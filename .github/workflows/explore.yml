@@ -29,7 +29,12 @@ jobs:
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: python pipeline/explore_apis.py
-
+        
+      - name: 상세조회 확인
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: python pipeline/explore_detail.py
+        
       - name: 원본 XML 보관
         if: always()
         uses: actions/upload-artifact@v4
