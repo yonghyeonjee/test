@@ -1,0 +1,39 @@
+name: explore-apis
+
+on:
+  workflow_dispatch:
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: 설정 점검
+        env:
+          DATA_GO_KR_KEY:       ${{ secrets.DATA_GO_KR_KEY }}
+          GEMINI_API_KEY:       ${{ secrets.GEMINI_API_KEY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python pipeline/check_setup.py
+
+      - name: API 샘플 수집
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: python pipeline/explore_apis.py
+
+      - name: 원본 XML 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-samples
+          path: samples/
+          retention-days: 7
