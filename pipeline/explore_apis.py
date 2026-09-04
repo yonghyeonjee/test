@@ -1,21 +1,20 @@
 """
-explore_apis.py — 스키마 설계 전에 실제 응답을 눈으로 확인하는 스크립트
+explore_apis.py — 스키마 확정 전, 4개 API의 실제 응답 구조를 확인한다.
 
-사용법:
-    python pipeline/explore_apis.py            # 전체
-    python pipeline/explore_apis.py bokjiro_local   # 하나만
+각 소스마다:
+  1) 전체 건수(totalCount) 확인   <- 정규화 비용이 여기서 결정됨
+  2) 목록 20건 호출 -> 필드 목록 + 레코드 1건 출력
+  3) 상세조회가 있으면 1건 호출 -> 지원대상/선정기준 원문 확인
 
-하는 일:
-  1) endpoints.json 의 각 API를 20건씩 호출
-  2) 원본 응답을 samples/{key}.xml 로 저장
-  3) 응답에서 발견된 필드명 목록을 출력  <- 스키마 설계의 재료
+    python pipeline/explore_apis.py
+    python pipeline/explore_apis.py bokjiro_local
 """
 
 import json
 import os
 import sys
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import requests
@@ -24,130 +23,230 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
 
-SERVICE_KEY = os.environ.get("DATA_GO_KR_KEY", "").strip()
+KEY = os.environ.get("DATA_GO_KR_KEY", "").strip()
 SAMPLES = ROOT / "samples"
 SAMPLES.mkdir(exist_ok=True)
 ROWS = 20
 
+# 정규화의 재료가 되는 긴 서술형 필드
+LONG_FIELDS = {
+    "tgtrDtlCn", "slctCritCn", "alwServCn", "wlfareInfoOutlCn",
+    "servDgst", "bsnsSumryCn", "trgetNm", "reqstMthPapersCn",
+}
 
-def load_endpoints() -> dict:
-    with open(Path(__file__).parent / "endpoints.json", encoding="utf-8") as f:
-        cfg = json.load(f)
-    return {k: v for k, v in cfg.items() if not k.startswith("_")}
 
-
-def build_params(raw: dict) -> dict:
+def fill(raw: dict, page=1) -> dict:
     out = {}
     for k, v in raw.items():
         v = str(v)
-        v = v.replace("__SERVICE_KEY__", SERVICE_KEY)
+        v = v.replace("__SERVICE_KEY__", KEY)
         v = v.replace("__ROWS__", str(ROWS))
-        v = v.replace("__PAGE__", "1")
+        v = v.replace("__PAGE__", str(page))
         out[k] = v
     return out
 
 
-def collect_field_names(xml_text: str):
-    """응답에 등장하는 모든 태그명과 등장 횟수를 센다."""
+def diagnose(body: str) -> str | None:
+    checks = {
+        "SERVICE_KEY_IS_NOT_REGISTERED": "서비스키 미등록. Decoding 키인지, 승인됐는지 확인",
+        "SERVICE KEY IS NOT REGISTERED": "서비스키 미등록. Decoding 키인지, 승인됐는지 확인",
+        "NO_OPENAPI_SERVICE_ERROR": "엔드포인트 경로 오류",
+        "LIMITED_NUMBER_OF_SERVICE_REQUESTS": "일일 호출 한도 초과",
+        "SERVICE_ACCESS_DENIED": "이용 권한 없음. 활용신청 상태 확인",
+        "DEADLINE_HAS_EXPIRED": "인증키 기한 만료",
+    }
+    for token, msg in checks.items():
+        if token in body:
+            return msg
+    return None
+
+
+# ── XML ──────────────────────────────────────────────────────
+
+def xml_tags(text):
     try:
-        root = ET.fromstring(xml_text)
+        root = ET.fromstring(text)
     except ET.ParseError:
-        return None
-    counter = Counter()
+        return None, None
+    counter = Counter(el.tag for el in root.iter())
+    return root, counter
+
+
+def xml_first_record(root):
     for el in root.iter():
-        counter[el.tag] += 1
-    return counter
+        kids = list(el)
+        if len(kids) >= 3 and all(len(list(k)) == 0 for k in kids):
+            return el
+    return None
 
 
-def sample_first_record(xml_text: str):
-    """반복되는 아이템 하나를 골라 필드=값 형태로 보여준다."""
-    try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return None
+def xml_flat(root):
+    """중첩 무시하고 leaf 태그=값 전부 뽑기 (상세조회용)"""
+    out = []
+    for el in root.iter():
+        if list(el):
+            continue
+        txt = (el.text or "").strip()
+        if txt:
+            out.append((el.tag, txt))
+    return out
 
-    # 자식이 여러 개인 반복 노드를 찾는다
+
+# ── JSON ─────────────────────────────────────────────────────
+
+def json_first_record(obj):
+    """가장 그럴듯한 레코드 리스트를 찾아 첫 항목 반환"""
     best = None
-    for el in root.iter():
-        children = list(el)
-        if len(children) >= 3 and all(len(list(c)) == 0 for c in children):
-            best = el
-            break
-    if best is None:
-        return None
-    return [(c.tag, (c.text or "").strip()[:120]) for c in best]
+    def walk(o):
+        nonlocal best
+        if isinstance(o, list):
+            if o and isinstance(o[0], dict) and (best is None or len(o) > 1):
+                best = o[0]
+            for v in o:
+                walk(v)
+        elif isinstance(o, dict):
+            for v in o.values():
+                walk(v)
+    walk(obj)
+    return best
 
 
-def probe(key: str, conf: dict):
-    print("\n" + "=" * 70)
-    print(f"[{key}] {conf['label']}")
-    print("=" * 70)
+def find_total(obj):
+    found = {}
+    def walk(o):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if k.lower() in ("totalcount", "totalcnt", "total"):
+                    found[k] = v
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    walk(obj)
+    return found
 
-    url = conf["url"]
-    if "PUT_ENDPOINT_HERE" in url:
-        print("  SKIP: endpoints.json 에 URL을 아직 안 넣었습니다.")
-        print(f"        참고: {conf['portal']}")
-        return
+
+# ── 본체 ─────────────────────────────────────────────────────
+
+def probe(name: str, conf: dict):
+    print("\n" + "=" * 72)
+    print(f"[{name}] {conf['label']}")
+    print("=" * 72)
+
+    fmt = conf.get("format", "xml")
 
     try:
-        r = requests.get(url, params=build_params(conf["params"]), timeout=30)
+        r = requests.get(conf["url"], params=fill(conf["params"]), timeout=40)
     except Exception as e:
-        print(f"  ERROR: 요청 실패 - {e}")
+        print(f"  ERROR 요청 실패: {e}")
         return
 
-    print(f"  HTTP {r.status_code}  ({len(r.text):,} bytes)")
+    print(f"  HTTP {r.status_code}  ({len(r.text):,} bytes, {fmt})")
+    ext = "json" if fmt == "json" else "xml"
+    (SAMPLES / f"{name}_list.{ext}").write_text(r.text, encoding="utf-8")
 
-    out = SAMPLES / f"{key}.xml"
-    out.write_text(r.text, encoding="utf-8")
-    print(f"  saved -> {out.relative_to(ROOT)}")
-
-    body = r.text
-
-    # 흔한 실패 케이스 진단
-    if "SERVICE_KEY_IS_NOT_REGISTERED" in body or "SERVICE KEY IS NOT REGISTERED" in body:
-        print("  !! 서비스키 미등록. Decoding 키를 썼는지, 승인 상태인지 확인하세요.")
-        return
-    if "NO_OPENAPI_SERVICE_ERROR" in body:
-        print("  !! 엔드포인트 경로 오류. Swagger에서 오퍼레이션명을 다시 확인하세요.")
-        return
-    if "LIMITED_NUMBER_OF_SERVICE_REQUESTS" in body:
-        print("  !! 일일 호출 한도 초과.")
+    msg = diagnose(r.text)
+    if msg:
+        print(f"  !! {msg}")
+        print("  " + r.text[:400].replace("\n", " "))
         return
 
-    fields = collect_field_names(body)
-    if fields is None:
-        print("  (XML 파싱 실패 - 응답 앞부분)")
-        print("  " + body[:600].replace("\n", "\n  "))
+    detail_id = None
+
+    if fmt == "xml":
+        root, counter = xml_tags(r.text)
+        if root is None:
+            print("  XML 파싱 실패:")
+            print("  " + r.text[:500])
+            return
+
+        total = root.findtext(".//totalCount")
+        print(f"  ** totalCount = {total} **")
+
+        print(f"\n  -- 태그 {len(counter)}종 --")
+        for tag, n in counter.most_common():
+            print(f"     {tag:<30} x{n}")
+
+        rec = xml_first_record(root)
+        if rec is not None:
+            print("\n  -- 레코드 1건 --")
+            for c in rec:
+                v = (c.text or "").strip()
+                print(f"     {c.tag:<26} : {v[:160]}")
+            detail_id = rec.findtext(conf.get("detail_key", "servId"))
+
+    else:  # json
+        try:
+            obj = r.json()
+        except Exception:
+            print("  JSON 파싱 실패:")
+            print("  " + r.text[:500])
+            return
+
+        totals = find_total(obj)
+        print(f"  ** total 관련 필드 = {totals} **")
+
+        print("\n  -- 최상위 구조 --")
+        print("     " + json.dumps(obj, ensure_ascii=False)[:300])
+
+        rec = json_first_record(obj)
+        if rec:
+            print(f"\n  -- 레코드 1건 ({len(rec)}개 필드) --")
+            for k, v in rec.items():
+                print(f"     {k:<26} : {str(v)[:160]}")
+            detail_id = rec.get(conf.get("detail_key", ""))
+
+    # ── 상세조회 ──
+    durl = conf.get("detail_url")
+    if not durl or not detail_id:
         return
 
-    print(f"\n  -- 발견된 태그 ({len(fields)}종) --")
-    for tag, n in fields.most_common():
-        print(f"     {tag:<32} x{n}")
+    print(f"\n  -- 상세조회 ({conf['detail_key']}={detail_id}) --")
+    dp = fill(conf.get("detail_params", {}))
+    dp[conf["detail_key"]] = detail_id
 
-    rec = sample_first_record(body)
-    if rec:
-        print("\n  -- 레코드 1건 샘플 --")
-        for tag, val in rec:
-            print(f"     {tag:<28} : {val}")
+    try:
+        d = requests.get(durl, params=dp, timeout=40)
+    except Exception as e:
+        print(f"     ERROR: {e}")
+        return
+
+    print(f"     HTTP {d.status_code} ({len(d.text):,} bytes)")
+    (SAMPLES / f"{name}_detail.{ext}").write_text(d.text, encoding="utf-8")
+
+    msg = diagnose(d.text)
+    if msg:
+        print(f"     !! {msg}")
+        return
+
+    droot, _ = xml_tags(d.text)
+    if droot is None:
+        print("     " + d.text[:400])
+        return
+
+    for tag, val in xml_flat(droot):
+        limit = 500 if tag in LONG_FIELDS else 120
+        mark = " ***" if tag in LONG_FIELDS else ""
+        print(f"     {tag:<24}{mark} : {val[:limit]}")
 
 
 def main():
-    if not SERVICE_KEY:
-        print("DATA_GO_KR_KEY 가 비어 있습니다. .env 를 확인하세요.")
+    if not KEY:
+        print("DATA_GO_KR_KEY 가 비어 있습니다.")
         sys.exit(1)
 
-    endpoints = load_endpoints()
-    targets = sys.argv[1:] or list(endpoints.keys())
+    with open(Path(__file__).parent / "endpoints.json", encoding="utf-8") as f:
+        cfg = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
 
-    for key in targets:
-        if key not in endpoints:
-            print(f"알 수 없는 키: {key}")
+    for name in (sys.argv[1:] or list(cfg)):
+        if name not in cfg:
+            print(f"알 수 없는 키: {name}")
             continue
-        probe(key, endpoints[key])
+        probe(name, cfg[name])
 
-    print("\n" + "-" * 70)
-    print("samples/ 폴더의 xml 파일을 열어보고, 위 태그 목록을 공유하면")
-    print("그걸 기준으로 통합 스키마를 확정합니다.")
+    print("\n" + "-" * 72)
+    print("*** 표시된 긴 필드가 정규화의 재료입니다.")
+    print("위 출력 전체를 Claude 에 붙여넣으세요.")
 
 
 if __name__ == "__main__":

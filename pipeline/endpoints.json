@@ -1,28 +1,30 @@
 {
   "_README": [
-    "각 API의 공공데이터포털 상세페이지 하단 Swagger UI에서 실제 경로를 확인해 채우세요.",
-    "오퍼레이션명이 문서마다 조금씩 다르므로 아래 값은 '추정치'입니다.",
-    "explore_apis.py 를 돌리면 어느 항목이 틀렸는지 알려줍니다.",
-    "params 안의 __SERVICE_KEY__ / __ROWS__ / __PAGE__ 는 스크립트가 치환합니다."
+    "확정된 엔드포인트 (2026-09-05, 공공데이터포털 승인 화면 기준)",
+    "format: xml | json  — bizinfo 계열은 dataType=json 을 지원합니다.",
+    "__SERVICE_KEY__ / __ROWS__ / __PAGE__ 는 스크립트가 치환합니다."
   ],
 
   "bokjiro_local": {
     "label": "한국사회보장정보원_지자체복지서비스 (목록)",
-    "portal": "https://www.data.go.kr/data/15108347/openapi.do",
-    "url": "http://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist",
+    "url": "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist",
+    "detail_url": "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed",
+    "detail_key": "servId",
     "params": {
       "serviceKey": "__SERVICE_KEY__",
       "pageNo": "__PAGE__",
       "numOfRows": "__ROWS__",
       "callTp": "L"
     },
+    "detail_params": { "serviceKey": "__SERVICE_KEY__", "callTp": "D" },
     "format": "xml"
   },
 
   "bokjiro_central": {
     "label": "한국사회보장정보원_중앙부처복지서비스 (목록)",
-    "portal": "공공데이터포털에서 '중앙부처복지서비스' 검색",
-    "url": "http://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfarelistV001",
+    "url": "https://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfarelistV001",
+    "detail_url": "https://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfaredetailedV001",
+    "detail_key": "servId",
     "params": {
       "serviceKey": "__SERVICE_KEY__",
       "pageNo": "__PAGE__",
@@ -30,30 +32,35 @@
       "callTp": "L",
       "srchKeyCode": "001"
     },
+    "detail_params": { "serviceKey": "__SERVICE_KEY__", "callTp": "D" },
     "format": "xml"
   },
 
   "bizinfo_support": {
     "label": "중소벤처기업부_중소기업 지원사업 공고 조회",
-    "portal": "공공데이터포털 마이페이지 > 활용신청 현황에서 상세 확인",
-    "url": "PUT_ENDPOINT_HERE",
+    "url": "https://apis.data.go.kr/1421000/bizinfo/pblancBsnsService",
+    "detail_url": null,
+    "detail_key": "pblancId",
     "params": {
       "serviceKey": "__SERVICE_KEY__",
+      "dataType": "json",
       "pageNo": "__PAGE__",
       "numOfRows": "__ROWS__"
     },
-    "format": "xml"
+    "format": "json"
   },
 
   "bizinfo_event": {
     "label": "중소벤처기업연구원_행사정보 조회",
-    "portal": "공공데이터포털 마이페이지 > 활용신청 현황에서 상세 확인",
-    "url": "PUT_ENDPOINT_HERE",
+    "url": "https://apis.data.go.kr/B554618/bizinfo/eventService",
+    "detail_url": null,
+    "detail_key": "eventInfoId",
     "params": {
       "serviceKey": "__SERVICE_KEY__",
+      "dataType": "json",
       "pageNo": "__PAGE__",
       "numOfRows": "__ROWS__"
     },
-    "format": "xml"
+    "format": "json"
   }
 }
