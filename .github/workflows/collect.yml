@@ -1,0 +1,42 @@
+name: collect
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "수집할 소스 (비우면 전체)"
+        required: false
+        default: ""
+        type: choice
+        options: ["", "bokjiro_local", "bokjiro_central", "bizinfo_support", "bizinfo_event"]
+      detail_only:
+        description: "상세조회만 보충"
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 18 * * *"
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: 수집
+        env:
+          DATA_GO_KR_KEY:       ${{ secrets.DATA_GO_KR_KEY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python pipeline/collect.py ${{ inputs.source }} ${{ inputs.detail_only && '--detail-only' || '' }}
