@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+*.key
+samples/*
+!samples/.gitkeep
+__pycache__/
+.venv/
+node_modules/
+.next/
+.DS_Store
