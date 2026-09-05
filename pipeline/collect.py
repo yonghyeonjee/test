@@ -53,8 +53,8 @@ MAX_CALLS = {
 }
 PAGE_ROWS = 100
 SLEEP = 0.12          # 초당 30tps 제한 대비 여유
-TIMEOUT = 15
-RETRIES = 2           # 오래 붙들지 않는다. 실패 건은 다음 실행에서 다시 시도된다
+TIMEOUT = 10
+RETRIES = 1           # 오래 붙들지 않는다. 실패 건은 다음 실행에서 다시 시도된다
 DEADLINE_MIN = 45     # 이 시간을 넘기면 저장하고 정상 종료 (러너 타임아웃 회피)
 
 # 연결 실패/5xx 를 지수 백오프로 재시도하는 세션
@@ -92,17 +92,31 @@ def mask(text) -> str:
     return t
 
 
+# 호스트별로 http 폴백 여부를 기억한다.
+# 매 요청마다 https 타임아웃을 기다리면 건당 30초씩 낭비된다.
+_USE_HTTP: set[str] = set()
+
+
+def _host(url: str) -> str:
+    return url.split("//", 1)[-1].split("/", 1)[0]
+
+
 def get(url, params, fmt):
-    """재시도 + https 실패 시 http 폴백"""
+    """재시도 + https 실패 시 http 폴백 (폴백 결과를 호스트 단위로 기억)"""
+    h = _host(url)
+    if h in _USE_HTTP:
+        url = url.replace("https://", "http://", 1)
+
     try:
         r = SESSION.get(url, params=params, timeout=TIMEOUT)
     except requests.exceptions.RequestException:
-        # 포털이 https 에서만 막히는 경우가 있어 한 번 더 시도
         alt = url.replace("https://", "http://", 1)
         if alt == url:
             raise
-        print("    https 실패 -> http 재시도")
+        print(f"    https 실패 -> {h} 는 이후 http 사용", flush=True)
+        _USE_HTTP.add(h)
         r = SESSION.get(alt, params=params, timeout=TIMEOUT)
+
     time.sleep(SLEEP)
     if fmt == "json":
         return r.json()

@@ -7,8 +7,8 @@
 
   "bokjiro_local": {
     "label": "한국사회보장정보원_지자체복지서비스 (목록)",
-    "url": "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist",
-    "detail_url": "https://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed",
+    "url": "http://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfarelist",
+    "detail_url": "http://apis.data.go.kr/B554287/LocalGovernmentWelfareInformations/LcgvWelfaredetailed",
     "detail_key": "servId",
     "params": {
       "serviceKey": "__SERVICE_KEY__",
@@ -22,8 +22,8 @@
 
   "bokjiro_central": {
     "label": "한국사회보장정보원_중앙부처복지서비스 (목록)",
-    "url": "https://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfarelistV001",
-    "detail_url": "https://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfaredetailedV001",
+    "url": "http://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfarelistV001",
+    "detail_url": "http://apis.data.go.kr/B554287/NationalWelfareInformationsV001/NationalWelfaredetailedV001",
     "detail_key": "servId",
     "params": {
       "serviceKey": "__SERVICE_KEY__",
