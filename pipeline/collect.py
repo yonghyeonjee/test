@@ -220,7 +220,7 @@ def run(name, conf, detail_only=False):
         durl = conf.get("detail_url")
         if durl:
             todo = SB.table("programs") \
-                .select("source_id") \
+                .select("source_id,kind,title") \
                 .eq("source", name) \
                 .is_("raw_target", "null") \
                 .limit(q.limit - q.used) \
@@ -247,7 +247,14 @@ def run(name, conf, detail_only=False):
                                "apply_start", "apply_end", "is_always_on",
                                "apply_method", "contact")}
                     if upd:
-                        upd.update({"source": name, "source_id": row["source_id"]})
+                        # NOT NULL 컬럼(kind, title)을 함께 보내야 upsert 가 통과한다.
+                        # Postgres 는 ON CONFLICT 판정 전에 NOT NULL 을 먼저 검사한다.
+                        upd.update({
+                            "source": name,
+                            "source_id": row["source_id"],
+                            "kind": row["kind"],
+                            "title": row["title"],
+                        })
                         batch.append(upd)
                     dfails = 0
                 except Exception as e:
