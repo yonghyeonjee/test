@@ -1,26 +1,26 @@
 import type { MetadataRoute } from "next";
-import { getRegions } from "@/lib/db";
+import { getAreas, getTopSourceIds } from "@/lib/db";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 
 export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const regions = await getRegions();
+  const [areas, ids] = await Promise.all([getAreas(), getTopSourceIds(400)]);
 
-  // 1단계에서는 지역 조건이 붙은 URL 만 올린다.
-  // 자동 생성 페이지를 한 번에 수천 개 노출하면 품질 평가에서 통째로 걸릴 수 있어,
-  // 색인 상태를 확인하며 단계적으로 늘린다.
-  const entries: MetadataRoute.Sitemap = [
+  // 자동 생성 페이지를 한 번에 수천 개 올리면 품질 평가에서 통째로 걸릴 수 있다.
+  // 색인 상태를 보며 단계적으로 늘린다. 지금은 지역 + 상위 400건.
+  return [
     { url: SITE, changeFrequency: "daily", priority: 1 },
+    ...areas.map((a) => ({
+      url: `${SITE}/area/${encodeURIComponent(a.sido)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    })),
+    ...ids.map((id) => ({
+      url: `${SITE}/p/${encodeURIComponent(id)}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
   ];
-
-  for (const r of regions) {
-    entries.push({
-      url: `${SITE}/?sido=${encodeURIComponent(r.sido)}`,
-      changeFrequency: "weekly",
-      priority: 0.8,
-    });
-  }
-  return entries;
 }

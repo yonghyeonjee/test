@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { daysLeft, type Program } from "@/lib/db";
 
 /** 나이 조건을 5~95 축 위의 막대로 그린다. 내 나이 위치에 표식. */
@@ -64,19 +65,13 @@ export default function ProgramEntry({
       </div>
 
       <h3 className="mt-1 text-[1.0625rem] font-bold leading-snug">
-        {p.detail_url ? (
-          <a
-            href={p.detail_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline decoration-rule decoration-2 underline-offset-4
-                       hover:decoration-ink"
-          >
-            {p.title}
-          </a>
-        ) : (
-          p.title
-        )}
+        <Link
+          href={`/p/${encodeURIComponent(p.source_id)}`}
+          className="underline decoration-rule decoration-2 underline-offset-4
+                     hover:decoration-ink"
+        >
+          {p.title}
+        </Link>
       </h3>
 
       {p.summary && (
@@ -98,6 +93,16 @@ export default function ProgramEntry({
         {p.household?.map((h) => (
           <span key={h} className="text-muted">
             {h}
+          </span>
+        ))}
+        {p.biz_target?.map((t) => (
+          <span key={t} className="text-muted">
+            {t}
+          </span>
+        ))}
+        {p.biz_field?.map((f) => (
+          <span key={f} className="text-muted">
+            {f}
           </span>
         ))}
         {p.support_type && p.support_type !== "기타" && (

@@ -32,9 +32,9 @@ export default function RootLayout({
             <a href="/" className="text-lg font-extrabold tracking-tight">
               지원
             </a>
-            <span className="text-xs text-muted">
-              공공데이터 기반 · 정부 공식 서비스 아님
-            </span>
+            <a href="/#areas" className="text-xs text-muted hover:text-ink">
+              지역별로 보기
+            </a>
           </header>
 
           <main>{children}</main>

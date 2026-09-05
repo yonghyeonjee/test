@@ -2,11 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { EMPLOYMENT, HOUSEHOLD } from "@/lib/db";
+import { BIZ_FIELD, BIZ_TARGET } from "@/lib/db";
 
-type Region = { sido: string; sigungu: { name: string; n: number }[] };
-
-/** 문장 안의 빈칸 하나. 누르면 아래로 목록이 열린다. */
 function Blank({
   value,
   placeholder,
@@ -47,13 +44,11 @@ function Blank({
       >
         {value ?? placeholder}
       </button>
-
       {open && (
         <span
           className={`absolute left-0 top-[calc(100%+6px)] z-20 block
                       max-h-72 overflow-y-auto rounded border border-ink
                       bg-white py-1 shadow-lg ${wide ? "w-72" : "w-44"}`}
-          role="listbox"
         >
           {value && (
             <button
@@ -87,105 +82,82 @@ function Blank({
   );
 }
 
-export default function ConditionSentence({ regions }: { regions: Region[] }) {
+export default function BusinessSentence({ sidos }: { sidos: string[] }) {
   const router = useRouter();
   const sp = useSearchParams();
 
   const sido = sp.get("sido");
-  const sigungu = sp.get("sigungu");
-  const age = sp.get("age");
-  const emp = sp.get("emp");
-  const hh = sp.getAll("hh");
+  const target = sp.get("target");
+  const years = sp.get("years");
+  const fields = sp.getAll("field");
 
   const set = (patch: Record<string, string | string[] | null>) => {
     const next = new URLSearchParams(sp.toString());
+    next.set("tab", "business");
     for (const [k, v] of Object.entries(patch)) {
       next.delete(k);
       if (Array.isArray(v)) v.forEach((x) => next.append(k, x));
       else if (v) next.set(k, v);
     }
-    router.replace(next.toString() ? `/?${next}` : "/", { scroll: false });
+    router.replace(`/?${next}`, { scroll: false });
   };
 
-  const sgg = regions.find((r) => r.sido === sido)?.sigungu ?? [];
-  const ages = Array.from({ length: 91 }, (_, i) => i + 5);
-
-  // 순서대로 하나씩 묻는다. 한 번에 다 보여주면 어디부터 눌러야 할지 모른다.
-  const step = !sido ? 1 : !age ? 2 : !emp ? 3 : 4;
+  const yearOpts = [
+    { label: "예비창업", value: "0" },
+    ...Array.from({ length: 20 }, (_, i) => ({
+      label: `${i + 1}년차`,
+      value: String(i + 1),
+    })),
+    { label: "21년 이상", value: "25" },
+  ];
 
   return (
     <section>
-      <p className="mb-3 text-sm font-bold text-grant">
-        {step === 1 && "1. 어디에 사시나요?"}
-        {step === 2 && "2. 나이가 어떻게 되시나요?"}
-        {step === 3 && "3. 지금 어떤 상태이신가요?"}
-        {step === 4 && "조건에 맞는 사업을 찾았습니다"}
-      </p>
-
       <h1 className="text-display font-extrabold leading-snug">
         <span className="whitespace-nowrap">
           <Blank
             value={sido}
             placeholder="어느 지역"
             wide
-            options={regions.map((r) => ({ label: r.sido, value: r.sido }))}
-            onPick={(v) => set({ sido: v, sigungu: null })}
+            options={sidos.map((s) => ({ label: s, value: s }))}
+            onPick={(v) => set({ sido: v })}
           />
-          {sido && sgg.length > 0 && (
-            <>
-              {" "}
-              <Blank
-                value={sigungu}
-                placeholder="시·군·구"
-                wide
-                options={sgg.map((s) => ({
-                  label: `${s.name} (${s.n})`,
-                  value: s.name,
-                }))}
-                onPick={(v) => set({ sigungu: v })}
-              />
-            </>
-          )}
-          에 사는
+          에서
         </span>{" "}
-        {sido && (
         <span className="whitespace-nowrap">
           <Blank
-            value={age ? `${age}세` : null}
-            placeholder="몇 살"
-            options={ages.map((a) => ({ label: `${a}세`, value: String(a) }))}
-            onPick={(v) => set({ age: v })}
+            value={years ? yearOpts.find((y) => y.value === years)?.label ?? null : null}
+            placeholder="몇 년째"
+            options={yearOpts}
+            onPick={(v) => set({ years: v })}
           />
-        </span>
-        )}{" "}
-        {sido && age && (
+        </span>{" "}
         <span className="whitespace-nowrap">
           <Blank
-            value={emp}
-            placeholder="어떤 상태"
-            options={EMPLOYMENT.map((e) => ({ label: e, value: e }))}
-            onPick={(v) => set({ emp: v })}
+            value={target}
+            placeholder="어떤 사업체"
+            wide
+            options={BIZ_TARGET.map((t) => ({ label: t, value: t }))}
+            onPick={(v) => set({ target: v })}
           />
-          입니다.
+          를 하고 있습니다.
         </span>
-        )}
       </h1>
 
-      {step >= 3 && (
       <div className="mt-7">
         <p className="mb-2 text-sm text-muted">
-          해당되는 것이 있으면 눌러주세요. 없어도 결과는 나옵니다.
+          필요한 지원이 있으면 눌러주세요.
         </p>
         <div className="flex flex-wrap gap-1.5">
-          {HOUSEHOLD.map((h) => {
-            const on = hh.includes(h);
+          {BIZ_FIELD.map((f) => {
+            const on = fields.includes(f);
             return (
               <button
-                key={h}
+                key={f}
                 type="button"
                 aria-pressed={on}
                 onClick={() =>
-                  set({ hh: on ? hh.filter((x) => x !== h) : [...hh, h] })
+                  set({ field: on ? fields.filter((x) => x !== f) : [...fields, f] })
                 }
                 className={`rounded-full border px-3 py-1.5 text-sm transition-colors
                   ${
@@ -194,13 +166,12 @@ export default function ConditionSentence({ regions }: { regions: Region[] }) {
                       : "border-rule bg-white text-muted hover:border-ink hover:text-ink"
                   }`}
               >
-                {h}
+                {f}
               </button>
             );
           })}
         </div>
       </div>
-      )}
     </section>
   );
 }
