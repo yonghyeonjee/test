@@ -20,6 +20,9 @@ import time
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+import re
+from urllib.parse import quote
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -28,6 +31,12 @@ from supabase import create_client
 
 sys.path.insert(0, str(Path(__file__).parent))
 from sources import ADAPTERS  # noqa: E402
+
+# 로그 버퍼링 해제: 타임아웃으로 강제 종료돼도 진행 상황이 남는다
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(ROOT / ".env")
@@ -44,8 +53,9 @@ MAX_CALLS = {
 }
 PAGE_ROWS = 100
 SLEEP = 0.12          # 초당 30tps 제한 대비 여유
-TIMEOUT = 30
-RETRIES = 4           # 공공데이터포털은 간헐적 타임아웃이 잦다
+TIMEOUT = 15
+RETRIES = 2           # 오래 붙들지 않는다. 실패 건은 다음 실행에서 다시 시도된다
+DEADLINE_MIN = 45     # 이 시간을 넘기면 저장하고 정상 종료 (러너 타임아웃 회피)
 
 # 연결 실패/5xx 를 지수 백오프로 재시도하는 세션
 SESSION = requests.Session()
@@ -53,7 +63,7 @@ _retry = Retry(
     total=RETRIES,
     connect=RETRIES,
     read=RETRIES,
-    backoff_factor=2,                     # 2s, 4s, 8s, 16s
+    backoff_factor=1,                     # 1s, 2s
     status_forcelist=[429, 500, 502, 503, 504],
     allowed_methods=["GET"],
 )
@@ -70,6 +80,16 @@ class Quota:
             return False
         self.used += 1
         return True
+
+
+def mask(text) -> str:
+    """예외 메시지 등에 섞여 나오는 서비스키를 가린다."""
+    t = str(text)
+    t = re.sub(r"serviceKey=[^&\s)]+", "serviceKey=***", t)
+    if KEY:
+        t = t.replace(KEY, "***")
+        t = t.replace(quote(KEY, safe=""), "***")
+    return t
 
 
 def get(url, params, fmt):
@@ -140,7 +160,8 @@ def upsert(table, rows, conflict):
 
 
 def run(name, conf, detail_only=False):
-    print(f"\n{'=' * 64}\n[{name}] {conf['label']}\n{'=' * 64}")
+    print(f"\n{'=' * 64}\n[{name}] {conf['label']}\n{'=' * 64}", flush=True)
+    deadline = time.time() + DEADLINE_MIN * 60
 
     run_row = SB.table("ingest_runs").insert(
         {"source": name, "status": "running"}
@@ -199,7 +220,7 @@ def run(name, conf, detail_only=False):
                     prog_rows.append({k: v for k, v in mapped.items() if v is not None})
 
                 fetched += len(items)
-                print(f"  page {page}: +{len(items)}  (누적 {fetched})")
+                print(f"  page {page}: +{len(items)}  (누적 {fetched})", flush=True)
 
                 if len(raw_rows) >= 500:
                     upsert("raw_items", raw_rows, "source,source_id")
@@ -229,14 +250,22 @@ def run(name, conf, detail_only=False):
             print(f"  상세조회 대상 {len(todo)}건 (남은 쿼터 {q.limit - q.used})")
 
             batch, dkey, dfails = [], conf.get("detail_key", "servId"), 0
+            t0 = time.time()
             for i, row in enumerate(todo, 1):
                 if not q.take():
-                    print("  쿼터 소진 — 다음 실행에서 이어집니다")
+                    print("  쿼터 소진 — 다음 실행에서 이어집니다", flush=True)
+                    break
+                if time.time() > deadline:
+                    print(f"  {DEADLINE_MIN}분 경과 — 저장하고 종료합니다", flush=True)
                     break
                 try:
                     dp = fill(conf.get("detail_params", {}))
                     dp[dkey] = row["source_id"]
+                    _t = time.time()
                     droot = get(durl, dp, "xml")
+                    if i <= 3:
+                        print(f"    [진단] {row['source_id']} "
+                              f"{time.time() - _t:.1f}초", flush=True)
                     d = xml_detail(droot)
                     if d.get("resultCode") not in (None, "0"):
                         continue
@@ -265,10 +294,13 @@ def run(name, conf, detail_only=False):
                         break
                     time.sleep(5)
 
-                if i % 100 == 0:
-                    print(f"    {i}/{len(todo)}")
-                if len(batch) >= 200:
+                if i % 25 == 0:
+                    rate = i / max(time.time() - t0, 1)
+                    print(f"    {i}/{len(todo)}  ({rate:.1f}건/초, 저장대기 {len(batch)})",
+                          flush=True)
+                if len(batch) >= 50:
                     upsert("programs", batch, "source,source_id")
+                    print(f"    중간 저장 {len(batch)}건", flush=True)
                     batch = []
 
             if batch:
@@ -282,10 +314,11 @@ def run(name, conf, detail_only=False):
         }).eq("id", run_id).execute()
 
     except Exception as e:
-        print(f"  ERROR {type(e).__name__}: {e}")
+        msg = mask(e)
+        print(f"  ERROR {type(e).__name__}: {msg}")
         SB.table("ingest_runs").update({
             "status": "error", "fetched": fetched,
-            "finished_at": "now()", "message": str(e)[:500],
+            "finished_at": "now()", "message": msg[:500],
         }).eq("id", run_id).execute()
         raise
 
