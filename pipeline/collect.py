@@ -21,6 +21,8 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -42,6 +44,21 @@ MAX_CALLS = {
 }
 PAGE_ROWS = 100
 SLEEP = 0.12          # 초당 30tps 제한 대비 여유
+TIMEOUT = 30
+RETRIES = 4           # 공공데이터포털은 간헐적 타임아웃이 잦다
+
+# 연결 실패/5xx 를 지수 백오프로 재시도하는 세션
+SESSION = requests.Session()
+_retry = Retry(
+    total=RETRIES,
+    connect=RETRIES,
+    read=RETRIES,
+    backoff_factor=2,                     # 2s, 4s, 8s, 16s
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)
+SESSION.mount("https://", HTTPAdapter(max_retries=_retry))
+SESSION.mount("http://", HTTPAdapter(max_retries=_retry))
 
 
 class Quota:
@@ -56,7 +73,16 @@ class Quota:
 
 
 def get(url, params, fmt):
-    r = requests.get(url, params=params, timeout=40)
+    """재시도 + https 실패 시 http 폴백"""
+    try:
+        r = SESSION.get(url, params=params, timeout=TIMEOUT)
+    except requests.exceptions.RequestException:
+        # 포털이 https 에서만 막히는 경우가 있어 한 번 더 시도
+        alt = url.replace("https://", "http://", 1)
+        if alt == url:
+            raise
+        print("    https 실패 -> http 재시도")
+        r = SESSION.get(alt, params=params, timeout=TIMEOUT)
     time.sleep(SLEEP)
     if fmt == "json":
         return r.json()
@@ -132,8 +158,19 @@ def run(name, conf, detail_only=False):
             page, total = 1, None
             raw_rows, prog_rows = [], []
 
+            fails = 0
             while q.take():
-                data = get(conf["url"], fill(conf["params"], page), fmt)
+                try:
+                    data = get(conf["url"], fill(conf["params"], page), fmt)
+                except Exception as e:
+                    fails += 1
+                    print(f"  page {page} 실패({fails}/3): {type(e).__name__}")
+                    if fails >= 3:
+                        print("  연속 실패 — 여기까지 저장하고 중단합니다")
+                        break
+                    time.sleep(10)
+                    continue
+                fails = 0
 
                 if fmt == "xml":
                     if total is None:
@@ -164,6 +201,12 @@ def run(name, conf, detail_only=False):
                 fetched += len(items)
                 print(f"  page {page}: +{len(items)}  (누적 {fetched})")
 
+                if len(raw_rows) >= 500:
+                    upsert("raw_items", raw_rows, "source,source_id")
+                    upsert("programs", prog_rows, "source,source_id")
+                    print(f"    중간 저장 {len(prog_rows)}건")
+                    raw_rows, prog_rows = [], []
+
                 if total and fetched >= total:
                     break
                 page += 1
@@ -185,7 +228,7 @@ def run(name, conf, detail_only=False):
 
             print(f"  상세조회 대상 {len(todo)}건 (남은 쿼터 {q.limit - q.used})")
 
-            batch, dkey = [], conf.get("detail_key", "servId")
+            batch, dkey, dfails = [], conf.get("detail_key", "servId"), 0
             for i, row in enumerate(todo, 1):
                 if not q.take():
                     print("  쿼터 소진 — 다음 실행에서 이어집니다")
@@ -206,8 +249,14 @@ def run(name, conf, detail_only=False):
                     if upd:
                         upd.update({"source": name, "source_id": row["source_id"]})
                         batch.append(upd)
+                    dfails = 0
                 except Exception as e:
+                    dfails += 1
                     print(f"    skip {row['source_id']}: {type(e).__name__}")
+                    if dfails >= 10:
+                        print("    연속 10회 실패 — 중단하고 저장합니다")
+                        break
+                    time.sleep(5)
 
                 if i % 100 == 0:
                     print(f"    {i}/{len(todo)}")
