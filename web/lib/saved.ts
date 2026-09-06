@@ -45,3 +45,40 @@ export type SavedRow = {
   query: string;
   created_at: string;
 };
+
+/** 010-1234-5678 처럼 보기 좋게. 자릿수가 안 맞으면 원본 그대로 둔다. */
+export function fmtPhone(raw: string) {
+  const d = digits(raw);
+  if (d.length === 11) return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}`;
+  return raw;
+}
+
+/** 123-45-67890 */
+export function fmtBizNo(raw: string | null) {
+  if (!raw) return null;
+  const d = digits(raw);
+  if (d.length !== 10) return raw;
+  return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5)}`;
+}
+
+/** 저장된 조건을 사람이 읽는 문장으로. 주소 파라미터를 그대로 풀어 쓴다. */
+export function describeQuery(query: string) {
+  const sp = new URLSearchParams(query);
+  const bits: string[] = [];
+  const push = (v: string | null) => v && bits.push(v);
+
+  push(sp.get("sigungu") ?? sp.get("sido"));
+  const age = sp.get("age");
+  if (age) bits.push(`${age}세`);
+  push(sp.get("emp"));
+  bits.push(...sp.getAll("hh"));
+
+  push(sp.get("target"));
+  const years = sp.get("years");
+  if (years) bits.push(`업력 ${years}년`);
+  bits.push(...sp.getAll("ind"));
+  bits.push(...sp.getAll("field"));
+
+  return bits;
+}

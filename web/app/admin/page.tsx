@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
+import SavedPanel, { type SavedFull } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
 
 export const dynamic = "force-dynamic";
@@ -79,11 +80,18 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     return <p className="card p-6 text-sm">SUPABASE_SERVICE_KEY 가 없습니다.</p>;
 
   const since = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const [logs, settings, cov] = await Promise.all([
+  const [logs, settings, cov, saved] = await Promise.all([
     db.from("search_log").select("*").gte("at", since).limit(5000),
     db.from("site_settings").select("key,value"),
     db.from("coverage").select("*"),
+    db
+      .from("saved_searches")
+      .select("id,kind,label,query,name,phone,email,biz_no,created_at")
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
+
+  const savedRows = (saved.data ?? []) as SavedFull[];
 
   const rows = (logs.data ?? []) as Row[];
   const count = <K extends string>(k: K) => {
@@ -130,11 +138,12 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </form>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
         {[
           { k: "오늘 검색", v: today },
           { k: "30일 검색", v: rows.length },
           { k: "결과 0건", v: zero.length },
+          { k: "저장한 조건", v: savedRows.length },
           {
             k: "노출 사업",
             v: (cov.data ?? []).reduce(
@@ -149,6 +158,13 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           </div>
         ))}
       </div>
+
+      <Panel
+        title="저장한 조건"
+        note={savedRows.length >= 200 ? "최근 200건" : `${savedRows.length}건`}
+      >
+        <SavedPanel rows={savedRows} />
+      </Panel>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -183,7 +199,12 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       />
 
       <p className="mt-8 text-xs leading-relaxed text-muted">
-        검색 기록에는 개인을 식별할 수 있는 정보가 들어 있지 않습니다.
+        위쪽 <b className="font-bold text-ink2">저장한 조건</b> 은 이용자가
+        직접 동의하고 남긴 연락처입니다. 안내 목적 외로 쓰지 말고, 삭제를
+        요청받으면 지웁니다.
+      </p>
+      <p className="mt-2 text-xs leading-relaxed text-muted">
+        그 아래 검색 통계에는 개인을 식별할 수 있는 정보가 들어 있지 않습니다.
         IP·브라우저 정보·자유입력 원문은 저장하지 않으며, 나이는 10년 단위로만
         기록합니다.
       </p>
