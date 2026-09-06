@@ -10,7 +10,15 @@ export const dynamicParams = true;
 import { HOOK, SITE_URL as SITE, YEAR } from "@/lib/seo";
 
 export async function generateStaticParams() {
-  const areas = await getAreas();
+  // DB 를 못 읽어도 빌드는 통과시킨다. 목록이 비면 해당 경로는
+  // 미리 만들지 않고 요청이 올 때 렌더한다.
+  let areas;
+  try {
+    areas = await getAreas();
+  } catch (e) {
+    console.warn("[app/area/[sido]/page.tsx] 정적 경로 생성을 건너뛴다:", e);
+    return [];
+  }
   return areas.map((a) => ({ sido: a.sido }));
 }
 
