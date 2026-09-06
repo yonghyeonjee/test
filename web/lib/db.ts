@@ -1,11 +1,46 @@
 import { createClient } from "@supabase/supabase-js";
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+/** 비어 있는 환경변수 이름들. 설정이 끝났으면 빈 배열이다. */
+export const missingDbEnv = (
+  [
+    ["NEXT_PUBLIC_SUPABASE_URL", SUPABASE_URL],
+    ["NEXT_PUBLIC_SUPABASE_ANON_KEY", SUPABASE_ANON_KEY],
+  ] as const
+)
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+
+export const dbConfigured = missingDbEnv.length === 0;
+
+export function dbEnvError() {
+  return new Error(
+    `Supabase 환경변수가 비어 있습니다: ${missingDbEnv.join(", ")}. ` +
+      "Vercel > Settings > Environment Variables 에서 값을 넣고, " +
+      "각 변수의 Production 스코프가 켜져 있는지 확인한다."
+  );
+}
+
 // 읽기 전용. anon 키만 사용한다 — service_role 키는 절대 여기 넣지 않는다.
-export const db = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { auth: { persistSession: false } }
-);
+//
+// 설정이 없을 때 createClient 는 "supabaseUrl is required" 만 던져서 어느 변수가
+// 비었는지 알려주지 않는다. 그래서 직접 확인하고, 실제로 db 를 건드리는 순간에
+// 변수 이름이 박힌 오류를 던진다. import 시점에 던지면 설정 안내 화면까지 같이
+// 죽으므로 여기서는 던지지 않는다.
+export const db = dbConfigured
+  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    })
+  : (new Proxy(
+      {},
+      {
+        get() {
+          throw dbEnvError();
+        },
+      }
+    ) as ReturnType<typeof createClient>);
 
 export type Program = {
   id: number;

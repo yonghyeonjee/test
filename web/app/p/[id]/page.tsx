@@ -17,7 +17,15 @@ export const dynamicParams = true;
 import { SITE_URL as SITE } from "@/lib/seo";
 
 export async function generateStaticParams() {
-  const ids = await getTopSourceIds(400);
+  // DB 를 못 읽어도 빌드는 통과시킨다. 목록이 비면 해당 경로는
+  // 미리 만들지 않고 요청이 올 때 렌더한다.
+  let ids;
+  try {
+    ids = await getTopSourceIds(400);
+  } catch (e) {
+    console.warn("[app/p/[id]/page.tsx] 정적 경로 생성을 건너뛴다:", e);
+    return [];
+  }
   return ids.map((id) => ({ id }));
 }
 
