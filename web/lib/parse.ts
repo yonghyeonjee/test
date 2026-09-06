@@ -8,7 +8,7 @@
  * 같은 문장이 매번 다르게 해석되면 신뢰가 무너진다.
  */
 
-import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD } from "./db";
+import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY } from "./db";
 
 export type Parsed = {
   sido?: string;
@@ -170,9 +170,27 @@ export type ParsedBiz = {
   sido?: string;
   target?: string;
   field: string[];
+  industry: string[];
   years?: number;
   leftover: string[];
 };
+
+/** 업종. 공고에 붙어 있는 13종에만 대응한다. */
+const INDUSTRY_WORDS: [RegExp, string][] = [
+  [/제조업|제조|공장/, "제조업"],
+  [/음식점|외식|식당|카페/, "음식점업"],
+  [/정보통신|IT|소프트웨어|앱 ?개발/i, "정보통신업"],
+  [/농림|농업|어업|축산|임업/, "농림어업"],
+  [/도소매|소매|도매|유통업/, "도소매업"],
+  [/개인서비스|미용|세탁/, "개인서비스업"],
+  [/건설업|건설|건축/, "건설업"],
+  [/운수|물류|화물|택배/, "운수·물류업"],
+  [/숙박|호텔|펜션|게스트하우스/, "숙박업"],
+  [/전문서비스|과학기술|엔지니어링|연구소/, "전문·과학·기술서비스업"],
+  [/교육서비스|학원|교습/, "교육서비스업"],
+  [/예술|스포츠|여가|공연/, "예술·스포츠·여가업"],
+  [/금융업|보험업/, "금융·보험업"],
+];
 
 /**
  * 사업체 종류. "예비창업" 은 "창업" 을 품고 있으므로 먼저 본다.
@@ -201,7 +219,7 @@ const BIZ_FIELD_WORDS: [RegExp, string][] = [
 
 export function parseBizQuery(raw: string): ParsedBiz {
   const text = (raw || "").trim();
-  const out: ParsedBiz = { field: [], leftover: [] };
+  const out: ParsedBiz = { field: [], industry: [], leftover: [] };
   if (!text) return out;
 
   // 업력. "3년" "업력 5년차" "7년 미만" 을 모두 같은 값으로 본다.
@@ -235,9 +253,13 @@ export function parseBizQuery(raw: string): ParsedBiz {
     if (re.test(rest) && !out.field.includes(v)) out.field.push(v);
   }
 
+  for (const [re, v] of INDUSTRY_WORDS) {
+    if (re.test(text) && !out.industry.includes(v)) out.industry.push(v);
+  }
+
   const known =
     (out.sido ? 1 : 0) + (out.target ? 1 : 0) +
-    (out.years !== undefined ? 1 : 0) + out.field.length;
+    (out.years !== undefined ? 1 : 0) + out.field.length + out.industry.length;
   if (known === 0) out.leftover = text.split(/\s+/).slice(0, 5);
 
   return out;
@@ -248,6 +270,7 @@ export function describeBiz(p: ParsedBiz) {
   if (p.sido) bits.push(p.sido);
   if (p.target) bits.push(p.target);
   if (p.years !== undefined) bits.push(`업력 ${p.years}년`);
+  bits.push(...p.industry);
   bits.push(...p.field);
   return bits;
 }
@@ -259,10 +282,11 @@ export function toBizParams(p: ParsedBiz) {
   if (p.target) sp.set("target", p.target);
   if (p.years !== undefined) sp.set("years", String(p.years));
   p.field.forEach((f) => sp.append("field", f));
+  p.industry.forEach((i) => sp.append("ind", i));
   sp.set("via", "text");
   return sp;
 }
 
-export { BIZ_FIELD, BIZ_TARGET };
+export { BIZ_FIELD, BIZ_TARGET, INDUSTRY };
 
 export { EMPLOYMENT, HOUSEHOLD };

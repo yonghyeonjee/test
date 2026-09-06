@@ -10,6 +10,8 @@ import html
 import re
 from datetime import date, datetime
 
+from revenue import parse_revenue_cap
+
 # ── 공통 유틸 ────────────────────────────────────────────────
 
 TAG_RE = re.compile(r"<[^>]+>")
@@ -239,6 +241,12 @@ def from_bizinfo_support(item: dict, detail=None) -> dict:
         "raw_target": clean(item.get("trgetNm")),
         "raw_criteria": clean(item.get("hashtags")),
         "raw_benefit": clean(item.get("bsnsSumryCn")),
+
+        # 신청 자격의 매출 상한. 못 뽑으면 None 이고, 그 공고는 매출로 거르지 않는다.
+        "revenue_max": parse_revenue_cap(
+            clean(item.get("trgetNm")),
+            clean(item.get("bsnsSumryCn")),
+        ),
     }
 
 

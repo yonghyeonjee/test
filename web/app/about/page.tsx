@@ -78,7 +78,8 @@ export default function About() {
         <p className="mt-4 max-w-[36rem] leading-relaxed text-ink2">
           회원가입, 로그인, 주민등록번호, 소득 자료 — 하나도 필요 없습니다.
           조회하려고 개인정보를 넘길 이유가 없다고 봅니다. 사는 곳과 나이 정도만
-          넣으면 되고, 그 값도 저장하지 않습니다.
+          넣으면 되고, 그 값도 저장하지 않습니다. 조건을 저장해 두고 다음에 다시
+          열고 싶으실 때만 이름과 연락처를 여쭙습니다.
         </p>
         <p className="mt-3 max-w-[36rem] leading-relaxed text-ink2">
           휴대폰에서 바로 열리고, 글자가 작아 불편하면 화면 위쪽의{" "}

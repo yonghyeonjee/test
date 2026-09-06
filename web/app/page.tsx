@@ -7,6 +7,7 @@ import ConditionSentence from "@/components/ConditionSentence";
 import Finder from "@/components/Finder";
 import ProgramEntry from "@/components/ProgramEntry";
 import PromoBanner from "@/components/PromoBanner";
+import SaveSearch from "@/components/SaveSearch";
 import SearchBox from "@/components/SearchBox";
 import Hero from "@/components/Hero";
 import ShareButton from "@/components/ShareButton";
@@ -63,8 +64,9 @@ function Row({ title, sub, items, more }: {
   );
 }
 
-function Results({ results, label, myAge }: {
+function Results({ results, label, myAge, kind }: {
   results: Program[]; label: string; myAge?: number;
+  kind: "welfare" | "business";
 }) {
   return (
     <section className="mt-10">
@@ -97,6 +99,8 @@ function Results({ results, label, myAge }: {
         </div>
       )}
 
+      {results.length > 0 && <SaveSearch kind={kind} />}
+
       <p className="mt-8 text-xs leading-relaxed text-muted">
         여기 나온 사업이 곧 신청 자격이 있다는 뜻은 아닙니다. 소득·재산 기준처럼
         화면에 담기지 않은 요건이 남아 있을 수 있으니, 눌러서 원문을 확인하세요.
@@ -118,10 +122,13 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     const bizField = many(searchParams.field);
     const yearsRaw = one(searchParams.years);
     const bizYears = yearsRaw ? Number(yearsRaw) : undefined;
-    const asked = Boolean(sido || bizTarget || bizField.length || yearsRaw);
+    const industry = many(searchParams.ind);
+    const asked = Boolean(
+      sido || bizTarget || bizField.length || yearsRaw || industry.length
+    );
 
     const results = asked
-      ? await matchBusiness({ sido, bizTarget, bizField, bizYears })
+      ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry })
       : [];
     if (asked)
       logSearch({ kind: "business", sido, bizTarget, bizField,
@@ -139,7 +146,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           />
         </Suspense>
         {asked ? (
-          <Results results={results} label="신청할 수 있는 지원사업" />
+          <Results results={results} label="신청할 수 있는 지원사업" kind="business" />
         ) : (
           <>
             <p className="num mt-8 text-sm text-muted">
@@ -204,7 +211,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
       )}
 
       {asked ? (
-        <Results results={results} label="해당될 수 있는 사업" myAge={age} />
+        <Results results={results} label="해당될 수 있는 사업" myAge={age} kind="welfare" />
       ) : (
         <>
           <Row title="놓치면 내년까지 기다려야 합니다"

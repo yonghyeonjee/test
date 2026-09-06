@@ -5,8 +5,8 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
   description:
-    `${SITE_NAME}는 회원가입 없이 이용할 수 있으며 이름·연락처·주민등록번호를 ` +
-    "수집하지 않습니다. 어떤 정보를 어떻게 다루는지 정리했습니다.",
+    `${SITE_NAME}는 회원가입 없이 이용할 수 있습니다. 조건 저장을 신청하실 때만 ` +
+    "이름과 연락처를 받습니다. 어떤 정보를 어떻게 다루는지 정리했습니다.",
   alternates: { canonical: `${SITE_URL}/privacy` },
 };
 
@@ -35,17 +35,47 @@ export default function Privacy() {
           나라지원은 회원가입이 없습니다.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          이름, 연락처, 주민등록번호, 소득·재산 자료를 받지 않습니다.
-          보조금24처럼 행정정보를 연계하지 않으므로, 저희는 이용자가 누구인지
-          알 수 없습니다.
+          그냥 찾아보기만 하실 때는 아무것도 받지 않습니다. 주민등록번호와
+          소득·재산 자료는 어떤 경우에도 받지 않고, 보조금24처럼 행정정보를
+          연계하지도 않습니다.
+        </p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          다만 <b className="font-bold text-ink2">조건 저장</b>을 직접
+          신청하시면, 그때만 이름·휴대폰 번호·이메일(사업자등록번호는 선택)을
+          받습니다. 저장하지 않으시면 이 항목은 수집되지 않습니다.
         </p>
       </div>
 
-      <H>1. 수집하지 않는 것</H>
+      <H>1. 조건 저장을 신청하실 때 받는 것</H>
+      <p className="mt-3 text-sm leading-relaxed">
+        수집 항목과 이용 목적, 보관 기간은 아래와 같습니다. 동의하지 않으셔도
+        조회 기능은 그대로 쓰실 수 있고, 저장만 되지 않습니다.
+      </p>
       <ul className="mt-3 space-y-1.5 text-sm leading-relaxed">
         {[
-          "이름 · 생년월일 · 주민등록번호",
-          "전화번호 · 이메일 · 주소",
+          "이름 · 휴대폰 번호 — 저장한 조건을 다시 열어드리기 위해",
+          "이메일 — 지원사업 안내를 보내드리기 위해",
+          "사업자등록번호(선택) — 기업 지원사업을 구분해 안내하기 위해",
+          "보관 기간 — 저장일로부터 3년, 또는 삭제 요청 시 즉시 파기",
+        ].map((s) => (
+          <li key={s} className="flex gap-2">
+            <span className="text-brand">·</span>
+            <span>{s}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-sm leading-relaxed text-muted">
+        저장한 조건은 저장하실 때 넣으신 이름과 휴대폰 번호로 엽니다. 아는
+        사람이 두 가지를 모두 알면 열어볼 수 있는 방식이므로, 남에게 알려지면
+        곤란한 조건은 저장하지 마시고 조회만 하시거나 주소를 직접 보관하시길
+        권합니다. 열람 화면에서는 이메일과 사업자등록번호를 다시 보여주지
+        않습니다.
+      </p>
+
+      <H>2. 어떤 경우에도 받지 않는 것</H>
+      <ul className="mt-3 space-y-1.5 text-sm leading-relaxed">
+        {[
+          "생년월일 · 주민등록번호",
           "소득 · 재산 · 가족관계 등 행정정보",
           "IP 주소 · 브라우저 정보(User-Agent) · 접속 기기 식별자",
           "로그인 정보 (계정 자체가 없습니다)",
@@ -58,7 +88,7 @@ export default function Privacy() {
         ))}
       </ul>
 
-      <H>2. 기록하는 것 — 조건 통계</H>
+      <H>3. 기록하는 것 — 조건 통계</H>
       <p className="mt-3 text-sm leading-relaxed">
         어떤 조건이 많이 쓰이는지, 어떤 조건에서 결과가 하나도 안 나오는지
         알아야 데이터의 빈 곳을 채울 수 있습니다. 이를 위해 아래 항목만
@@ -95,21 +125,21 @@ export default function Privacy() {
         <b className="font-bold">개인정보에 해당하지 않는 통계 자료</b>입니다.
       </p>
 
-      <H>3. 쿠키</H>
+      <H>4. 쿠키</H>
       <p className="mt-3 text-sm leading-relaxed">
         일반 이용자에게는 쿠키를 심지 않습니다. 광고나 추적 도구도 넣지
         않습니다. 관리자 화면(<code className="rounded bg-surface2 px-1">/admin</code>)에
         로그인할 때만 인증용 쿠키를 하나 사용하며, 8시간 뒤 만료됩니다.
       </p>
 
-      <H>4. 검색 조건은 주소창에 있습니다</H>
+      <H>5. 검색 조건은 주소창에 있습니다</H>
       <p className="mt-3 text-sm leading-relaxed">
         조회 조건은 서버가 아니라 주소(URL)에 담깁니다. 그래서 링크를 저장하거나
         공유하면 같은 결과를 다시 볼 수 있습니다. 다만 그 주소를 다른 사람에게
         보내면 조건도 함께 전달되니, 필요할 때만 공유하세요.
       </p>
 
-      <H>5. 정보를 넘기지 않습니다</H>
+      <H>6. 정보를 넘기지 않습니다</H>
       <p className="mt-3 text-sm leading-relaxed">
         제3자에게 정보를 제공하거나 판매하지 않습니다. 애초에 넘길 개인정보가
         없습니다. 화면에서 &lsquo;원문에서 확인하고 신청하기&rsquo;를 누르면
@@ -117,14 +147,14 @@ export default function Privacy() {
         방침이 적용됩니다.
       </p>
 
-      <H>6. 데이터 보관</H>
+      <H>7. 데이터 보관</H>
       <p className="mt-3 text-sm leading-relaxed">
         조건 통계는 Supabase(서울 리전 외 해외 리전 포함)에 저장되며,
         서비스 개선 목적 외에는 쓰지 않습니다. 통계로서 가치가 없어진 기록은
         주기적으로 지웁니다.
       </p>
 
-      <H>7. 문의</H>
+      <H>8. 문의</H>
       <p className="mt-3 text-sm leading-relaxed">
         방침에 대한 문의나 기록 삭제 요청은 아래로 연락 주세요. 다만 개인을
         식별할 수 있는 기록 자체가 없어, 특정인의 기록만 찾아 지우는 것은

@@ -64,6 +64,12 @@
   .badge-new   { @apply bg-brandSoft text-brand; }
   .badge-quiet { @apply bg-ground text-muted; }
 
+  .field {
+    @apply w-full rounded-ctl border-[1.5px] border-line bg-surface px-3.5 py-2.5
+           text-[15px] outline-none transition-colors;
+  }
+  .field:focus { @apply border-brand; }
+
   .btn {
     @apply inline-flex items-center justify-center rounded-btn px-5 py-3.5
            text-[15px] font-bold transition-colors disabled:opacity-60;
