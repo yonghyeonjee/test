@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import VisitTracker from "@/components/VisitTracker";
 import "./globals.css";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <div className="mx-auto max-w-[54rem] px-5">
+          <VisitTracker />
           <SiteHeader />
 
           <main>{children}</main>

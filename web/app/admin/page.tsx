@@ -80,7 +80,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     return <p className="card p-6 text-sm">SUPABASE_SERVICE_KEY 가 없습니다.</p>;
 
   const since = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const [logs, settings, cov, saved] = await Promise.all([
+  const [logs, settings, cov, saved, visits] = await Promise.all([
     db.from("search_log").select("*").gte("at", since).limit(5000),
     db.from("site_settings").select("key,value"),
     db.from("coverage").select("*"),
@@ -89,7 +89,30 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       .select("id,kind,label,query,name,phone,email,biz_no,created_at")
       .order("created_at", { ascending: false })
       .limit(200),
+    db.from("visit_log").select("*").gte("at", since).limit(5000),
   ]);
+
+  const visitRows = (visits.data ?? []) as Row[];
+
+  /** 값별로 세어 많은 순으로. 빈 값은 세지 않는다. */
+  const tally = (rows: Row[], key: string, top = 10) => {
+    const m = new Map<string, number>();
+    for (const r of rows) {
+      const v = r[key];
+      if (v === null || v === undefined || v === "") continue;
+      m.set(String(v), (m.get(String(v)) ?? 0) + 1);
+    }
+    return [...m.entries()]
+      .map(([label, n]) => ({ label, n }))
+      .sort((a, b) => b.n - a.n)
+      .slice(0, top);
+  };
+
+  const terms = tally(visitRows, "term", 20);
+  const campaigns = tally(
+    visitRows.filter((r) => r.utm_campaign),
+    "utm_campaign"
+  );
 
   const savedRows = (saved.data ?? []) as SavedFull[];
 
@@ -138,12 +161,13 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </form>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-6">
         {[
           { k: "오늘 검색", v: today },
           { k: "30일 검색", v: rows.length },
           { k: "결과 0건", v: zero.length },
           { k: "저장한 조건", v: savedRows.length },
+          { k: "30일 유입", v: visitRows.length },
           {
             k: "노출 사업",
             v: (cov.data ?? []).reduce(
@@ -168,6 +192,55 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
+          <Panel title="유입 채널" note="최근 30일">
+            <Rank rows={tally(visitRows, "channel")} keyName="label" />
+          </Panel>
+          <Panel title="처음 열린 페이지">
+            <Rank rows={tally(visitRows, "landing")} keyName="label" />
+          </Panel>
+        </div>
+        <div>
+          <Panel
+            title="유입 검색어"
+            note={terms.length ? "최근 30일" : "대부분 안 넘어옵니다"}
+          >
+            {terms.length ? (
+              <Rank rows={terms} keyName="label" />
+            ) : (
+              <p className="text-sm leading-relaxed text-muted">
+                구글·네이버는 리퍼러에서 검색어를 지우고 보냅니다. 그래서 여기는
+                대개 비어 있습니다 — 기록이 안 되는 게 아니라 브라우저가 안 넘겨
+                줍니다. 실제 검색어는{" "}
+                <a
+                  href="https://search.google.com/search-console"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-brand"
+                >
+                  구글 서치콘솔
+                </a>
+                과{" "}
+                <a
+                  href="https://searchadvisor.naver.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-4 hover:text-brand"
+                >
+                  네이버 서치어드바이저
+                </a>
+                에서 보셔야 합니다. 직접 링크에 <code>utm_term</code> 을 붙이면
+                그 값은 여기 그대로 쌓입니다.
+              </p>
+            )}
+          </Panel>
+          <Panel title="캠페인" note="utm_campaign">
+            <Rank rows={campaigns} keyName="label" />
+          </Panel>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
           <Panel title="많이 찾는 지역" note="최근 30일">
             <Rank rows={count("sido")} keyName="label" />
           </Panel>
@@ -183,7 +256,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
                  note="여기가 데이터 구멍입니다">
             <Rank rows={zeroRows} keyName="label" />
           </Panel>
-          <Panel title="유입 방식">
+          <Panel title="조회 방식" note="화면에서 어떻게 찾았는지">
             <Rank rows={count("entry")} keyName="label" />
           </Panel>
           <Panel title="많이 찾는 취업상태">

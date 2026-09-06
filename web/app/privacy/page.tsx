@@ -125,21 +125,33 @@ export default function Privacy() {
         <b className="font-bold">개인정보에 해당하지 않는 통계 자료</b>입니다.
       </p>
 
-      <H>4. 쿠키</H>
+      <H>4. 유입 경로</H>
+      <p className="mt-3 text-sm leading-relaxed">
+        어느 사이트를 거쳐 오셨는지(리퍼러 주소의 도메인), 처음 열린 페이지,
+        링크에 붙은 캠페인 표시(utm)를 방문당 한 번 기록합니다. 어떤 경로로
+        알리는 것이 도움이 되는지 보기 위해서입니다.
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        전체 주소가 아니라 도메인만 남기며, IP 주소와 브라우저 정보는 여기서도
+        받지 않습니다. 검색 포털이 검색어를 함께 보내오는 경우 그 낱말이 남을 수
+        있으나, 구글·네이버는 대부분 지우고 보냅니다.
+      </p>
+
+      <H>5. 쿠키</H>
       <p className="mt-3 text-sm leading-relaxed">
         일반 이용자에게는 쿠키를 심지 않습니다. 광고나 추적 도구도 넣지
         않습니다. 관리자 화면(<code className="rounded bg-surface2 px-1">/admin</code>)에
         로그인할 때만 인증용 쿠키를 하나 사용하며, 8시간 뒤 만료됩니다.
       </p>
 
-      <H>5. 검색 조건은 주소창에 있습니다</H>
+      <H>6. 검색 조건은 주소창에 있습니다</H>
       <p className="mt-3 text-sm leading-relaxed">
         조회 조건은 서버가 아니라 주소(URL)에 담깁니다. 그래서 링크를 저장하거나
         공유하면 같은 결과를 다시 볼 수 있습니다. 다만 그 주소를 다른 사람에게
         보내면 조건도 함께 전달되니, 필요할 때만 공유하세요.
       </p>
 
-      <H>6. 정보를 넘기지 않습니다</H>
+      <H>7. 정보를 넘기지 않습니다</H>
       <p className="mt-3 text-sm leading-relaxed">
         제3자에게 정보를 제공하거나 판매하지 않습니다. 애초에 넘길 개인정보가
         없습니다. 화면에서 &lsquo;원문에서 확인하고 신청하기&rsquo;를 누르면
@@ -147,14 +159,14 @@ export default function Privacy() {
         방침이 적용됩니다.
       </p>
 
-      <H>7. 데이터 보관</H>
+      <H>8. 데이터 보관</H>
       <p className="mt-3 text-sm leading-relaxed">
         조건 통계는 Supabase(서울 리전 외 해외 리전 포함)에 저장되며,
         서비스 개선 목적 외에는 쓰지 않습니다. 통계로서 가치가 없어진 기록은
         주기적으로 지웁니다.
       </p>
 
-      <H>8. 문의</H>
+      <H>9. 문의</H>
       <p className="mt-3 text-sm leading-relaxed">
         방침에 대한 문의나 기록 삭제 요청은 아래로 연락 주세요. 다만 개인을
         식별할 수 있는 기록 자체가 없어, 특정인의 기록만 찾아 지우는 것은
