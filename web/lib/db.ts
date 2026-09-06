@@ -65,6 +65,7 @@ export type Program = {
   biz_years_min: number | null;
   biz_years_max: number | null;
   industry: string[] | null;
+  apply_start: string | null;
   apply_end: string | null;
   is_always_on: boolean;
   support_type: string | null;
@@ -175,7 +176,6 @@ export type Detail = Program & {
   target_text: string | null;
   criteria_text: string | null;
   benefit_text: string | null;
-  apply_start: string | null;
   support_cycle: string | null;
   life_cycle: string[] | null;
   apply_method: string | null;
@@ -416,6 +416,37 @@ export async function getSettings() {
     newDays: Number(m.get("new_days") ?? 7),
     notice: String(m.get("notice") ?? "").replace(/^"|"$/g, ""),
   };
+}
+
+export type ApplyStatus = "closed" | "upcoming" | "ongoing" | "always";
+
+export const STATUS_LABEL: Record<ApplyStatus, string> = {
+  closed: "마감",
+  upcoming: "예정",
+  ongoing: "진행 중",
+  always: "상시",
+};
+
+/** 서버가 어느 시간대에 있든 한국 날짜로 판단한다. "YYYY-MM-DD". */
+function todayKST() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(
+    new Date()
+  );
+}
+
+/**
+ * 접수 상태. apply_start / apply_end 는 date 라 문자열 비교로 충분하다.
+ * 날짜가 아예 없는 공고는 "진행 중"으로 본다 — 원문에서 기간을 못 뽑은
+ * 경우가 많아 마감으로 단정하면 멀쩡한 공고가 죽어 보인다.
+ */
+export function applyStatus(
+  p: Pick<Program, "apply_start" | "apply_end" | "is_always_on">
+): ApplyStatus {
+  if (p.is_always_on) return "always";
+  const today = todayKST();
+  if (p.apply_end && p.apply_end < today) return "closed";
+  if (p.apply_start && p.apply_start > today) return "upcoming";
+  return "ongoing";
 }
 
 export function daysLeft(p: Pick<Program, "apply_end" | "is_always_on">) {

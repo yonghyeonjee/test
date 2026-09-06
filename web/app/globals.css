@@ -4,14 +4,34 @@
 
 @layer base {
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
-  body { @apply bg-ground text-ink antialiased; }
+
+  /*
+   * 큰 화면 보기. rem 만 키우면 text-[11px] 처럼 px 로 박힌 글자가 그대로
+   * 남아 오히려 더 안 보인다. zoom 은 여백·아이콘까지 같이 키우고, 이 사이트는
+   * 고정 너비 없이 max-width 로만 잡혀 있어 가로 스크롤도 생기지 않는다.
+   */
+  html.big body { zoom: 1.25; }
+  @supports not (zoom: 1) {
+    html.big { font-size: 20px; }
+  }
+  /*
+   * 단색 종이색 위에 아주 옅은 빛을 두 군데 얹는다. 스크롤해도 배경이
+   * 같이 흐르지 않도록 고정해서, 화면이 넓어져도 톤이 유지되게 한다.
+   */
+  body {
+    @apply bg-ground text-ink antialiased;
+    background-image:
+      radial-gradient(900px 520px at 50% -10%, rgba(13, 107, 79, 0.07), transparent 62%),
+      radial-gradient(680px 420px at 105% 8%, rgba(212, 160, 74, 0.055), transparent 60%);
+    background-attachment: fixed;
+  }
   .num { font-variant-numeric: tabular-nums; }
   ::selection { background: #0D6B4F; color: #fff; }
   :focus-visible { outline: 2px solid #0D6B4F; outline-offset: 2px; border-radius: 6px; }
 }
 
 @layer components {
-  .card { @apply rounded-card bg-surface shadow-card; }
+  .card { @apply rounded-card bg-surface shadow-card ring-1 ring-inset ring-line/50; }
   .card-link { @apply transition duration-150; }
   .card-link:hover { @apply -translate-y-0.5 shadow-lift; }
 
@@ -37,6 +57,10 @@
            text-[11px] font-bold leading-tight;
   }
   .badge-due   { @apply bg-accentSoft text-accent; }
+  /* 접수 상태 */
+  .badge-open   { @apply bg-brandSoft text-brand; }
+  .badge-soon   { @apply bg-goldSoft text-gold; }
+  .badge-closed { @apply bg-ground text-faint ring-1 ring-inset ring-line; }
   .badge-hot   { @apply bg-alertSoft text-alert; }
   .badge-new   { @apply bg-brandSoft text-brand; }
   .badge-quiet { @apply bg-ground text-muted; }

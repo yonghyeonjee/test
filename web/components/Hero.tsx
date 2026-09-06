@@ -29,14 +29,16 @@ export default function Hero({
         </p>
 
         <h1 className="mt-3 text-[2rem] font-extrabold leading-[1.18] tracking-[-.025em] sm:text-[2.35rem]">
-          받을 수 있는데
+          나라에서 주는 지원,
           <br />
-          모르고 지나친 지원금
+          <span className="text-[#8FCFB0]">받을 수 있는</span> 지원
         </h1>
 
-        <p className="mt-4 max-w-[26rem] text-[15px] leading-relaxed text-[#A9CFBC]">
-          사는 곳과 나이만 넣으면 됩니다. 회원가입도, 주민등록번호도, 소득 자료도
-          필요 없습니다.
+        <p className="mt-4 max-w-[27rem] text-[15px] leading-relaxed text-[#A9CFBC]">
+          중앙부처와 지자체가 내놓은 지원사업을 한자리에 모았습니다. 그중에서
+          <b className="font-bold text-white"> 내 조건에 실제로 해당되는 것만</b>{" "}
+          추려서 보여드립니다. 사는 곳과 나이만 넣으면 됩니다 — 회원가입도,
+          주민등록번호도, 소득 자료도 필요 없습니다.
         </p>
 
         <div className="mt-7 flex flex-wrap gap-x-7 gap-y-3">
@@ -61,7 +63,9 @@ export default function Hero({
         </div>
       </section>
 
-      <div className="-mt-16 px-0.5">
+      {/* 히어로가 position:relative 라 그냥 두면 검색 카드 위를 덮는다.
+          끌어올린 쪽에도 스택 순서를 줘야 입력칸이 눌린다. */}
+      <div className="relative z-10 -mt-16 px-0.5">
         <div className="card p-4 sm:p-5">
           <SearchBox index={index} />
         </div>

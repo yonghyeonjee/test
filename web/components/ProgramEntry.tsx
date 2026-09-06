@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ageLabel, daysLeft, type Program } from "@/lib/db";
+import {
+  ageLabel,
+  applyStatus,
+  daysLeft,
+  STATUS_LABEL,
+  type Program,
+} from "@/lib/db";
 
 /** 나이 조건을 5~95 축 위의 막대로. 내 나이 위치에 표식. */
 function AgeBar({ min, max, me }: { min: number | null; max: number | null; me?: number }) {
@@ -28,10 +34,24 @@ function AgeBar({ min, max, me }: { min: number | null; max: number | null; me?:
   );
 }
 
+const STATUS_CLASS = {
+  closed:   "badge-closed",
+  upcoming: "badge-soon",
+  ongoing:  "badge-open",
+  always:   "badge-open",
+} as const;
+
 export function Badges({ p }: { p: Program & { first_seen_at?: string } }) {
+  const status = applyStatus(p);
   const left = daysLeft(p);
-  const out: React.ReactNode[] = [];
-  if (left !== null && left >= 0 && left <= 14)
+  const out: React.ReactNode[] = [
+    // 접수 상태를 맨 앞에. 마감된 공고를 모르고 눌러보는 일이 없게 한다.
+    <span key="s" className={`badge ${STATUS_CLASS[status]}`}>
+      {STATUS_LABEL[status]}
+    </span>,
+  ];
+  // 진행 중이면서 2주 안에 끝나는 것만 남은 날짜를 덧붙인다.
+  if (status === "ongoing" && left !== null && left >= 0 && left <= 14)
     out.push(
       <span key="d" className="badge badge-due num">
         {left === 0 ? "오늘 마감" : `D-${left}`}
@@ -82,7 +102,6 @@ export default function ProgramEntry({
         {p.biz_target?.map((t) => <span key={t}>{t}</span>)}
         {p.biz_field?.map((f) => <span key={f}>{f}</span>)}
         {p.support_type && p.support_type !== "기타" && <span>{p.support_type}</span>}
-        {p.is_always_on && <span>상시</span>}
       </div>
     </Link>
   );
