@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body { @apply bg-ground text-ink antialiased; }
+  .num { font-variant-numeric: tabular-nums; }
+  ::selection { background: #0D6B4F; color: #fff; }
+  :focus-visible { outline: 2px solid #0D6B4F; outline-offset: 2px; border-radius: 6px; }
+}
+
+@layer components {
+  .card { @apply rounded-card bg-surface shadow-card; }
+  .card-link { @apply transition duration-150; }
+  .card-link:hover { @apply -translate-y-0.5 shadow-lift; }
+
+  .tile {
+    @apply flex flex-col gap-2.5 rounded-card border-[1.5px] border-transparent
+           bg-surface p-[18px] text-left shadow-card transition duration-150;
+  }
+  .tile:hover { @apply -translate-y-0.5 border-brand; }
+  .tile-ic {
+    @apply flex h-10 w-10 items-center justify-center rounded-[12px]
+           bg-brandSoft text-brand;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-pill border-[1.5px] border-line2
+           bg-surface px-3.5 py-2 text-[13.5px] font-semibold text-ink2
+           transition-colors hover:border-brand hover:text-brand;
+  }
+  .chip-on { @apply border-brand bg-brand text-white hover:text-white; }
+
+  .badge {
+    @apply inline-flex items-center rounded-pill px-2 py-0.5
+           text-[11px] font-bold leading-tight;
+  }
+  .badge-due   { @apply bg-accentSoft text-accent; }
+  .badge-hot   { @apply bg-alertSoft text-alert; }
+  .badge-new   { @apply bg-brandSoft text-brand; }
+  .badge-quiet { @apply bg-ground text-muted; }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-btn px-5 py-3.5
+           text-[15px] font-bold transition-colors disabled:opacity-60;
+  }
+  .btn-primary { @apply bg-brand text-white hover:bg-brandDeep; }
+  .btn-ghost   { @apply border-[1.5px] border-line2 bg-surface text-ink2
+                        hover:border-brand hover:text-brand; }
+
+  .field {
+    @apply w-full rounded-ctl border-[1.5px] border-line bg-surface px-3.5 py-2.5
+           text-sm outline-none transition-colors focus:border-brand;
+  }
+
+  .blank {
+    @apply relative inline-flex items-baseline rounded-[8px] px-2 pb-0.5
+           font-extrabold cursor-pointer transition-colors
+           bg-brandSoft text-brand hover:bg-brand hover:text-white;
+  }
+  .blank-empty {
+    @apply bg-transparent text-faint underline decoration-line2 decoration-dashed
+           decoration-2 underline-offset-[7px] hover:bg-transparent
+           hover:text-brand hover:decoration-brand;
+  }
+}
+
+/* 히어로 — 깊은 숲색 그라데이션. Datacenter 의 남색과 확실히 갈라놓는다. */
+.hero {
+  background: linear-gradient(150deg, #062418 0%, #08402F 55%, #0D6B4F 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(720px 380px at 82% 6%, rgba(120, 200, 165, .28), transparent 62%),
+    radial-gradient(560px 300px at 6% 104%, rgba(212, 160, 74, .20), transparent 60%);
+  pointer-events: none;
+}
+.hero > * { position: relative; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

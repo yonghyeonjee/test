@@ -1,128 +1,86 @@
-# 복지·지원사업 매칭 서비스
+# jiwon.knowhow-it.com
 
-조건(지역·나이·취업여부·기업형태)을 입력하면 해당 가능성이 있는
-정부 복지서비스와 기업 지원사업을 찾아주는 서비스.
+조건(지역·나이·취업상태·가구상황)을 넣으면 해당될 수 있는
+복지서비스를 찾아주는 화면.
 
-```
-공공데이터 API ──▶ raw_items (원본 그대로)
-                        │
-                   Gemini 배치 정규화 (1회)
-                        ▼
-                   programs (구조화 컬럼)
-                        │
-                     순수 SQL 조회
-                        ▼
-                   Next.js 웹
-```
-
-핵심 원칙: **매칭을 런타임에 하지 않는다.** 수집 시점에 한 번만
-정규화하고, 사용자 조회는 인덱스 SQL로만 처리한다.
-
----
-
-## 셋업 순서 (로컬 설치 없음)
-
-### 1. GitHub 저장소 만들기
-
-1. github.com → 우측 상단 **+** → **New repository**
-2. 이름 `welfare`, **Private** 선택 → Create
-3. 이 압축 파일을 푼 뒤, 저장소 화면에서 **Add file → Upload files**
-   → 폴더 안 내용물 전체를 드래그 → **Commit changes**
-
-> `.github` 처럼 점으로 시작하는 폴더가 드래그에서 빠질 수 있습니다.
-> 업로드 후 저장소에 `.github/workflows/` 가 보이는지 확인하세요.
-> 안 보이면 그 폴더만 따로 한 번 더 올리면 됩니다.
-
-### 2. 키 등록
-
-저장소 → **Settings** → **Secrets and variables** → **Actions**
-
-**Secrets** 탭 → New repository secret (4개):
-
-| Name | Value |
-|---|---|
-| `DATA_GO_KR_KEY` | 공공데이터포털 **Decoding** 키 |
-| `GEMINI_API_KEY` | AI Studio 키 |
-| `SUPABASE_URL` | `https://iabtlainrxzkwyhyqajl.supabase.co` |
-| `SUPABASE_SERVICE_KEY` | service_role 키 (Rotate 한 새 것) |
-
-**Variables** 탭 → New repository variable (2개):
-
-| Name | Value |
-|---|---|
-| `GEMINI_MODEL` | `gemini-3.1-flash-lite` |
-| `MAX_ITEMS_PER_RUN` | `2000` |
-
-### 3. API 샘플 수집 실행 ← **지금 할 일**
-
-저장소 → **Actions** 탭 → 왼쪽 **explore-apis** → **Run workflow** → 초록 버튼
-
-1~2분 뒤 완료되면 실행 항목 클릭 → **explore** 잡 클릭 → 각 단계를 펼쳐 로그 확인
-
-- `설정 점검` 에 `[OK]` 3개가 나와야 합니다
-- `API 샘플 수집` 로그 전체를 복사해서 Claude에 붙여넣으세요
-- 화면 하단 **Artifacts → api-samples** 에서 원본 XML도 받을 수 있습니다
-
-`bizinfo_support`, `bizinfo_event` 는 `pipeline/endpoints.json` 의
-`PUT_ENDPOINT_HERE` 를 실제 경로로 바꿔야 동작합니다.
-GitHub 에서 파일 클릭 → 연필 아이콘으로 바로 수정할 수 있습니다.
-
-### 4. (선택) 로컬에서 하고 싶을 때
-
-Claude Code 나 터미널이 편하면 로컬도 됩니다:
+## 로컬 실행
 
 ```bash
-pip install -r requirements.txt
-cp .env.example .env        # 값 채우기
-python pipeline/check_setup.py
-python pipeline/explore_apis.py
+cd web
+npm install
+cp .env.local.example .env.local   # anon 키 채우기
+npm run dev
 ```
 
----
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` 는 Supabase > Settings > API 의
+**anon** 키다. service_role 키를 넣으면 브라우저에 노출되므로 절대 쓰지 않는다.
 
-## 폴더 구조
+## Vercel 배포
 
-```
-welfare/
-├─ pipeline/
-│  ├─ endpoints.json     API 경로 설정 (Swagger 보고 수정)
-│  ├─ explore_apis.py    샘플 수집 + 필드 분석
-│  └─ check_setup.py     키 3종 점검
-├─ sql/
-│  └─ 000_init.sql       원본 적재 테이블
-├─ samples/              API 응답 원본 (git 제외)
-├─ .github/workflows/
-│  └─ daily.yml          매일 KST 03:00 배치
-└─ web/                  Next.js (추후)
-```
+1. Vercel 에서 GitHub 저장소 연결
+2. **Root Directory 를 `web` 으로 지정** (저장소 루트에는 파이썬 파이프라인이 있다)
+3. 환경변수 3개 등록: `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
+4. Settings > Domains 에 `jiwon.knowhow-it.com` 추가 → 안내되는 CNAME 을 DNS 에 등록
 
----
+## 관리자 (/admin)
 
-## 비용 메모
+Vercel > Settings > Environment Variables 에 아래를 넣어야 동작한다.
+**코드나 저장소에는 절대 두지 않는다.** 저장소가 공개돼 있고, 한 번
+커밋되면 이력에서 지워도 남는다.
 
-| 항목 | 월 |
+| 변수 | 값 |
 |---|---|
-| Supabase Free | $0 |
-| Vercel Hobby | $0 |
-| GitHub Actions | $0 (무료 2,000분 내) |
-| Gemini 정규화 (초기 1회, 1.5만건) | 약 $6 |
-| Gemini 증분 (일 수백건) | $1 미만 |
+| `ADMIN_USER` | 관리자 아이디 |
+| `ADMIN_PASSWORD` | 관리자 비밀번호 (16자 이상 권장) |
+| `ADMIN_SECRET` | 아무 긴 무작위 문자열 (세션 서명용) |
+| `SUPABASE_SERVICE_KEY` | Supabase service_role 키 |
 
-주의사항:
-- Google Cloud는 **하드 지출 한도가 없습니다.** 예산 알림만 옵니다.
-  코드 쪽 `MAX_ITEMS_PER_RUN` 이 실질적인 안전장치입니다.
-- `gemini-2.5-flash-lite` 는 더 싸지만 2026-10-16 종료 예정이니 쓰지 마세요.
-- Gemini는 thinking 토큰이 출력 토큰으로 과금됩니다.
-  정규화 호출에서는 thinking을 끄고, `usage_metadata` 로 실사용량을 확인하세요.
+`/admin` 은 robots 에서 noindex 이고 사이트맵에도 넣지 않는다.
 
----
+## 관리자 로그인 배경 영상
 
-## 아직 안 만든 것 (의도적)
+`public/login-bg.mp4` 를 직접 만들어 넣었다 (130KB, 12초 무한루프).
+숲색 바탕에 초록·황금빛이 느리게 흐르며, 히어로 그라데이션과 같은 계열이다.
 
-- `sql/001_schema.sql` — 정규화 스키마. **API 샘플을 본 뒤에** 확정
-- `pipeline/collect.py` — 수집 본체
-- `pipeline/normalize.py` — Gemini 배치 정규화
-- `web/` — Next.js
+자체 파일로 둔 이유:
 
-스키마를 먼저 만들면 실제 응답과 안 맞아서 두 번 만들게 됩니다.
-4단계 결과를 확인하고 진행하세요.
+- 외부 CDN 이 막히거나 파일이 사라져도 깨지지 않는다
+- 저작권 표기가 필요 없다
+- Vercel 엣지에서 나가므로 빠르다
+- Datacenter 로그인의 파란 입자 영상과 겹치지 않는다 (두 서비스는 무관하다)
+
+다른 영상으로 바꾸려면 `NEXT_PUBLIC_LOGIN_VIDEO` 에 .mp4 주소를 넣는다.
+출처 표기가 필요한 소재면 `NEXT_PUBLIC_LOGIN_CREDIT` 도 채운다.
+
+## 속도
+
+체감 속도를 좌우하는 것은 쿼리 성능이 아니라 **왕복 횟수와 거리**다.
+
+| 조치 | 효과 |
+|---|---|
+| `vercel.json` 의 `regions: ["icn1"]` | 함수를 서울로. DB(도쿄)까지 거리가 짧아진다 |
+| `home_bundle()` RPC | 홈 조회 9번 → 1번 (130ms) |
+| 검색 로깅을 `await` 하지 않음 | 왕복 1번 제거 |
+| 폰트를 CSS `@import` → `<link>` | 렌더 차단 제거 |
+| 영상·포스터 1년 캐시 | 재방문 시 재다운로드 없음 |
+
+Vercel Hobby 는 리전을 하나만 고를 수 있다. 기본값이 미국(iad1)이라
+`vercel.json` 이 없으면 매 조회마다 태평양을 왕복한다.
+
+## 검색 로그와 개인정보
+
+`search_log` 에는 개인을 식별할 수 있는 정보를 넣지 않는다.
+
+- 저장: 지역, 나이대(10년 단위), 취업상태, 가구상황, 결과 수, 유입경로
+- 미저장: IP, User-Agent, 세션ID, 검색창에 입력한 원문
+
+푸터 고지문이 이 내용과 일치해야 한다. 로깅 범위를 바꾸면 고지문도 함께
+고친다.
+
+## 데이터
+
+- 읽기는 `programs_public` 뷰와 `match_welfare` 함수만 사용한다.
+  원문(raw_*)과 내부 메타는 공개하지 않는다.
+- 매칭 대상은 정규화가 끝나고 확신도 0.3 을 넘는 행뿐이다.
+  미정규화 행은 나이 조건이 비어 있어 전 연령에 걸리므로 제외한다.
