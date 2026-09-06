@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import BusinessSentence from "@/components/BusinessSentence";
-import ConditionSentence from "@/components/ConditionSentence";
+import Finder from "@/components/Finder";
 import ProgramEntry from "@/components/ProgramEntry";
 import Hero from "@/components/Hero";
 import ShareButton from "@/components/ShareButton";
@@ -65,7 +65,7 @@ function Results({ results, label, myAge }: {
   return (
     <section className="mt-10">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 className="text-[1.0625rem] font-bold">{label}</h2>
+        <h1 className="text-[1.0625rem] font-bold">{label}</h1>
         <span className="num text-sm text-muted">
           {results.length}건{results.length >= 60 && "+"}
         </span>
@@ -175,22 +175,20 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         </p>
       )}
 
-      {!asked && (
+      {!asked ? (
         <Hero
-          index={sggIndex}
           count={coverage.welfare + coverage.business}
           closing={closingCount}
-        />
-      )}
-
-      <div className={asked ? "" : "mt-12"}>
-        {!asked && (
-          <p className="mb-3 text-xs font-bold text-muted">직접 골라서 찾기</p>
-        )}
-        <Suspense fallback={<div className="h-40" />}>
-          <ConditionSentence regions={regions} />
+        >
+          <Suspense fallback={<div className="h-56" />}>
+            <Finder regions={regions} index={sggIndex} />
+          </Suspense>
+        </Hero>
+      ) : (
+        <Suspense fallback={<div className="h-56" />}>
+          <Finder regions={regions} index={sggIndex} />
         </Suspense>
-      </div>
+      )}
 
       {asked ? (
         <Results results={results} label="해당될 수 있는 사업" myAge={age} />
