@@ -18,22 +18,20 @@ export default function Tabs({
   ] as const;
 
   return (
-    <nav className="mb-9 flex gap-6 border-b border-rule">
+    <nav className="mb-9 flex gap-6 border-b border-line">
       {items.map((it) => {
         const on = it.key === active;
         return (
           <Link
             key={it.key}
             href={it.href}
-            className={`-mb-px border-b-2 pb-2.5 text-sm transition-colors
-              ${
-                on
-                  ? "border-ink font-bold text-ink"
-                  : "border-transparent text-muted hover:text-ink"
+            className={`flex-1 rounded-pill py-2.5 text-center text-sm
+              transition-colors ${
+                on ? "bg-brand font-bold text-white" : "text-muted hover:text-brand"
               }`}
           >
             {it.label}
-            <span className="num ml-1.5 text-xs font-normal text-muted">
+            <span className={`num ml-1.5 text-xs font-normal ${on ? "text-white/70" : "text-faint"}`}>
               {it.n.toLocaleString()}
             </span>
           </Link>

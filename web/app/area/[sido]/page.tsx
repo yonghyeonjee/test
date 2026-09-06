@@ -7,8 +7,7 @@ import { getArea, getAreas, listByArea } from "@/lib/db";
 export const revalidate = 86400;
 export const dynamicParams = true;
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
-const YEAR = new Date().getFullYear();
+import { HOOK, SITE_URL as SITE, YEAR } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const areas = await getAreas();
@@ -26,8 +25,9 @@ export async function generateMetadata({
 
   const title = `${sido} 지원금·복지서비스 ${a.n}건 총정리 (${YEAR})`;
   const description =
-    `${sido}에서 신청할 수 있는 복지서비스 ${a.n}건을 나이·소득·가구 조건별로 정리했습니다. ` +
-    `청년 대상 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건.`;
+    `${sido}에서 신청할 수 있는 지원금 ${a.n}건. ` +
+    `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
+    `${HOOK} 나이·소득 조건별로 바로 확인하세요.`;
 
   return {
     title,
@@ -79,8 +79,7 @@ export default async function AreaPage({ params }: { params: { sido: string } })
           <Link
             key={s.label}
             href={`/?sido=${encodeURIComponent(sido)}&${s.q}`}
-            className="rounded-full border border-rule bg-white px-3 py-1.5 text-sm
-                       text-muted transition-colors hover:border-ink hover:text-ink"
+            className="chip"
           >
             {s.label} <span className="num font-bold">{s.n}</span>
           </Link>
@@ -89,23 +88,22 @@ export default async function AreaPage({ params }: { params: { sido: string } })
 
       <Link
         href={`/?sido=${encodeURIComponent(sido)}`}
-        className="mt-8 block bg-ink px-5 py-4 text-center text-[0.95rem]
-                   font-bold text-white transition-opacity hover:opacity-90"
+        className="btn btn-primary mt-8 w-full py-4 text-[0.95rem]"
       >
         내 조건으로 찾아보기
       </Link>
 
-      <h2 className="mt-16 border-b-2 border-ink pb-2 text-sm font-bold">
+      <h2 className="mt-16 border-b-2 border-line2 pb-2 text-sm font-bold">
         {sido} 지원사업 목록
       </h2>
-      <div className="mt-2 divide-y divide-rule">
+      <div className="mt-3 grid gap-3">
         {list.map((p) => (
           <ProgramEntry key={p.id} p={p} />
         ))}
       </div>
 
       <section className="mt-16">
-        <h2 className="border-b-2 border-ink pb-2 text-sm font-bold">다른 지역</h2>
+        <h2 className="border-b-2 border-line2 pb-2 text-sm font-bold">다른 지역</h2>
         <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
           {all
             .filter((a) => a.sido !== sido)

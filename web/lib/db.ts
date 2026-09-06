@@ -220,6 +220,169 @@ export function ageLabel(p: Pick<Program, "age_min" | "age_max">) {
   return null;
 }
 
+// ── 홈 피드 / 통계 / 로깅 ────────────────────────────────
+
+export type Bundle = {
+  coverage: { welfare: number; business: number };
+  settings: { closingDays: number; newDays: number; notice: string };
+  areas: Area[];
+  stats: { age: Stat[]; employment: Stat[]; household: Stat[] };
+  regions: { sido: string; sigungu: { name: string; n: number }[] }[];
+  sggIndex: Record<string, { sido: string; full: string }>;
+  closingCount: number;
+  closing: Program[];
+  fresh: Program[];
+};
+
+/**
+ * 홈에 필요한 자료를 한 번에 받아온다.
+ *
+ * 나눠서 부르면 조회 9번이고, Vercel 함수와 DB 가 멀면 왕복만 1.5초가 넘는다.
+ * 서버에서 한 번에 묶어 오면 130ms 안에 끝난다.
+ */
+export async function getHomeBundle(): Promise<Bundle> {
+  const { data } = await db.rpc("home_bundle");
+  const b = (data ?? {}) as Record<string, any>;
+
+  const regionRows = (b.regions ?? []) as
+    { sido: string | null; sigungu: string | null; n: number }[];
+
+  const map = new Map<string, { name: string; n: number }[]>();
+  const idx: Record<string, { sido: string; full: string }> = {};
+  for (const r of regionRows) {
+    if (!r.sido) continue;
+    const list = map.get(r.sido) ?? [];
+    if (r.sigungu) {
+      list.push({ name: r.sigungu, n: r.n });
+      idx[r.sigungu] = { sido: r.sido, full: r.sigungu };
+      const short = r.sigungu.replace(/(특별자치)?[시군구]$/, "");
+      if (short.length >= 2 && !idx[short]) idx[short] = { sido: r.sido, full: r.sigungu };
+    }
+    map.set(r.sido, list);
+  }
+
+  const num = (v: unknown, d: number) => {
+    const n = Number(String(v ?? "").replace(/"/g, ""));
+    return Number.isFinite(n) ? n : d;
+  };
+  const st = (b.settings ?? {}) as Record<string, unknown>;
+
+  return {
+    coverage: {
+      welfare: b.coverage?.welfare ?? 0,
+      business: b.coverage?.business ?? 0,
+    },
+    settings: {
+      closingDays: num(st.closing_days, 14),
+      newDays: num(st.new_days, 7),
+      notice: String(st.notice ?? "").replace(/^"|"$/g, ""),
+    },
+    areas: (b.areas ?? []) as Area[],
+    stats: {
+      age: (b.stat_age ?? []) as Stat[],
+      employment: (b.stat_employment ?? []) as Stat[],
+      household: (b.stat_household ?? []) as Stat[],
+    },
+    regions: Array.from(map.entries())
+      .map(([sido, list]) => ({
+        sido,
+        sigungu: list.sort((a, b2) => a.name.localeCompare(b2.name, "ko")),
+      }))
+      .sort((a, b2) => a.sido.localeCompare(b2.sido, "ko")),
+    sggIndex: idx,
+    closingCount: Number(b.closing_count ?? 0),
+    closing: (b.closing ?? []) as Program[],
+    fresh: (b.fresh ?? []) as Program[],
+  };
+}
+
+
+export async function feedClosing(kind: string | null = null, limit = 8) {
+  const { data } = await db.rpc("feed_closing", { p_kind: kind, p_limit: limit });
+  return (data ?? []) as Program[];
+}
+
+export async function feedNew(kind: string | null = null, limit = 8) {
+  const { data } = await db.rpc("feed_new", { p_kind: kind, p_limit: limit });
+  return (data ?? []) as Program[];
+}
+
+export type Stat = { label: string; n: number };
+
+export async function getStats() {
+  const [age, emp, hh] = await Promise.all([
+    db.from("stat_age").select("label,n"),
+    db.from("stat_employment").select("label,n"),
+    db.from("stat_household").select("label,n"),
+  ]);
+  return {
+    age: (age.data ?? []) as Stat[],
+    employment: (emp.data ?? []) as Stat[],
+    household: (hh.data ?? []) as Stat[],
+  };
+}
+
+/** 시군구 이름 → 시도. 자유 입력 파서가 쓴다. */
+export async function getSigunguIndex() {
+  const { data } = await db.from("regions_available").select("sido,sigungu");
+  const idx = new Map<string, { sido: string; full: string }>();
+  for (const r of data ?? []) {
+    if (!r.sigungu || !r.sido) continue;
+    idx.set(r.sigungu, { sido: r.sido, full: r.sigungu });
+    // "안산시" -> "안산" 으로도 찾을 수 있게
+    const short = String(r.sigungu).replace(/(특별자치)?[시군구]$/, "");
+    if (short.length >= 2 && !idx.has(short))
+      idx.set(short, { sido: r.sido, full: r.sigungu });
+  }
+  return idx;
+}
+
+/**
+ * 검색 조건을 기록한다. 개인 식별 정보는 담지 않는다.
+ * IP·User-Agent·자유입력 원문·세션ID 없음. 나이는 10년 단위로 뭉갠다.
+ */
+export function logSearch(a: {
+  kind: string;
+  sido?: string;
+  sigungu?: string;
+  age?: number;
+  employment?: string;
+  household?: string[];
+  bizTarget?: string;
+  bizField?: string[];
+  n: number;
+  entry: string;
+}) {
+  // 응답을 기다리지 않는다. 통계 기록이 화면을 늦추면 안 된다.
+  void db
+    .rpc("log_search", {
+      p_kind: a.kind,
+      p_sido: a.sido ?? null,
+      p_sigungu: a.sigungu ?? null,
+      p_age: a.age ?? null,
+      p_employment: a.employment ?? null,
+      p_household: a.household?.length ? a.household : null,
+      p_biz_target: a.bizTarget ?? null,
+      p_biz_field: a.bizField?.length ? a.bizField : null,
+      p_n: a.n,
+      p_entry: a.entry,
+    })
+    .then(
+      () => {},
+      () => {}
+    );
+}
+
+export async function getSettings() {
+  const { data } = await db.from("settings_public").select("key,value");
+  const m = new Map((data ?? []).map((d) => [d.key as string, d.value]));
+  return {
+    closingDays: Number(m.get("closing_days") ?? 14),
+    newDays: Number(m.get("new_days") ?? 7),
+    notice: String(m.get("notice") ?? "").replace(/^"|"$/g, ""),
+  };
+}
+
 export function daysLeft(p: Pick<Program, "apply_end" | "is_always_on">) {
   if (p.is_always_on || !p.apply_end) return null;
   const end = new Date(p.apply_end + "T23:59:59+09:00").getTime();
