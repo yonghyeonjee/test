@@ -8,7 +8,7 @@
 ```bash
 cd web
 npm install
-cp .env.local.example .env.local   # anon 키 채우기
+cp env.example .env.local   # anon 키 채우기
 npm run dev
 ```
 
