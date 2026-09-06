@@ -1,11 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import ConditionSentence from "./ConditionSentence";
-import SearchBox from "./SearchBox";
-
-type Region = { sido: string; sigungu: { name: string; n: number }[] };
-type Idx = Record<string, { sido: string; full: string }>;
 
 const MODES = [
   { key: "pick", label: "선택으로 찾기", hint: "골라서 찾기 — 쉬워요" },
@@ -22,11 +17,11 @@ type Mode = (typeof MODES)[number]["key"];
  * 아는 사람은 옆 탭으로 넘어가면 된다.
  */
 export default function Finder({
-  regions,
-  index,
+  pick,
+  search,
 }: {
-  regions: Region[];
-  index: Idx;
+  pick: React.ReactNode;
+  search: React.ReactNode;
 }) {
   const [mode, setMode] = useState<Mode>("pick");
 
@@ -66,11 +61,7 @@ export default function Finder({
         })}
       </div>
 
-      {mode === "pick" ? (
-        <ConditionSentence regions={regions} />
-      ) : (
-        <SearchBox index={index} autoFocus />
-      )}
+      {mode === "pick" ? pick : search}
     </div>
   );
 }

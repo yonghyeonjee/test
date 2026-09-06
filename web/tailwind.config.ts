@@ -14,23 +14,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        ground:   "#F6F5F1",   // 따뜻한 종이색 (Datacenter 는 차가운 #F3F4F7)
+        // 따뜻한 종이색은 정부지원 조회 화면에 얹으니 촌스러웠다.
+        // 중립에 가까운 서늘한 회색으로 낮추고, 색은 초록 하나만 남긴다.
+        ground:   "#F2F4F5",
         surface:  "#FFFFFF",
-        surface2: "#FAF9F6",
-        line:     "#E6E4DC",
-        line2:    "#D3D0C4",
-        ink:      "#1A2420",   // 초록 기운이 도는 먹색
-        ink2:     "#343E39",
-        muted:    "#6B7570",
-        faint:    "#9BA39E",
+        surface2: "#F8FAFA",
+        line:     "#E1E6E7",
+        line2:    "#C9D1D2",
+        ink:      "#131A1C",
+        ink2:     "#2E3A3C",
+        muted:    "#647175",
+        faint:    "#94A0A3",
 
         brand:     "#0D6B4F",  // 진초록
         brand2:    "#2E8F6E",
         brandDeep: "#08402F",
         brandSoft: "#E3F0E9",
 
-        accent:     "#B4530E",  // 마감 — 따뜻한 주황
-        accentSoft: "#FBEEE1",
+        accent:     "#A8500F",  // 마감
+        accentSoft: "#FBEDE0",
         alert:      "#A32B22",
         alertSoft:  "#FAE9E6",
         gold:       "#8A6A12",

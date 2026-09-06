@@ -85,6 +85,13 @@ export const BIZ_TARGET = [
 ];
 
 // 실제 데이터 분포순
+/** 공고에 실제로 붙어 있는 업종만. 없는 값을 늘어놓으면 빈 결과만 나온다. */
+export const INDUSTRY = [
+  "제조업", "음식점업", "정보통신업", "농림어업", "도소매업",
+  "개인서비스업", "건설업", "운수·물류업", "숙박업",
+  "전문·과학·기술서비스업", "교육서비스업", "예술·스포츠·여가업", "금융·보험업",
+];
+
 export const BIZ_FIELD = [
   "경영", "기술", "금융", "판로", "수출", "인력", "시설", "창업",
 ];
@@ -144,6 +151,7 @@ export type BusinessQuery = {
   bizTarget?: string;
   bizField?: string[];
   bizYears?: number;
+  industry?: string[];
 };
 
 export async function matchBusiness(q: BusinessQuery, limit = 60) {
@@ -152,6 +160,7 @@ export async function matchBusiness(q: BusinessQuery, limit = 60) {
     p_biz_target: q.bizTarget || null,
     p_biz_field: q.bizField?.length ? q.bizField : null,
     p_biz_years: q.bizYears ?? null,
+    p_industry: q.industry?.length ? q.industry : null,
     p_limit: limit,
   });
   if (error) throw error;

@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BIZ_FIELD, BIZ_TARGET } from "@/lib/db";
+import { BIZ_FIELD, BIZ_TARGET, INDUSTRY } from "@/lib/db";
 
 function Blank({
   value,
@@ -90,6 +90,7 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
   const target = sp.get("target");
   const years = sp.get("years");
   const fields = sp.getAll("field");
+  const inds = sp.getAll("ind");
 
   const set = (patch: Record<string, string | string[] | null>) => {
     const next = new URLSearchParams(sp.toString());
@@ -113,7 +114,7 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
 
   return (
     <section>
-      <h1 className="text-display font-extrabold leading-snug">
+      <p className="text-display font-extrabold leading-snug">
         <span className="whitespace-nowrap">
           <Blank
             value={sido}
@@ -142,7 +143,7 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
           />
           를 하고 있습니다.
         </span>
-      </h1>
+      </p>
 
       <div className="mt-7">
         <p className="mb-2 text-sm text-muted">
@@ -163,6 +164,32 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
                   ${on ? "chip-on" : ""}`}
               >
                 {f}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 업종은 붙어 있는 공고가 370건뿐이라, 골라도 업종 없는 공고는
+          그대로 남는다. 좁히는 용도로만 쓴다. */}
+      <div className="mt-6">
+        <p className="mb-2 text-sm text-muted">
+          업종을 고르면 그 업종 공고가 앞에 옵니다.
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {INDUSTRY.map((i) => {
+            const on = inds.includes(i);
+            return (
+              <button
+                key={i}
+                type="button"
+                aria-pressed={on}
+                onClick={() =>
+                  set({ ind: on ? inds.filter((x) => x !== i) : [...inds, i] })
+                }
+                className={`chip ${on ? "chip-on" : ""}`}
+              >
+                {i}
               </button>
             );
           })}

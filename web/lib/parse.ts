@@ -8,7 +8,7 @@
  * 같은 문장이 매번 다르게 해석되면 신뢰가 무너진다.
  */
 
-import { EMPLOYMENT, HOUSEHOLD } from "./db";
+import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY } from "./db";
 
 export type Parsed = {
   sido?: string;
@@ -163,5 +163,130 @@ export function toParams(p: Parsed) {
   sp.set("via", "text");
   return sp;
 }
+
+// ── 기업 지원사업 ──────────────────────────────────────────
+
+export type ParsedBiz = {
+  sido?: string;
+  target?: string;
+  field: string[];
+  industry: string[];
+  years?: number;
+  leftover: string[];
+};
+
+/** 업종. 공고에 붙어 있는 13종에만 대응한다. */
+const INDUSTRY_WORDS: [RegExp, string][] = [
+  [/제조업|제조|공장/, "제조업"],
+  [/음식점|외식|식당|카페/, "음식점업"],
+  [/정보통신|IT|소프트웨어|앱 ?개발/i, "정보통신업"],
+  [/농림|농업|어업|축산|임업/, "농림어업"],
+  [/도소매|소매|도매|유통업/, "도소매업"],
+  [/개인서비스|미용|세탁/, "개인서비스업"],
+  [/건설업|건설|건축/, "건설업"],
+  [/운수|물류|화물|택배/, "운수·물류업"],
+  [/숙박|호텔|펜션|게스트하우스/, "숙박업"],
+  [/전문서비스|과학기술|엔지니어링|연구소/, "전문·과학·기술서비스업"],
+  [/교육서비스|학원|교습/, "교육서비스업"],
+  [/예술|스포츠|여가|공연/, "예술·스포츠·여가업"],
+  [/금융업|보험업/, "금융·보험업"],
+];
+
+/**
+ * 사업체 종류. "예비창업" 은 "창업" 을 품고 있으므로 먼저 본다.
+ * 맨 뒤의 "창업" 단독은 여기서 잡지 않고 지원분야로 넘긴다.
+ */
+const BIZ_TARGET_WORDS: [RegExp, string][] = [
+  [/예비창업|창업준비/, "예비창업자"],
+  [/창업기업|스타트업|초기창업/, "창업기업"],
+  [/소상공인|소상공|자영업|1인기업/, "소상공인"],
+  [/중견기업|중견/, "중견기업"],
+  [/협동조합/, "협동조합"],
+  [/사회적기업|사회적경제|사회적/, "사회적기업"],
+  [/중소기업|중소/, "중소기업"],
+];
+
+const BIZ_FIELD_WORDS: [RegExp, string][] = [
+  [/자금|융자|보증|대출|금융/, "금융"],
+  [/수출|해외|무역|글로벌/, "수출"],
+  [/판로|마케팅|홍보|전시|입점|온라인몰|유통/, "판로"],
+  [/기술|연구개발|시제품|특허|인증|R&D/i, "기술"],
+  [/인력|채용|고용|인건비|훈련/, "인력"],
+  [/시설|장비|공간|임대|사무실|공장/, "시설"],
+  [/경영|컨설팅|진단/, "경영"],
+  [/창업/, "창업"],
+];
+
+export function parseBizQuery(raw: string): ParsedBiz {
+  const text = (raw || "").trim();
+  const out: ParsedBiz = { field: [], industry: [], leftover: [] };
+  if (!text) return out;
+
+  // 업력. "3년" "업력 5년차" "7년 미만" 을 모두 같은 값으로 본다.
+  // 연도(2026년)가 잡히지 않도록 두 자리까지만 받는다.
+  const y = text.match(/(?:업력\s*)?(\d{1,2})\s*년/);
+  if (y) {
+    const n = Number(y[1]);
+    if (n >= 0 && n <= 30) out.years = n;
+  }
+
+  for (const [re, name] of SIDO_WORDS) {
+    if (re.test(text)) {
+      out.sido = name;
+      break;
+    }
+  }
+
+  // 대상으로 삼은 낱말은 덜어내고 분야를 본다. 그러지 않으면
+  // "창업기업" 의 '창업' 이 지원분야로 한 번 더 잡힌다.
+  let rest = text;
+  for (const [re, v] of BIZ_TARGET_WORDS) {
+    const m = text.match(re);
+    if (m) {
+      out.target = v;
+      rest = text.replace(m[0], " ");
+      break;
+    }
+  }
+
+  for (const [re, v] of BIZ_FIELD_WORDS) {
+    if (re.test(rest) && !out.field.includes(v)) out.field.push(v);
+  }
+
+  for (const [re, v] of INDUSTRY_WORDS) {
+    if (re.test(text) && !out.industry.includes(v)) out.industry.push(v);
+  }
+
+  const known =
+    (out.sido ? 1 : 0) + (out.target ? 1 : 0) +
+    (out.years !== undefined ? 1 : 0) + out.field.length + out.industry.length;
+  if (known === 0) out.leftover = text.split(/\s+/).slice(0, 5);
+
+  return out;
+}
+
+export function describeBiz(p: ParsedBiz) {
+  const bits: string[] = [];
+  if (p.sido) bits.push(p.sido);
+  if (p.target) bits.push(p.target);
+  if (p.years !== undefined) bits.push(`업력 ${p.years}년`);
+  bits.push(...p.industry);
+  bits.push(...p.field);
+  return bits;
+}
+
+export function toBizParams(p: ParsedBiz) {
+  const sp = new URLSearchParams();
+  sp.set("tab", "business");
+  if (p.sido) sp.set("sido", p.sido);
+  if (p.target) sp.set("target", p.target);
+  if (p.years !== undefined) sp.set("years", String(p.years));
+  p.field.forEach((f) => sp.append("field", f));
+  p.industry.forEach((i) => sp.append("ind", i));
+  sp.set("via", "text");
+  return sp;
+}
+
+export { BIZ_FIELD, BIZ_TARGET, INDUSTRY };
 
 export { EMPLOYMENT, HOUSEHOLD };

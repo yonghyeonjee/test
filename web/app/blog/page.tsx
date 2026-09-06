@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import PromoBanner from "@/components/PromoBanner";
 import { POSTS } from "@/lib/posts";
 import { t } from "@/lib/seo";
 
@@ -42,6 +43,8 @@ export default function BlogIndex() {
           </Link>
         ))}
       </div>
+
+      <PromoBanner placement="blog" />
     </div>
   );
 }
