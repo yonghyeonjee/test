@@ -21,8 +21,7 @@
   body {
     @apply bg-ground text-ink antialiased;
     background-image:
-      radial-gradient(900px 520px at 50% -10%, rgba(13, 107, 79, 0.07), transparent 62%),
-      radial-gradient(680px 420px at 105% 8%, rgba(212, 160, 74, 0.055), transparent 60%);
+      radial-gradient(1100px 560px at 50% -12%, rgba(13, 107, 79, 0.055), transparent 60%);
     background-attachment: fixed;
   }
   .num { font-variant-numeric: tabular-nums; }
@@ -92,7 +91,7 @@
 
 /* 히어로 — 깊은 숲색 그라데이션. Datacenter 의 남색과 확실히 갈라놓는다. */
 .hero {
-  background: linear-gradient(150deg, #062418 0%, #08402F 55%, #0D6B4F 100%);
+  background: linear-gradient(158deg, #06231B 0%, #0A3A2C 58%, #10553F 100%);
   position: relative;
   overflow: hidden;
 }
@@ -101,8 +100,8 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(720px 380px at 82% 6%, rgba(120, 200, 165, .28), transparent 62%),
-    radial-gradient(560px 300px at 6% 104%, rgba(212, 160, 74, .20), transparent 60%);
+    radial-gradient(760px 400px at 84% 4%, rgba(126, 196, 166, .20), transparent 64%),
+    linear-gradient(transparent 62%, rgba(3, 18, 13, .28));
   pointer-events: none;
 }
 .hero > * { position: relative; }

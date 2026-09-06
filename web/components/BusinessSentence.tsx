@@ -113,7 +113,7 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
 
   return (
     <section>
-      <h1 className="text-display font-extrabold leading-snug">
+      <p className="text-display font-extrabold leading-snug">
         <span className="whitespace-nowrap">
           <Blank
             value={sido}
@@ -142,7 +142,7 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
           />
           를 하고 있습니다.
         </span>
-      </h1>
+      </p>
 
       <div className="mt-7">
         <p className="mb-2 text-sm text-muted">

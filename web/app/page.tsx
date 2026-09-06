@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import BusinessSentence from "@/components/BusinessSentence";
+import BizSearchBox from "@/components/BizSearchBox";
+import ConditionSentence from "@/components/ConditionSentence";
 import Finder from "@/components/Finder";
 import ProgramEntry from "@/components/ProgramEntry";
+import PromoBanner from "@/components/PromoBanner";
+import SearchBox from "@/components/SearchBox";
 import Hero from "@/components/Hero";
 import ShareButton from "@/components/ShareButton";
 import StatTables from "@/components/StatTables";
@@ -128,8 +132,11 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     return (
       <>
         <Tabs active="business" counts={coverage} />
-        <Suspense fallback={<div className="h-40" />}>
-          <BusinessSentence sidos={sidos} />
+        <Suspense fallback={<div className="h-56" />}>
+          <Finder
+            pick={<BusinessSentence sidos={sidos} />}
+            search={<BizSearchBox autoFocus />}
+          />
         </Suspense>
         {asked ? (
           <Results results={results} label="신청할 수 있는 지원사업" />
@@ -181,12 +188,18 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           closing={closingCount}
         >
           <Suspense fallback={<div className="h-56" />}>
-            <Finder regions={regions} index={sggIndex} />
+            <Finder
+              pick={<ConditionSentence regions={regions} />}
+              search={<SearchBox index={sggIndex} autoFocus />}
+            />
           </Suspense>
         </Hero>
       ) : (
         <Suspense fallback={<div className="h-56" />}>
-          <Finder regions={regions} index={sggIndex} />
+          <Finder
+            pick={<ConditionSentence regions={regions} />}
+            search={<SearchBox index={sggIndex} autoFocus />}
+          />
         </Suspense>
       )}
 
@@ -225,6 +238,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               ))}
             </div>
           </section>
+
+          <PromoBanner placement="home" />
         </>
       )}
     </>
