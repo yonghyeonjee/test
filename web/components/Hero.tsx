@@ -1,5 +1,4 @@
 import Link from "next/link";
-import SearchBox from "./SearchBox";
 
 /** 대상자 중심 입구. "무엇을 지원하나"가 아니라 "누가 받나"로 묻는다. */
 const TILES = [
@@ -15,11 +14,12 @@ const TILES = [
 ];
 
 export default function Hero({
-  index, count, closing,
+  count, closing, children,
 }: {
-  index: Record<string, { sido: string; full: string }>;
   count: number;
   closing: number;
+  /** 히어로에 걸쳐 올라오는 카드 안에 들어갈 것 — 찾기 화면. */
+  children: React.ReactNode;
 }) {
   return (
     <>
@@ -66,9 +66,7 @@ export default function Hero({
       {/* 히어로가 position:relative 라 그냥 두면 검색 카드 위를 덮는다.
           끌어올린 쪽에도 스택 순서를 줘야 입력칸이 눌린다. */}
       <div className="relative z-10 -mt-16 px-0.5">
-        <div className="card p-4 sm:p-5">
-          <SearchBox index={index} />
-        </div>
+        <div className="card p-4 sm:p-5">{children}</div>
 
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TILES.map((t) => (

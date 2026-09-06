@@ -122,7 +122,7 @@ export default function ConditionSentence({ regions }: { regions: Region[] }) {
         {step === 4 && "조건에 맞는 사업을 찾았습니다"}
       </p>
 
-      <h1 className="text-display font-extrabold leading-snug">
+      <p className="text-display font-extrabold leading-snug">
         <span className="whitespace-nowrap">
           <Blank
             value={sido}
@@ -169,7 +169,7 @@ export default function ConditionSentence({ regions }: { regions: Region[] }) {
           입니다.
         </span>
         )}
-      </h1>
+      </p>
 
       {step >= 3 && (
       <div className="mt-7">
