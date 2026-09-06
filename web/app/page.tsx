@@ -5,6 +5,7 @@ import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Hero from "@/components/Hero";
+import ShareButton from "@/components/ShareButton";
 import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
 import { SITE_URL } from "@/lib/seo";
@@ -63,12 +64,19 @@ function Results({ results, label, myAge }: {
 }) {
   return (
     <section className="mt-10">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
         <h2 className="text-[1.0625rem] font-bold">{label}</h2>
         <span className="num text-sm text-muted">
           {results.length}건{results.length >= 60 && "+"}
         </span>
       </div>
+
+      {/* 조건이 주소에 그대로 담기므로, 찾은 결과를 그대로 보낼 수 있다. */}
+      {results.length > 0 && (
+        <div className="mb-4">
+          <ShareButton title={label} text="이 조건으로 찾은 지원사업입니다" />
+        </div>
+      )}
 
       {results.length === 0 ? (
         <div className="card p-8 text-center">

@@ -1,4 +1,4 @@
-export const SITE_NAME = "지원찾기";
+export const SITE_NAME = "나라지원";
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 

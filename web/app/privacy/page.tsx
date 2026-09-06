@@ -22,7 +22,7 @@ export default function Privacy() {
   return (
     <article className="pb-6">
       <nav className="mb-6 text-xs text-muted">
-        <Link href="/" className="hover:text-brand">지원찾기</Link>
+        <Link href="/" className="hover:text-brand">나라지원</Link>
         {" / "}개인정보 처리방침
       </nav>
 
@@ -32,7 +32,7 @@ export default function Privacy() {
 
       <div className="card mt-6 p-5">
         <p className="text-[15px] font-bold">
-          지원찾기는 회원가입이 없습니다.
+          나라지원은 회원가입이 없습니다.
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           이름, 연락처, 주민등록번호, 소득·재산 자료를 받지 않습니다.

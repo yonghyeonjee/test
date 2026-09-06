@@ -2,14 +2,24 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ProgramEntry from "@/components/ProgramEntry";
+import ShareButton from "@/components/ShareButton";
 import {
   ageLabel,
+  applyStatus,
   daysLeft,
+  STATUS_LABEL,
   getProgram,
   getRelated,
   getTopSourceIds,
   type Detail,
 } from "@/lib/db";
+
+const STATUS_BADGE = {
+  closed:   "badge-closed",
+  upcoming: "badge-soon",
+  ongoing:  "badge-open",
+  always:   "badge-open",
+} as const;
 
 export const revalidate = 86400;
 export const dynamicParams = true;
@@ -89,6 +99,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
   const related = await getRelated(p);
   const left = daysLeft(p);
+  const status = applyStatus(p);
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
@@ -129,11 +140,31 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <p className="text-sm font-bold">{where}</p>
       <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-tight">{p.title}</h1>
 
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className={`badge ${STATUS_BADGE[status]}`}>
+          {STATUS_LABEL[status]}
+        </span>
+        <ShareButton title={p.title} text={`${where} · ${p.title}`} />
+      </div>
+
       {p.summary && <p className="mt-4 leading-relaxed text-muted">{p.summary}</p>}
 
-      {left !== null && left >= 0 && left <= 30 && (
+      {status === "ongoing" && left !== null && left >= 0 && left <= 30 && (
         <p className="num mt-5 inline-block border-l-[3px] border-accent pl-3 text-sm font-bold text-accent">
           {left === 0 ? "오늘 접수 마감" : `접수 마감까지 ${left}일`}
+        </p>
+      )}
+
+      {status === "closed" && (
+        <p className="mt-5 inline-block border-l-[3px] border-line2 pl-3 text-sm font-bold text-muted">
+          접수가 끝난 공고입니다. 내년에 다시 열리는 사업일 수 있으니 원문에서
+          확인하세요.
+        </p>
+      )}
+
+      {status === "upcoming" && p.apply_start && (
+        <p className="num mt-5 inline-block border-l-[3px] border-gold pl-3 text-sm font-bold text-gold">
+          {p.apply_start} 접수 시작 예정
         </p>
       )}
 
