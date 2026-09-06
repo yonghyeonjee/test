@@ -47,8 +47,8 @@ function Blank({
       {open && (
         <span
           className={`absolute left-0 top-[calc(100%+6px)] z-20 block
-                      max-h-72 overflow-y-auto rounded border border-ink
-                      bg-white py-1 shadow-lg ${wide ? "w-72" : "w-44"}`}
+                      max-h-72 overflow-y-auto rounded-card border border-line
+                      bg-white py-1 shadow-lift ${wide ? "w-72" : "w-44"}`}
         >
           {value && (
             <button
@@ -57,7 +57,7 @@ function Blank({
                 onPick(null);
                 setOpen(false);
               }}
-              className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-paper"
+              className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-ground"
             >
               선택 지우기
             </button>
@@ -70,7 +70,7 @@ function Blank({
                 onPick(o.value);
                 setOpen(false);
               }}
-              className={`block w-full px-3 py-2 text-left text-sm hover:bg-paper
+              className={`block w-full px-3 py-2 text-left text-sm hover:bg-ground
                           ${o.value === value ? "font-bold" : ""}`}
             >
               {o.label}
@@ -159,12 +159,8 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
                 onClick={() =>
                   set({ field: on ? fields.filter((x) => x !== f) : [...fields, f] })
                 }
-                className={`rounded-full border px-3 py-1.5 text-sm transition-colors
-                  ${
-                    on
-                      ? "border-ink bg-ink text-white"
-                      : "border-rule bg-white text-muted hover:border-ink hover:text-ink"
-                  }`}
+                className={`chip
+                  ${on ? "chip-on" : ""}`}
               >
                 {f}
               </button>
