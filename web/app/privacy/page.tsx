@@ -41,14 +41,13 @@ export default function Privacy() {
         </p>
       </div>
 
-      <H>1. 수집하지 않는 것</H>
+      <H>1. 어떤 경우에도 받지 않는 것</H>
       <ul className="mt-3 space-y-1.5 text-sm leading-relaxed">
         {[
-          "이름 · 생년월일 · 주민등록번호",
-          "전화번호 · 이메일 · 주소",
+          "생년월일 · 주민등록번호",
+          "주소 (사는 지역은 시·군·구까지만)",
           "소득 · 재산 · 가족관계 등 행정정보",
           "IP 주소 · 브라우저 정보 (저희 서버에는 남기지 않습니다)",
-          "로그인 정보 (계정 자체가 없습니다)",
           "검색창에 직접 입력하신 문장",
         ].map((s) => (
           <li key={s} className="flex gap-2">
@@ -57,6 +56,12 @@ export default function Privacy() {
           </li>
         ))}
       </ul>
+
+      <p className="mt-3 text-sm leading-relaxed text-muted">
+        그냥 찾아보기만 하실 때는 아무것도 받지 않습니다. 저장 목록을 쓰실 때만
+        사용자명과 비밀번호를 만들고, 이름·연락처는 그때도 선택입니다 —{" "}
+        <b className="font-bold text-ink2">4·5항</b>에 적어 두었습니다.
+      </p>
 
       <H>2. 기록하는 것 — 조건 통계</H>
       <p className="mt-3 text-sm leading-relaxed">
@@ -109,6 +114,12 @@ export default function Privacy() {
       <p className="mt-2 text-sm leading-relaxed">
         원치 않으시면 브라우저의 추적 차단 기능이나 확장 프로그램으로 막을 수
         있습니다. 막아도 지원금 검색과 저장 기능은 그대로 동작합니다.
+      </p>
+      <p className="mt-2 text-sm leading-relaxed">
+        따로, 어느 사이트를 거쳐 오셨는지(리퍼러 주소의 <b className="font-bold">
+        도메인만</b>), 처음 열린 페이지, 링크에 붙은 캠페인 표시(utm)를 방문당
+        한 번 저희 서버에 남깁니다. 어떤 경로로 알리는 것이 도움이 되는지 보기
+        위해서이며, 전체 주소·IP·브라우저 정보는 남기지 않습니다.
       </p>
       <p className="mt-2 text-sm leading-relaxed">
         이 밖에 관리자 화면(<code className="rounded bg-surface2 px-1">/admin</code>)에

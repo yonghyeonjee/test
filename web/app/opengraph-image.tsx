@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "지원찾기 — 내가 받을 수 있는 정부지원금 조회";
+export const alt = "나라지원 — 내가 받을 수 있는 정부지원금 조회";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -18,7 +18,7 @@ export default function OG() {
         }}
       >
         <div style={{ fontSize: 26, letterSpacing: 8, color: "#8FCFB0" }}>
-          지원찾기
+          나라지원
         </div>
         <div style={{ fontSize: 78, fontWeight: 800, lineHeight: 1.15, marginTop: 22 }}>
           받을 수 있는데
