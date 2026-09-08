@@ -88,7 +88,11 @@ export default function SaveBar({
   return (
     <div className="card p-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
+        {/* basis-full 이라야 좁은 화면에서 설명이 제 줄을 차지한다.
+            flex-1(basis:0)로 두면 남는 자리에 늘 "맞는" 것으로 계산돼
+            줄바꿈이 일어나지 않고, 버튼(shrink-0)이 폭을 다 가져가면
+            글자가 한 자씩 세로로 쌓인다. */}
+        <div className="min-w-0 grow basis-full sm:basis-0">
           <p className="text-[13px] font-bold">
             {saved ? "저장해둔 조건입니다" : "이 조건 저장해두기"}
           </p>
