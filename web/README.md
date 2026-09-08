@@ -68,6 +68,31 @@ Vercel > Settings > Environment Variables 에 아래를 넣어야 동작한다.
 Vercel Hobby 는 리전을 하나만 고를 수 있다. 기본값이 미국(iad1)이라
 `vercel.json` 이 없으면 매 조회마다 태평양을 왕복한다.
 
+## Google Tag Manager
+
+`NEXT_PUBLIC_GTM_ID` 에 컨테이너 ID 를 넣으면 붙는다. 비워두면 스크립트를
+아예 넣지 않는다.
+
+기본 페이지뷰만으로는 이 서비스에서 알아낼 게 별로 없다. 조건이 주소에
+담기고 화면 전체가 새로 그려지지 않기 때문이다. 그래서 사건을 직접 밀어 넣는다.
+
+| 사건 | 언제 | 담기는 값 |
+|---|---|---|
+| `page_view_spa` | 주소가 바뀔 때마다 | `page_path`, `has_condition` |
+| `search_submit` | 검색창에서 찾기 | `entry`, `matched` (알아들은 개수) |
+| `search_result` | 결과가 그려질 때 | `result_count`, `is_empty`, `sido`, `age_band` |
+| `save_condition` | 조건 저장 | `condition` |
+| `copy_link` / `share` | 링크 복사·공유 | `kind` |
+| `apply_click` | **원문으로 이동** | `program`, `region`, `source` |
+| `account_create` / `account_login` | 계정 | `gave_contact` |
+
+`apply_click` 이 실질적인 전환이다. GA4 에서 이걸 전환으로 표시해두면
+"검색 → 신청" 깔때기가 보인다. `is_empty` 는 데이터를 어디부터 채울지
+알려주는 신호다.
+
+넘기지 않는 것: 검색창에 입력한 원문, 저장한 조건의 상세 내용,
+사용자명, 연락처.
+
 ## 검색 로그와 개인정보
 
 `search_log` 에는 개인을 식별할 수 있는 정보를 넣지 않는다.

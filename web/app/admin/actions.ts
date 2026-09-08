@@ -14,14 +14,16 @@ function admin() {
   });
 }
 
-// 무차별 대입 방지: 5회 실패 시 15분 잠금 (Datacenter 와 같은 정책)
+// 무차별 대입 방지: 5회 실패 시 15분 잠금.
+// 서버리스라 인스턴스마다 카운터가 따로 있어 실제로는 이보다 관대하다.
+// 400ms 지연이 더 실질적인 방어다.
 const FAILS = new Map<string, { n: number; until: number }>();
 const LIMIT = 5;
 const LOCK_MS = 15 * 60_000;
 
 export async function login(_: unknown, form: FormData) {
-  const user = String(form.get("user") ?? "");
-  const pass = String(form.get("pass") ?? "");
+  const user = String(form.get("user") ?? "").trim();
+  const pass = String(form.get("pass") ?? "").trim();
   const now = Date.now();
 
   const rec = FAILS.get(user);

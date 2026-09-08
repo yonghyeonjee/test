@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { track } from "./Gtm";
 import { describe, parseQuery, toParams } from "@/lib/parse";
 
 type Idx = Record<string, { sido: string; full: string }>;
@@ -34,6 +35,8 @@ export default function SearchBox({
 
   const go = () => {
     if (!ready) return;
+    // 원문은 보내지 않는다. 몇 개를 알아들었는지만 남긴다.
+    track("search_submit", { entry: "text", matched: bits.length });
     router.push(`/?${toParams(parsed)}`);
   };
 

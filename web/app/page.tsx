@@ -2,17 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import BusinessSentence from "@/components/BusinessSentence";
-import BizSearchBox from "@/components/BizSearchBox";
 import ConditionSentence from "@/components/ConditionSentence";
-import Finder from "@/components/Finder";
 import ProgramEntry from "@/components/ProgramEntry";
-import PromoBanner from "@/components/PromoBanner";
-import SaveSearch from "@/components/SaveSearch";
-import SearchBox from "@/components/SearchBox";
+import SaveBar from "@/components/SaveBar";
+import SavedList from "@/components/SavedList";
 import Hero from "@/components/Hero";
-import ShareButton from "@/components/ShareButton";
 import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
+import TrackResults from "@/components/Track";
 import { SITE_URL } from "@/lib/seo";
 import {
   feedClosing, getBusinessRegions, getHomeBundle,
@@ -64,25 +61,23 @@ function Row({ title, sub, items, more }: {
   );
 }
 
-function Results({ results, label, myAge, kind }: {
-  results: Program[]; label: string; myAge?: number;
-  kind: "welfare" | "business";
+function Results({ results, label, myAge, terms }: {
+  results: Program[]; label: string; myAge?: number; terms: string[];
 }) {
   return (
-    <section className="mt-10">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h1 className="text-[1.0625rem] font-bold">{label}</h1>
+    <section className="mt-8">
+      {results.length > 0 && (
+        <Suspense fallback={null}>
+          <SaveBar label={terms} />
+        </Suspense>
+      )}
+
+      <div className="mb-3 mt-8 flex items-baseline justify-between">
+        <h2 className="text-[1.0625rem] font-bold">{label}</h2>
         <span className="num text-sm text-muted">
           {results.length}건{results.length >= 60 && "+"}
         </span>
       </div>
-
-      {/* 조건이 주소에 그대로 담기므로, 찾은 결과를 그대로 보낼 수 있다. */}
-      {results.length > 0 && (
-        <div className="mb-4">
-          <ShareButton title={label} text="이 조건으로 찾은 지원사업입니다" />
-        </div>
-      )}
 
       {results.length === 0 ? (
         <div className="card p-8 text-center">
@@ -98,8 +93,6 @@ function Results({ results, label, myAge, kind }: {
           {results.map((p) => <ProgramEntry key={p.id} p={p} myAge={myAge} />)}
         </div>
       )}
-
-      {results.length > 0 && <SaveSearch kind={kind} />}
 
       <p className="mt-8 text-xs leading-relaxed text-muted">
         여기 나온 사업이 곧 신청 자격이 있다는 뜻은 아닙니다. 소득·재산 기준처럼
@@ -122,13 +115,10 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     const bizField = many(searchParams.field);
     const yearsRaw = one(searchParams.years);
     const bizYears = yearsRaw ? Number(yearsRaw) : undefined;
-    const industry = many(searchParams.ind);
-    const asked = Boolean(
-      sido || bizTarget || bizField.length || yearsRaw || industry.length
-    );
+    const asked = Boolean(sido || bizTarget || bizField.length || yearsRaw);
 
     const results = asked
-      ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry })
+      ? await matchBusiness({ sido, bizTarget, bizField, bizYears })
       : [];
     if (asked)
       logSearch({ kind: "business", sido, bizTarget, bizField,
@@ -139,14 +129,16 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     return (
       <>
         <Tabs active="business" counts={coverage} />
-        <Suspense fallback={<div className="h-56" />}>
-          <Finder
-            pick={<BusinessSentence sidos={sidos} />}
-            search={<BizSearchBox autoFocus />}
-          />
+        <Suspense fallback={<div className="h-40" />}>
+          <BusinessSentence sidos={sidos} />
         </Suspense>
         {asked ? (
-          <Results results={results} label="신청할 수 있는 지원사업" kind="business" />
+          <Results
+            results={results}
+            label="신청할 수 있는 지원사업"
+            terms={[sido, bizTarget, yearsRaw ? `${yearsRaw}년차` : "", ...bizField]
+              .filter(Boolean) as string[]}
+          />
         ) : (
           <>
             <p className="num mt-8 text-sm text-muted">
@@ -183,35 +175,43 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     <>
       <Tabs active="welfare" counts={coverage} />
 
+      {!asked && (
+        <Suspense fallback={null}>
+          <SavedList />
+        </Suspense>
+      )}
+
       {settings.notice && (
         <p className="mb-6 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">
           {settings.notice}
         </p>
       )}
 
-      {!asked ? (
+      {!asked && (
         <Hero
+          index={sggIndex}
           count={coverage.welfare + coverage.business}
           closing={closingCount}
-        >
-          <Suspense fallback={<div className="h-56" />}>
-            <Finder
-              pick={<ConditionSentence regions={regions} />}
-              search={<SearchBox index={sggIndex} autoFocus />}
-            />
-          </Suspense>
-        </Hero>
-      ) : (
-        <Suspense fallback={<div className="h-56" />}>
-          <Finder
-            pick={<ConditionSentence regions={regions} />}
-            search={<SearchBox index={sggIndex} autoFocus />}
-          />
-        </Suspense>
+        />
       )}
 
+      <div className={asked ? "" : "mt-12"}>
+        {!asked && (
+          <p className="mb-3 text-xs font-bold text-muted">직접 골라서 찾기</p>
+        )}
+        <Suspense fallback={<div className="h-40" />}>
+          <ConditionSentence regions={regions} />
+        </Suspense>
+      </div>
+
       {asked ? (
-        <Results results={results} label="해당될 수 있는 사업" myAge={age} kind="welfare" />
+        <Results
+          results={results}
+          label="해당될 수 있는 사업"
+          myAge={age}
+          terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household]
+            .filter(Boolean) as string[]}
+        />
       ) : (
         <>
           <Row title="놓치면 내년까지 기다려야 합니다"
@@ -245,8 +245,6 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               ))}
             </div>
           </section>
-
-          <PromoBanner placement="home" />
         </>
       )}
     </>

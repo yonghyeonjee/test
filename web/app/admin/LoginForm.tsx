@@ -31,19 +31,19 @@ export default function LoginForm() {
     <div className="-mx-5 grid min-h-[calc(100vh-6rem)] overflow-hidden
                     sm:mx-0 sm:grid-cols-[1.15fr_1fr] sm:rounded-card">
       {/* 왼쪽: 분위기 패널 */}
-      <div className="hero relative hidden flex-col justify-between p-9 text-white sm:flex">
+      <div className="hero relative hidden flex-col justify-between overflow-hidden p-9 text-white sm:flex">
         {VIDEO && (
           <video
             autoPlay muted loop playsInline preload="metadata"
             poster="/poster.jpg"
-            className="absolute inset-0 h-full w-full object-cover opacity-70"
+            className="absolute inset-0 z-0 h-full w-full object-cover opacity-70"
           >
             <source src={VIDEO} type="video/mp4" />
           </video>
         )}
         <div className="relative">
           <p className="text-[11px] font-bold tracking-[.3em] text-[#8FCFB0]">
-            나라지원
+            지원찾기
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default function LoginForm() {
           </p>
           <h1 className="mt-2 text-2xl font-extrabold">관리자</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            나라지원 운영 화면입니다. 내부용이며 검색엔진에 노출되지 않습니다.
+            지원찾기 운영 화면입니다. 내부용이며 검색엔진에 노출되지 않습니다.
           </p>
 
           <label className="mt-7 block text-xs font-bold text-muted">아이디</label>

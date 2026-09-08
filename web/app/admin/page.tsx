@@ -1,7 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
-import SavedPanel, { type SavedFull } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
 
 export const dynamic = "force-dynamic";
@@ -80,41 +79,13 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     return <p className="card p-6 text-sm">SUPABASE_SERVICE_KEY 가 없습니다.</p>;
 
   const since = new Date(Date.now() - 30 * 86400_000).toISOString();
-  const [logs, settings, cov, saved, visits] = await Promise.all([
+  const [logs, settings, cov, popular, savedCnt] = await Promise.all([
     db.from("search_log").select("*").gte("at", since).limit(5000),
     db.from("site_settings").select("key,value"),
     db.from("coverage").select("*"),
-    db
-      .from("saved_searches")
-      .select("id,kind,label,query,name,phone,email,biz_no,created_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    db.from("visit_log").select("*").gte("at", since).limit(5000),
+    db.from("saved_popular").select("*").limit(10),
+    db.from("saved_condition").select("device_key", { count: "exact", head: true }),
   ]);
-
-  const visitRows = (visits.data ?? []) as Row[];
-
-  /** 값별로 세어 많은 순으로. 빈 값은 세지 않는다. */
-  const tally = (rows: Row[], key: string, top = 10) => {
-    const m = new Map<string, number>();
-    for (const r of rows) {
-      const v = r[key];
-      if (v === null || v === undefined || v === "") continue;
-      m.set(String(v), (m.get(String(v)) ?? 0) + 1);
-    }
-    return [...m.entries()]
-      .map(([label, n]) => ({ label, n }))
-      .sort((a, b) => b.n - a.n)
-      .slice(0, top);
-  };
-
-  const terms = tally(visitRows, "term", 20);
-  const campaigns = tally(
-    visitRows.filter((r) => r.utm_campaign),
-    "utm_campaign"
-  );
-
-  const savedRows = (saved.data ?? []) as SavedFull[];
 
   const rows = (logs.data ?? []) as Row[];
   const count = <K extends string>(k: K) => {
@@ -161,13 +132,12 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </form>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-6">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { k: "오늘 검색", v: today },
           { k: "30일 검색", v: rows.length },
           { k: "결과 0건", v: zero.length },
-          { k: "저장한 조건", v: savedRows.length },
-          { k: "30일 유입", v: visitRows.length },
+          { k: "저장된 조건", v: savedCnt.count ?? 0 },
           {
             k: "노출 사업",
             v: (cov.data ?? []).reduce(
@@ -183,62 +153,6 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         ))}
       </div>
 
-      <Panel
-        title="저장한 조건"
-        note={savedRows.length >= 200 ? "최근 200건" : `${savedRows.length}건`}
-      >
-        <SavedPanel rows={savedRows} />
-      </Panel>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Panel title="유입 채널" note="최근 30일">
-            <Rank rows={tally(visitRows, "channel")} keyName="label" />
-          </Panel>
-          <Panel title="처음 열린 페이지">
-            <Rank rows={tally(visitRows, "landing")} keyName="label" />
-          </Panel>
-        </div>
-        <div>
-          <Panel
-            title="유입 검색어"
-            note={terms.length ? "최근 30일" : "대부분 안 넘어옵니다"}
-          >
-            {terms.length ? (
-              <Rank rows={terms} keyName="label" />
-            ) : (
-              <p className="text-sm leading-relaxed text-muted">
-                구글·네이버는 리퍼러에서 검색어를 지우고 보냅니다. 그래서 여기는
-                대개 비어 있습니다 — 기록이 안 되는 게 아니라 브라우저가 안 넘겨
-                줍니다. 실제 검색어는{" "}
-                <a
-                  href="https://search.google.com/search-console"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-brand"
-                >
-                  구글 서치콘솔
-                </a>
-                과{" "}
-                <a
-                  href="https://searchadvisor.naver.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-4 hover:text-brand"
-                >
-                  네이버 서치어드바이저
-                </a>
-                에서 보셔야 합니다. 직접 링크에 <code>utm_term</code> 을 붙이면
-                그 값은 여기 그대로 쌓입니다.
-              </p>
-            )}
-          </Panel>
-          <Panel title="캠페인" note="utm_campaign">
-            <Rank rows={campaigns} keyName="label" />
-          </Panel>
-        </div>
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Panel title="많이 찾는 지역" note="최근 30일">
@@ -252,11 +166,15 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           </Panel>
         </div>
         <div>
+          <Panel title="많이 저장된 조건"
+                 note="가장 강한 수요 신호">
+            <Rank rows={(popular.data ?? []) as Row[]} keyName="label" />
+          </Panel>
           <Panel title="결과가 0건이던 조건"
                  note="여기가 데이터 구멍입니다">
             <Rank rows={zeroRows} keyName="label" />
           </Panel>
-          <Panel title="조회 방식" note="화면에서 어떻게 찾았는지">
+          <Panel title="유입 방식">
             <Rank rows={count("entry")} keyName="label" />
           </Panel>
           <Panel title="많이 찾는 취업상태">
@@ -272,14 +190,9 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       />
 
       <p className="mt-8 text-xs leading-relaxed text-muted">
-        위쪽 <b className="font-bold text-ink2">저장한 조건</b> 은 이용자가
-        직접 동의하고 남긴 연락처입니다. 안내 목적 외로 쓰지 말고, 삭제를
-        요청받으면 지웁니다.
-      </p>
-      <p className="mt-2 text-xs leading-relaxed text-muted">
-        그 아래 검색 통계에는 개인을 식별할 수 있는 정보가 들어 있지 않습니다.
-        IP·브라우저 정보·자유입력 원문은 저장하지 않으며, 나이는 10년 단위로만
-        기록합니다.
+        검색 기록과 저장한 조건에는 개인을 식별할 수 있는 정보가 없습니다.
+        IP·브라우저 정보·자유입력 원문은 남기지 않고, 나이는 10년 단위로만
+        기록하며, 저장 조건은 브라우저가 만든 무작위 번호로만 구분합니다.
       </p>
     </div>
   );

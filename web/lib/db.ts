@@ -1,46 +1,27 @@
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-/** 비어 있는 환경변수 이름들. 설정이 끝났으면 빈 배열이다. */
-export const missingDbEnv = (
-  [
-    ["NEXT_PUBLIC_SUPABASE_URL", SUPABASE_URL],
-    ["NEXT_PUBLIC_SUPABASE_ANON_KEY", SUPABASE_ANON_KEY],
-  ] as const
-)
-  .filter(([, v]) => !v)
-  .map(([k]) => k);
-
-export const dbConfigured = missingDbEnv.length === 0;
-
-export function dbEnvError() {
-  return new Error(
-    `Supabase 환경변수가 비어 있습니다: ${missingDbEnv.join(", ")}. ` +
-      "Vercel > Settings > Environment Variables 에서 값을 넣고, " +
-      "각 변수의 Production 스코프가 켜져 있는지 확인한다."
-  );
+/**
+ * 환경변수가 없으면 supabase-js 가 "supabaseUrl is required" 만 던진다.
+ * 어느 변수가 어디에 없는지 알 수 없어 배포 실패 원인을 찾기 어렵다.
+ * 이름을 찍어서 바로 알 수 있게 한다.
+ */
+function need(name: string) {
+  const v = process.env[name];
+  if (!v)
+    throw new Error(
+      `환경변수 ${name} 가 없습니다. ` +
+        "Vercel > Settings > Environment Variables 에서 " +
+        "Production 스코프에도 켜져 있는지 확인하세요."
+    );
+  return v;
 }
 
 // 읽기 전용. anon 키만 사용한다 — service_role 키는 절대 여기 넣지 않는다.
-//
-// 설정이 없을 때 createClient 는 "supabaseUrl is required" 만 던져서 어느 변수가
-// 비었는지 알려주지 않는다. 그래서 직접 확인하고, 실제로 db 를 건드리는 순간에
-// 변수 이름이 박힌 오류를 던진다. import 시점에 던지면 설정 안내 화면까지 같이
-// 죽으므로 여기서는 던지지 않는다.
-export const db = dbConfigured
-  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
-      auth: { persistSession: false },
-    })
-  : (new Proxy(
-      {},
-      {
-        get() {
-          throw dbEnvError();
-        },
-      }
-    ) as ReturnType<typeof createClient>);
+export const db = createClient(
+  need("NEXT_PUBLIC_SUPABASE_URL"),
+  need("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+  { auth: { persistSession: false } }
+);
 
 export type Program = {
   id: number;
@@ -65,7 +46,6 @@ export type Program = {
   biz_years_min: number | null;
   biz_years_max: number | null;
   industry: string[] | null;
-  apply_start: string | null;
   apply_end: string | null;
   is_always_on: boolean;
   support_type: string | null;
@@ -85,13 +65,6 @@ export const BIZ_TARGET = [
 ];
 
 // 실제 데이터 분포순
-/** 공고에 실제로 붙어 있는 업종만. 없는 값을 늘어놓으면 빈 결과만 나온다. */
-export const INDUSTRY = [
-  "제조업", "음식점업", "정보통신업", "농림어업", "도소매업",
-  "개인서비스업", "건설업", "운수·물류업", "숙박업",
-  "전문·과학·기술서비스업", "교육서비스업", "예술·스포츠·여가업", "금융·보험업",
-];
-
 export const BIZ_FIELD = [
   "경영", "기술", "금융", "판로", "수출", "인력", "시설", "창업",
 ];
@@ -151,7 +124,6 @@ export type BusinessQuery = {
   bizTarget?: string;
   bizField?: string[];
   bizYears?: number;
-  industry?: string[];
 };
 
 export async function matchBusiness(q: BusinessQuery, limit = 60) {
@@ -160,7 +132,6 @@ export async function matchBusiness(q: BusinessQuery, limit = 60) {
     p_biz_target: q.bizTarget || null,
     p_biz_field: q.bizField?.length ? q.bizField : null,
     p_biz_years: q.bizYears ?? null,
-    p_industry: q.industry?.length ? q.industry : null,
     p_limit: limit,
   });
   if (error) throw error;
@@ -185,6 +156,7 @@ export type Detail = Program & {
   target_text: string | null;
   criteria_text: string | null;
   benefit_text: string | null;
+  apply_start: string | null;
   support_cycle: string | null;
   life_cycle: string[] | null;
   apply_method: string | null;
@@ -425,37 +397,6 @@ export async function getSettings() {
     newDays: Number(m.get("new_days") ?? 7),
     notice: String(m.get("notice") ?? "").replace(/^"|"$/g, ""),
   };
-}
-
-export type ApplyStatus = "closed" | "upcoming" | "ongoing" | "always";
-
-export const STATUS_LABEL: Record<ApplyStatus, string> = {
-  closed: "마감",
-  upcoming: "예정",
-  ongoing: "진행 중",
-  always: "상시",
-};
-
-/** 서버가 어느 시간대에 있든 한국 날짜로 판단한다. "YYYY-MM-DD". */
-function todayKST() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(
-    new Date()
-  );
-}
-
-/**
- * 접수 상태. apply_start / apply_end 는 date 라 문자열 비교로 충분하다.
- * 날짜가 아예 없는 공고는 "진행 중"으로 본다 — 원문에서 기간을 못 뽑은
- * 경우가 많아 마감으로 단정하면 멀쩡한 공고가 죽어 보인다.
- */
-export function applyStatus(
-  p: Pick<Program, "apply_start" | "apply_end" | "is_always_on">
-): ApplyStatus {
-  if (p.is_always_on) return "always";
-  const today = todayKST();
-  if (p.apply_end && p.apply_end < today) return "closed";
-  if (p.apply_start && p.apply_start > today) return "upcoming";
-  return "ongoing";
 }
 
 export function daysLeft(p: Pick<Program, "apply_end" | "is_always_on">) {
