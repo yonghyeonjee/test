@@ -1,12 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import BizSearchBox from "@/components/BizSearchBox";
 import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
+import Finder from "@/components/Finder";
+import PromoBanner from "@/components/PromoBanner";
 import SaveBar from "@/components/SaveBar";
 import SavedList from "@/components/SavedList";
 import Hero from "@/components/Hero";
+import SearchBox from "@/components/SearchBox";
 import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
 import TrackResults from "@/components/Track";
@@ -73,7 +77,7 @@ function Results({ results, label, myAge, terms }: {
       )}
 
       <div className="mb-3 mt-8 flex items-baseline justify-between">
-        <h2 className="text-[1.0625rem] font-bold">{label}</h2>
+        <h1 className="text-[1.0625rem] font-bold">{label}</h1>
         <span className="num text-sm text-muted">
           {results.length}건{results.length >= 60 && "+"}
         </span>
@@ -115,10 +119,13 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     const bizField = many(searchParams.field);
     const yearsRaw = one(searchParams.years);
     const bizYears = yearsRaw ? Number(yearsRaw) : undefined;
-    const asked = Boolean(sido || bizTarget || bizField.length || yearsRaw);
+    const industry = many(searchParams.ind);
+    const asked = Boolean(
+      sido || bizTarget || bizField.length || yearsRaw || industry.length
+    );
 
     const results = asked
-      ? await matchBusiness({ sido, bizTarget, bizField, bizYears })
+      ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry })
       : [];
     if (asked)
       logSearch({ kind: "business", sido, bizTarget, bizField,
@@ -129,8 +136,11 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     return (
       <>
         <Tabs active="business" counts={coverage} />
-        <Suspense fallback={<div className="h-40" />}>
-          <BusinessSentence sidos={sidos} />
+        <Suspense fallback={<div className="h-56" />}>
+          <Finder
+            pick={<BusinessSentence sidos={sidos} />}
+            search={<BizSearchBox autoFocus />}
+          />
         </Suspense>
         {asked ? (
           <Results
@@ -187,22 +197,26 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         </p>
       )}
 
-      {!asked && (
+      {!asked ? (
         <Hero
-          index={sggIndex}
           count={coverage.welfare + coverage.business}
           closing={closingCount}
-        />
-      )}
-
-      <div className={asked ? "" : "mt-12"}>
-        {!asked && (
-          <p className="mb-3 text-xs font-bold text-muted">직접 골라서 찾기</p>
-        )}
-        <Suspense fallback={<div className="h-40" />}>
-          <ConditionSentence regions={regions} />
+        >
+          <Suspense fallback={<div className="h-56" />}>
+            <Finder
+              pick={<ConditionSentence regions={regions} />}
+              search={<SearchBox index={sggIndex} autoFocus />}
+            />
+          </Suspense>
+        </Hero>
+      ) : (
+        <Suspense fallback={<div className="h-56" />}>
+          <Finder
+            pick={<ConditionSentence regions={regions} />}
+            search={<SearchBox index={sggIndex} autoFocus />}
+          />
         </Suspense>
-      </div>
+      )}
 
       {asked ? (
         <Results
@@ -245,6 +259,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               ))}
             </div>
           </section>
+
+          <PromoBanner placement="home" />
         </>
       )}
     </>
