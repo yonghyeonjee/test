@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HowItWorksArt } from "./Infographic";
 import Photo from "./Photo";
+import { AmbientVideo, hasPublic } from "./Video";
 import { CountUp } from "./Motion";
 
 /** 대상자 중심 입구. "무엇을 지원하나"가 아니라 "누가 받나"로 묻는다. */
@@ -21,9 +22,11 @@ export default function Hero({
   /** 히어로에 걸쳐 올라오는 카드 안에 들어갈 것 — 찾기 화면. */
   children: React.ReactNode;
 }) {
+  const video = hasPublic("video/hero.mp4") ? "/video/hero.mp4" : "/login-bg.mp4";
   return (
     <>
       <section className="hero -mx-5 px-6 pb-24 pt-12 text-white sm:mx-0 sm:rounded-card sm:px-10">
+        <AmbientVideo src={video} poster="/poster.jpg" />
         <div className="grid items-center gap-8 md:grid-cols-[1.15fr_.85fr]">
           <div>
             <p className="eyebrow !text-[#9CC9FF]">

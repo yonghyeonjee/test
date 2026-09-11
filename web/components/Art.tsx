@@ -149,3 +149,10 @@ export function ArtAgency({ className = "" }: P) {
     </svg>
   );
 }
+
+/** 글머리 그림 고르기. 이름만 적어 두고 여기서 부품으로 바꾼다. */
+export function PostArt({ name, className = "" }: { name?: string; className?: string }) {
+  const M = { policy: ArtPolicy, money: ArtMoney, study: ArtStudy, jobs: ArtJobs, agency: ArtAgency, license: ArtLicense, jeonse: ArtJeonse } as const;
+  const C = M[(name ?? "policy") as keyof typeof M] ?? ArtPolicy;
+  return <C className={className} />;
+}

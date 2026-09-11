@@ -165,6 +165,21 @@
 }
 .hero > *, .stats-band > *, .band-deep > * { position: relative; }
 
+/* 배경 영상: 무늬 아래, 글자 위에는 절대 오지 않게. 색을 빼고 옅게 깔아 글자를 해치지 않는다. */
+.hero > video.ambient {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: .28; filter: saturate(.4) brightness(.9); mix-blend-mode: screen; z-index: 0;
+  pointer-events: none;
+}
+.hero::before, .hero::after { z-index: 1; }
+.hero > *:not(video) { z-index: 2; }
+
+/* 절차 그림: 점선이 흐르고, 마지막 단계가 숨 쉰다 */
+.flow { stroke-dasharray: 3 5; animation: flow 1.6s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -16; } }
+.pulse { transform-origin: center; transform-box: fill-box; animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
 .band-deep {
   background: #0A1E3C;
   position: relative;
@@ -209,6 +224,8 @@
 .skip:focus { top: 8px; }
 
 @media (prefers-reduced-motion: reduce) {
+  .hero > video.ambient { display: none; }
+  .flow, .pulse { animation: none; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .page-enter { animation: none; }
   .sk { animation: none; }

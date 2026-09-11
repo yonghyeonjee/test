@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PostArt } from "@/components/Art";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { POSTS } from "@/lib/posts";
@@ -28,8 +29,10 @@ export default function BlogIndex() {
           <Link
             key={p.slug}
             href={`/blog/${p.slug}`}
-            className="card card-link block p-5"
+            className="card card-link flex gap-5 p-5"
           >
+            <div className="hidden h-16 w-24 shrink-0 sm:block"><PostArt name={p.art} /></div>
+            <div className="min-w-0">
             <h2 className="text-[1.0625rem] font-bold leading-snug">{p.title}</h2>
             <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted">
               {p.description}
@@ -40,6 +43,7 @@ export default function BlogIndex() {
                   {k}
                 </span>
               ))}
+            </div>
             </div>
           </Link>
         ))}

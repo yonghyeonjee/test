@@ -13,8 +13,8 @@ export function HowItWorksArt({ className = "" }: { className?: string }) {
     <svg viewBox="0 0 300 250" className={`h-full w-full ${className}`} aria-hidden
          fontFamily="inherit">
       {/* 연결선 */}
-      <path d="M62 60v60M62 150v50" stroke={dim} strokeWidth="1.5" strokeDasharray="3 5" />
-      <path d="M150 60v60M150 150v50" stroke={dim} strokeWidth="1.5" strokeDasharray="3 5" />
+      <path className="flow" d="M62 60v60M62 150v50" stroke={dim} strokeWidth="1.5" />
+      <path className="flow" d="M150 60v60M150 150v50" stroke={dim} strokeWidth="1.5" />
       {/* 1. 입력 */}
       <g transform="translate(20 22)">
         <rect width="84" height="46" rx="8" fill="rgba(255,255,255,.08)" stroke={dim} />
@@ -28,10 +28,13 @@ export function HowItWorksArt({ className = "" }: { className?: string }) {
         <text x="10" y="36" fontSize="12" fill={ink} fontWeight="700">해당되는 공고만</text>
       </g>
       {/* 3. 신청 */}
+      {/* CSS transform 은 SVG transform 속성을 덮어쓴다. 자리는 바깥 g 가, 숨쉬기는 안쪽 g 가 맡는다. */}
       <g transform="translate(20 202)">
-        <rect width="84" height="46" rx="8" fill={hi} />
-        <text x="10" y="19" fontSize="9.5" fill="#0A1E3C" fontWeight="700">3 · 하는 것</text>
-        <text x="10" y="36" fontSize="12" fill="#0A1E3C" fontWeight="800">원문에서 신청</text>
+        <g className="pulse">
+          <rect width="84" height="46" rx="8" fill={hi} />
+          <text x="10" y="19" fontSize="9.5" fill="#0A1E3C" fontWeight="700">3 · 하는 것</text>
+          <text x="10" y="36" fontSize="12" fill="#0A1E3C" fontWeight="800">원문에서 신청</text>
+        </g>
       </g>
       {/* 오른쪽: 공고 더미가 줄어드는 그림 */}
       <g transform="translate(130 22)">

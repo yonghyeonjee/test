@@ -113,6 +113,21 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   };
 
   const terms = tally(visitRows, "term", 20);
+  const landings = tally(visitRows, "landing", 10);
+
+  /** 서울 기준 날짜. 서버가 어디 있든 하루 경계가 같아야 한다. */
+  const kst = (v: unknown) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date(String(v)));
+  const todayK = kst(new Date());
+  const visitsToday = visitRows.filter((r) => kst(r.at) === todayK).length;
+  const since7 = Date.now() - 7 * 86400_000;
+  const visits7 = visitRows.filter((r) => new Date(String(r.at)).getTime() >= since7).length;
+  // 최근 30일 일별. 없는 날도 0으로 채워 막대가 빠지지 않게.
+  const byDay = new Map<string, number>();
+  for (let i = 29; i >= 0; i--) byDay.set(kst(new Date(Date.now() - i * 86400_000)), 0);
+  for (const r of visitRows) { const d = kst(r.at); if (byDay.has(d)) byDay.set(d, (byDay.get(d) ?? 0) + 1); }
+  const daily = [...byDay.entries()].map(([d, n]) => ({ d, n }));
+  const dailyMax = Math.max(1, ...daily.map((x) => x.n));
   const campaigns = tally(
     visitRows.filter((r) => r.utm_campaign),
     "utm_campaign"
@@ -166,12 +181,14 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </form>
       </div>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-6">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {[
           { k: "오늘 검색", v: today },
           { k: "30일 검색", v: rows.length },
           { k: "결과 0건", v: zero.length },
           { k: "저장한 조건", v: savedRows.length },
+          { k: "오늘 유입", v: visitsToday },
+          { k: "7일 유입", v: visits7 },
           { k: "30일 유입", v: visitRows.length },
           {
             k: "노출 사업",
@@ -187,6 +204,42 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           </div>
         ))}
       </div>
+
+      <Panel title="일별 유입자" note="최근 30일 · 탭당 한 번, 사이트 안 이동은 세지 않음">
+        <div className="flex h-28 items-end gap-[3px]">
+          {daily.map((x) => (
+            <div key={x.d} className="group relative flex-1">
+              <div className="w-full rounded-t-[3px] bg-brand/70 transition-colors group-hover:bg-brand"
+                   style={{ height: `${Math.max(2, (x.n / dailyMax) * 100)}%` }} />
+              <span className="pointer-events-none absolute -top-6 left-1/2 hidden -translate-x-1/2 whitespace-nowrap
+                               rounded bg-ink px-1.5 py-0.5 text-[10px] text-white group-hover:block">
+                {x.d.slice(5).replace("-", ".")} · {x.n}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-1 flex justify-between text-[10px] text-faint">
+          <span>{daily[0]?.d.slice(5).replace("-", ".")}</span>
+          <span>오늘</span>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="mb-1 text-xs font-bold text-muted">처음 도착한 화면</p>
+            <Rank rows={landings.map((t) => ({ landing: t.label, n: t.n }))} keyName="landing" />
+          </div>
+          <div>
+            <p className="mb-1 text-xs font-bold text-muted">하루 평균</p>
+            <p className="num text-2xl font-extrabold">
+              {(visitRows.length / 30).toFixed(1)}
+              <span className="ml-1 text-xs font-normal text-muted">명 / 일</span>
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              한 탭에서 첫 화면을 열 때 한 번 셉니다. 새로고침이나 사이트 안 이동은 세지
+              않으므로 페이지뷰보다 작고, 사람 수에 가깝습니다. IP 는 저장하지 않습니다.
+            </p>
+          </div>
+        </div>
+      </Panel>
 
       <Panel
         title="저장한 조건"
