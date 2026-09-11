@@ -66,7 +66,9 @@ export default function LicenseList({ board, picked }: { board: LicenseBoard; pi
                       <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13.5px]">
                         {s.items.map((l) => (
                           <li key={l.code || l.name} className="text-ink2">
-                            {l.name}
+                            {l.code ? (
+                              <Link href={`/license/${encodeURIComponent(l.code)}`} className="hover:text-brand hover:underline">{l.name}</Link>
+                            ) : l.name}
                             {!picked && (
                               <span className="ml-1 text-[11px] text-faint">{l.series}</span>
                             )}

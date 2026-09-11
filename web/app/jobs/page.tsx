@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ArtJobs } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
 import MidAd from "@/components/MidAd";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
 import JobsTabs from "@/components/JobsTabs";
@@ -9,6 +10,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getJobs } from "@/lib/pubJobs";
+import { JOBS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
 
 export const metadata: Metadata = {
@@ -111,6 +113,8 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
       </section>
 
       <AdSlot name="page_bottom" />
+      <Faq items={JOBS_FAQ} />
+
       <GuideBanner title="취업을 준비하신다면 이것도" />
       <RelatedLinks items={jobsRelated()} />
       <PromoBanner placement="jobs" context="job" />

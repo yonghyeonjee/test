@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtLicense } from "@/components/Art";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -8,6 +9,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import LicenseList from "@/components/LicenseList";
 import { getLicenses } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
+import { LICENSE_FAQ } from "@/lib/pageFaq";
 
 /** 종목 목록은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 충분하다. */
 export const revalidate = 86400;
@@ -100,6 +102,8 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
           </p>
         </div>
       </section>
+
+      <Faq items={LICENSE_FAQ} />
 
       <GuideBanner title="취업·이직을 준비하신다면 이것도" />
       <RelatedLinks items={licenseRelated()} />
