@@ -13,11 +13,14 @@ import { licenseRelated } from "@/lib/related";
 export const revalidate = 86400;
 
 export const metadata: Metadata = {
-  title: "국가자격 종목 전체 목록 — 분야별·등급별로 찾기",
+  title: "국가자격증 종류 총정리 — 사회복지사·보육교사·기사 등급별 목록",
   description:
     "한국산업인력공단이 시행하는 국가기술자격·국가전문자격 종목을 직무 분야와 등급별로 펼쳤습니다. " +
     "자격증 응시료·학원비를 지원하는 정부 제도와 함께 보실 수 있습니다.",
   keywords: [
+    "국가자격증 종류",
+    "사회복지사 자격증",
+    "보육교사 자격증",
     "국가자격 종목",
     "국가기술자격 목록",
     "자격증 종류",

@@ -11,7 +11,7 @@ import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness } from "@/lib/alio
 import { agencyRelated } from "@/lib/related";
 
 export const metadata: Metadata = {
-  title: "공공기관 지원사업 — 생애주기·분야별로 찾는 기관 서비스",
+  title: "공공기관 지원사업·직업훈련 — 청년지원사업부터 어르신 복지까지",
   description:
     "전국 공공기관이 국민에게 제공하는 사업을 생애주기(청년·중장년·어르신)와 분야(사회복지·취업·교육·건강)로 " +
     "걸러 봅니다. 기획재정부 알리오 플러스 공개 자료입니다.",

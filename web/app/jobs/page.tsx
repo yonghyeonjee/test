@@ -12,11 +12,13 @@ import { getJobs } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
 
 export const metadata: Metadata = {
-  title: "공공기관 채용정보 — 지역·고용형태로 찾는 나라일터 공고",
+  title: "공공기관 채용정보·취업지원제도 — 지역별 채용 공고 한눈에",
   description:
     "인사혁신처 나라일터에 올라온 공공기관·지자체 채용 공고를 지역과 고용형태, 기관명으로 " +
     "걸러 봅니다. 접수 중인 공고를 마감 임박순으로 보여 드립니다.",
   keywords: [
+    "취업지원제도",
+    "구직",
     "공공기관 채용",
     "공공기관 채용정보",
     "나라일터 채용",

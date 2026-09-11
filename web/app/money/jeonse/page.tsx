@@ -13,11 +13,13 @@ import { jeonseRelated } from "@/lib/related";
 export const revalidate = 21600;
 
 export const metadata: Metadata = {
-  title: "전세자금대출 금리 비교 — 은행별 기준·가산·적용금리",
+  title: "청년 전세대출·전세자금대출 금리 비교 — 은행별 적용금리 한눈에",
   description:
     "한국주택금융공사가 보증하는 전세자금대출의 은행별 금리를 낮은 순으로 정리했습니다. " +
     "기준금리와 가산금리를 나눠 보여드리므로 어디서 차이가 나는지 바로 보입니다.",
   keywords: [
+    "청년 전세대출",
+    "청년 버팀목 대출",
     "전세자금대출 금리",
     "전세자금대출 금리 비교",
     "주택금융공사 전세자금보증",

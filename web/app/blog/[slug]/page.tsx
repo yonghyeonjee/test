@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostArt } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
+import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import type { PromoContext } from "@/lib/promo";
@@ -18,6 +19,10 @@ const POST_CONTEXT: Record<string, PromoContext> = {
   "youth-support": "youth",
   "sme-startup-support": "business",
   "government-subsidy-types": "money",
+  "national-employment-support": "job",
+  "youth-benefits": "youth",
+  "social-worker-license": "job",
+  "vocational-training-card": "job",
 };
 
 export function generateStaticParams() {
@@ -101,6 +106,8 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           )}
         </section>
       ))}
+
+      {post.faq && <Faq items={post.faq} />}
 
       <Link href={post.cta.href} className="btn btn-primary mt-12 w-full py-4">
         {post.cta.label}
