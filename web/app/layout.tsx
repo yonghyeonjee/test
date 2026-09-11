@@ -102,7 +102,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Suspense>
 
         <a href="#main" className="skip">본문으로 건너뛰기</a>
-        <div className="mx-auto max-w-[54rem] px-5">
+        <div className="mx-auto max-w-[54rem] px-5 lg:max-w-[64rem]">
           <VisitTracker />
           <SiteHeader index={index} />
 

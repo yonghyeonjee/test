@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArtStudy } from "@/components/Art";
 import GuideBanner from "@/components/GuideBanner";
 import JobsTabs from "@/components/JobsTabs";
+import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RankBars from "@/components/RankBars";
@@ -90,6 +91,8 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
           곧 취업이라서입니다. 졸업자가 적은 학과는 순위에서 뺐습니다.
         </p>
       </section>
+
+      <MidAd name="detail_mid" context="student" seed="majors" className="mt-12" />
 
       <section className="mt-12">
         <h2 className="text-[1.0625rem] font-bold">학과 이름으로 찾기</h2>

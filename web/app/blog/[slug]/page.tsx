@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostArt } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
+import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import type { PromoContext } from "@/lib/promo";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -72,8 +73,11 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         {post.lead}
       </p>
 
-      {post.sections.map((s) => (
+      {post.sections.map((s, i) => (
         <section key={s.h} className="mt-10">
+          {i === 2 && (
+            <MidAd name="post_mid" context={POST_CONTEXT[post.slug] ?? "general"} seed={post.slug} className="mb-10" />
+          )}
           <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
             {s.h}
           </h2>

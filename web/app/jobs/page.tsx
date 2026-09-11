@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArtJobs } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
+import MidAd from "@/components/MidAd";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
 import JobsTabs from "@/components/JobsTabs";
@@ -67,6 +68,7 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
 
       <JobsTabs active="/jobs" />
       <JobList board={board} filter={filter} />
+      <MidAd name="detail_mid" context="job" seed="jobs" className="mt-10" />
 
       <p className="mt-3 text-xs leading-relaxed text-muted">
         나라일터 공개 자료를 여섯 시간마다 받아 옵니다. 접수 기간과 자격 요건의 최종

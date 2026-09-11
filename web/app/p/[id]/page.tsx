@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
+import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
@@ -192,6 +193,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         {p.org_name && <Row label="담당">{p.dept_name || p.org_name}</Row>}
         {p.contact && <Row label="문의">{p.contact}</Row>}
       </dl>
+
+      <MidAd name="detail_mid" context={promoContextForProgram(p)} seed={p.source_id} />
 
       <Section title="지원대상" body={p.target_text} />
       {p.criteria_text !== p.target_text && (

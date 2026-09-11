@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArtJeonse } from "@/components/Art";
 import GuideBanner from "@/components/GuideBanner";
+import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -77,6 +78,8 @@ export default async function Jeonse() {
           </a>
         </div>
       )}
+
+      <MidAd name="detail_mid" context="housing" seed="jeonse" className="mt-12" />
 
       <section className="mt-14">
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">

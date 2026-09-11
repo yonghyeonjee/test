@@ -21,7 +21,7 @@ export type Seo = {
 
 export type AdKind = "html" | "image";
 export type AdSlotCfg = { on: boolean; kind: AdKind; html: string; img: string; href: string; alt: string };
-export const AD_SLOTS = ["home_mid", "results_bottom", "post_bottom", "page_bottom"] as const;
+export const AD_SLOTS = ["home_mid", "results_bottom", "post_bottom", "page_bottom", "detail_mid", "post_mid"] as const;
 export type AdSlotName = (typeof AD_SLOTS)[number];
 export type Ads = Record<AdSlotName, AdSlotCfg>;
 
@@ -30,6 +30,8 @@ export const AD_SLOT_LABEL: Record<AdSlotName, string> = {
   results_bottom: "조회 결과 목록 아래",
   post_bottom: "안내 글 본문 끝",
   page_bottom: "자료 화면(채용·공공기관·정책·지역) 본문 끝",
+  detail_mid: "본문 중간 (사업 상세·지역·채용·통계 화면) — 비우면 우리 사이트 배너",
+  post_mid: "안내 글 중간 — 비우면 우리 사이트 배너",
 };
 
 export const EMPTY_SLOT: AdSlotCfg = { on: false, kind: "html", html: "", img: "", href: "", alt: "" };
