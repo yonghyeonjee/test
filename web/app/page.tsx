@@ -7,6 +7,9 @@ import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
 import GuideBanner from "@/components/GuideBanner";
+import QuickMenu from "@/components/QuickMenu";
+import SectionHead from "@/components/SectionHead";
+import StatsBand from "@/components/StatsBand";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
@@ -18,6 +21,8 @@ import Tabs from "@/components/Tabs";
 import TrackResults from "@/components/Track";
 import { promoContextFor } from "@/lib/promo";
 import { blogIndexRelated } from "@/lib/related";
+import { LOAN_ORGS } from "@/lib/studentLoan";
+import { MAJORS } from "@/lib/majors";
 import { SITE_URL } from "@/lib/seo";
 import {
   feedClosing, getBusinessRegions, getHomeBundle,
@@ -64,19 +69,9 @@ function Row({ title, sub, items, more }: {
 }) {
   if (!items.length) return null;
   return (
-    <section className="mt-12">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-[1.0625rem] font-bold">
-          {title}
-          {sub && <span className="ml-2 text-xs font-normal text-muted">{sub}</span>}
-        </h2>
-        {more && (
-          <Link href={more} className="text-xs text-muted hover:text-brand">
-            더 보기
-          </Link>
-        )}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+    <section className="mt-10 min-w-0">
+      <SectionHead title={title} sub={sub} more={more} />
+      <div className="grid gap-3">
         {items.map((p) => <ProgramEntry key={p.id} p={p} compact />)}
       </div>
     </section>
@@ -217,17 +212,20 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
       )}
 
       {!asked ? (
-        <Hero
-          count={coverage.welfare + coverage.business}
-          closing={closingCount}
-        >
-          <Suspense fallback={<div className="h-56" />}>
-            <Finder
-              pick={<ConditionSentence regions={regions} />}
-              search={<SearchBox index={sggIndex} autoFocus />}
-            />
-          </Suspense>
-        </Hero>
+        <>
+          <Hero
+            count={coverage.welfare + coverage.business}
+            closing={closingCount}
+          >
+            <Suspense fallback={<div className="h-56" />}>
+              <Finder
+                pick={<ConditionSentence regions={regions} />}
+                search={<SearchBox index={sggIndex} autoFocus />}
+              />
+            </Suspense>
+          </Hero>
+          <QuickMenu />
+        </>
       ) : (
         <Suspense fallback={<div className="h-56" />}>
           <Finder
@@ -253,25 +251,25 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         </>
       ) : (
         <>
-          <Row title="놓치면 내년까지 기다려야 합니다"
-               sub={`${settings.closingDays}일 이내`} items={closing} />
-          <Row title="이번 주에 새로 올라왔어요"
-               sub={`최근 ${settings.newDays}일`} items={fresh} />
+          <div className="grid gap-x-6 md:grid-cols-2">
+            <Row title="놓치면 내년까지 기다려야 합니다"
+                 sub={`${settings.closingDays}일 이내 마감`} items={closing.slice(0, 5)}
+                 more="/policies" />
+            <Row title="이번 주에 새로 올라왔어요"
+                 sub={`최근 ${settings.newDays}일`} items={fresh.slice(0, 5)}
+                 more="/policies" />
+          </div>
 
           <section className="mt-14">
-            <h2 className="text-[1.0625rem] font-bold">어디에 해당되시나요</h2>
-            <p className="mb-3 mt-1 text-sm text-muted">
-              눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다.
-            </p>
+            <SectionHead title="어디에 해당되시나요"
+                         sub="눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다." more="/policies" />
             <StatTables areas={areas} age={stats.age}
                         employment={stats.employment} household={stats.household} />
           </section>
 
           <section id="areas" className="mt-12">
-            <h2 className="text-[1.0625rem] font-bold">우리 동네 지원금</h2>
-            <p className="mb-3 mt-1 text-sm text-muted">
-              시·도를 고르면 시·군·구 사업까지 함께 나옵니다.
-            </p>
+            <SectionHead title="우리 동네 지원금"
+                         sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />
             <div className="card grid grid-cols-2 gap-x-6 gap-y-1 p-5 sm:grid-cols-3">
               {areas.map((a) => (
                 <Link key={a.sido} href={`/area/${encodeURIComponent(a.sido)}`}
@@ -308,6 +306,16 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           <RelatedLinks
             title="처음이시라면 이것부터"
             items={blogIndexRelated().filter((r) => r.href !== "/")}
+          />
+
+          <StatsBand
+            total={coverage.welfare + coverage.business}
+            items={[
+              { n: coverage.welfare, label: "개인·가구 복지" },
+              { n: coverage.business, label: "기업·소상공인 지원" },
+              { n: LOAN_ORGS.length, label: "학자금 이자지원 기관" },
+              { n: MAJORS.length, label: "학과별 취업 통계" },
+            ]}
           />
 
           <PromoBanner placement="home" />

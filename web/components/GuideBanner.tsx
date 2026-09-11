@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArtJeonse, ArtLicense, ArtPolicy, ArtStudy } from "./Art";
+import { ArtJeonse, ArtLicense, ArtPolicy, ArtStudy, ArtJobs, ArtAgency } from "./Art";
 
 /**
  * 사이트 안에서 다음에 볼 곳을 권하는 띠.
@@ -29,6 +29,20 @@ const ITEMS = [
     title: "학자금 이자지원 되는 곳",
     desc: "학자금 대출 이자를 대신 내주는 지자체를 지역별로 정리했습니다.",
     Art: ArtStudy,
+  },
+  {
+    href: "/jobs",
+    tag: "매일 갱신",
+    title: "공공기관 채용정보",
+    desc: "나라일터 채용 공고를 지역·고용형태로 걸러 접수 중인 것부터 봅니다.",
+    Art: ArtJobs,
+  },
+  {
+    href: "/agency",
+    tag: "공공기관",
+    title: "공공기관 사업·행사·시설",
+    desc: "지자체 공고에 안 나오는 공공기관 사업을 생애주기와 분야로 찾습니다.",
+    Art: ArtAgency,
   },
   {
     href: "/license",

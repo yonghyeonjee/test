@@ -145,6 +145,18 @@ const MONEY: Related = {
   desc: "받는 돈 말고, 나가는 돈을 줄여 주는 제도만 모았습니다.",
 };
 
+const JOBS: Related = {
+  href: "/jobs",
+  title: "공공기관 채용정보",
+  desc: "나라일터 채용 공고를 지역·고용형태로 걸러 접수 중인 것부터 봅니다.",
+};
+
+const AGENCY: Related = {
+  href: "/agency",
+  title: "공공기관 지원사업·행사·시설",
+  desc: "지자체 공고에 안 나오는 공공기관 사업을 생애주기와 분야로 찾습니다.",
+};
+
 const LICENSE: Related = {
   href: "/license",
   title: "국가자격 종목 전체 목록",
@@ -173,8 +185,22 @@ export function studentLoanRelated(): Related[] {
   return keep([LICENSE, JEONSE, POLICIES, HOME]);
 }
 
+export function agencyRelated(): Related[] {
+  return keep([HOME, POLICIES, JOBS, post("government-subsidy-types")]);
+}
+
+const MAJORS: Related = {
+  href: "/jobs/majors",
+  title: "학과별 취업률 통계",
+  desc: "전공을 고르기 전에 졸업생이 어디로 갔는지 3년치로 봅니다.",
+};
+
+export function jobsRelated(): Related[] {
+  return keep([MAJORS, LICENSE, HOME, POLICIES]);
+}
+
 export function licenseRelated(): Related[] {
-  return keep([
+  return keep([JOBS, 
     { href: "/?emp=구직중&via=license", title: "구직 중인 분을 위한 지원",
       desc: "취업 준비 기간의 생활비·교육비를 돕는 사업만 모아 봅니다." },
     STUDY, POLICIES, post("youth-support"),
