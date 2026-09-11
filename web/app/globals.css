@@ -20,12 +20,18 @@
    */
   body {
     @apply bg-ground text-ink antialiased;
+    font-size: 16px;
+    line-height: 1.65;
+    font-feature-settings: "ss01", "cv01";
+    background-image:
+      radial-gradient(900px 420px at 50% -10%, rgba(11, 95, 165, 0.07), transparent 60%);
+    background-repeat: no-repeat;
   }
   /* 제목은 명조. 글자 사이를 조금 좁혀 인쇄물처럼. */
-  .display { @apply font-serif font-bold tracking-[-.02em]; }
+  .display { @apply font-sans font-extrabold tracking-[-.035em]; }
   .num { font-variant-numeric: tabular-nums; }
-  ::selection { background: #0D6B4F; color: #fff; }
-  :focus-visible { outline: 2px solid #0D6B4F; outline-offset: 2px; border-radius: 6px; }
+  ::selection { background: #0B5FA5; color: #fff; }
+  :focus-visible { outline: 2px solid #0B5FA5; outline-offset: 2px; border-radius: 6px; }
 }
 
 @layer components {
@@ -37,7 +43,7 @@
   .rows > * + * { @apply border-t border-line; }
 
   /* 인쇄물의 큰 번호. */
-  .numeral { @apply font-serif text-[2.4rem] font-black leading-none text-brand; }
+  .numeral { @apply font-sans text-[2.4rem] font-black leading-none tracking-[-.04em] text-brand; }
   /* 짧은 위첨자 제목 — 작게, 자간 넓게 */
   .eyebrow { @apply text-[11px] font-bold uppercase tracking-[.28em] text-brand; }
 
@@ -104,8 +110,8 @@
 
 /* 구역 제목 — 왼쪽에 굵은 초록 표식. 정책정보포털의 ┃ 표식 자리다. */
 .sec-title {
-  font-family: "Noto Serif KR", "Apple SD Gothic Neo", serif;
-  letter-spacing: -.02em;
+  font-weight: 800;
+  letter-spacing: -.025em;
   position: relative;
   padding-left: 14px;
 }
@@ -116,27 +122,27 @@
   top: .2em;
   bottom: .2em;
   width: 3px;
-  background: #0D6B4F;
+  background: #0B5FA5;
 }
 
 /* 머리말 메뉴 띠 — 한 줄 짙은 띠에 메뉴를 늘어놓는다. */
 .menu-band {
-  background: #0B2A21;
+  background: #0A1E3C;
 }
 .menu-band a { color: rgba(255,255,255,.82); }
 .menu-band a:hover, .menu-band a[aria-current="page"] { color: #fff; }
-.menu-band a[aria-current="page"] { box-shadow: inset 0 -2px 0 #8FCFB0; }
+.menu-band a[aria-current="page"] { box-shadow: inset 0 -2px 0 #9CC9FF; }
 
 /* 통계 띠 — 히어로와 같은 계열, 조금 더 밝게. */
 .stats-band {
-  background: linear-gradient(158deg, #0B2A21 0%, #145240 100%);
+  background: linear-gradient(158deg, #0A1E3C 0%, #164A87 100%);
   position: relative;
   overflow: hidden;
 }
 
 /* 히어로 — 깊은 숲색 그라데이션. Datacenter 의 남색과 확실히 갈라놓는다. */
 .hero {
-  background: linear-gradient(160deg, #0B2A21 0%, #0F3A2D 60%, #145240 100%);
+  background: linear-gradient(160deg, #0A1E3C 0%, #10305C 60%, #164A87 100%);
   position: relative;
   overflow: hidden;
 }
@@ -153,14 +159,14 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(700px 380px at 88% 0%, rgba(143, 207, 176, .16), transparent 64%),
-    linear-gradient(transparent 70%, rgba(4, 18, 13, .30));
+    radial-gradient(700px 380px at 88% 0%, rgba(156, 201, 255, .16), transparent 64%),
+    linear-gradient(transparent 70%, rgba(5, 15, 31, .30));
   pointer-events: none;
 }
 .hero > *, .stats-band > *, .band-deep > * { position: relative; }
 
 .band-deep {
-  background: #0B2A21;
+  background: #0A1E3C;
   position: relative;
   overflow: hidden;
 }
@@ -175,11 +181,11 @@
 [data-site-header] { position: sticky; top: 0; z-index: 30; transition: box-shadow .2s, background-color .2s; }
 [data-site-header]::before {
   content: ""; position: absolute; inset: 0 -20px; z-index: -1;
-  background: rgba(246,244,238,.72); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  background: rgba(243,246,250,.72); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
   opacity: 0; transition: opacity .2s;
 }
 [data-site-header].scrolled::before { opacity: 1; }
-[data-site-header].scrolled { box-shadow: 0 8px 24px -16px rgba(20,32,28,.35); }
+[data-site-header].scrolled { box-shadow: 0 8px 24px -16px rgba(15,27,45,.35); }
 
 /* 누르는 느낌 */
 .chip:active, .btn:active, .tile:active { transform: scale(.97); }
@@ -191,15 +197,15 @@
 .card-link:hover .go { opacity: 1; transform: none; }
 
 /* 마감까지 남은 기간 막대 */
-.due { height: 3px; border-radius: 2px; background: #E6E2D8; overflow: hidden; }
-.due > i { display: block; height: 100%; background: linear-gradient(90deg, #0D6B4F, #A8500F); }
+.due { height: 3px; border-radius: 2px; background: #E1E7F0; overflow: hidden; }
+.due > i { display: block; height: 100%; background: linear-gradient(90deg, #0B5FA5, #D9691F); }
 
 /* 뼈대 반짝임 */
-.sk { border-radius: 8px; background: linear-gradient(90deg, #ECE8DE 25%, #F6F4EE 50%, #ECE8DE 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }
+.sk { border-radius: 8px; background: linear-gradient(90deg, #E6ECF4 25%, #F3F6FA 50%, #E6ECF4 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }
 @keyframes sk { to { background-position: -200% 0; } }
 
 /* 건너뛰기 링크 — 포커스될 때만 보인다 */
-.skip { position: absolute; left: 8px; top: -40px; z-index: 50; padding: 8px 12px; border-radius: 8px; background: #0D6B4F; color: #fff; font-weight: 700; }
+.skip { position: absolute; left: 8px; top: -40px; z-index: 50; padding: 8px 12px; border-radius: 8px; background: #0B5FA5; color: #fff; font-weight: 700; }
 .skip:focus { top: 8px; }
 
 @media (prefers-reduced-motion: reduce) {

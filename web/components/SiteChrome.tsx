@@ -93,7 +93,7 @@ export function SiteFooter() {
         </div>
         {cols.map((c) => (
           <div key={c.h}>
-            <p className="eyebrow !text-[#8FCFB0]">{c.h}</p>
+            <p className="eyebrow !text-[#9CC9FF]">{c.h}</p>
             <ul className="mt-3 space-y-1.5">
               {c.items.map(([label, href]) => (
                 <li key={href}><Link href={href} className="hover:text-white">{label}</Link></li>
