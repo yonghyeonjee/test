@@ -3,6 +3,8 @@ import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
+import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
+import { parseAds, parseSeo } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false } };
@@ -322,6 +324,9 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           </Panel>
         </div>
       </div>
+
+      <SeoPanel initial={parseSeo(st.get("seo"))} />
+      <AdsPanel initial={parseAds(st.get("ads"))} />
 
       <SettingsPanel
         closingDays={String(st.get("closing_days") ?? 14)}

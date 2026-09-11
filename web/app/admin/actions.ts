@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
+import { parseAds, parseSeo } from "@/lib/settings";
 
 /** 쓰기는 서비스 키로만. 브라우저에 절대 내려가지 않는다. */
 function admin() {
@@ -74,6 +75,22 @@ export async function saveSetting(key: string, value: string) {
 
   revalidatePath("/admin");
   revalidatePath("/");
+  return { error: null };
+}
+
+/**
+ * JSON 설정(seo, ads) 저장. 모양을 한 번 걸러서 넣는다 — 화면이 기대하는
+ * 항목만 남기고 나머지는 버린다. 없던 키면 만든다.
+ */
+export async function saveJsonSetting(key: "seo" | "ads", value: unknown) {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다." };
+  const clean = key === "seo" ? parseSeo(value) : parseAds(value);
+  const { error } = await admin()
+    .from("site_settings")
+    .upsert({ key, value: clean as never, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  if (error) return { error: error.message };
+  revalidatePath("/", "layout");
+  revalidatePath("/admin");
   return { error: null };
 }
 

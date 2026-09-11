@@ -215,6 +215,12 @@
 .due { height: 3px; border-radius: 2px; background: #E1E7F0; overflow: hidden; }
 .due > i { display: block; height: 100%; background: linear-gradient(90deg, #0B5FA5, #D9691F); }
 
+/* 광고 지면: 본문과 헷갈리지 않게 표시하고, 높이를 제한해 화면을 밀어내지 않는다 */
+.ad-slot { position: relative; border: 1px dashed #C5D0DE; border-radius: 14px; padding: 18px 16px 14px; max-height: 200px; overflow: hidden; contain: content; }
+.ad-tag { position: absolute; left: 12px; top: -8px; padding: 0 6px; background: #F3F6FA; font-size: 10px; font-weight: 700; letter-spacing: .16em; color: #93A1B3; }
+.ad-html { display: flex; justify-content: center; }
+.ad-html ins, .ad-html iframe { max-width: 100%; }
+
 /* 뼈대 반짝임 */
 .sk { border-radius: 8px; background: linear-gradient(90deg, #E6ECF4 25%, #F3F6FA 50%, #E6ECF4 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }
 @keyframes sk { to { background-position: -200% 0; } }

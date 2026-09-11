@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtPolicy } from "@/components/Art";
+import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -247,6 +248,7 @@ export default async function Policies() {
         </div>
       </section>
 
+      <AdSlot name="page_bottom" />
       <GuideBanner />
       <RelatedLinks items={policiesRelated()} />
       <PromoBanner placement="policies" />

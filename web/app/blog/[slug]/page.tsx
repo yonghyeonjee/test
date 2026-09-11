@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PostArt } from "@/components/Art";
+import AdSlot from "@/components/AdSlot";
 import PromoBanner from "@/components/PromoBanner";
 import type { PromoContext } from "@/lib/promo";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -100,6 +101,8 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       <Link href={post.cta.href} className="btn btn-primary mt-12 w-full py-4">
         {post.cta.label}
       </Link>
+
+      <AdSlot name="post_bottom" />
 
       <RelatedLinks items={postRelated(post.slug)} />
 

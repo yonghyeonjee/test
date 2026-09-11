@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArtJobs } from "@/components/Art";
+import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
 import JobsTabs from "@/components/JobsTabs";
@@ -105,6 +106,7 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
         </div>
       </section>
 
+      <AdSlot name="page_bottom" />
       <GuideBanner title="취업을 준비하신다면 이것도" />
       <RelatedLinks items={jobsRelated()} />
       <PromoBanner placement="jobs" context="job" />
