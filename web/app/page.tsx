@@ -11,6 +11,7 @@ import QuickMenu from "@/components/QuickMenu";
 import SectionHead from "@/components/SectionHead";
 import StatsBand from "@/components/StatsBand";
 import { Reveal } from "@/components/Motion";
+import AdSlot from "@/components/AdSlot";
 import { TrustIcon } from "@/components/Infographic";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -246,6 +247,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
             terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household]
               .filter(Boolean) as string[]}
           />
+          <AdSlot name="results_bottom" />
           <PromoBanner
             placement="results"
             context={promoContextFor({ employment, household, age })}
@@ -272,6 +274,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               ))}
             </ol>
           </Reveal>
+
+          <AdSlot name="home_mid" />
 
           <div className="grid gap-x-6 md:grid-cols-2">
             <Row title="놓치면 내년까지 기다려야 합니다"

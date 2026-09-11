@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
+import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
 import ProgramEntry from "@/components/ProgramEntry";
 import PromoBanner from "@/components/PromoBanner";
@@ -269,6 +270,7 @@ export default async function AreaPage({ params }: { params: { sido: string } })
 
       <LoanBlock sido={sido} />
 
+      <AdSlot name="page_bottom" />
       <GuideBanner title="이 지역에서 같이 보면 좋은 것" />
 
       <RelatedLinks items={areaRelated(sido)} />

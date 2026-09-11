@@ -7,10 +7,11 @@ import { HotkeyFocus } from "@/components/Motion";
 import FloatingMenu from "@/components/FloatingMenu";
 import { unstable_cache } from "next/cache";
 import { getSigunguIndex } from "@/lib/db";
+import { getSiteConfig } from "@/lib/settings";
 import "./globals.css";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
-export const metadata: Metadata = {
+const BASE: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "정부지원금 조회 — 로그인 없이 내 조건으로 찾기 | 나라지원",
@@ -35,10 +36,25 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
-  // 네이버 서치어드바이저 소유 확인. <head> 에 meta 로 나간다.
-  verification: { other: { "naver-site-verification": "a910f9a9fb3d311d3ebe25d0d7f821df89c3bb12" } },
   formatDetection: { telephone: false },
 };
+
+/** 관리자 설정(SEO)을 합쳐 낸다. 확인 토큰·설명·색인 여부가 여기서 바뀐다. */
+export async function generateMetadata(): Promise<Metadata> {
+  const { seo } = await getSiteConfig();
+  const other: Record<string, string> = {};
+  if (seo.naver) other["naver-site-verification"] = seo.naver;
+  if (seo.bing) other["msvalidate.01"] = seo.bing;
+  return {
+    ...BASE,
+    description: seo.description.trim() || BASE.description,
+    keywords: seo.keywords.trim()
+      ? seo.keywords.split(",").map((k) => k.trim()).filter(Boolean)
+      : BASE.keywords,
+    robots: seo.index ? { index: true, follow: true } : { index: false, follow: false },
+    verification: { ...(seo.google ? { google: seo.google } : {}), other },
+  };
+}
 
 /**
  * 머리말 검색창이 쓰는 시군구 색인. 어느 화면에서든 필요해 레이아웃에서

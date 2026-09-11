@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AgencyList from "@/components/AgencyList";
 import { ArtAgency } from "@/components/Art";
+import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -104,6 +105,7 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
         </div>
       </section>
 
+      <AdSlot name="page_bottom" />
       <GuideBanner />
       <RelatedLinks items={agencyRelated()} />
       <PromoBanner placement="agency" context="general" />
