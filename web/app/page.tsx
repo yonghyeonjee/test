@@ -6,6 +6,7 @@ import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
+import GuideBanner from "@/components/GuideBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
@@ -275,6 +276,26 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               ))}
             </div>
           </section>
+
+          <section className="mt-12">
+            <Link href="/policies" className="card card-link block p-6 sm:flex
+                                              sm:items-center sm:justify-between sm:gap-6">
+              <span className="block">
+                <b className="block text-[1.0625rem] font-bold">
+                  무엇을 찾아야 할지 모르겠다면
+                </b>
+                <span className="mt-1.5 block text-sm leading-relaxed text-muted">
+                  대상·분야·지역·업종을 전부 펼쳐 두었습니다. 누르기만 하면 그 조건에
+                  걸리는 공고만 남습니다.
+                </span>
+              </span>
+              <span className="btn btn-primary mt-4 shrink-0 sm:mt-0">
+                정책 전체 보기
+              </span>
+            </Link>
+          </section>
+
+          <GuideBanner />
 
           <RelatedLinks
             title="처음이시라면 이것부터"

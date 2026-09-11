@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
+import GuideBanner from "@/components/GuideBanner";
 import ProgramEntry from "@/components/ProgramEntry";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { areaNote, govWelfare, howToApply, howToUse } from "@/lib/areaNotes";
 import { areaRelated } from "@/lib/related";
+import { loanBySido, productLabel } from "@/lib/studentLoan";
 import { getArea, getAreas, listByArea } from "@/lib/db";
 
 export const revalidate = 86400;
@@ -49,6 +51,48 @@ export async function generateMetadata({
     ],
     openGraph: { title, description, type: "website" },
   };
+}
+
+
+/**
+ * 이 지역에 학자금 대출 이자를 대신 내주는 곳이 있는지.
+ *
+ * 협약한 기관이 없으면 아무것도 그리지 않는다. "없습니다"만 적힌 칸은
+ * 화면만 길게 만들 뿐이다.
+ */
+function LoanBlock({ sido }: { sido: string }) {
+  const orgs = loanBySido(sido);
+  if (!orgs.length) return null;
+  return (
+    <section className="mt-14">
+      <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+        {sido} 학자금 대출 이자지원
+      </h2>
+      <p className="mt-3 text-sm leading-relaxed text-muted">
+        한국장학재단과 협약을 맺어 학자금 대출 이자를 지자체가 대신 내주는 곳입니다.
+        신청한 사람만 지원하므로, 해당되면 학기 시작 전에 공고를 챙기셔야 합니다.
+      </p>
+      <ul className="card mt-4 divide-y divide-line p-5">
+        {orgs.map((o) => (
+          <li key={o.org} className="py-3 first:pt-0 last:pb-0">
+            <b className="text-sm font-bold">{o.org}</b>
+            <span className="ml-2 text-xs text-muted">
+              {o.sigungu ? `${o.sigungu} 단위` : "광역 단위"} · {o.ways.join("·")}
+            </span>
+            <span className="mt-1 block text-[13px] leading-relaxed text-muted">
+              {o.products.map(productLabel).join(" · ")}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <Link
+        href="/money/student-loan"
+        className="mt-3 inline-flex text-sm font-semibold text-brand hover:underline"
+      >
+        다른 지역까지 전부 보기 →
+      </Link>
+    </section>
+  );
 }
 
 export default async function AreaPage({ params }: { params: { sido: string } }) {
@@ -222,6 +266,10 @@ export default async function AreaPage({ params }: { params: { sido: string } })
             ))}
         </div>
       </section>
+
+      <LoanBlock sido={sido} />
+
+      <GuideBanner title="이 지역에서 같이 보면 좋은 것" />
 
       <RelatedLinks items={areaRelated(sido)} />
 
