@@ -88,7 +88,7 @@ export default function MoneyIndex() {
       </section>
 
       <RelatedLinks items={moneyRelated()} />
-      <PromoBanner placement="money" />
+      <PromoBanner placement="money" context="money" />
     </div>
   );
 }

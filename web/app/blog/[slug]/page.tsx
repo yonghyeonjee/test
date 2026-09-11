@@ -2,11 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PromoBanner from "@/components/PromoBanner";
+import type { PromoContext } from "@/lib/promo";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import { getPost, POSTS } from "@/lib/posts";
 import { postRelated } from "@/lib/related";
 import { SITE_URL, t } from "@/lib/seo";
+
+
+/** 글 주제와 이어지는 바깥 자료를 고르는 단서. */
+const POST_CONTEXT: Record<string, PromoContext> = {
+  "youth-support": "youth",
+  "sme-startup-support": "business",
+  "government-subsidy-types": "money",
+};
 
 export function generateStaticParams() {
   return POSTS.map((p) => ({ slug: p.slug }));
@@ -90,7 +99,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
       <RelatedLinks items={postRelated(post.slug)} />
 
-      <PromoBanner placement="post" />
+      <PromoBanner placement="post" context={POST_CONTEXT[post.slug] ?? "general"} />
 
       <p className="mt-8 text-xs leading-relaxed text-muted">
         이 글은 제도의 큰 갈래를 설명한 것입니다. 금액과 시행 시기는 해마다

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
+import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import {
@@ -26,6 +27,7 @@ const STATUS_BADGE = {
 export const revalidate = 86400;
 export const dynamicParams = true;
 
+import { promoContextForProgram } from "@/lib/promo";
 import { programRelated } from "@/lib/related";
 import { SITE_URL as SITE } from "@/lib/seo";
 
@@ -239,6 +241,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         </section>
       )}
       <RelatedLinks items={programRelated(p.sido)} />
+      <PromoBanner placement="program" context={promoContextForProgram(p)} />
     </article>
   );
 }

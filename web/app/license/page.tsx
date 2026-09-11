@@ -100,7 +100,7 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
 
       <GuideBanner title="취업·이직을 준비하신다면 이것도" />
       <RelatedLinks items={licenseRelated()} />
-      <PromoBanner placement="license" />
+      <PromoBanner placement="license" context="job" />
     </div>
   );
 }

@@ -273,7 +273,7 @@ export default async function AreaPage({ params }: { params: { sido: string } })
 
       <RelatedLinks items={areaRelated(sido)} />
 
-      <PromoBanner placement="area" />
+      <PromoBanner placement="area" context="housing" />
     </article>
   );
 }
