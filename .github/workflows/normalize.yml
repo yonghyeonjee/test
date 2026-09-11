@@ -1,0 +1,46 @@
+name: normalize
+
+# 원문에서 매칭 조건을 뽑는다. 수집(collect)이 끝나면 자동으로 이어 돌고,
+# 규칙을 고쳤을 때는 여기서 손으로 돌린다.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry = 통계만 / new = 안 된 것만 / all = 전부 다시"
+        required: false
+        default: "new"
+        type: choice
+        options: ["dry", "new", "all"]
+  workflow_run:
+    workflows: ["collect"]
+    types: [completed]
+
+concurrency:
+  group: normalize
+  cancel-in-progress: false
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: 규칙 검증
+        run: python pipeline/test_normalize.py
+
+      - name: 정규화
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          MODE: ${{ inputs.mode || 'new' }}
+        run: |
+          case "$MODE" in
+            dry) python -u pipeline/normalize.py --dry ;;
+            all) python -u pipeline/normalize.py --all ;;
+            *)   python -u pipeline/normalize.py ;;
+          esac
