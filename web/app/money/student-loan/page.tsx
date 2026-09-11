@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtStudy } from "@/components/Art";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { studentLoanRelated } from "@/lib/related";
+import { STUDENT_LOAN_FAQ } from "@/lib/pageFaq";
 import { hasNote } from "@/lib/areaNotes";
 import {
   LOAN_BASE, LOAN_ORGS, loanGrouped, productLabel,
@@ -135,6 +137,8 @@ export default function StudentLoan() {
           </p>
         </div>
       </section>
+
+      <Faq items={STUDENT_LOAN_FAQ} />
 
       <GuideBanner title="학생·청년이라면 이것도" />
       <RelatedLinks items={studentLoanRelated()} />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArtJeonse } from "@/components/Art";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
@@ -8,6 +9,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import RateTable from "@/components/RateTable";
 import { getRentRates, pct, ymd } from "@/lib/rentRate";
 import { jeonseRelated } from "@/lib/related";
+import { JEONSE_FAQ } from "@/lib/pageFaq";
 
 /** 공사가 하루 한 번 갱신한다. 여섯 시간마다 다시 받아 오면 충분하다. */
 export const revalidate = 21600;
@@ -118,6 +120,8 @@ export default async function Jeonse() {
           </p>
         </div>
       </section>
+
+      <Faq items={JEONSE_FAQ} />
 
       <GuideBanner title="전세를 알아보신다면 이것도" />
       <RelatedLinks items={jeonseRelated()} />

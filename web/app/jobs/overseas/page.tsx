@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtJobs } from "@/components/Art";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobsTabs from "@/components/JobsTabs";
 import PageBanner from "@/components/PageBanner";
@@ -8,6 +9,7 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { STATUS_LABEL } from "@/lib/db";
 import { dot } from "@/lib/pubJobs";
+import { OVERSEAS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
 import { getOverseasJobs, nationFacet } from "@/lib/worldjob";
 
@@ -164,6 +166,8 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
           </p>
         </div>
       </section>
+
+      <Faq items={OVERSEAS_FAQ} />
 
       <GuideBanner title="취업을 준비하신다면 이것도" />
       <RelatedLinks items={jobsRelated()} />

@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtPolicy } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { AGE_LINK } from "@/components/StatTables";
 import { policiesRelated } from "@/lib/related";
+import { POLICIES_FAQ } from "@/lib/pageFaq";
 import {
   BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY,
   getAreas, getCoverage, getRegions, getStats,
@@ -251,6 +253,8 @@ export default async function Policies() {
       </section>
 
       <AdSlot name="page_bottom" />
+      <Faq items={POLICIES_FAQ} />
+
       <GuideBanner />
       <RelatedLinks items={policiesRelated()} />
       <PromoBanner placement="policies" />

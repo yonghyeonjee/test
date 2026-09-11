@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtStudy } from "@/components/Art";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobsTabs from "@/components/JobsTabs";
 import MidAd from "@/components/MidAd";
@@ -11,6 +12,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import {
   LATEST, MAJOR_SOURCE, MAJOR_YEARS, OVERALL, SCHOOLS, findMajors, rankedMajors,
 } from "@/lib/majors";
+import { MAJORS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
 
 export const metadata: Metadata = {
@@ -193,6 +195,8 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
           </p>
         </div>
       </section>
+
+      <Faq items={MAJORS_FAQ} />
 
       <GuideBanner title="학생·청년이라면 이것도" />
       <RelatedLinks items={jobsRelated()} />

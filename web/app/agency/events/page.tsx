@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import AgencyList from "@/components/AgencyList";
 import { ArtAgency } from "@/components/Art";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { EVT_CATE, SIDO_SHORT, callAlio, toEvent } from "@/lib/alioplus";
+import { EVENTS_INTRO, EVENTS_FAQ } from "@/lib/pageFaq";
 import { agencyRelated } from "@/lib/related";
 import { AgencyTabs } from "../page";
 
@@ -57,6 +59,15 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
         기획재정부 알리오 플러스 공개 자료를 여섯 시간마다 받아 옵니다. 신청 방법과 기간은
         각 기관 안내에서 확인하세요.
       </p>
+      <section className="mt-14">
+        <h2 className="sec-title text-[1.0625rem] font-extrabold">공공기관 행사, 이렇게 고르세요</h2>
+        <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
+          {EVENTS_INTRO.map((t) => <p key={t.slice(0, 20)}>{t}</p>)}
+        </div>
+      </section>
+
+      <Faq items={EVENTS_FAQ} />
+
       <GuideBanner />
       <RelatedLinks items={agencyRelated()} />
       <PromoBanner placement="agency-events" context="general" />

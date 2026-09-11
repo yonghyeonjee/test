@@ -3,12 +3,14 @@ import Link from "next/link";
 import AgencyList from "@/components/AgencyList";
 import { ArtAgency } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
+import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness } from "@/lib/alioplus";
 import { agencyRelated } from "@/lib/related";
+import { AGENCY_FAQ } from "@/lib/pageFaq";
 
 export const metadata: Metadata = {
   title: "공공기관 지원사업·직업훈련 — 청년지원사업부터 어르신 복지까지",
@@ -106,6 +108,8 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
       </section>
 
       <AdSlot name="page_bottom" />
+      <Faq items={AGENCY_FAQ} />
+
       <GuideBanner />
       <RelatedLinks items={agencyRelated()} />
       <PromoBanner placement="agency" context="general" />
