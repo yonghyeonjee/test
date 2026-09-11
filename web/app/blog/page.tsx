@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PromoBanner from "@/components/PromoBanner";
+import RelatedLinks from "@/components/RelatedLinks";
 import { POSTS } from "@/lib/posts";
-import { t } from "@/lib/seo";
+import { blogIndexRelated } from "@/lib/related";
 
 export const metadata: Metadata = {
-  title: t("정부 지원금 안내 — 종류, 신청 방법, 대상 확인"),
+  title: "정부 지원금 안내 — 종류, 신청 방법, 대상 확인",
   description:
     "정부 지원금의 종류와 신청 방법, 대상 확인하는 법을 정리했습니다. 청년 지원 정책과 중소기업·창업 지원사업 안내도 함께 보실 수 있습니다.",
   alternates: { canonical: "/blog" },
@@ -43,6 +44,8 @@ export default function BlogIndex() {
           </Link>
         ))}
       </div>
+
+      <RelatedLinks items={blogIndexRelated()} />
 
       <PromoBanner placement="blog" />
     </div>

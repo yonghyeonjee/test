@@ -3,7 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
 import ProgramEntry from "@/components/ProgramEntry";
-import { areaNote } from "@/lib/areaNotes";
+import PromoBanner from "@/components/PromoBanner";
+import RelatedLinks from "@/components/RelatedLinks";
+import { areaNote, govWelfare, howToApply, howToUse } from "@/lib/areaNotes";
+import { areaRelated } from "@/lib/related";
 import { getArea, getAreas, listByArea } from "@/lib/db";
 
 export const revalidate = 86400;
@@ -28,16 +31,22 @@ export async function generateMetadata({
   const a = await getArea(sido);
   if (!a) return { title: "찾을 수 없는 지역" };
 
-  const title = `${sido} 지원금·복지서비스 ${a.n}건 총정리 (${YEAR})`;
+  const title = `${sido} 정부 복지·지원금 ${a.n}건 총정리 (${YEAR})`;
   const description =
-    `${sido}에서 신청할 수 있는 지원금 ${a.n}건. ` +
+    `${sido} 정부 복지와 지원금 ${a.n}건을 한자리에. ` +
     `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
-    `${HOOK} 나이·소득 조건별로 바로 확인하세요.`;
+    `${HOOK} 신청 방법과 활용 방법까지 정리했습니다.`;
 
   return {
     title,
     description,
     alternates: { canonical: `${SITE}/area/${encodeURIComponent(sido)}` },
+    keywords: [
+      `${sido} 정부 복지`,
+      `${sido} 지원금`,
+      "정부복지",
+      "정부 지원금 신청 방법",
+    ],
     openGraph: { title, description, type: "website" },
   };
 }
@@ -52,6 +61,8 @@ export default async function AreaPage({ params }: { params: { sido: string } })
   if (!area) return notFound();
 
   const note = areaNote(sido);
+  const steps = howToUse(sido);
+  const apply = howToApply(sido);
 
   const stats = [
     { label: "청년 대상", n: area.youth, q: "age=28" },
@@ -131,6 +142,60 @@ export default async function AreaPage({ params }: { params: { sido: string } })
         </p>
       </section>
 
+      <section className="mt-16">
+        <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+          {sido} 정부 복지, 왜 여기서 찾나
+        </h2>
+        <p className="mt-4 leading-relaxed text-ink2">
+          {govWelfare(
+            sido,
+            area.n,
+            stats.map((s) => ({ label: s.label, n: s.n }))
+          )}
+        </p>
+      </section>
+
+      <section className="mt-16">
+        <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+          활용 방법
+        </h2>
+        <ol className="mt-5 grid gap-3">
+          {steps.map((st) => (
+            <li key={st.step} className="card flex gap-4 p-5">
+              <span
+                aria-hidden
+                className="num flex h-7 w-7 shrink-0 items-center justify-center
+                           rounded-pill bg-brandSoft text-[13px] font-bold text-brand"
+              >
+                {st.step}
+              </span>
+              <div className="min-w-0">
+                <b className="text-[15px]">{st.title}</b>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">{st.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mt-16">
+        <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+          신청 방법
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-muted">
+          사업마다 창구가 다릅니다. 공고문에 적힌 접수처를 따르되, 어느 쪽인지
+          헷갈리면 주소지 행정복지센터에 물어보시는 것이 가장 빠릅니다.
+        </p>
+        <dl className="mt-5 grid gap-3">
+          {apply.map((a) => (
+            <div key={a.title} className="card p-5">
+              <dt className="text-[15px] font-bold">{a.title}</dt>
+              <dd className="mt-1.5 text-sm leading-relaxed text-muted">{a.body}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
       <h2 className="mt-16 border-b-2 border-line2 pb-2 text-sm font-bold">
         {sido} 지원사업 목록
       </h2>
@@ -157,6 +222,10 @@ export default async function AreaPage({ params }: { params: { sido: string } })
             ))}
         </div>
       </section>
+
+      <RelatedLinks items={areaRelated(sido)} />
+
+      <PromoBanner placement="area" />
     </article>
   );
 }

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PromoBanner from "@/components/PromoBanner";
+import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import { getPost, POSTS } from "@/lib/posts";
+import { postRelated } from "@/lib/related";
 import { SITE_URL, t } from "@/lib/seo";
 
 export function generateStaticParams() {
@@ -17,7 +20,7 @@ export function generateMetadata({
   const post = getPost(params.slug);
   if (!post) return {};
   return {
-    title: t(post.title),
+    title: post.title,
     description: post.description,
     keywords: post.keywords,
     alternates: { canonical: `/blog/${post.slug}` },
@@ -85,7 +88,11 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         {post.cta.label}
       </Link>
 
-      <p className="mt-4 text-xs leading-relaxed text-muted">
+      <RelatedLinks items={postRelated(post.slug)} />
+
+      <PromoBanner placement="post" />
+
+      <p className="mt-8 text-xs leading-relaxed text-muted">
         이 글은 제도의 큰 갈래를 설명한 것입니다. 금액과 시행 시기는 해마다
         바뀌므로, 실제 신청 전에는 공고 원문이나 관할 주민센터에서 확인하세요.
       </p>

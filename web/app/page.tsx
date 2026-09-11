@@ -7,6 +7,7 @@ import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
 import PromoBanner from "@/components/PromoBanner";
+import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
 import SavedList from "@/components/SavedList";
 import Hero from "@/components/Hero";
@@ -14,6 +15,7 @@ import SearchBox from "@/components/SearchBox";
 import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
 import TrackResults from "@/components/Track";
+import { blogIndexRelated } from "@/lib/related";
 import { SITE_URL } from "@/lib/seo";
 import {
   feedClosing, getBusinessRegions, getHomeBundle,
@@ -28,13 +30,27 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }):
     === "business";
   if (biz)
     return {
-      title: "중소기업·소상공인 정부지원사업 조회",
+      title: "중소기업·소상공인 정부지원사업 조회 — 지역·업종·업력으로",
       description:
         "지역과 사업체 형태만 고르면 신청할 수 있는 정부 지원사업 공고를 " +
         "찾아드립니다. 자금·기술·인력·수출·판로 분야를 마감일 순으로 정리했습니다.",
       alternates: { canonical: `${SITE_URL}/?tab=business` },
     };
-  return { alternates: { canonical: SITE_URL } };
+  return {
+    title: "정부복지 지원금 조회 — 사는 곳과 나이만 넣으면 됩니다",
+    description:
+      "전국 지자체와 중앙부처의 정부복지·지원금을 한자리에 모았습니다. " +
+      "사는 곳과 나이를 넣으면 해당될 만한 것만 남습니다. " +
+      "회원가입도 주민등록번호도 필요 없습니다.",
+    keywords: [
+      "정부복지",
+      "정부 지원금 조회",
+      "지원금 찾기",
+      "복지서비스",
+      "지원금 신청 방법",
+    ],
+    alternates: { canonical: SITE_URL },
+  };
 }
 
 type SP = { [k: string]: string | string[] | undefined };
@@ -259,6 +275,11 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               ))}
             </div>
           </section>
+
+          <RelatedLinks
+            title="처음이시라면 이것부터"
+            items={blogIndexRelated().filter((r) => r.href !== "/")}
+          />
 
           <PromoBanner placement="home" />
         </>
