@@ -13,11 +13,11 @@ export default function OG() {
         style={{
           width: "100%", height: "100%", display: "flex",
           flexDirection: "column", justifyContent: "center", padding: 80,
-          background: "linear-gradient(150deg,#062418 0%,#063C6B 55%,#0B5FA5 100%)",
+          background: "linear-gradient(150deg,#062418 0%,#3B2FB5 55%,#5A4BE0 100%)",
           color: "#fff",
         }}
       >
-        <div style={{ fontSize: 26, letterSpacing: 8, color: "#9CC9FF" }}>
+        <div style={{ fontSize: 26, letterSpacing: 8, color: "#C4B5FD" }}>
           나라지원
         </div>
         <div style={{ fontSize: 78, fontWeight: 800, lineHeight: 1.15, marginTop: 22 }}>
@@ -26,7 +26,7 @@ export default function OG() {
         <div style={{ fontSize: 78, fontWeight: 800, lineHeight: 1.15 }}>
           모르고 지나친 지원금
         </div>
-        <div style={{ fontSize: 32, color: "#B7C9E2", marginTop: 30 }}>
+        <div style={{ fontSize: 32, color: "#C7C3EA", marginTop: 30 }}>
           회원가입도 주민등록번호도 없이 조회
         </div>
       </div>

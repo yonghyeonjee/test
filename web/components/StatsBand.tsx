@@ -16,9 +16,9 @@ export default function StatsBand({ welfare, business, items }: {
     <section className="stats-band -mx-5 mt-16 px-6 py-10 text-white sm:mx-0 sm:rounded-card sm:px-10">
       <div className="grid gap-8 md:grid-cols-[1fr_1fr]">
         <div>
-          <p className="eyebrow !text-[#9CC9FF]">숫자로 보는 {SITE_NAME}</p>
+          <p className="eyebrow !text-[#C4B5FD]">숫자로 보는 {SITE_NAME}</p>
           <p className="display mt-3 text-[1.6rem] leading-tight">
-            지금 <b className="text-[#9CC9FF]"><CountUp value={total} /></b>건의
+            지금 <b className="text-[#C4B5FD]"><CountUp value={total} /></b>건의
             <br />정책·지원 정보를 안내합니다
           </p>
           <div className="mt-6">

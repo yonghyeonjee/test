@@ -8,6 +8,7 @@ import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
 import GuideBanner from "@/components/GuideBanner";
 import QuickMenu from "@/components/QuickMenu";
+import TopicGrid from "@/components/TopicGrid";
 import SectionHead from "@/components/SectionHead";
 import StatsBand from "@/components/StatsBand";
 import { Reveal } from "@/components/Motion";
@@ -28,6 +29,7 @@ import { LOAN_ORGS } from "@/lib/studentLoan";
 import { MAJORS } from "@/lib/majors";
 import { SITE_URL } from "@/lib/seo";
 import {
+  countByTopic,
   feedClosing, getBusinessRegions, getHomeBundle,
   logSearch, matchBusiness, matchWelfare, type Program,
 } from "@/lib/db";
@@ -190,6 +192,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const employment = one(searchParams.emp);
   const household = many(searchParams.hh);
   const asked = Boolean(sido || age || employment || household.length);
+  const topicCounts = asked ? {} : await countByTopic().catch(() => ({} as Record<string, number>));
 
   const results = asked
     ? await matchWelfare({ sido, sigungu, age, employment, household })
@@ -229,6 +232,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               />
             </Suspense>
           </Hero>
+          <TopicGrid counts={topicCounts} />
           <QuickMenu />
         </>
       ) : (

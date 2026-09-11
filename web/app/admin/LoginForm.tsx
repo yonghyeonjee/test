@@ -42,7 +42,7 @@ export default function LoginForm() {
           </video>
         )}
         <div className="relative">
-          <p className="text-[11px] font-bold tracking-[.3em] text-[#9CC9FF]">
+          <p className="text-[11px] font-bold tracking-[.3em] text-[#C4B5FD]">
             나라지원
           </p>
         </div>
@@ -53,7 +53,7 @@ export default function LoginForm() {
             <br />
             빈손으로 돌아갔는지
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-[#B7C9E2]">
+          <p className="mt-3 text-sm leading-relaxed text-[#C7C3EA]">
             결과가 0건이던 조건이 곧 다음에 채울 데이터입니다.
           </p>
           <div className="mt-7 flex gap-7 text-sm">
@@ -64,7 +64,7 @@ export default function LoginForm() {
             ].map(([a, b]) => (
               <div key={a}>
                 <b className="block font-extrabold">{a}</b>
-                <small className="text-[#B7C9E2]">{b}</small>
+                <small className="text-[#C7C3EA]">{b}</small>
               </div>
             ))}
           </div>

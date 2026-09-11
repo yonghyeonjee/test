@@ -257,6 +257,34 @@ export async function listByArea(sido: string, limit = 100) {
   return (data ?? []) as Program[];
 }
 
+/** 분야(topics) 하나로 전국 목록. 확신도 순. */
+export async function listByTopic(topic: string, limit = 60) {
+  const { data } = await db
+    .from("programs_public")
+    .select("*")
+    .eq("kind", "welfare")
+    .contains("topics", [topic])
+    .order("norm_confidence", { ascending: false })
+    .limit(limit);
+  return (data ?? []) as Program[];
+}
+
+/** 분야별 건수. 홈 격자에 쓴다. 분야 수만큼 HEAD 요청을 보낸다. */
+export async function countByTopic(): Promise<Record<string, number>> {
+  const { TOPICS } = await import("./topics");
+  const rows = await Promise.all(
+    TOPICS.map(async (t) => {
+      const { count } = await db
+        .from("programs_public")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "welfare")
+        .contains("topics", [t.key]);
+      return [t.key, count ?? 0] as const;
+    }),
+  );
+  return Object.fromEntries(rows);
+}
+
 export function ageLabel(p: Pick<Program, "age_min" | "age_max">) {
   if (p.age_min !== null && p.age_max !== null) return `만 ${p.age_min}~${p.age_max}세`;
   if (p.age_min !== null) return `만 ${p.age_min}세 이상`;

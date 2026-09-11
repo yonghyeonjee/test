@@ -56,7 +56,7 @@ export default function Finder({
               {m.label}
               <small
                 className={`mt-0.5 block text-[11px] font-normal ${
-                  on ? "text-[#B7C9E2]" : "text-faint"
+                  on ? "text-[#C7C3EA]" : "text-faint"
                 }`}
               >
                 {m.hint}

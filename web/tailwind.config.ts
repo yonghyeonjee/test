@@ -17,25 +17,25 @@ export default {
         // 따뜻한 종이색은 정부지원 조회 화면에 얹으니 촌스러웠다.
         // 중립에 가까운 서늘한 회색으로 낮추고, 색은 초록 하나만 남긴다.
         // 종이에 가까운 따뜻한 바탕. 차가운 회색은 관리 도구처럼 보였다.
-        ground:   "#F3F6FA",
+        ground:   "#F7F7FB",
         surface:  "#FFFFFF",
-        surface2: "#F8FAFD",
-        line:     "#E1E7F0",
-        line2:    "#C5D0DE",
-        ink:      "#0F1B2D",
-        ink2:     "#2B3A4F",
-        muted:    "#5F6E82",
-        faint:    "#93A1B3",
+        surface2: "#F9F8FF",
+        line:     "#E6E4F2",
+        line2:    "#CFCBE6",
+        ink:      "#171532",
+        ink2:     "#2E2B4F",
+        muted:    "#6B6885",
+        faint:    "#9C99B4",
         /** 짙은 띠(히어로·통계·꼬리말) 바탕 */
-        deep:     "#0A1E3C",
-        deep2:    "#10305C",
+        deep:     "#1E1B4B",
+        deep2:    "#2A2777",
         clay:     "#D9691F",
         claySoft: "#FCEBDD",
 
-        brand:     "#0B5FA5",  // 진초록
-        brand2:    "#2F7FD0",
-        brandDeep: "#063C6B",
-        brandSoft: "#E4EEF9",
+        brand:     "#5A4BE0",  // 진초록
+        brand2:    "#7B6CF6",
+        brandDeep: "#3B2FB5",
+        brandSoft: "#ECEAFF",
 
         accent:     "#D9691F",  // 마감
         accentSoft: "#FCEBDD",
@@ -52,10 +52,10 @@ export default {
                 "system-ui", '"Malgun Gothic"', "sans-serif"],
       },
       // 모서리를 조금 죽이고 그림자를 걷어낸다. 둥둥 떠 있는 카드가 템플릿처럼 보였다.
-      borderRadius: { card: "14px", btn: "10px", ctl: "10px", pill: "999px" },
+      borderRadius: { card: "18px", btn: "12px", ctl: "10px", pill: "999px" },
       boxShadow: {
-        card: "0 1px 0 rgba(15,27,45,.04)",
-        lift: "0 8px 24px rgba(15,27,45,.10)",
+        card: "0 2px 12px rgba(23,21,50,.05)",
+        lift: "0 8px 24px rgba(23,21,50,.10)",
       },
     },
   },

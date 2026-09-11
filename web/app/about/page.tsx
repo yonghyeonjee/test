@@ -50,9 +50,9 @@ export default function About() {
 
       <section className="band-deep -mx-5 mt-10 grid items-center gap-8 px-6 py-9 text-white sm:mx-0 sm:rounded-card sm:px-10 md:grid-cols-[1fr_1fr]">
         <div>
-          <p className="eyebrow !text-[#9CC9FF]">어떻게 돌아가나</p>
+          <p className="eyebrow !text-[#C4B5FD]">어떻게 돌아가나</p>
           <h2 className="display mt-2 text-[1.5rem] leading-tight">세 단계, 회원가입 없이</h2>
-          <ol className="mt-4 space-y-2.5 text-[14.5px] leading-relaxed text-[#B7C9E2]">
+          <ol className="mt-4 space-y-2.5 text-[14.5px] leading-relaxed text-[#C7C3EA]">
             <li><b className="text-white">1.</b> 사는 곳과 나이를 넣습니다. 가구 사정과 취업 상태는 골라도, 안 골라도 됩니다.</li>
             <li><b className="text-white">2.</b> 공고 원문에서 추려낸 조건으로 걸러, 해당되는 공고만 남깁니다.</li>
             <li><b className="text-white">3.</b> 원문 링크로 넘어가 소득·재산 기준까지 확인하고 신청합니다.</li>

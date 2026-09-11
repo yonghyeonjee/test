@@ -8,6 +8,7 @@ import TopSearch from "./TopSearch";
 
 const NAV = [
   { href: "/", label: "지원금 찾기" },
+  { href: "/topic", label: "분야별" },
   { href: "/#areas", label: "지역별" },
   { href: "/?tab=business", label: "기업지원" },
   { href: "/policies", label: "전체 정책" },
@@ -97,7 +98,7 @@ export function SiteFooter() {
         </div>
         {cols.map((c) => (
           <div key={c.h}>
-            <p className="eyebrow !text-[#9CC9FF]">{c.h}</p>
+            <p className="eyebrow !text-[#C4B5FD]">{c.h}</p>
             <ul className="mt-3 space-y-1.5">
               {c.items.map(([label, href]) => (
                 <li key={href}><Link href={href} className="hover:text-white">{label}</Link></li>
