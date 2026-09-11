@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
+import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import {
   ageLabel,
@@ -25,6 +26,7 @@ const STATUS_BADGE = {
 export const revalidate = 86400;
 export const dynamicParams = true;
 
+import { programRelated } from "@/lib/related";
 import { SITE_URL as SITE } from "@/lib/seo";
 
 export async function generateStaticParams() {
@@ -236,6 +238,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
           )}
         </section>
       )}
+      <RelatedLinks items={programRelated(p.sido)} />
     </article>
   );
 }

@@ -5,8 +5,9 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "개인정보 처리방침",
   description:
-    `${SITE_NAME}는 회원가입 없이 이용할 수 있으며 이름·연락처·주민등록번호를 ` +
-    "수집하지 않습니다. 어떤 정보를 어떻게 다루는지 정리했습니다.",
+    `${SITE_NAME}는 찾아보기만 할 때는 아무것도 받지 않습니다. 저장 목록을 쓰실 때만 ` +
+    "사용자명을 만들고, 이름·연락처는 그때도 선택입니다. 주민등록번호는 어떤 경우에도 " +
+    "받지 않습니다.",
   alternates: { canonical: `${SITE_URL}/privacy` },
 };
 

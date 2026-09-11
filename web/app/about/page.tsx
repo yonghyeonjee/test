@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import RelatedLinks from "@/components/RelatedLinks";
+import { aboutRelated } from "@/lib/related";
 import { SITE_NAME, t } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: t("서비스 소개 — 받을 수 있는 지원만 골라서"),
+  title: "서비스 소개 — 받을 수 있는 지원만 골라서",
   description:
     "나라지원은 흩어져 있는 정부·지자체 지원사업 중에서 내 조건에 해당되는 것만 골라 보여줍니다. 회원가입도 주민등록번호도 필요 없습니다.",
   alternates: { canonical: "/about" },
@@ -106,7 +108,9 @@ export default function About() {
         내 조건으로 찾아보기
       </Link>
 
-      <p className="mt-4 text-xs leading-relaxed text-muted">
+      <RelatedLinks items={aboutRelated()} />
+
+      <p className="mt-8 text-xs leading-relaxed text-muted">
         {SITE_NAME}은 공공데이터를 정리해 안내하는 민간 서비스로, 정부·지자체가
         운영하는 공식 서비스가 아닙니다. 신청 자격의 최종 확인과 접수는 공고
         원문이나 관할 주민센터를 통해 하시기 바랍니다.
