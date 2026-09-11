@@ -138,7 +138,7 @@ export default function StudentLoan() {
 
       <GuideBanner title="학생·청년이라면 이것도" />
       <RelatedLinks items={studentLoanRelated()} />
-      <PromoBanner placement="student-loan" />
+      <PromoBanner placement="student-loan" context="student" />
     </div>
   );
 }

@@ -116,7 +116,7 @@ export default async function Jeonse() {
 
       <GuideBanner title="전세를 알아보신다면 이것도" />
       <RelatedLinks items={jeonseRelated()} />
-      <PromoBanner placement="jeonse" />
+      <PromoBanner placement="jeonse" context="housing" />
     </div>
   );
 }

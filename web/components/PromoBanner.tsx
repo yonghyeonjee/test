@@ -1,29 +1,5 @@
+import { promoLinks, type PromoContext } from "@/lib/promo";
 import { SITE_NAME } from "@/lib/seo";
-
-/** 같이 운영하는 무료 자료들. 바깥으로 나가는 링크라 어디서 왔는지 표시해 둔다. */
-const LINKS = [
-  {
-    href: "https://knowhow-it.com/english-grammar-curriculum/",
-    tag: "영어",
-    title: "무료 영어 공부",
-    desc: "문법 커리큘럼을 처음부터 순서대로",
-    slug: "english",
-  },
-  {
-    href: "https://jeepedia.com/",
-    tag: "심리",
-    title: "무료 심리테스트",
-    desc: "성향과 기질을 짧은 문항으로",
-    slug: "psychology",
-  },
-  {
-    href: "https://knowhow-it.com/data-market/",
-    tag: "마케팅",
-    title: "무료 마케팅 용어",
-    desc: "데이터·마케팅 용어를 한자리에",
-    slug: "marketing",
-  },
-];
 
 function withUtm(href: string, slug: string, placement: string) {
   const u = new URL(href);
@@ -34,12 +10,20 @@ function withUtm(href: string, slug: string, placement: string) {
   return u.toString();
 }
 
+/**
+ * 같이 운영하는 무료 자료들. 바깥으로 나가는 링크라 어디서 왔는지 표시해 둔다.
+ * 어떤 세 개를 보여 줄지는 lib/promo.ts 가 문맥을 보고 고른다.
+ */
 export default function PromoBanner({
   placement = "home",
+  context = "general",
 }: {
   /** utm_campaign 으로 들어간다. 어느 화면의 배너가 먹히는지 나눠 보려고. */
   placement?: string;
+  /** 보고 있던 것과 이어지는 자료를 고르는 단서. */
+  context?: PromoContext;
 }) {
+  const links = promoLinks(context);
   return (
     <section className="mt-16">
       <h2 className="text-[1.0625rem] font-bold">무료로 더 보기</h2>
@@ -47,7 +31,7 @@ export default function PromoBanner({
         {SITE_NAME}과 같이 운영하는 자료입니다. 모두 무료이고 회원가입이 없습니다.
       </p>
       <div className="grid gap-3 sm:grid-cols-3">
-        {LINKS.map((l) => (
+        {links.map((l) => (
           <a
             key={l.slug}
             href={withUtm(l.href, l.slug, placement)}
@@ -60,7 +44,7 @@ export default function PromoBanner({
               {l.title}
               <svg
                 viewBox="0 0 24 24"
-                className="h-3.5 w-3.5 text-faint"
+                className="h-3.5 w-3.5 shrink-0 text-faint"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2.2"

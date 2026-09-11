@@ -16,6 +16,7 @@ import SearchBox from "@/components/SearchBox";
 import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
 import TrackResults from "@/components/Track";
+import { promoContextFor } from "@/lib/promo";
 import { blogIndexRelated } from "@/lib/related";
 import { SITE_URL } from "@/lib/seo";
 import {
@@ -176,6 +177,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
                  sub={`${settings.closingDays}일 이내`} items={closing} />
           </>
         )}
+        <PromoBanner placement={asked ? "business-results" : "business"} context="business" />
       </>
     );
   }
@@ -236,13 +238,19 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
       )}
 
       {asked ? (
-        <Results
-          results={results}
-          label="해당될 수 있는 사업"
-          myAge={age}
-          terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household]
-            .filter(Boolean) as string[]}
-        />
+        <>
+          <Results
+            results={results}
+            label="해당될 수 있는 사업"
+            myAge={age}
+            terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household]
+              .filter(Boolean) as string[]}
+          />
+          <PromoBanner
+            placement="results"
+            context={promoContextFor({ employment, household, age })}
+          />
+        </>
       ) : (
         <>
           <Row title="놓치면 내년까지 기다려야 합니다"
