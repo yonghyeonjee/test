@@ -11,6 +11,8 @@ export type Section = { h: string; p: string[]; list?: string[] };
 
 export type Post = {
   slug: string;
+  /** 글머리 그림. components/Art 의 이름. */
+  art?: "policy" | "money" | "study" | "jobs" | "agency" | "license" | "jeonse";
   title: string;
   /** 검색 결과에 그대로 노출된다. */
   description: string;
@@ -25,6 +27,7 @@ export type Post = {
 export const POSTS: Post[] = [
   {
     slug: "government-subsidy-types",
+    art: "money",
     title: "정부 지원금 종류 총정리 — 현금, 감면, 이용권, 서비스",
     description:
       "정부 지원금은 현금만 있는 게 아닙니다. 지급 방식에 따라 어떤 종류가 있고 무엇을 먼저 확인해야 하는지 정리했습니다.",
@@ -64,6 +67,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: "how-to-apply",
+    art: "policy",
     title: "정부지원금 신청 방법 — 어디서 어떻게 신청하나",
     description:
       "온라인 신청, 방문 신청, 우편 접수까지. 정부 지원금을 실제로 신청하는 경로와 미리 준비할 서류를 정리했습니다.",
@@ -99,6 +103,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: "youth-support",
+    art: "study",
     title: "청년 지원 정책 모음 — 월세, 취업, 자산형성",
     description:
       "청년을 대상으로 하는 정부·지자체 지원은 주거, 일자리, 자산형성으로 나뉩니다. 어떤 갈래가 있는지와 나이 기준 보는 법을 정리했습니다.",
@@ -133,6 +138,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: "sme-startup-support",
+    art: "agency",
     title: "중소기업·창업 지원사업 찾는 법",
     description:
       "중소기업과 창업기업을 위한 정부 지원사업은 자금, 판로, 인력, 기술로 나뉩니다. 업력과 업종으로 좁혀서 찾는 방법을 정리했습니다.",
@@ -169,6 +175,7 @@ export const POSTS: Post[] = [
   },
   {
     slug: "check-eligibility",
+    art: "license",
     title: "지원금 대상 확인하는 법 — 신청 전에 볼 것",
     description:
       "내가 정부 지원금 대상이 되는지 확인하려면 소득, 가구, 거주지, 중복 수급을 봐야 합니다. 순서대로 확인하는 방법을 정리했습니다.",

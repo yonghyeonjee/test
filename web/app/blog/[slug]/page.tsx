@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PostArt } from "@/components/Art";
 import PromoBanner from "@/components/PromoBanner";
 import type { PromoContext } from "@/lib/promo";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -54,9 +55,12 @@ export default function PostPage({ params }: { params: { slug: string } }) {
         </Link>
       </nav>
 
-      <h1 className="mt-2 text-[1.75rem] font-extrabold leading-tight">
-        {post.title}
-      </h1>
+      <div className="mt-2 flex items-start justify-between gap-6">
+        <h1 className="display text-[1.75rem] leading-tight sm:text-[2rem]">
+          {post.title}
+        </h1>
+        <div className="hidden h-24 w-36 shrink-0 sm:block"><PostArt name={post.art} /></div>
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className="num badge badge-quiet">{post.updated} 기준</span>

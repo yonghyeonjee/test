@@ -3,7 +3,10 @@ import { Suspense } from "react";
 import { GtmNoScript, GtmScript, RouteChange } from "@/components/Gtm";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import VisitTracker from "@/components/VisitTracker";
-import { BackToTop, HotkeyFocus } from "@/components/Motion";
+import { HotkeyFocus } from "@/components/Motion";
+import FloatingMenu from "@/components/FloatingMenu";
+import { unstable_cache } from "next/cache";
+import { getSigunguIndex } from "@/lib/db";
 import "./globals.css";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -32,10 +35,30 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
+  // 네이버 서치어드바이저 소유 확인. <head> 에 meta 로 나간다.
+  verification: { other: { "naver-site-verification": "a910f9a9fb3d311d3ebe25d0d7f821df89c3bb12" } },
   formatDetection: { telephone: false },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/**
+ * 머리말 검색창이 쓰는 시군구 색인. 어느 화면에서든 필요해 레이아웃에서
+ * 받되, 한 시간 캐시로 두어 매 요청마다 DB 를 두드리지 않는다. 못 읽으면
+ * 빈 색인 — 검색창은 그대로 뜨고 지역만 못 알아듣는다.
+ */
+const cachedIndex = unstable_cache(
+  async () => {
+    try {
+      return Object.fromEntries(await getSigunguIndex());
+    } catch {
+      return {} as Record<string, { sido: string; full: string }>;
+    }
+  },
+  ["sgg-index"],
+  { revalidate: 3600 },
+);
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const index = await cachedIndex();
   return (
     <html lang="ko">
       <head>
@@ -65,10 +88,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main" className="skip">본문으로 건너뛰기</a>
         <div className="mx-auto max-w-[54rem] px-5">
           <VisitTracker />
-          <SiteHeader />
+          <SiteHeader index={index} />
 
           <main id="main">{children}</main>
-          <BackToTop />
+          <FloatingMenu />
           <HotkeyFocus />
 
           <SiteFooter />

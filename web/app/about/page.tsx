@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import RelatedLinks from "@/components/RelatedLinks";
+import { HowItWorksArt, TrustIcon } from "@/components/Infographic";
+import { IntroVideo } from "@/components/Video";
 import { aboutRelated } from "@/lib/related";
 import { SITE_NAME, t } from "@/lib/seo";
 
@@ -33,7 +35,7 @@ const USES = [
 export default function About() {
   return (
     <div className="py-4">
-      <h1 className="text-[1.75rem] font-extrabold leading-tight">
+      <h1 className="display text-[2rem] leading-tight sm:text-[2.4rem]">
         받을 수 있는 지원만
         <br />
         골라서 보여드립니다
@@ -45,6 +47,21 @@ export default function About() {
         부처별, 지자체별로 흩어진 공고를 일일이 뒤져야 합니다. {SITE_NAME}은 그
         수고를 대신합니다.
       </p>
+
+      <section className="band-deep -mx-5 mt-10 grid items-center gap-8 px-6 py-9 text-white sm:mx-0 sm:rounded-card sm:px-10 md:grid-cols-[1fr_1fr]">
+        <div>
+          <p className="eyebrow !text-[#9CC9FF]">어떻게 돌아가나</p>
+          <h2 className="display mt-2 text-[1.5rem] leading-tight">세 단계, 회원가입 없이</h2>
+          <ol className="mt-4 space-y-2.5 text-[14.5px] leading-relaxed text-[#B7C9E2]">
+            <li><b className="text-white">1.</b> 사는 곳과 나이를 넣습니다. 가구 사정과 취업 상태는 골라도, 안 골라도 됩니다.</li>
+            <li><b className="text-white">2.</b> 공고 원문에서 추려낸 조건으로 걸러, 해당되는 공고만 남깁니다.</li>
+            <li><b className="text-white">3.</b> 원문 링크로 넘어가 소득·재산 기준까지 확인하고 신청합니다.</li>
+          </ol>
+        </div>
+        <div className="aspect-[6/5] max-h-64"><HowItWorksArt /></div>
+      </section>
+
+      <div className="mt-8"><IntroVideo rel="video/intro.mp4" poster="/poster.jpg" title="나라지원 1분 안내" /></div>
 
       <section className="mt-12">
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
@@ -77,6 +94,15 @@ export default function About() {
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
           아무것도 요구하지 않습니다
         </h2>
+        <div className="mt-5 grid gap-5 sm:grid-cols-4">
+          {([
+            ["lock", "개인정보 미저장"], ["source", "출처 9곳 명시"], ["link", "원문 링크 필수"], ["clock", "매일 새벽 갱신"],
+          ] as const).map(([ic, t]) => (
+            <div key={ic} className="flex items-center gap-2.5 text-[14px] font-bold text-ink2">
+              <TrustIcon name={ic} />{t}
+            </div>
+          ))}
+        </div>
         <p className="mt-4 max-w-[36rem] leading-relaxed text-ink2">
           회원가입, 로그인, 주민등록번호, 소득 자료 — 하나도 필요 없습니다.
           조회하려고 개인정보를 넘길 이유가 없다고 봅니다. 사는 곳과 나이 정도만

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BigText from "./BigText";
 import { HeaderFx } from "./Motion";
+import TopSearch from "./TopSearch";
 
 const NAV = [
   { href: "/", label: "지원금 찾기" },
@@ -24,7 +25,7 @@ function useIsAdmin() {
   return path?.startsWith("/admin") ?? false;
 }
 
-export function SiteHeader() {
+export function SiteHeader({ index = {} }: { index?: Record<string, { sido: string; full: string }> }) {
   const path = usePathname();
   if (path?.startsWith("/admin")) return null;
   const current = (href: string) => {
@@ -36,13 +37,16 @@ export function SiteHeader() {
     <header data-site-header className="pb-2 pt-4">
       <HeaderFx />
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-baseline gap-2">
+        <Link href="/" className="flex shrink-0 items-baseline gap-2">
           <span className="display text-[1.5rem] text-deep">나라지원</span>
-          <span className="hidden text-xs text-muted sm:inline">
+          <span className="hidden text-xs text-muted lg:inline">
             나라에서 주는 지원, 받을 수 있는 지원
           </span>
         </Link>
-        <BigText />
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <TopSearch index={index} />
+          <BigText />
+        </div>
       </div>
 
       {/* 메뉴가 많아 한 줄 띠로 묶는다. 좁은 화면에서는 가로로 밀어서 본다. */}
