@@ -14,8 +14,18 @@ import { findRows } from "./openapi";
  */
 
 const BASE = "http://openapi.alioplus.go.kr/api";
-const KEY = (process.env.ALIOPLUS_API_KEY ?? "").trim();
-export const alioConfigured = KEY.length > 0;
+
+/**
+ * 알리오 플러스는 활용정보(시설·행사·사업·기관)마다 인증키를 따로 준다.
+ * 종류별 변수를 먼저 보고, 없으면 공통 ALIOPLUS_API_KEY 로 대신한다.
+ */
+const KEYS: Record<"facility" | "event" | "business" | "apba", string> = {
+  facility: (process.env.ALIOPLUS_KEY_FACILITY ?? process.env.ALIOPLUS_API_KEY ?? "").trim(),
+  event: (process.env.ALIOPLUS_KEY_EVENT ?? process.env.ALIOPLUS_API_KEY ?? "").trim(),
+  business: (process.env.ALIOPLUS_KEY_BUSINESS ?? process.env.ALIOPLUS_API_KEY ?? "").trim(),
+  apba: (process.env.ALIOPLUS_KEY_APBA ?? process.env.ALIOPLUS_API_KEY ?? "").trim(),
+};
+export const alioConfigured = Object.values(KEYS).some((k) => k.length > 0);
 
 export type AlioResult =
   | { ok: true; rows: Record<string, string>[] }
@@ -37,9 +47,10 @@ export async function callAlio(
   pageSize = 300,
   revalidate = 21600,
 ): Promise<AlioResult> {
-  if (!alioConfigured) return { ok: false, reason: "인증키가 설정되지 않았습니다." };
+  const key = KEYS[path];
+  if (!key) return { ok: false, reason: "인증키가 설정되지 않았습니다." };
   const body = new URLSearchParams({
-    "X-API-AUTH-KEY": KEY.replace(/\+/g, "%2B"),
+    "X-API-AUTH-KEY": key.replace(/\+/g, "%2B"),
     pageSize: String(pageSize),
     ...params,
   });
