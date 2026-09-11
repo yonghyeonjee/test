@@ -162,7 +162,7 @@ export default function AccountBox({ onDone }: { onDone?: () => void }) {
               <label className="mt-3 flex items-start gap-2 text-xs leading-relaxed">
                 <input type="checkbox" checked={consent}
                        onChange={(e) => setConsent(e.target.checked)}
-                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#0B5FA5]" />
+                       className="mt-0.5 h-4 w-4 shrink-0 accent-[#5A4BE0]" />
                 <span className="text-muted">
                   지원사업 안내를 받기 위해 이름·휴대폰 뒤 8자리·이메일을
                   수집·이용하는 데 동의합니다. 언제든 삭제를 요청할 수 있고,

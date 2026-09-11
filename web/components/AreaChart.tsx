@@ -81,12 +81,12 @@ export default function AreaChart({
                 textAnchor="end"
                 dominantBaseline="central"
                 fontSize="11.5"
-                fill="#2B3A4F"
+                fill="#2E2B4F"
               >
                 {b.label}
               </text>
 
-              <path d={barPath(w, y)} fill="#0B5FA5" />
+              <path d={barPath(w, y)} fill="#5A4BE0" />
 
               <text
                 x={X0 + w + 7}
@@ -94,7 +94,7 @@ export default function AreaChart({
                 dominantBaseline="central"
                 fontSize="11.5"
                 fontWeight="700"
-                fill="#5F6E82"
+                fill="#6B6885"
               >
                 {b.n}
               </text>
@@ -108,7 +108,7 @@ export default function AreaChart({
           y1={PAD_TOP - 6}
           x2={X0 - 0.5}
           y2={H - ROW + BAR_H + 6}
-          stroke="#E1E7F0"
+          stroke="#E6E4F2"
           strokeWidth="1"
         />
       </svg>

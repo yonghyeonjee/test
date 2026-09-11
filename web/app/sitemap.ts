@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAreas, getTopSourceIds } from "@/lib/db";
 import { POSTS } from "@/lib/posts";
 import { getLicenses } from "@/lib/qnet";
+import { TOPICS } from "@/lib/topics";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 
@@ -38,6 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: SITE, changeFrequency: "daily" as const, priority: 1 },
     { url: `${SITE}/?tab=business`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${SITE}/policies`, changeFrequency: "daily" as const, priority: 0.9 },
+    { url: `${SITE}/topic`, changeFrequency: "weekly" as const, priority: 0.8 },
+    ...TOPICS.map((t) => ({ url: `${SITE}/topic/${t.slug}`, changeFrequency: "daily" as const, priority: 0.8 })),
     { url: `${SITE}/money`, changeFrequency: "weekly" as const, priority: 0.8 },
     { url: `${SITE}/money/jeonse`, changeFrequency: "daily" as const, priority: 0.8 },
     { url: `${SITE}/money/student-loan`, changeFrequency: "weekly" as const, priority: 0.8 },
