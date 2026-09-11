@@ -10,6 +10,7 @@ import GuideBanner from "@/components/GuideBanner";
 import QuickMenu from "@/components/QuickMenu";
 import SectionHead from "@/components/SectionHead";
 import StatsBand from "@/components/StatsBand";
+import { TrustIcon } from "@/components/Infographic";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
@@ -251,6 +252,26 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         </>
       ) : (
         <>
+          <section className="mt-14">
+            <p className="eyebrow">이렇게 찾습니다</p>
+            <h2 className="display mt-2 text-[1.5rem] leading-tight">
+              검색어를 몰라도 됩니다. 조건만 고르세요.
+            </h2>
+            <ol className="mt-6 grid gap-6 sm:grid-cols-3">
+              {[
+                ["01", "사는 곳과 나이를 넣습니다", "시·군·구까지 넣으면 우리 동네 사업이 같이 나옵니다. 가구 사정과 취업 상태는 골라도, 안 골라도 됩니다."],
+                ["02", "해당되는 공고만 남습니다", "공고 원문에서 추려낸 나이·거주·가구 조건으로 거릅니다. 마감된 것은 표시되고, 마감 임박은 앞에 옵니다."],
+                ["03", "원문에서 신청합니다", "화면에 담기지 않은 소득·재산 기준이 남아 있을 수 있어, 원문 링크로 넘어가 최종 확인 뒤 신청합니다."],
+              ].map(([n, h, b]) => (
+                <li key={n} className="border-t-2 border-ink pt-4">
+                  <span className="numeral">{n}</span>
+                  <b className="mt-2 block text-[15.5px] font-bold">{h}</b>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
           <div className="grid gap-x-6 md:grid-cols-2">
             <Row title="놓치면 내년까지 기다려야 합니다"
                  sub={`${settings.closingDays}일 이내 마감`} items={closing.slice(0, 5)}
@@ -284,7 +305,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           </section>
 
           <section className="mt-12">
-            <Link href="/policies" className="card card-link block p-6 sm:flex
+            <Link href="/policies" className="card card-link block border-l-4 border-l-brand p-6 sm:flex
                                               sm:items-center sm:justify-between sm:gap-6">
               <span className="block">
                 <b className="block text-[1.0625rem] font-bold">
@@ -308,11 +329,31 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
             items={blogIndexRelated().filter((r) => r.href !== "/")}
           />
 
+          <section className="mt-16 border-y border-line py-10">
+            <p className="eyebrow">믿을 수 있는 이유</p>
+            <h2 className="display mt-2 text-[1.5rem] leading-tight">숫자 하나까지 출처가 있습니다</h2>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {([
+                ["source", "정부 공개 자료만 씁니다", "복지로·기업마당 등 9곳의 공공데이터를 그대로 색인합니다. 저희가 지어낸 사업은 없습니다."],
+                ["link", "모든 공고에 원문 링크", "요약만 보고 판단하지 않도록, 한 건마다 발행 기관의 원문으로 이어집니다."],
+                ["lock", "개인정보를 저장하지 않습니다", "나이와 지역은 화면에서만 쓰고, 검색 기록에 IP·이름·원문 입력을 남기지 않습니다."],
+                ["clock", "매일 새벽 갱신", "새 공고와 마감을 매일 새벽 반영합니다. 마지막 수집 시각은 관리자 화면에서 확인합니다."],
+              ] as const).map(([ic, h, b]) => (
+                <div key={ic}>
+                  <TrustIcon name={ic} />
+                  <b className="mt-3 block text-[15px] font-bold">{h}</b>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <StatsBand
-            total={coverage.welfare + coverage.business}
+            welfare={coverage.welfare}
+            business={coverage.business}
             items={[
-              { n: coverage.welfare, label: "개인·가구 복지" },
-              { n: coverage.business, label: "기업·소상공인 지원" },
+              { n: areas.length, label: "시·도" },
+              { n: 9, label: "자료 출처 기관" },
               { n: LOAN_ORGS.length, label: "학자금 이자지원 기관" },
               { n: MAJORS.length, label: "학과별 취업 통계" },
             ]}

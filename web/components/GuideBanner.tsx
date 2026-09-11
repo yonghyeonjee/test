@@ -54,7 +54,7 @@ const ITEMS = [
 ];
 
 export default function GuideBanner({
-  title = "이런 것도 찾아보실 수 있습니다",
+  title = "지원금 옆에 붙어 다니는 것들",
 }: {
   title?: string;
 }) {
@@ -62,7 +62,7 @@ export default function GuideBanner({
     <section className="mt-14">
       <h2 className="text-[1.0625rem] font-bold">{title}</h2>
       <p className="mb-3 mt-1 text-sm text-muted">
-        지원금 말고도, 돈이 덜 나가게 해 주는 제도들을 모아 두었습니다.
+        받는 돈만 보면 절반입니다. 나가는 돈을 줄이고, 자격과 일자리로 이어지는 자료를 같이 둡니다.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {ITEMS.map((it) => (

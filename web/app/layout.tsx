@@ -44,6 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
         />
+        {/* 제목용 명조. 본문 고딕과 대비를 주어 관공서 안내문이 아니라 잡지처럼 읽히게. */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700;900&display=swap"
+        />
         {/* 큰 화면 보기 설정을 첫 페인트 전에 적용한다. 없으면 글자가
             커졌다 작아지는 깜빡임이 보인다. */}
         <script

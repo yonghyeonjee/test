@@ -16,15 +16,21 @@ export default {
       colors: {
         // 따뜻한 종이색은 정부지원 조회 화면에 얹으니 촌스러웠다.
         // 중립에 가까운 서늘한 회색으로 낮추고, 색은 초록 하나만 남긴다.
-        ground:   "#F2F4F5",
+        // 종이에 가까운 따뜻한 바탕. 차가운 회색은 관리 도구처럼 보였다.
+        ground:   "#F6F4EE",
         surface:  "#FFFFFF",
-        surface2: "#F8FAFA",
-        line:     "#E1E6E7",
-        line2:    "#C9D1D2",
-        ink:      "#131A1C",
-        ink2:     "#2E3A3C",
-        muted:    "#647175",
-        faint:    "#94A0A3",
+        surface2: "#FBFAF7",
+        line:     "#E6E2D8",
+        line2:    "#CFC9BB",
+        ink:      "#14201C",
+        ink2:     "#2F3B36",
+        muted:    "#66716C",
+        faint:    "#98A19C",
+        /** 짙은 띠(히어로·통계·꼬리말) 바탕 */
+        deep:     "#0B2A21",
+        deep2:    "#0F3A2D",
+        clay:     "#B8672A",
+        claySoft: "#F6E7DA",
 
         brand:     "#0D6B4F",  // 진초록
         brand2:    "#2E8F6E",
@@ -41,11 +47,13 @@ export default {
       fontFamily: {
         sans: ['"Pretendard Variable"', "Pretendard", "-apple-system",
                "system-ui", '"Malgun Gothic"', "sans-serif"],
+        serif: ['"Noto Serif KR"', '"Apple SD Gothic Neo"', '"Nanum Myeongjo"', "serif"],
       },
-      borderRadius: { card: "18px", btn: "12px", ctl: "10px", pill: "999px" },
+      // 모서리를 조금 죽이고 그림자를 걷어낸다. 둥둥 떠 있는 카드가 템플릿처럼 보였다.
+      borderRadius: { card: "14px", btn: "10px", ctl: "10px", pill: "999px" },
       boxShadow: {
-        card: "0 1px 2px rgba(26,36,32,.04), 0 6px 18px rgba(26,36,32,.055)",
-        lift: "0 2px 6px rgba(26,36,32,.06), 0 16px 40px rgba(26,36,32,.11)",
+        card: "0 1px 0 rgba(20,32,28,.04)",
+        lift: "0 8px 24px rgba(20,32,28,.10)",
       },
     },
   },
