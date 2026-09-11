@@ -9,7 +9,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "정부지원금 조회 — 로그인 없이 내 조건으로 찾기 | 지원찾기",
+    default: "정부지원금 조회 — 로그인 없이 내 조건으로 찾기 | 나라지원",
     template: `%s | ${SITE_NAME}`,
   },
   description:

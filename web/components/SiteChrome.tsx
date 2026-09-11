@@ -8,6 +8,8 @@ const NAV = [
   { href: "/", label: "지원금 찾기" },
   { href: "/#areas", label: "지역별" },
   { href: "/?tab=business", label: "기업지원" },
+  { href: "/policies", label: "전체 정책" },
+  { href: "/money", label: "생활금융" },
   { href: "/blog", label: "지원금 안내" },
   { href: "/about", label: "소개" },
 ];
@@ -70,6 +72,14 @@ export function SiteFooter() {
         <p className="mt-4">
           <Link href="/about" className="underline underline-offset-4 hover:text-brand">
             서비스 소개
+          </Link>
+          <span className="mx-2 text-line2">·</span>
+          <Link href="/policies" className="underline underline-offset-4 hover:text-brand">
+            전체 정책
+          </Link>
+          <span className="mx-2 text-line2">·</span>
+          <Link href="/money" className="underline underline-offset-4 hover:text-brand">
+            생활금융
           </Link>
           <span className="mx-2 text-line2">·</span>
           <Link href="/blog" className="underline underline-offset-4 hover:text-brand">

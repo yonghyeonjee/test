@@ -29,6 +29,11 @@ const BIG = [
 export function areaRelated(sido: string): Related[] {
   const others = BIG.filter((s) => s !== sido).slice(0, 2);
   return keep([
+    {
+      href: "/money/student-loan",
+      title: "학자금 이자지원 되는 지자체",
+      desc: `${sido}에도 학자금 대출 이자를 대신 내주는 곳이 있는지 확인해 보세요.`,
+    },
     post("check-eligibility"),
     post("how-to-apply"),
     ...others.map((s) => ({
@@ -112,4 +117,52 @@ export function programRelated(sido: string | null): Related[] {
         }
       : null,
   ]);
+}
+
+// ── 새로 붙인 자료 화면 ──────────────────────────────────
+
+const POLICIES: Related = {
+  href: "/policies",
+  title: "정책 전체 찾아보기",
+  desc: "대상·분야·지역·업종을 눌러 가며 전국 공고를 훑어볼 수 있습니다.",
+};
+
+const JEONSE: Related = {
+  href: "/money/jeonse",
+  title: "전세자금대출 금리 비교",
+  desc: "주택금융공사 보증 전세대출의 은행별 금리를 낮은 순으로 세워 두었습니다.",
+};
+
+const STUDY: Related = {
+  href: "/money/student-loan",
+  title: "학자금 이자지원 되는 지자체",
+  desc: "학자금 대출 이자를 대신 내주는 지역이 있습니다. 사는 곳이 있는지 보세요.",
+};
+
+const MONEY: Related = {
+  href: "/money",
+  title: "생활금융 정보",
+  desc: "받는 돈 말고, 나가는 돈을 줄여 주는 제도만 모았습니다.",
+};
+
+const HOME: Related = {
+  href: "/",
+  title: "내 조건으로 지원금 찾기",
+  desc: "사는 곳과 나이만 넣으면 해당될 만한 사업만 남습니다. 회원가입은 없습니다.",
+};
+
+export function policiesRelated(): Related[] {
+  return keep([HOME, JEONSE, STUDY, post("check-eligibility")]);
+}
+
+export function moneyRelated(): Related[] {
+  return keep([POLICIES, HOME, post("how-to-apply"), post("government-subsidy-types")]);
+}
+
+export function jeonseRelated(): Related[] {
+  return keep([STUDY, POLICIES, HOME, post("how-to-apply")]);
+}
+
+export function studentLoanRelated(): Related[] {
+  return keep([JEONSE, POLICIES, HOME, post("check-eligibility")]);
 }
