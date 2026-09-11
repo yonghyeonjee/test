@@ -112,3 +112,40 @@ export function ArtLicense({ className = "" }: P) {
     </svg>
   );
 }
+
+export function ArtJobs({ className = "" }: P) {
+  return (
+    <svg viewBox="0 0 160 110" className={`${base} ${className}`} aria-hidden>
+      <rect x="22" y="38" width="88" height="56" rx="8" fill="#fff"
+            stroke="#0D6B4F" strokeWidth="2.4" />
+      <path d="M48 38v-8a6 6 0 016-6h24a6 6 0 016 6v8" fill="none"
+            stroke="#0D6B4F" strokeWidth="2.4" />
+      <rect x="22" y="56" width="88" height="6" fill="#E3F0E9" />
+      <rect x="58" y="52" width="16" height="14" rx="3" fill="#0D6B4F" />
+      <circle cx="124" cy="40" r="20" fill="#E3F0E9" stroke="#0D6B4F" strokeWidth="2.4" />
+      <path d="M116 40l5 5 11-11" fill="none" stroke="#0D6B4F"
+            strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      <g stroke="#C9D1D2" strokeWidth="3" strokeLinecap="round">
+        <path d="M34 74h30M34 84h20" />
+      </g>
+    </svg>
+  );
+}
+
+export function ArtAgency({ className = "" }: P) {
+  return (
+    <svg viewBox="0 0 160 110" className={`${base} ${className}`} aria-hidden>
+      <path d="M22 44L80 18l58 26" fill="none" stroke="#0D6B4F" strokeWidth="3.4"
+            strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="30" y="44" width="100" height="8" fill="#E3F0E9" />
+      <g fill="#fff" stroke="#0D6B4F" strokeWidth="2.4">
+        <rect x="40" y="52" width="12" height="36" rx="2" />
+        <rect x="62" y="52" width="12" height="36" rx="2" />
+        <rect x="86" y="52" width="12" height="36" rx="2" />
+        <rect x="108" y="52" width="12" height="36" rx="2" />
+      </g>
+      <rect x="26" y="88" width="108" height="8" rx="2" fill="#0D6B4F" />
+      <circle cx="80" cy="34" r="5" fill="#0D6B4F" />
+    </svg>
+  );
+}

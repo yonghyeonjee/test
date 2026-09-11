@@ -28,7 +28,7 @@ export type ApiResult<T> =
  * 포털 응답은 서비스마다 모양이 제각각이다. header/body 로 감싼 것도 있고
  * 최상위에 items 를 그냥 두는 것도 있다. 배열을 찾을 때까지 걸어 들어간다.
  */
-function findRows(v: unknown, depth = 0): Record<string, unknown>[] | null {
+export function findRows(v: unknown, depth = 0): Record<string, unknown>[] | null {
   if (depth > 6 || v === null || typeof v !== "object") return null;
   if (Array.isArray(v))
     return v.every((x) => x && typeof x === "object")
@@ -170,12 +170,16 @@ export async function callOpenApiXml(
     if (!res.ok) return { ok: false, reason: `응답 코드 ${res.status}` };
     const xml = await res.text();
 
-    const code = xml.match(/<resultCode>\s*([^<]+?)\s*</)?.[1];
+    // 서비스마다 결과 코드 태그 이름이 다르다 (resultCode / ERR_CD).
+    const code =
+      xml.match(/<resultCode>\s*([^<]+?)\s*</)?.[1] ??
+      xml.match(/<ERR_CD>\s*([^<]+?)\s*</)?.[1];
     if (code && code !== "00" && code !== "0")
       return {
         ok: false,
         reason:
           xml.match(/<resultMsg>([^<]+)</)?.[1] ??
+          xml.match(/<ERR_NM>([^<]+)</)?.[1] ??
           xml.match(/<returnAuthMsg>([^<]+)</)?.[1] ??
           `결과 코드 ${code}`,
       };

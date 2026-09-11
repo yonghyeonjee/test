@@ -18,7 +18,7 @@ export default function Tabs({
   ] as const;
 
   return (
-    <nav className="mb-9 flex gap-6 border-b border-line">
+    <nav className="mb-9 mt-5 flex gap-6 border-b border-line">
       {items.map((it) => {
         const on = it.key === active;
         return (

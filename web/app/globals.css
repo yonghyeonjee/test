@@ -95,6 +95,35 @@
   }
 }
 
+/* 구역 제목 — 왼쪽에 굵은 초록 표식. 정책정보포털의 ┃ 표식 자리다. */
+.sec-title {
+  position: relative;
+  padding-left: 12px;
+}
+.sec-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .18em;
+  bottom: .18em;
+  width: 4px;
+  border-radius: 2px;
+  background: #0D6B4F;
+}
+
+/* 머리말 메뉴 띠 — 한 줄 짙은 띠에 메뉴를 늘어놓는다. */
+.menu-band {
+  background: linear-gradient(90deg, #08402F, #0D6B4F);
+}
+.menu-band a { color: rgba(255,255,255,.82); }
+.menu-band a:hover, .menu-band a[aria-current="page"] { color: #fff; }
+.menu-band a[aria-current="page"] { box-shadow: inset 0 -2px 0 #8FCFB0; }
+
+/* 통계 띠 — 히어로와 같은 계열, 조금 더 밝게. */
+.stats-band {
+  background: linear-gradient(158deg, #0A3A2C 0%, #10553F 100%);
+}
+
 /* 히어로 — 깊은 숲색 그라데이션. Datacenter 의 남색과 확실히 갈라놓는다. */
 .hero {
   background: linear-gradient(158deg, #06231B 0%, #0A3A2C 58%, #10553F 100%);
