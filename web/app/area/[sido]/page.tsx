@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import AreaChart from "@/components/AreaChart";
 import ProgramEntry from "@/components/ProgramEntry";
+import { areaNote } from "@/lib/areaNotes";
 import { getArea, getAreas, listByArea } from "@/lib/db";
 
 export const revalidate = 86400;
@@ -49,6 +51,8 @@ export default async function AreaPage({ params }: { params: { sido: string } })
   ]);
   if (!area) return notFound();
 
+  const note = areaNote(sido);
+
   const stats = [
     { label: "청년 대상", n: area.youth, q: "age=28" },
     { label: "어르신 대상", n: area.senior, q: "age=68" },
@@ -89,12 +93,43 @@ export default async function AreaPage({ params }: { params: { sido: string } })
         ))}
       </div>
 
+      <AreaChart
+        sido={sido}
+        bars={stats.map((s) => ({
+          label: s.label.replace(" 대상", "").replace(" 가구", "").replace("임신·", ""),
+          full: s.label,
+          n: s.n,
+          href: `/?sido=${encodeURIComponent(sido)}&${s.q}`,
+        }))}
+      />
+
       <Link
         href={`/?sido=${encodeURIComponent(sido)}`}
         className="btn btn-primary mt-8 w-full py-4 text-[0.95rem]"
       >
         내 조건으로 찾아보기
       </Link>
+
+      <section className="mt-16">
+        <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+          {sido}에서는 누가 무엇을 찾나
+        </h2>
+
+        <p className="mt-4 leading-relaxed text-ink2">{note.intro}</p>
+
+        <div className="mt-6 grid gap-3">
+          {note.cases.map((c) => (
+            <div key={c.who} className="card p-5">
+              <b className="text-[15px]">{c.who}</b>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{c.body}</p>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-6 border-l-[3px] border-brand pl-4 leading-relaxed text-ink2">
+          {note.closing}
+        </p>
+      </section>
 
       <h2 className="mt-16 border-b-2 border-line2 pb-2 text-sm font-bold">
         {sido} 지원사업 목록
