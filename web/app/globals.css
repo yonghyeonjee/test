@@ -10,6 +10,8 @@
    * 남아 오히려 더 안 보인다. zoom 은 여백·아이콘까지 같이 키우고, 이 사이트는
    * 고정 너비 없이 max-width 로만 잡혀 있어 가로 스크롤도 생기지 않는다.
    */
+  /* PC 에서는 살짝 크게. 넓은 화면에서 글자가 잘게 보인다는 말이 맞았다. */
+  @media (min-width: 1280px) { body { zoom: 1.08; } }
   html.big body { zoom: 1.25; }
   @supports not (zoom: 1) {
     html.big { font-size: 20px; }
