@@ -40,19 +40,21 @@ export async function generateMetadata({ searchParams }: { searchParams: SP }):
     === "business";
   if (biz)
     return {
-      title: "중소기업·소상공인 정부지원사업 조회 — 지역·업종·업력으로",
+      title: "중소기업·소상공인 지원사업·인건비지원사업 조회 — 지역·업종·업력으로",
       description:
         "지역과 사업체 형태만 고르면 신청할 수 있는 정부 지원사업 공고를 " +
         "찾아드립니다. 자금·기술·인력·수출·판로 분야를 마감일 순으로 정리했습니다.",
       alternates: { canonical: `${SITE_URL}/?tab=business` },
     };
   return {
-    title: "정부복지 지원금 조회 — 사는 곳과 나이만 넣으면 됩니다",
+    title: "청년지원금·정부지원금 조회 — 사는 곳과 나이만 넣으면 됩니다",
     description:
       "전국 지자체와 중앙부처의 정부복지·지원금을 한자리에 모았습니다. " +
       "사는 곳과 나이를 넣으면 해당될 만한 것만 남습니다. " +
       "회원가입도 주민등록번호도 필요 없습니다.",
     keywords: [
+      "청년지원금",
+      "복지서비스",
       "정부복지",
       "정부 지원금 조회",
       "지원금 찾기",

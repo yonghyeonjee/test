@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
+import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
+import { programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
@@ -49,8 +51,8 @@ function seoTitle(p: Detail) {
   const age = ageLabel(p);
   if (age) who.push(age.replace("만 ", ""));
   if (p.household?.length) who.push(p.household[0]);
-  const tail = who.length ? ` ${who.join(" ")}` : "";
-  return `${where}${tail} ${p.title} 신청자격·방법`.replace(/\s+/g, " ").trim();
+  // 검색에서 많이 치는 말(청년지원금·복지서비스 등)을 제목에 넣는다.
+  return `${p.title} — ${where} ${who.join(" ")} ${topicKeyword(p)} 신청 조건·기간`.replace(/\s+/g, " ").trim();
 }
 
 export async function generateMetadata({
@@ -143,7 +145,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <p className="text-sm font-bold">{where}</p>
       <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-tight">{p.title}</h1>
 
-      {p.summary && <p className="mt-4 leading-relaxed text-muted">{p.summary}</p>}
+      {/* 필드로 만든 요약 문단. 표보다 먼저 "나한테 해당되나, 언제까지"를 말한다. */}
+      <p className="mt-4 text-[15.5px] leading-[1.8] text-ink2">{programIntro(p)}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className={`badge ${STATUS_BADGE[status]}`}>
@@ -169,6 +172,22 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         <p className="num mt-5 inline-block border-l-[3px] border-accent pl-3 text-sm font-bold text-accent">
           {left === 0 ? "오늘 접수 마감" : `접수 마감까지 ${left}일`}
         </p>
+      )}
+
+      {programChecks(p).length > 0 && (
+        <section className="mt-9 rounded-card border border-line bg-surface2 p-5">
+          <h2 className="text-sm font-bold">이런 분이 해당됩니다</h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {programChecks(p).map((c) => (
+              <li key={c} className="flex items-start gap-2 text-[14.5px] leading-snug">
+                <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-brand" fill="none" stroke="currentColor"
+                     strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12l5 5 9-10" /></svg>
+                {c}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-muted">전부 해당되면 신청 자격이 있을 가능성이 높습니다. 최종 판단은 원문 기준입니다.</p>
+        </section>
       )}
 
       <h2 className="mt-11 border-b-2 border-line2 pb-2 text-sm font-bold">
@@ -203,6 +222,15 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <Section title="지원내용" body={p.benefit_text} />
       <Section title="신청방법" body={p.apply_method} />
 
+      <h2 className="mt-9 border-b-2 border-line2 pb-2 text-sm font-bold">신청 전에 확인할 것</h2>
+      <ol className="mt-4 grid gap-2.5">
+        {programBeforeApply(p).map((t, i) => (
+          <li key={t} className="flex gap-3 text-sm leading-relaxed text-ink2">
+            <span className="num shrink-0 font-extrabold text-brand">{i + 1}</span>{t}
+          </li>
+        ))}
+      </ol>
+
       {p.detail_url && (
         <ApplyLink
           href={p.detail_url}
@@ -222,6 +250,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
           : "기업마당(중소벤처기업부)"}
         입니다.
       </p>
+
+      <Faq items={programFaq(p)} />
 
       {related.length > 0 && (
         <section className="mt-16">

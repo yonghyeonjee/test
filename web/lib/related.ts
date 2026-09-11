@@ -196,11 +196,11 @@ const MAJORS: Related = {
 };
 
 export function jobsRelated(): Related[] {
-  return keep([MAJORS, LICENSE, HOME, POLICIES]);
+  return keep([post("national-employment-support"), MAJORS, LICENSE, HOME]);
 }
 
 export function licenseRelated(): Related[] {
-  return keep([JOBS, 
+  return keep([post("social-worker-license"), post("vocational-training-card"), JOBS, 
     { href: "/?emp=구직중&via=license", title: "구직 중인 분을 위한 지원",
       desc: "취업 준비 기간의 생활비·교육비를 돕는 사업만 모아 봅니다." },
     STUDY, POLICIES, post("youth-support"),

@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
 import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
+import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
+import { areaFaq } from "@/lib/faq";
 import ProgramEntry from "@/components/ProgramEntry";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -35,7 +37,7 @@ export async function generateMetadata({
   const a = await getArea(sido);
   if (!a) return { title: "찾을 수 없는 지역" };
 
-  const title = `${sido} 정부 복지·지원금 ${a.n}건 총정리 (${YEAR})`;
+  const title = `${sido} 청년지원금·복지서비스 ${a.n}건 총정리 (${YEAR})`;
   const description =
     `${sido} 정부 복지와 지원금 ${a.n}건을 한자리에. ` +
     `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
@@ -46,6 +48,8 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `${SITE}/area/${encodeURIComponent(sido)}` },
     keywords: [
+      `${sido} 청년지원금`,
+      `${sido} 복지서비스`,
       `${sido} 정부 복지`,
       `${sido} 지원금`,
       "정부복지",
@@ -270,6 +274,8 @@ export default async function AreaPage({ params }: { params: { sido: string } })
             ))}
         </div>
       </section>
+
+      {area && <Faq items={areaFaq(sido, area)} />}
 
       <LoanBlock sido={sido} />
 
