@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HowItWorksArt } from "./Infographic";
 import Photo from "./Photo";
+import { CountUp } from "./Motion";
 
 /** 대상자 중심 입구. "무엇을 지원하나"가 아니라 "누가 받나"로 묻는다. */
 const TILES = [
@@ -26,7 +27,7 @@ export default function Hero({
         <div className="grid items-center gap-8 md:grid-cols-[1.15fr_.85fr]">
           <div>
             <p className="eyebrow !text-[#8FCFB0]">
-              공공데이터 {count.toLocaleString()}건 · 매일 새벽 갱신
+              공공데이터 <CountUp value={count} />건 · 매일 새벽 갱신
             </p>
             <h1 className="display mt-4 text-[2.25rem] leading-[1.15] sm:text-[2.9rem]">
               나라에서 주는 지원,

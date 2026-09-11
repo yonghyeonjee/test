@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Reveal } from "./Motion";
 import { ArtJeonse, ArtLicense, ArtPolicy, ArtStudy, ArtJobs, ArtAgency } from "./Art";
 
 /**
@@ -59,7 +60,7 @@ export default function GuideBanner({
   title?: string;
 }) {
   return (
-    <section className="mt-14">
+    <Reveal as="section" className="mt-14">
       <h2 className="text-[1.0625rem] font-bold">{title}</h2>
       <p className="mb-3 mt-1 text-sm text-muted">
         받는 돈만 보면 절반입니다. 나가는 돈을 줄이고, 자격과 일자리로 이어지는 자료를 같이 둡니다.
@@ -78,6 +79,6 @@ export default function GuideBanner({
           </Link>
         ))}
       </div>
-    </section>
+    </Reveal>
   );
 }

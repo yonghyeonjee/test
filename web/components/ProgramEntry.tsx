@@ -60,6 +60,25 @@ export function Badges({ p }: { p: Program & { first_seen_at?: string } }) {
   return <>{out}</>;
 }
 
+/**
+ * 접수 기간 중 얼마나 지났는지. 시작일과 마감일이 다 있을 때만 그린다.
+ * 마감이 가까울수록 막대 끝이 흙색으로 물든다.
+ */
+function DueBar({ p }: { p: Program }) {
+  if (!p.apply_start || !p.apply_end || p.is_always_on) return null;
+  const s = new Date(p.apply_start + "T00:00:00+09:00").getTime();
+  const e = new Date(p.apply_end + "T23:59:59+09:00").getTime();
+  if (!(e > s)) return null;
+  const k = Math.min(1, Math.max(0, (Date.now() - s) / (e - s)));
+  if (k <= 0 || k >= 1) return null;
+  return (
+    <div className="mt-3 flex items-center gap-2" title="접수 기간 진행">
+      <div className="due flex-1"><i style={{ width: `${Math.round(k * 100)}%` }} /></div>
+      <span className="num text-[11px] text-muted">~{p.apply_end.slice(5).replace("-", ".")}</span>
+    </div>
+  );
+}
+
 export default function ProgramEntry({
   p,
   myAge,
@@ -96,6 +115,8 @@ export default function ProgramEntry({
         <AgeBar min={p.age_min} max={p.age_max} me={myAge} />
       )}
 
+      <DueBar p={p} />
+
       <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
         {p.income_pct && <span className="num">중위소득 {p.income_pct}%↓</span>}
         {p.household?.map((h) => <span key={h}>{h}</span>)}
@@ -103,6 +124,7 @@ export default function ProgramEntry({
         {p.biz_field?.map((f) => <span key={f}>{f}</span>)}
         {p.support_type && p.support_type !== "기타" && <span>{p.support_type}</span>}
       </div>
+      <span className="go text-xs font-bold text-brand" aria-hidden>자세히 →</span>
     </Link>
   );
 }

@@ -30,8 +30,15 @@ export default function Finder({
       <div
         role="tablist"
         aria-label="찾는 방법"
-        className="mb-4 grid grid-cols-2 gap-1.5 rounded-btn bg-ground p-1.5"
+        className="relative mb-4 grid grid-cols-2 gap-1.5 rounded-btn bg-ground p-1.5"
       >
+        {/* 선택된 쪽으로 미끄러지는 초록 판. 버튼은 그 위에 투명하게 올라간다. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-y-1.5 left-1.5 w-[calc(50%-6px)] rounded-ctl bg-brand
+                     transition-transform duration-300 ease-[cubic-bezier(.2,.7,.2,1)]"
+          style={{ transform: mode === "pick" ? "translateX(0)" : "translateX(calc(100% + 6px))" }}
+        />
         {MODES.map((m) => {
           const on = mode === m.key;
           return (
@@ -41,11 +48,9 @@ export default function Finder({
               type="button"
               aria-selected={on}
               onClick={() => setMode(m.key)}
-              className={`rounded-ctl px-3 py-2.5 text-[15px] font-bold leading-tight
-                          transition-colors ${
-                            on
-                              ? "bg-brand text-white shadow-card"
-                              : "text-muted hover:text-brand"
+              className={`relative rounded-ctl px-3 py-2.5 text-[15px] font-bold leading-tight
+                          transition-colors duration-300 ${
+                            on ? "text-white" : "text-muted hover:text-brand"
                           }`}
             >
               {m.label}

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { GtmNoScript, GtmScript, RouteChange } from "@/components/Gtm";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import VisitTracker from "@/components/VisitTracker";
+import { BackToTop, HotkeyFocus } from "@/components/Motion";
 import "./globals.css";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
@@ -68,11 +69,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <RouteChange />
         </Suspense>
 
+        <a href="#main" className="skip">본문으로 건너뛰기</a>
         <div className="mx-auto max-w-[54rem] px-5">
           <VisitTracker />
           <SiteHeader />
 
-          <main>{children}</main>
+          <main id="main">{children}</main>
+          <BackToTop />
+          <HotkeyFocus />
 
           <SiteFooter />
         </div>
