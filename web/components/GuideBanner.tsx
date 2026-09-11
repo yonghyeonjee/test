@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArtJeonse, ArtPolicy, ArtStudy } from "./Art";
+import { ArtJeonse, ArtLicense, ArtPolicy, ArtStudy } from "./Art";
 
 /**
  * 사이트 안에서 다음에 볼 곳을 권하는 띠.
@@ -30,6 +30,13 @@ const ITEMS = [
     desc: "학자금 대출 이자를 대신 내주는 지자체를 지역별로 정리했습니다.",
     Art: ArtStudy,
   },
+  {
+    href: "/license",
+    tag: "전체 목록",
+    title: "국가자격 종목 찾아보기",
+    desc: "무슨 자격증이 있는지 직무 분야와 등급으로 나눠 두었습니다.",
+    Art: ArtLicense,
+  },
 ];
 
 export default function GuideBanner({
@@ -43,7 +50,7 @@ export default function GuideBanner({
       <p className="mb-3 mt-1 text-sm text-muted">
         지원금 말고도, 돈이 덜 나가게 해 주는 제도들을 모아 두었습니다.
       </p>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {ITEMS.map((it) => (
           <Link key={it.href} href={it.href} className="card card-link block p-5">
             <div className="h-16 w-24">

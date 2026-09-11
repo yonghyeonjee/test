@@ -92,3 +92,23 @@ export function ArtMoney({ className = "" }: P) {
     </svg>
   );
 }
+
+export function ArtLicense({ className = "" }: P) {
+  return (
+    <svg viewBox="0 0 160 110" className={`${base} ${className}`} aria-hidden>
+      <rect x="22" y="18" width="96" height="70" rx="8" fill="#fff"
+            stroke="#0D6B4F" strokeWidth="2.4" />
+      <rect x="22" y="18" width="96" height="14" rx="8" fill="#0D6B4F" />
+      <rect x="22" y="26" width="96" height="6" fill="#0D6B4F" />
+      <g stroke="#2E8F6E" strokeWidth="3" strokeLinecap="round">
+        <path d="M36 46h40M36 58h52M36 70h30" />
+      </g>
+      <circle cx="122" cy="80" r="18" fill="#E3F0E9" stroke="#0D6B4F" strokeWidth="2.4" />
+      <circle cx="122" cy="80" r="11" fill="none" stroke="#0D6B4F" strokeWidth="2.4" />
+      <path d="M116 80l4 4 8-9" fill="none" stroke="#0D6B4F"
+            strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M112 96l-4 12 6-3 6 3-4-12" fill="#0D6B4F" />
+      <path d="M132 96l4 12-6-3-6 3 4-12" fill="#2E8F6E" />
+    </svg>
+  );
+}

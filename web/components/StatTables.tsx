@@ -49,7 +49,8 @@ function Table({
   );
 }
 
-const AGE_LINK: Record<string, number> = {
+/** 나이대 통계 라벨 → 조회에 넣을 대표 나이. 전체 정책 화면도 같이 쓴다. */
+export const AGE_LINK: Record<string, number> = {
   "청소년 (~18세)": 16,
   "청년 (19~39세)": 28,
   "중장년 (40~64세)": 52,

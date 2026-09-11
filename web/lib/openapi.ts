@@ -114,3 +114,77 @@ export async function callOpenApi<T = Record<string, unknown>>(
     return { ok: false, reason: e instanceof Error ? e.message : "호출 실패" };
   }
 }
+
+// ── XML 만 주는 서비스 ──────────────────────────────────────
+
+/** &amp; 같은 엔티티만 되돌린다. 본문에 태그가 섞이는 자료는 아니다. */
+function unescapeXml(s: string) {
+  return s
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+/**
+ * <item>…</item> 묶음을 객체 배열로 바꾼다. 응답 항목이 평평한 문자열뿐인
+ * 서비스(q-net 종목 목록 등)에만 쓴다. 중첩 XML 을 다루려는 것이 아니다.
+ * 명세의 응답 예제에 </ obligfldcd > 처럼 공백이 섞인 닫는 태그가 있어
+ * 그것도 받아 준다.
+ */
+function parseItems(xml: string, tag = "item"): Record<string, string>[] {
+  const rows: Record<string, string>[] = [];
+  const block = new RegExp(`<${tag}>([\\s\\S]*?)</\\s*${tag}\\s*>`, "g");
+  const field = /<([A-Za-z_][\w.-]*)>([\s\S]*?)<\/\s*\1\s*>/g;
+  let m: RegExpExecArray | null;
+  while ((m = block.exec(xml))) {
+    const row: Record<string, string> = {};
+    let f: RegExpExecArray | null;
+    field.lastIndex = 0;
+    while ((f = field.exec(m[1]))) row[f[1]] = unescapeXml(f[2]);
+    rows.push(row);
+  }
+  return rows;
+}
+
+export async function callOpenApiXml(
+  url: string,
+  params: Record<string, string | number>,
+  revalidate = 86400,
+  opts: { keyParam?: string; itemTag?: string } = {},
+): Promise<ApiResult<Record<string, string>>> {
+  if (!openApiConfigured)
+    return { ok: false, reason: "인증키가 설정되지 않았습니다." };
+
+  const keyParam = opts.keyParam ?? "serviceKey";
+  const qs = Object.entries(params)
+    .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  const full = `${url}?${keyParam}=${serviceKey()}${qs ? `&${qs}` : ""}`;
+
+  try {
+    const res = await fetch(full, { next: { revalidate } });
+    if (!res.ok) return { ok: false, reason: `응답 코드 ${res.status}` };
+    const xml = await res.text();
+
+    const code = xml.match(/<resultCode>\s*([^<]+?)\s*</)?.[1];
+    if (code && code !== "00" && code !== "0")
+      return {
+        ok: false,
+        reason:
+          xml.match(/<resultMsg>([^<]+)</)?.[1] ??
+          xml.match(/<returnAuthMsg>([^<]+)</)?.[1] ??
+          `결과 코드 ${code}`,
+      };
+
+    const rows = parseItems(xml, opts.itemTag);
+    if (!rows.length) return { ok: false, reason: "목록이 비어 있습니다." };
+    const total = Number(xml.match(/<totalCount>\s*(\d+)/)?.[1]);
+    return { ok: true, rows, total: Number.isFinite(total) ? total : rows.length };
+  } catch (e) {
+    return { ok: false, reason: e instanceof Error ? e.message : "호출 실패" };
+  }
+}

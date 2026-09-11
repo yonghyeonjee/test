@@ -10,6 +10,7 @@ const NAV = [
   { href: "/?tab=business", label: "기업지원" },
   { href: "/policies", label: "전체 정책" },
   { href: "/money", label: "생활금융" },
+  { href: "/license", label: "자격증" },
   { href: "/blog", label: "지원금 안내" },
   { href: "/about", label: "소개" },
 ];

@@ -5,6 +5,7 @@ import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import { AGE_LINK } from "@/components/StatTables";
 import { policiesRelated } from "@/lib/related";
 import {
   BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY,
@@ -123,7 +124,7 @@ export default async function Policies() {
         {stats.age.length > 0 && (
           <Chips
             items={stats.age.map((s) => ({
-              href: `/?age=${encodeURIComponent(s.label.replace(/[^0-9]/g, "") || "30")}&via=policies`,
+              href: `/?age=${AGE_LINK[s.label] ?? 30}&via=policies`,
               label: s.label,
               n: s.n,
             }))}
