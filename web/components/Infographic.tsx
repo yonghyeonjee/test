@@ -8,7 +8,7 @@
 
 /** 히어로 오른쪽: 세 단계 흐름. 입력 → 걸러진 목록 → 원문 신청. */
 export function HowItWorksArt({ className = "" }: { className?: string }) {
-  const ink = "#EAF3EE", dim = "rgba(234,243,238,.55)", hi = "#8FCFB0";
+  const ink = "#EAF3EE", dim = "rgba(234,243,238,.55)", hi = "#9CC9FF";
   return (
     <svg viewBox="0 0 300 250" className={`h-full w-full ${className}`} aria-hidden
          fontFamily="inherit">
@@ -30,8 +30,8 @@ export function HowItWorksArt({ className = "" }: { className?: string }) {
       {/* 3. 신청 */}
       <g transform="translate(20 202)">
         <rect width="84" height="46" rx="8" fill={hi} />
-        <text x="10" y="19" fontSize="9.5" fill="#0B2A21" fontWeight="700">3 · 하는 것</text>
-        <text x="10" y="36" fontSize="12" fill="#0B2A21" fontWeight="800">원문에서 신청</text>
+        <text x="10" y="19" fontSize="9.5" fill="#0A1E3C" fontWeight="700">3 · 하는 것</text>
+        <text x="10" y="36" fontSize="12" fill="#0A1E3C" fontWeight="800">원문에서 신청</text>
       </g>
       {/* 오른쪽: 공고 더미가 줄어드는 그림 */}
       <g transform="translate(130 22)">
@@ -75,7 +75,7 @@ export function ShareBar({ a, b, labelA, labelB }: {
   return (
     <div>
       <div className="flex h-3 overflow-hidden rounded-pill bg-white/10">
-        <div className="bg-[#8FCFB0]" style={{ width: `${pa}%` }} />
+        <div className="bg-[#9CC9FF]" style={{ width: `${pa}%` }} />
         <div className="ml-0.5 flex-1 bg-white/35" />
       </div>
       <div className="mt-2 flex justify-between text-[12px] text-white/75">

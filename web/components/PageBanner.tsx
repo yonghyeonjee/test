@@ -17,11 +17,11 @@ export default function PageBanner({
     <section className="hero -mx-5 mt-2 px-6 py-9 sm:mx-0 sm:rounded-card sm:px-10">
       <div className="flex items-center gap-6">
         <div className="min-w-0 flex-1">
-          <p className="eyebrow !text-[#8FCFB0]">{eyebrow}</p>
+          <p className="eyebrow !text-[#9CC9FF]">{eyebrow}</p>
           <h1 className="display mt-3 text-[1.7rem] leading-tight text-white sm:text-[2rem]">
             {title}
           </h1>
-          <p className="mt-3 max-w-[32rem] text-[14.5px] leading-[1.8] text-[#B9D6C6]">
+          <p className="mt-3 max-w-[32rem] text-[14.5px] leading-[1.8] text-[#B7C9E2]">
             {sub}
           </p>
         </div>

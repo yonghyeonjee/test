@@ -17,28 +17,28 @@ export default {
         // 따뜻한 종이색은 정부지원 조회 화면에 얹으니 촌스러웠다.
         // 중립에 가까운 서늘한 회색으로 낮추고, 색은 초록 하나만 남긴다.
         // 종이에 가까운 따뜻한 바탕. 차가운 회색은 관리 도구처럼 보였다.
-        ground:   "#F6F4EE",
+        ground:   "#F3F6FA",
         surface:  "#FFFFFF",
-        surface2: "#FBFAF7",
-        line:     "#E6E2D8",
-        line2:    "#CFC9BB",
-        ink:      "#14201C",
-        ink2:     "#2F3B36",
-        muted:    "#66716C",
-        faint:    "#98A19C",
+        surface2: "#F8FAFD",
+        line:     "#E1E7F0",
+        line2:    "#C5D0DE",
+        ink:      "#0F1B2D",
+        ink2:     "#2B3A4F",
+        muted:    "#5F6E82",
+        faint:    "#93A1B3",
         /** 짙은 띠(히어로·통계·꼬리말) 바탕 */
-        deep:     "#0B2A21",
-        deep2:    "#0F3A2D",
-        clay:     "#B8672A",
-        claySoft: "#F6E7DA",
+        deep:     "#0A1E3C",
+        deep2:    "#10305C",
+        clay:     "#D9691F",
+        claySoft: "#FCEBDD",
 
-        brand:     "#0D6B4F",  // 진초록
-        brand2:    "#2E8F6E",
-        brandDeep: "#08402F",
-        brandSoft: "#E3F0E9",
+        brand:     "#0B5FA5",  // 진초록
+        brand2:    "#2F7FD0",
+        brandDeep: "#063C6B",
+        brandSoft: "#E4EEF9",
 
-        accent:     "#A8500F",  // 마감
-        accentSoft: "#FBEDE0",
+        accent:     "#D9691F",  // 마감
+        accentSoft: "#FCEBDD",
         alert:      "#A32B22",
         alertSoft:  "#FAE9E6",
         gold:       "#8A6A12",
@@ -47,13 +47,15 @@ export default {
       fontFamily: {
         sans: ['"Pretendard Variable"', "Pretendard", "-apple-system",
                "system-ui", '"Malgun Gothic"', "sans-serif"],
-        serif: ['"Noto Serif KR"', '"Apple SD Gothic Neo"', '"Nanum Myeongjo"', "serif"],
+        // 제목도 같은 고딕. 굵기와 자간으로만 본문과 갈라놓는다.
+        serif: ['"Pretendard Variable"', "Pretendard", "-apple-system",
+                "system-ui", '"Malgun Gothic"', "sans-serif"],
       },
       // 모서리를 조금 죽이고 그림자를 걷어낸다. 둥둥 떠 있는 카드가 템플릿처럼 보였다.
       borderRadius: { card: "14px", btn: "10px", ctl: "10px", pill: "999px" },
       boxShadow: {
-        card: "0 1px 0 rgba(20,32,28,.04)",
-        lift: "0 8px 24px rgba(20,32,28,.10)",
+        card: "0 1px 0 rgba(15,27,45,.04)",
+        lift: "0 8px 24px rgba(15,27,45,.10)",
       },
     },
   },

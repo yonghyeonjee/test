@@ -26,23 +26,23 @@ export default function Hero({
       <section className="hero -mx-5 px-6 pb-24 pt-12 text-white sm:mx-0 sm:rounded-card sm:px-10">
         <div className="grid items-center gap-8 md:grid-cols-[1.15fr_.85fr]">
           <div>
-            <p className="eyebrow !text-[#8FCFB0]">
+            <p className="eyebrow !text-[#9CC9FF]">
               공공데이터 <CountUp value={count} />건 · 매일 새벽 갱신
             </p>
             <h1 className="display mt-4 text-[2.25rem] leading-[1.15] sm:text-[2.9rem]">
               나라에서 주는 지원,
               <br />
-              <span className="text-[#8FCFB0]">받을 수 있는</span> 지원.
+              <span className="text-[#9CC9FF]">받을 수 있는</span> 지원.
             </h1>
-            <p className="mt-5 max-w-[27rem] text-[15.5px] leading-[1.8] text-[#B9D6C6]">
+            <p className="mt-5 max-w-[27rem] text-[15.5px] leading-[1.8] text-[#B7C9E2]">
               중앙부처와 지자체가 내놓은 지원사업을 한자리에 모아,
               <b className="font-bold text-white"> 내 조건에 실제로 해당되는 것만</b>{" "}
               남깁니다. 사는 곳과 나이만 넣으면 됩니다.
             </p>
-            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#B9D6C6]">
+            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#B7C9E2]">
               {TRUST.map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#8FCFB0]" fill="none"
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#9CC9FF]" fill="none"
                        stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"
                        strokeLinejoin="round" aria-hidden><path d="M5 12l5 5 9-10" /></svg>
                   {t}
