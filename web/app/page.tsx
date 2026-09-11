@@ -10,6 +10,7 @@ import GuideBanner from "@/components/GuideBanner";
 import QuickMenu from "@/components/QuickMenu";
 import SectionHead from "@/components/SectionHead";
 import StatsBand from "@/components/StatsBand";
+import { Reveal } from "@/components/Motion";
 import { TrustIcon } from "@/components/Infographic";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -252,7 +253,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         </>
       ) : (
         <>
-          <section className="mt-14">
+          <Reveal as="section" className="mt-14">
             <p className="eyebrow">이렇게 찾습니다</p>
             <h2 className="display mt-2 text-[1.5rem] leading-tight">
               검색어를 몰라도 됩니다. 조건만 고르세요.
@@ -270,7 +271,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
                 </li>
               ))}
             </ol>
-          </section>
+          </Reveal>
 
           <div className="grid gap-x-6 md:grid-cols-2">
             <Row title="놓치면 내년까지 기다려야 합니다"
@@ -329,7 +330,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
             items={blogIndexRelated().filter((r) => r.href !== "/")}
           />
 
-          <section className="mt-16 border-y border-line py-10">
+          <Reveal as="section" className="mt-16 border-y border-line py-10">
             <p className="eyebrow">믿을 수 있는 이유</p>
             <h2 className="display mt-2 text-[1.5rem] leading-tight">숫자 하나까지 출처가 있습니다</h2>
             <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -346,7 +347,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
                 </div>
               ))}
             </div>
-          </section>
+          </Reveal>
 
           <StatsBand
             welfare={coverage.welfare}

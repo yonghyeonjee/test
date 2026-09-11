@@ -165,7 +165,47 @@
   overflow: hidden;
 }
 
+/* ── 움직임 ─────────────────────────────────────────── */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s cubic-bezier(.2,.7,.2,1); }
+.reveal.in { opacity: 1; transform: none; }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-enter { animation: page-in .24s ease-out both; }
+
+/* 머리말: 스크롤하면 유리처럼 떠서 따라온다 */
+[data-site-header] { position: sticky; top: 0; z-index: 30; transition: box-shadow .2s, background-color .2s; }
+[data-site-header]::before {
+  content: ""; position: absolute; inset: 0 -20px; z-index: -1;
+  background: rgba(246,244,238,.72); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  opacity: 0; transition: opacity .2s;
+}
+[data-site-header].scrolled::before { opacity: 1; }
+[data-site-header].scrolled { box-shadow: 0 8px 24px -16px rgba(20,32,28,.35); }
+
+/* 누르는 느낌 */
+.chip:active, .btn:active, .tile:active { transform: scale(.97); }
+.chip, .btn, .tile { transition-property: color, background-color, border-color, transform, box-shadow; }
+
+/* 카드 오른쪽 아래 화살표가 스치듯 나타난다 */
+.card-link { position: relative; }
+.card-link .go { position: absolute; right: 16px; bottom: 14px; opacity: 0; transform: translateX(-6px); transition: opacity .18s, transform .18s; }
+.card-link:hover .go { opacity: 1; transform: none; }
+
+/* 마감까지 남은 기간 막대 */
+.due { height: 3px; border-radius: 2px; background: #E6E2D8; overflow: hidden; }
+.due > i { display: block; height: 100%; background: linear-gradient(90deg, #0D6B4F, #A8500F); }
+
+/* 뼈대 반짝임 */
+.sk { border-radius: 8px; background: linear-gradient(90deg, #ECE8DE 25%, #F6F4EE 50%, #ECE8DE 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }
+@keyframes sk { to { background-position: -200% 0; } }
+
+/* 건너뛰기 링크 — 포커스될 때만 보인다 */
+.skip { position: absolute; left: 8px; top: -40px; z-index: 50; padding: 8px 12px; border-radius: 8px; background: #0D6B4F; color: #fff; font-weight: 700; }
+.skip:focus { top: 8px; }
+
 @media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .page-enter { animation: none; }
+  .sk { animation: none; }
   *, ::before, ::after {
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;

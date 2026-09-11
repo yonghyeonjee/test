@@ -1,5 +1,6 @@
 import { SITE_NAME } from "@/lib/seo";
 import { ShareBar } from "./Infographic";
+import { CountUp } from "./Motion";
 
 /**
  * 맨 아래 통계 띠. "이 사이트에 무엇이 얼마나 있나"를 숫자로.
@@ -17,7 +18,7 @@ export default function StatsBand({ welfare, business, items }: {
         <div>
           <p className="eyebrow !text-[#8FCFB0]">숫자로 보는 {SITE_NAME}</p>
           <p className="display mt-3 text-[1.6rem] leading-tight">
-            지금 <b className="num text-[#8FCFB0]">{total.toLocaleString()}</b>건의
+            지금 <b className="text-[#8FCFB0]"><CountUp value={total} /></b>건의
             <br />정책·지원 정보를 안내합니다
           </p>
           <div className="mt-6">
@@ -28,7 +29,7 @@ export default function StatsBand({ welfare, business, items }: {
           {items.map((it) => (
             <div key={it.label} className="rounded-card border border-white/15 px-3 py-4 text-center">
               <b className="num display block text-[1.6rem] font-black">
-                {typeof it.n === "number" ? it.n.toLocaleString() : it.n}
+                {typeof it.n === "number" ? <CountUp value={it.n} /> : it.n}
               </b>
               <span className="mt-0.5 block text-[11.5px] text-white/70">{it.label}</span>
             </div>

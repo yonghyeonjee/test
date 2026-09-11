@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BigText from "./BigText";
+import { HeaderFx } from "./Motion";
 
 const NAV = [
   { href: "/", label: "지원금 찾기" },
@@ -32,7 +33,8 @@ export function SiteHeader() {
     return path === base || path?.startsWith(base + "/");
   };
   return (
-    <header className="pt-5">
+    <header data-site-header className="pb-2 pt-4">
+      <HeaderFx />
       <div className="flex items-center justify-between gap-3">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="display text-[1.5rem] text-deep">나라지원</span>
