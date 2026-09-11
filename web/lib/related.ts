@@ -145,6 +145,12 @@ const MONEY: Related = {
   desc: "받는 돈 말고, 나가는 돈을 줄여 주는 제도만 모았습니다.",
 };
 
+const LICENSE: Related = {
+  href: "/license",
+  title: "국가자격 종목 전체 목록",
+  desc: "무슨 자격증이 있는지 직무 분야와 등급으로 나눠 두었습니다.",
+};
+
 const HOME: Related = {
   href: "/",
   title: "내 조건으로 지원금 찾기",
@@ -152,7 +158,7 @@ const HOME: Related = {
 };
 
 export function policiesRelated(): Related[] {
-  return keep([HOME, JEONSE, STUDY, post("check-eligibility")]);
+  return keep([HOME, LICENSE, JEONSE, STUDY]);
 }
 
 export function moneyRelated(): Related[] {
@@ -164,5 +170,13 @@ export function jeonseRelated(): Related[] {
 }
 
 export function studentLoanRelated(): Related[] {
-  return keep([JEONSE, POLICIES, HOME, post("check-eligibility")]);
+  return keep([LICENSE, JEONSE, POLICIES, HOME]);
+}
+
+export function licenseRelated(): Related[] {
+  return keep([
+    { href: "/?emp=구직중&via=license", title: "구직 중인 분을 위한 지원",
+      desc: "취업 준비 기간의 생활비·교육비를 돕는 사업만 모아 봅니다." },
+    STUDY, POLICIES, post("youth-support"),
+  ]);
 }
