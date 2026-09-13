@@ -4,6 +4,7 @@ import LoginForm from "./LoginForm";
 import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
+import JobsIngestPanel from "./JobsIngestPanel";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,11 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       .limit(1000),
     db.from("visit_log").select("*").gte("at", since).limit(5000),
   ]);
+  const jobStats = await Promise.all(["gojobs", "worldjob"].map(async (source) => {
+    const { count } = await db.from("job_posts").select("id", { count: "exact", head: true }).eq("source", source);
+    const { data } = await db.from("job_posts").select("reg_date,fetched_at").eq("source", source).order("fetched_at", { ascending: false }).limit(1).maybeSingle();
+    return { source, n: count ?? 0, newest: (data?.reg_date as string | null) ?? null, fetched: (data?.fetched_at as string | null) ?? null };
+  }));
 
   const visitRows = (visits.data ?? []) as Row[];
 
@@ -325,6 +331,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </div>
       </div>
 
+      <JobsIngestPanel stats={jobStats} />
       <SeoPanel initial={parseSeo(st.get("seo"))} />
       <AdsPanel initial={parseAds(st.get("ads"))} />
 
