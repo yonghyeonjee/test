@@ -152,22 +152,74 @@ async function writeCursor(db: ReturnType<typeof svc>, all: Record<string, Curso
   await db.from("site_settings").upsert({ key: "jobs_cursor", value: all as never, updated_at: new Date().toISOString() }, { onConflict: "key" });
 }
 
+export type LastRun = {
+  source: string;
+  state: "running" | "done" | "failed";
+  startedAt: string;
+  finishedAt?: string;
+  by: "cron" | "admin";
+  report?: RunReport;
+};
+
+/**
+ * 실행 기록을 DB 에 남긴다.
+ *
+ * 함수가 시간 초과로 죽으면 화면에는 아무것도 안 남는다. 시작할 때 한 번,
+ * 끝날 때 한 번 적어 두면 새로고침만 해도 "돌다가 죽었는지, 실패했는지,
+ * 끝났는지"를 알 수 있다.
+ */
+async function writeRun(db: ReturnType<typeof svc>, run: LastRun) {
+  try {
+    await db.from("site_settings").upsert(
+      { key: "jobs_last_run", value: run as never, updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+  } catch {
+    /* 기록 실패로 수집을 막지 않는다 */
+  }
+}
+
+export async function readLastRun(): Promise<LastRun | null> {
+  try {
+    const { data } = await svc().from("site_settings").select("value").eq("key", "jobs_last_run").maybeSingle();
+    return (data?.value as LastRun) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** 한 소스를 pagesPerRun 쪽까지 읽는다. */
-export async function ingest(name: Source, opts: { pages?: number; since?: string; reset?: boolean } = {}): Promise<RunReport> {
+export async function ingest(
+  name: Source,
+  opts: { pages?: number; since?: string; reset?: boolean; by?: "cron" | "admin" } = {},
+): Promise<RunReport> {
   const conf = SRC[name];
   const t0 = Date.now();
+  const startedAt = new Date().toISOString();
+  const by = opts.by ?? "admin";
+  let db0: ReturnType<typeof svc> | null = null;
+  try {
+    db0 = svc();
+    await writeRun(db0, { source: name, state: "running", startedAt, by });
+  } catch {
+    /* 아래에서 다시 잡는다 */
+  }
+  const fail = async (report: RunReport) => {
+    if (db0) await writeRun(db0, { source: name, state: "failed", startedAt, finishedAt: new Date().toISOString(), by, report });
+    return report;
+  };
   const pagesPerRun = opts.pages ?? 6;
   const since = opts.since ?? SINCE_DEFAULT;
   const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
-  if (!KEY) return { ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 };
+  if (!KEY) return fail({ ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 });
   const db = svc();
 
   const probed = await fetchPage(conf.url, 1);
   if ("err" in probed)
-    return { ...report, reason: `첫 쪽을 못 받았다 — ${probed.err}`, elapsedMs: Date.now() - t0 };
+    return fail({ ...report, reason: `첫 쪽을 못 받았다 — ${probed.err}`, elapsedMs: Date.now() - t0 });
   const first = probed.xml;
   const err = resultError(first);
-  if (err) return { ...report, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 };
+  if (err) return fail({ ...report, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 });
   const firstItems = parseItems(first, conf.item);
   const total = Number(first.match(/<totalCount>\s*(\d+)/)?.[1]) || firstItems.length;
   const lastPage = Math.max(1, Math.ceil(total / ROWS));
@@ -198,7 +250,7 @@ export async function ingest(name: Source, opts: { pages?: number; since?: strin
     const rows = parseItems(xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
     if (rows.length) {
       const { error } = await db.from("job_posts").upsert(rows as never[], { onConflict: "id" });
-      if (error) return { ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
+      if (error) return fail({ ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 });
     }
     const dates = rows.map((r) => r[conf.orderKey] as string | null).filter((x): x is string => !!x).sort();
     const oldest = dates[0] ?? null, newest = dates[dates.length - 1] ?? null;
@@ -213,5 +265,6 @@ export async function ingest(name: Source, opts: { pages?: number; since?: strin
   report.cursor = cursors[name];
   report.ok = true;
   report.elapsedMs = Date.now() - t0;
+  await writeRun(db, { source: name, state: "done", startedAt, finishedAt: new Date().toISOString(), by, report });
   return report;
 }
