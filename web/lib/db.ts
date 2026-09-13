@@ -305,6 +305,8 @@ export type Bundle = {
   sggIndex: Record<string, { sido: string; full: string }>;
   closingCount: number;
   closing: Program[];
+  /** closing 이 기준일(closingDays) 안에 걸린 게 아니라 마감일 가까운 순일 때 참. */
+  closingFallback: boolean;
   fresh: Program[];
 };
 
@@ -366,6 +368,7 @@ export async function getHomeBundle(): Promise<Bundle> {
     sggIndex: idx,
     closingCount: Number(b.closing_count ?? 0),
     closing: (b.closing ?? []) as Program[],
+    closingFallback: Boolean(b.closing_fallback),
     fresh: (b.fresh ?? []) as Program[],
   };
 }
