@@ -122,7 +122,7 @@ export default async function LicensePage({ params }: { params: { code: string }
         <a href={`https://www.q-net.or.kr/crf005.do?id=crf00505&jmCd=${encodeURIComponent(l.code)}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
           큐넷에서 시험 일정 보기
         </a>
-        <Link href={`/jobs?q=${encodeURIComponent(l.field)}`} className="btn btn-ghost">이 분야 공공기관 채용</Link>
+        <Link href={`/jobs/q/${encodeURIComponent(l.field)}`} className="btn btn-ghost">이 분야 공공기관 채용</Link>
       </div>
 
       <Faq items={licenseFaq(l)} />

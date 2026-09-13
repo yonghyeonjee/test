@@ -121,11 +121,24 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       let c = db.from(w.table).select("*", { count: "exact", head: true });
       if (w.filter) c = c.eq(w.filter[0], w.filter[1]);
       const { count } = await c;
-      let q = db.from(w.table).select(`fetched_at${w.dateCol ? `,${w.dateCol}` : ""}`).order("fetched_at", { ascending: false }).limit(1);
-      if (w.filter) q = q.eq(w.filter[0], w.filter[1]);
-      const { data } = await q.maybeSingle();
-      const row = (data ?? {}) as Record<string, string | null>;
-      return { key, n: count ?? 0, newest: w.dateCol ? (row[w.dateCol] ?? null) : null, fetched: row.fetched_at ?? null };
+      // "마지막 수집 시각" 과 "가장 새 자료" 는 다른 줄에서 나온다.
+      // 예전에는 fetched_at 이 제일 늦은 줄 하나를 읽고 그 줄의 날짜를
+      // 최신이라고 적었다. 과거분을 뒤에서부터 채워 넣는 중이라 방금 넣은
+      // 줄이 2011년 공고인 일이 흔했고, 그래서 13,850건을 모아 놓고도
+      // "최신 2011-08-26" 이라고 나왔다. 각각 따로 묻는다.
+      let f = db.from(w.table).select("fetched_at").order("fetched_at", { ascending: false }).limit(1);
+      if (w.filter) f = f.eq(w.filter[0], w.filter[1]);
+      const newestQ = async () => {
+        if (!w.dateCol) return null;
+        let q = db.from(w.table).select(w.dateCol)
+          .order(w.dateCol, { ascending: false, nullsFirst: false }).limit(1);
+        if (w.filter) q = q.eq(w.filter[0], w.filter[1]);
+        const { data } = await q.maybeSingle();
+        return ((data ?? {}) as Record<string, string | null>)[w.dateCol] ?? null;
+      };
+      const [fetchedRow, newest] = await Promise.all([f.maybeSingle(), newestQ()]);
+      const row = (fetchedRow.data ?? {}) as Record<string, string | null>;
+      return { key, n: count ?? 0, newest, fetched: row.fetched_at ?? null };
     } catch {
       return { key, n: 0, newest: null, fetched: null };
     }

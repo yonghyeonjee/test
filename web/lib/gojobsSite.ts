@@ -162,6 +162,36 @@ export async function probeSite(): Promise<SiteProbe[]> {
   }
   out.push({ step: "목록 1쪽", ok: true, detail: `응답 ${page.status} · ${page.type}`, ms: page.ms });
   out.push({ step: "HTML 뼈대", ok: true, detail: outline(page.text), ms: 0 });
+
+  // 한 쪽에 100건을 달라고 할 수 있나. 이게 되면 과거를 훑는 데 드는
+  // 쪽 수가 10분의 1이 된다 — 29,000쪽이 2,900쪽이 된다.
+  const t1 = Date.now();
+  const u = await discoverUnit(100);
+  out.push({
+    step: "쪽 크기",
+    ok: Boolean(u.unit),
+    detail: u.unit
+      ? `${u.unit.param}=${u.unit.size} 이 먹습니다. 과거 전체를 약 ${Math.ceil(290_000 / u.unit.size).toLocaleString()}쪽으로 훑습니다.`
+      : `100건 요청이 안 먹습니다. 한 쪽 ${BASE_UNIT}건 그대로 갑니다.\n  ${u.tried.join("\n  ")}`,
+    ms: Date.now() - t1,
+  });
+
+  // 뒤쪽 쪽이 앞쪽만큼 빠른가. API 는 뒤로 갈수록 느려져 결국 60초를
+  // 넘겼다. 사이트도 그러면 과거를 훑는 계획을 다시 짜야 한다.
+  const unit = u.unit ?? undefined;
+  for (const p of [50, 300, 1000]) {
+    const t = Date.now();
+    const r = await fetchList(p, unit);
+    out.push({
+      step: `${p}쪽`,
+      ok: r.ok,
+      detail: r.ok
+        ? `${r.jobs.length}건 · ${r.jobs[0]?.regDate ?? "날짜 없음"} ~ ${r.jobs[r.jobs.length - 1]?.regDate ?? "날짜 없음"}`
+        : r.reason,
+      ms: Date.now() - t,
+    });
+    if (!r.ok) break;
+  }
   return out;
 }
 
@@ -230,21 +260,60 @@ export function parseList(html: string): SiteJob[] {
 }
 
 /**
+ * 한 쪽에 몇 건을 달라고 할 때 쓰는 이름 후보.
+ *
+ * 전자정부 표준 프레임워크로 지은 목록은 대개 이 가운데 하나를 받는다.
+ * 어느 것인지는 짐작하지 않고 실제로 불러 보고 정한다 — 열 건보다 많이
+ * 오면 그 이름이 먹은 것이다.
+ */
+const UNIT_PARAMS = ["pageUnit", "recordCountPerPage", "pageSize", "rowSize"] as const;
+
+/** 기본 쪽 크기. 사이트가 아무것도 안 받아 줄 때의 값이다. */
+export const BASE_UNIT = 10;
+
+function listUrl(page: number, unit?: { param: string; size: number }) {
+  const q = [LIST_URL];
+  if (page > 1) q.push(`pageIndex=${page}`);
+  if (unit) q.push(`${unit.param}=${unit.size}`);
+  return q.join("&");
+}
+
+/**
  * 목록 한 쪽을 받아 읽는다.
  *
- * 쪽 넘김이 GET 으로 되는지 아직 모른다. 전자정부 표준틀은 대개
- * pageIndex 를 쓰므로 그걸로 시도하고, 1쪽과 같은 것이 오면 부르는 쪽이
- * 알아채도록 첫 공고 번호를 함께 돌려준다.
+ * pageIndex 로 쪽을 넘긴다. 한 쪽에 몇 건을 받을지는 unit 이 정하는데,
+ * 그 이름은 discoverUnit 이 미리 재 본 것을 넘겨받는다.
  */
-export async function fetchList(page = 1): Promise<
-  { ok: true; jobs: SiteJob[]; ms: number } | { ok: false; reason: string; ms: number }
-> {
-  const url = page > 1 ? `${LIST_URL}&pageIndex=${page}` : LIST_URL;
-  const r = await get(url, 20_000);
+export async function fetchList(
+  page = 1,
+  unit?: { param: string; size: number },
+): Promise<{ ok: true; jobs: SiteJob[]; ms: number } | { ok: false; reason: string; ms: number }> {
+  const r = await get(listUrl(page, unit), 20_000);
   if (!r.ok) return { ok: false, reason: "err" in r ? r.err! : `응답 ${r.status}`, ms: r.ms };
   const jobs = parseList(r.text);
   if (!jobs.length) return { ok: false, reason: "목록 줄을 못 찾았습니다", ms: r.ms };
   return { ok: true, jobs, ms: r.ms };
+}
+
+export type Unit = { param: string; size: number };
+
+/**
+ * 한 쪽에 100건을 달라고 할 수 있는지 재 본다.
+ *
+ * 한 쪽 10건으로는 과거를 다 훑는 데 29,000쪽이 든다. 100건이 되면
+ * 2,900쪽이라 스무날이면 끝난다. 그래서 한 번은 재 볼 값어치가 있다.
+ *
+ * 이름 후보를 하나씩 붙여 1쪽을 불러 보고, 열 건보다 많이 오면 그 이름이
+ * 먹은 것이다. 아무것도 안 먹으면 열 건짜리로 간다 — 느릴 뿐 틀리지 않는다.
+ */
+export async function discoverUnit(want = 100): Promise<{ unit: Unit | null; tried: string[] }> {
+  const tried: string[] = [];
+  for (const param of UNIT_PARAMS) {
+    const r = await fetchList(1, { param, size: want });
+    tried.push(`${param}=${want} → ${r.ok ? `${r.jobs.length}건` : r.reason}`);
+    if (r.ok && r.jobs.length > BASE_UNIT) return { unit: { param, size: want }, tried };
+  }
+  return { unit: null, tried };
 }
 
 /**
@@ -297,7 +366,7 @@ function sidoOf(text: string): string | null {
 export type SiteRun = {
   ok: boolean;
   saved: number;
-  pages: { page: number; got: number; saved: number; reason?: string }[];
+  pages: { page: number; got: number; saved: number; reason?: string; oldest?: string | null }[];
   /** 쪽 넘김이 GET 으로 되나. 2쪽이 1쪽과 같으면 false. */
   paging: boolean | null;
   reason?: string;
@@ -307,6 +376,12 @@ export type SiteRun = {
   more?: boolean;
   from?: number;
   to?: number;
+  /** 한 쪽에 몇 건씩 받았나. */
+  per?: number;
+  /** 쪽 크기를 재 본 결과. 잰 그 판에만 채운다. */
+  unitNote?: string;
+  /** 이번에 읽은 것 가운데 가장 오래된 등록일 = 지금 파 내려간 자리. */
+  oldest?: string | null;
   elapsedMs: number;
 };
 
@@ -317,12 +392,22 @@ export type SiteRun = {
  * 않는다(offset 에 비례해 느려져 마지막은 60초를 넘긴다). 사이트 목록은
  * 최신이 1쪽에 있다. robots.txt 가 허용하고, 앞쪽 몇 쪽만 하루 한 번 본다.
  */
-type SiteCursor = { nextPage: number; done: boolean; updated: string };
+type SiteCursor = {
+  nextPage: number;
+  done: boolean;
+  updated: string;
+  /** 한 쪽에 몇 건씩 받고 있나. 한 번 재 보고 적어 둔다. */
+  unit?: Unit | null;
+  /** 쪽 크기를 재 봤나. 못 재도(=열 건) 다시 재지 않도록 표시해 둔다. */
+  unitProbed?: boolean;
+  /** 지금 커서가 가 있는 자리의 공고 날짜. 어디까지 팠는지 눈으로 본다. */
+  at?: string | null;
+};
 
 export type SiteMode =
-  /** 1쪽부터 열 쪽(100건). 커서를 건드리지 않는다. 매일 아침이 이것이다. */
+  /** 늘 1쪽부터. 오늘 기준 최신을 챙긴다. 커서를 건드리지 않는다. */
   | "recent"
-  /** 커서부터 이어서 더 깊이. 끝까지 모으는 용도다. */
+  /** 커서부터 이어서 더 깊이 = 최신에서 과거 쪽으로. 끝까지 모으는 용도다. */
   | "past";
 
 async function readSiteCursor(db: ReturnType<typeof svc>): Promise<SiteCursor> {
@@ -335,7 +420,6 @@ export async function ingestSite(
   opts: { mode?: SiteMode; pages?: number; budgetMs?: number } = {},
 ): Promise<SiteRun> {
   const mode: SiteMode = opts.mode ?? "recent";
-  const pages = opts.pages ?? (mode === "recent" ? 10 : 30);
   const budgetMs = opts.budgetMs ?? 40_000;
   const t0 = Date.now();
   const run: SiteRun = { ok: false, saved: 0, pages: [], paging: null, elapsedMs: 0 };
@@ -349,18 +433,44 @@ export async function ingestSite(
   const now = new Date().toISOString();
   let firstId: string | null = null;
 
-  // recent: 늘 1쪽부터. 오늘 기준 최신 100건을 매일 챙긴다.
-  // past: 이어 읽는다. 매번 1쪽부터 다시 읽으면 같은 것만 쌓인다.
+  // 쪽 크기는 커서에 적어 둔다. 한 번 재 보고 그다음부터는 그대로 쓴다.
+  // 열 건짜리로 29만 건을 훑으면 29,000쪽이라 끝이 없다.
+  let cursor = await readSiteCursor(db);
+  let unit: Unit | null = cursor.unit ?? null;
+  if (!cursor.unitProbed) {
+    const d = await discoverUnit(100);
+    unit = d.unit;
+    cursor = { ...cursor, unit, unitProbed: true };
+    run.unitNote = unit ? `한 쪽 ${unit.size}건 (${unit.param})` : `한 쪽 ${BASE_UNIT}건 — ${d.tried.join(" / ")}`;
+    // 쪽 크기가 바뀌면 지금 커서의 쪽 번호가 가리키는 자리도 달라진다.
+    // 그때만 1쪽부터 다시 걷는다. 이미 받은 것은 같은 번호로 덮어써지니
+    // 손해가 없다. 못 재서 열 건 그대로면 파 놓은 깊이를 버릴 이유가 없다.
+    if (unit) {
+      cursor.nextPage = 1;
+      cursor.done = false;
+    }
+  }
+  const per = unit?.size ?? BASE_UNIT;
+  // 한 쪽이 커지면 한 번에 도는 쪽 수는 줄인다 — 받는 양은 비슷하게 두고
+  // 남의 사이트를 두드리는 횟수만 줄인다.
+  const pages = opts.pages ?? (mode === "recent"
+    ? Math.max(2, Math.ceil(250 / per))
+    : Math.max(4, Math.ceil(300 / per)));
+
+  // recent: 늘 1쪽부터. 오늘 기준 최신을 매일 챙긴다.
+  // past: 커서부터 이어 읽는다 = 최신 쪽에서 과거 쪽으로 한 걸음씩.
+  //       매번 1쪽부터 다시 읽으면 같은 것만 쌓인다.
   //       끝까지 갔으면(done) 1쪽으로 되감아 전체를 다시 훑는다.
-  const cur = mode === "past" ? await readSiteCursor(db) : null;
-  const start = cur && !cur.done ? cur.nextPage : 1;
+  const start = mode === "past" && !cursor.done ? cursor.nextPage : 1;
   let page = start;
   let read = 0;
   let ended = false;
+  /** 이번에 읽은 것 가운데 가장 오래된 등록일. 어디까지 팠는지 보여 준다. */
+  let oldest: string | null = null;
 
   for (; read < pages; page++, read++) {
     if (Date.now() - t0 > budgetMs - 6_000) break;
-    const r = await fetchList(page);
+    const r = await fetchList(page, unit ?? undefined);
     if (!r.ok) {
       run.pages.push({ page, got: 0, saved: 0, reason: r.reason });
       // "목록 줄을 못 찾았습니다"는 대개 끝을 지난 것이다. 응답 자체가 안 온
@@ -398,23 +508,29 @@ export async function ingestSite(
     const { error } = await db.from("job_posts").upsert(uniq as never[], { onConflict: "id" });
     if (error) return { ...run, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
 
-    run.pages.push({ page, got: r.jobs.length, saved: uniq.length });
+    for (const j of r.jobs) if (j.regDate && (!oldest || j.regDate < oldest)) oldest = j.regDate;
+    run.pages.push({ page, got: r.jobs.length, saved: uniq.length, oldest });
     run.saved += uniq.length;
-
   }
+  run.oldest = oldest;
+  run.per = per;
 
-  if (mode === "past") {
-    const done = ended || run.paging === false;
-    await db.from("site_settings").upsert(
-      { key: "gojobs_site_cursor",
-        value: { nextPage: done ? 1 : page, done, updated: now } as never,
-        updated_at: now },
-      { onConflict: "key" },
-    ).then(() => {}, () => {});
-    run.more = !done;
-  } else {
-    run.more = false;
-  }
+  // 커서는 두 모드 모두 적는다. recent 로 돌 때도 쪽 크기를 재 봤다는 사실은
+  // 남겨야 다음번에 또 재지 않는다. 다만 쪽 번호는 past 일 때만 옮긴다.
+  const done = mode === "past" ? ended || run.paging === false : cursor.done;
+  const next: SiteCursor = {
+    nextPage: mode === "past" ? (done ? 1 : page) : cursor.nextPage,
+    done,
+    updated: now,
+    unit,
+    unitProbed: true,
+    at: mode === "past" ? oldest : (cursor.at ?? null),
+  };
+  await db.from("site_settings").upsert(
+    { key: "gojobs_site_cursor", value: next as never, updated_at: now },
+    { onConflict: "key" },
+  ).then(() => {}, () => {});
+  run.more = mode === "past" ? !done : false;
   run.from = start;
   run.to = page - 1;
 

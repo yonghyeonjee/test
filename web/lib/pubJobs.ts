@@ -98,6 +98,30 @@ type Stored = {
   start_date: string | null; end_date: string | null; reg_date: string | null; url: string | null;
 };
 
+/** 저장된 한 줄을 화면이 쓰는 모양으로. */
+function toStoredJob(r: Stored): Job {
+  return {
+    id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
+    recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
+    start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
+    status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
+  };
+}
+
+/**
+ * 목록에 올릴 최대 건수.
+ *
+ * 600건이었다. 그런데 모아 둔 것이 2만 건을 넘어가면서 "수집한 것에 비해
+ * 너무 적게 나온다"는 말이 나왔다 — 맞는 말이다. 다만 2만 건 전부가 지금
+ * 볼 만한 것은 아니다. 대부분은 2008~2013년에 끝난 공고이고, 그건 목록이
+ * 아니라 기관별 이력(/jobs/org/…)에서 봐야 한다.
+ *
+ * 여기서는 최신순으로 3,000건까지 읽고 화면은 쪽으로 나눠 보여 준다.
+ * 읽어 온 전체를 대상으로 걸러야 칩에 붙는 숫자가 맞기 때문에, 쪽 나눔은
+ * 읽는 단계가 아니라 그리는 단계에서 한다.
+ */
+const LIST_MAX = 3000;
+
 /**
  * 매일 아침 수집해 둔 표에서 최신순으로 읽는다. 표가 비어 있으면(첫 배포·
  * 수집 실패) 예전처럼 API 를 직접 부른다.
@@ -111,14 +135,10 @@ async function fromStore(): Promise<JobBoard | null> {
       .eq("source", "gojobs")
       .order("reg_date", { ascending: false, nullsFirst: false })
       .order("end_date", { ascending: false, nullsFirst: false })
-      .limit(600);
+      .limit(LIST_MAX);
     const rows = (data ?? []) as Stored[];
     if (!rows.length) return null;
-    const jobs: Job[] = rows.map((r) => ({
-      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire, recruit: r.recruit,
-      sectors: r.sectors, headcount: r.headcount, start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
-      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
-    }));
+    const jobs: Job[] = rows.map(toStoredJob);
     return { ok: true, reason: null, jobs: sortJobs(jobs), total: count ?? jobs.length };
   } catch {
     return null;
@@ -237,13 +257,7 @@ export async function getJob(sourceId: string): Promise<Job | null> {
       .eq("source_id", sourceId)
       .maybeSingle();
     if (!data) return null;
-    const r = data as Stored;
-    return {
-      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
-      recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
-      start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
-      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
-    };
+    return toStoredJob(data as Stored);
   } catch {
     return null;
   }
@@ -268,12 +282,7 @@ export async function getRelatedJobs(job: Job, limit = 6): Promise<Job[]> {
   return rows
     .filter((r) => (seen.has(r.source_id) ? false : (seen.add(r.source_id), true)))
     .slice(0, limit)
-    .map((r) => ({
-      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
-      recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
-      start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
-      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
-    }));
+    .map(toStoredJob);
 }
 
 /** 공고가 실제로 있는 시·도와 건수. 지역별 목차가 쓴다. */
@@ -303,13 +312,7 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
       .eq("source", "gojobs").eq("region", sido)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
-    const rows = (data ?? []) as Stored[];
-    const jobs: Job[] = rows.map((r) => ({
-      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
-      recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
-      start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
-      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
-    }));
+    const jobs: Job[] = ((data ?? []) as Stored[]).map(toStoredJob);
     return {
       ok: jobs.length > 0,
       reason: jobs.length ? null : "아직 이 지역 공고를 받아오지 못했습니다.",
@@ -337,6 +340,193 @@ export async function getTopJobIds(limit = 400): Promise<string[]> {
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
     return ((data ?? []) as { source_id: string }[]).map((r) => r.source_id);
+  } catch {
+    return [];
+  }
+}
+
+// ── 마감된 공고에서 뽑아 쓰는 것 ─────────────────────────────
+
+/**
+ * 모아 둔 공고 2만여 건 가운데 지금 접수 중인 것은 수백 건뿐이다. 나머지는
+ * 이미 끝난 공고다. 목록에 늘어놓아 봐야 쓸모가 없지만, 모아 놓고 보면
+ * 목록으로는 알 수 없는 것이 나온다.
+ *
+ *  - 접수 기간이 며칠인지. 전체 중앙값 9일. 기관에 따라 5일도 있다.
+ *  - 어떤 기관이 얼마나 자주 뽑는지, 마지막으로 뽑은 게 언제인지.
+ *  - 그 기관 공고가 주로 몇 월에 올라오는지.
+ *
+ * 세는 일은 데이터베이스가 한다(job_overview·job_org_stats 뷰). 2만 건을
+ * 화면으로 끌어와 세면 그것만으로 몇 초가 간다.
+ *
+ * 다만 지금 모여 있는 과거분은 2008~2013년이 대부분이다. 그때 자료로
+ * "이 기관은 5월에 뽑습니다" 하고 말하면 거짓말에 가깝다. 그래서 화면에는
+ * 항상 "언제부터 언제까지 몇 건 기준"인지를 같이 적는다.
+ */
+export type JobOverview = {
+  total: number;
+  openN: number;
+  orgs: number;
+  lastYear: number;
+  firstReg: string | null;
+  lastReg: string | null;
+  medDays: number | null;
+};
+
+export async function getJobOverview(): Promise<JobOverview | null> {
+  if (!dbConfigured) return null;
+  try {
+    const { data, error } = await db
+      .from("job_overview")
+      .select("total,open_n,orgs,last_year,first_reg,last_reg,med_days")
+      .maybeSingle();
+    if (error || !data) return null;
+    const r = data as Record<string, number | string | null>;
+    return {
+      total: Number(r.total ?? 0),
+      openN: Number(r.open_n ?? 0),
+      orgs: Number(r.orgs ?? 0),
+      lastYear: Number(r.last_year ?? 0),
+      firstReg: (r.first_reg as string) ?? null,
+      lastReg: (r.last_reg as string) ?? null,
+      medDays: r.med_days == null ? null : Number(r.med_days),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export type OrgStat = {
+  org: string;
+  n: number;
+  openN: number;
+  firstReg: string | null;
+  lastReg: string | null;
+  avgDays: number | null;
+  /** 1월~12월 공고 수. 길이 12. */
+  months: number[];
+};
+
+const toOrgStat = (r: Record<string, unknown>): OrgStat => ({
+  org: String(r.org),
+  n: Number(r.n ?? 0),
+  openN: Number(r.open_n ?? 0),
+  firstReg: (r.first_reg as string) ?? null,
+  lastReg: (r.last_reg as string) ?? null,
+  avgDays: r.avg_days == null ? null : Number(r.avg_days),
+  months: Array.isArray(r.months) ? (r.months as number[]).map(Number) : [],
+});
+
+const ORG_COLS = "org,n,open_n,first_reg,last_reg,avg_days,months";
+
+/** 기관 하나의 채용 이력 요약. */
+export async function getOrgStat(org: string): Promise<OrgStat | null> {
+  if (!dbConfigured) return null;
+  try {
+    const { data } = await db.from("job_org_stats").select(ORG_COLS).eq("org", org).maybeSingle();
+    return data ? toOrgStat(data as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 공고를 많이 낸 기관 순. 기관 목차와 사이트맵이 쓴다.
+ *
+ * 두 건짜리 기관까지 4,564곳이 있다. 전부 페이지로 만들면 알맹이 없는
+ * 쪽이 수천 개 생긴다 — 검색엔진이 싫어하는 딱 그것이다. 여덟 건 이상
+ * 낸 곳만 쓴다(671곳).
+ */
+export async function getTopOrgs(limit = 300, minN = 8): Promise<OrgStat[]> {
+  if (!dbConfigured) return [];
+  try {
+    const { data } = await db
+      .from("job_org_stats").select(ORG_COLS)
+      .gte("n", minN)
+      .order("n", { ascending: false })
+      .limit(limit);
+    return ((data ?? []) as Record<string, unknown>[]).map(toOrgStat);
+  } catch {
+    return [];
+  }
+}
+
+/** 한 기관의 공고 전부. 접수 중인 것이 앞, 그다음 최근 등록순. */
+export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> {
+  if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
+  try {
+    const { data, count } = await db
+      .from("job_posts")
+      .select(
+        "source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
+        { count: "exact" },
+      )
+      .eq("source", "gojobs").eq("org", org)
+      .order("reg_date", { ascending: false, nullsFirst: false })
+      .limit(limit);
+    const jobs = ((data ?? []) as Stored[]).map(toStoredJob);
+    return {
+      ok: jobs.length > 0,
+      reason: jobs.length ? null : "이 기관의 공고를 아직 받아오지 못했습니다.",
+      jobs: sortJobs(jobs),
+      total: count ?? jobs.length,
+    };
+  } catch {
+    return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0 };
+  }
+}
+
+const MONTH_LABEL = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+
+/**
+ * "주로 N월에 올라옵니다" 라고 말해도 되는지.
+ *
+ * 열두 달에 고르게 뿌려진 것을 두고 제일 큰 달을 집어 "이 달에 뽑는다"고
+ * 하면 안 된다. 법무부는 239건인데 5월과 6월이 26건씩으로 제일 많다.
+ * 고르게 나눠도 달마다 20건이니, 26건은 아무 뜻이 없다.
+ *
+ * 기준을 두 개 둔다 — 30건 이상 모였고, 가장 많은 두 달의 합이 전체의
+ * 40%를 넘을 때만. 열두 달에 아무렇게나 뿌려도 두 달이 32% 안팎은
+ * 차지하므로 40%는 넉넉한 기준은 아니지만, 지금 자료에서 149곳 중 19곳만
+ * 넘는다. 나머지에는 아무 말도 하지 않는다.
+ */
+export function peakMonths(
+  months: number[],
+  minN = 30,
+  minShare = 0.4,
+): { label: string; share: number } | null {
+  const total = months.reduce((a, b) => a + b, 0);
+  if (months.length !== 12 || total < minN) return null;
+  const idx = months.map((n, i) => [n, i] as const).sort((a, b) => b[0] - a[0]);
+  const sum = idx[0][0] + idx[1][0];
+  if (sum / total < minShare) return null;
+  const two = [idx[0][1], idx[1][1]].sort((x, y) => x - y);
+  return { label: two.map((i) => MONTH_LABEL[i]).join("·"), share: Math.round((sum / total) * 100) };
+}
+
+/**
+ * 공고에 붙은 기관 구분과 건수. 구분별 목록과 사이트맵이 쓴다.
+ *
+ * 지금 값은 국가·교육·지자체·공공 넷이다. 나라일터 목록의 아이콘에서
+ * 읽어 온 것이라 고용형태(정규직·기간제)가 아니라 기관 계통이다.
+ */
+export async function getJobHires(): Promise<{ hire: string; n: number }[]> {
+  if (!dbConfigured) return [];
+  try {
+    const { data } = await db
+      .from("job_posts").select("hire").eq("source", "gojobs")
+      .not("hire", "is", null)
+      .gte("reg_date", new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10))
+      .limit(5000);
+    const m = new Map<string, number>();
+    for (const r of (data ?? []) as { hire: string | null }[]) {
+      // 값이 비었거나 "null" 이라는 글자가 그대로 들어온 줄이 있다.
+      // 그대로 두면 /jobs/hire/null 같은 주소가 사이트맵에 실린다.
+      const v = (r.hire ?? "").trim();
+      if (!v || v === "null" || v === "undefined") continue;
+      m.set(v, (m.get(v) ?? 0) + 1);
+    }
+    return [...m.entries()].map(([hire, n]) => ({ hire, n })).sort((a, b) => b.n - a.n);
   } catch {
     return [];
   }
