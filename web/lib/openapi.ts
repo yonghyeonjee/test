@@ -20,6 +20,27 @@ function serviceKey() {
   return /%[0-9A-Fa-f]{2}/.test(k) ? k : encodeURIComponent(k);
 }
 
+/**
+ * 포털이 응답을 주지 않고 매달리는 일이 잦다. 시간 제한이 없으면 빌드 때
+ * Next 가 60초 만에 워커를 죽여 배포 자체가 실패한다(실제로 /jobs 에서
+ * 그렇게 됐다). 어떤 호출도 이 시간을 넘기지 못하게 한다.
+ */
+const TIMEOUT_MS = Number(process.env.OPENAPI_TIMEOUT_MS ?? 8000);
+
+function timeout(ms = TIMEOUT_MS) {
+  return AbortSignal.timeout(ms);
+}
+
+/** AbortSignal.timeout 이 던지는 오류를 사람이 읽을 문구로 바꾼다. */
+export function callReason(e: unknown) {
+  if (e instanceof Error) {
+    if (e.name === "TimeoutError" || e.name === "AbortError")
+      return `응답이 ${Math.round(TIMEOUT_MS / 1000)}초 안에 오지 않았습니다.`;
+    return e.message;
+  }
+  return "호출 실패";
+}
+
 export type ApiResult<T> =
   | { ok: true; rows: T[]; total: number }
   | { ok: false; reason: string };
@@ -88,6 +109,7 @@ export async function callOpenApi<T = Record<string, unknown>>(
     const res = await fetch(full, {
       next: { revalidate },
       headers: { Accept: "application/json" },
+      signal: timeout(),
     });
     if (!res.ok) return { ok: false, reason: `응답 코드 ${res.status}` };
 
@@ -111,7 +133,7 @@ export async function callOpenApi<T = Record<string, unknown>>(
       total: findNumber(json, "totalCount") ?? rows.length,
     };
   } catch (e) {
-    return { ok: false, reason: e instanceof Error ? e.message : "호출 실패" };
+    return { ok: false, reason: callReason(e) };
   }
 }
 
@@ -166,7 +188,7 @@ export async function callOpenApiXml(
   const full = `${url}?${keyParam}=${serviceKey()}${qs ? `&${qs}` : ""}`;
 
   try {
-    const res = await fetch(full, { next: { revalidate } });
+    const res = await fetch(full, { next: { revalidate }, signal: timeout() });
     if (!res.ok) return { ok: false, reason: `응답 코드 ${res.status}` };
     const xml = await res.text();
 
@@ -189,6 +211,6 @@ export async function callOpenApiXml(
     const total = Number(xml.match(/<totalCount>\s*(\d+)/)?.[1]);
     return { ok: true, rows, total: Number.isFinite(total) ? total : rows.length };
   } catch (e) {
-    return { ok: false, reason: e instanceof Error ? e.message : "호출 실패" };
+    return { ok: false, reason: callReason(e) };
   }
 }

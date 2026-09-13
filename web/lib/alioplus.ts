@@ -1,4 +1,4 @@
-import { findRows } from "./openapi";
+import { findRows, callReason } from "./openapi";
 
 /**
  * 알리오 플러스 (기획재정부, 공공기관 경영정보 공개).
@@ -60,6 +60,8 @@ export async function callAlio(
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: body.toString(),
       next: { revalidate },
+      // 알리오 쪽도 매달리면 빌드가 통째로 죽는다. 시간 제한을 건다.
+      signal: AbortSignal.timeout(Number(process.env.OPENAPI_TIMEOUT_MS ?? 8000)),
     });
     if (!res.ok) return { ok: false, reason: `응답 코드 ${res.status}` };
     const text = await res.text();
@@ -72,7 +74,7 @@ export async function callAlio(
     }
     return { ok: true, rows: rows.map(flat) };
   } catch (e) {
-    return { ok: false, reason: e instanceof Error ? e.message : "호출 실패" };
+    return { ok: false, reason: callReason(e) };
   }
 }
 

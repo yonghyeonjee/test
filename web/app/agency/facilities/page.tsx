@@ -11,6 +11,12 @@ import { FACILITIES_INTRO, FACILITIES_FAQ } from "@/lib/pageFaq";
 import { agencyRelated } from "@/lib/related";
 import { AgencyTabs } from "../page";
 
+// 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
+// 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
+// 부르다 60초를 넘기면 배포가 통째로 실패한다. 미리 그리지 않게 못 박는다.
+// (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "공공기관 시설 이용 — 지역별 체육시설, 회의실, 강당 예약",
   description:
