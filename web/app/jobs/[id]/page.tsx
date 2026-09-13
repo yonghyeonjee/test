@@ -141,6 +141,11 @@ export default async function JobDetail({ params }: P) {
             {job.region} 공고 더 보기
           </Link>
         )}
+        {job.org && (
+          <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="btn btn-ghost px-5 py-2.5">
+            {job.org} 채용 이력
+          </Link>
+        )}
       </div>
       <p className="mt-2 text-xs leading-relaxed text-muted">
         접수 방법·제출 서류·자격 요건은 기관이 올린 원문에만 있습니다. 마감일이 바뀌는 일도
@@ -163,7 +168,13 @@ export default async function JobDetail({ params }: P) {
       {related.length > 0 && (
         <section className="mt-14">
           <h2 className="sec-title text-[1.0625rem] font-extrabold">
-            {job.org ? `${job.org}의 다른 공고` : "함께 보면 좋은 공고"}
+            {job.org ? (
+              <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="hover:text-brand">
+                {job.org}의 다른 공고
+              </Link>
+            ) : (
+              "함께 보면 좋은 공고"
+            )}
           </h2>
           <ul className="mt-4 grid gap-3">
             {related.map((r) => (

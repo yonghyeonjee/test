@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArtJobs } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
@@ -9,37 +10,35 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getJobsByRegion } from "@/lib/pubJobs";
+import { jobCanonical, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
 
-export const dynamicParams = true;
-export const revalidate = 3600;
-export function generateStaticParams() {
-  return [];
-}
+// /jobs/region/서울특별시 · /jobs/region/서울특별시/hire/교육/page/2
+export const dynamic = "force-dynamic";
 
-type P = { params: { sido: string }; searchParams: { [k: string]: string | string[] | undefined } };
-const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+type P = { params: { seg: string[] } };
 
-export function generateMetadata({ params }: { params: { sido: string } }): Metadata {
-  const sido = decodeURIComponent(params.sido);
+export function generateMetadata({ params }: P): Metadata {
+  const r = peekJobRoute(["region"], params.seg);
+  const sido = r.region!;
+  const extra = jobRouteLabel(r).filter((v) => v !== sido);
+  const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
   return {
-    title: `${sido} 공공기관 채용 공고 — 접수 중인 자리부터`,
+    title: `${sido} 공공기관 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 접수 중인 자리부터"}${tail}`,
     description:
       `${sido}에서 뽑는 공공기관·지자체 채용 공고를 모았습니다. 접수 중인 것이 앞에 오고 ` +
       "마감이 가까운 순서로 정렬합니다. 회원가입 없이 바로 볼 수 있습니다.",
     keywords: [`${sido} 채용`, `${sido} 공공기관 채용`, `${sido} 공무직`, "지자체 채용공고"],
-    alternates: { canonical: `/jobs/region/${encodeURIComponent(sido)}` },
+    alternates: { canonical: jobCanonical(r) },
+    robots: jobRobots(r),
   };
 }
 
-export default async function JobsByRegion({ params, searchParams }: P) {
-  const sido = decodeURIComponent(params.sido);
+export default async function JobsByRegion({ params }: P) {
+  const route = readJobRoute(["region"], params.seg);
+  if (!route) notFound();
+  const sido = route.region!;
   const board = await getJobsByRegion(sido);
-  const filter = {
-    q: one(searchParams.q) || undefined,
-    hire: one(searchParams.hire) || undefined,
-    open: one(searchParams.open) === "1",
-  };
   const openN = board.jobs.filter((j) => j.status !== "closed").length;
 
   return (
@@ -65,7 +64,7 @@ export default async function JobsByRegion({ params, searchParams }: P) {
         <span className="text-ink2">{sido}</span>
       </nav>
 
-      <JobList board={board} filter={filter} action={`/jobs/region/${encodeURIComponent(sido)}`} />
+      <JobList board={board} route={route} />
 
       <AdSlot name="page_bottom" />
 

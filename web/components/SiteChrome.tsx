@@ -38,6 +38,7 @@ const NAV: NavItem[] = [
     sub: [
       { href: "/jobs", label: "공공기관 채용" },
       { href: "/jobs/region", label: "지역별 채용" },
+      { href: "/jobs/org", label: "기관별 채용 이력" },
       { href: "/jobs/overseas", label: "해외취업" },
       { href: "/jobs/majors", label: "학과별 취업률" },
     ],
@@ -135,7 +136,7 @@ export function SiteFooter() {
   if (useIsAdmin()) return null;
   const cols: { h: string; items: [string, string][] }[] = [
     { h: "찾기", items: [["내 조건으로 찾기", "/"], ["기업 지원사업", "/?tab=business"], ["정책 전체", "/policies"], ["지역별", "/#areas"]] },
-    { h: "정보", items: [["채용·취업", "/jobs"], ["지역별 채용", "/jobs/region"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
+    { h: "정보", items: [["채용·취업", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
     { h: "안내", items: [["무료 서비스", "/free"], ["지원금 안내 글", "/blog"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];
   const sources: [string, string][] = [
