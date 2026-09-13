@@ -254,8 +254,18 @@ export async function fetchList(page = 1): Promise<
 export async function readViewFn(): Promise<string> {
   const r = await get(LIST_URL, 20_000);
   if (!r.ok) return "err" in r ? r.err! : `응답 ${r.status}`;
-  const m = r.text.match(/function\s+fn_apmView\s*\([^)]*\)\s*\{[\s\S]{0,700}?\n\s*\}/);
-  return m ? m[0].replace(/\s+/g, " ").slice(0, 700) : "fn_apmView 정의를 못 찾음";
+
+  // 정의가 한 줄로 눌려 있을 수도, 바깥 .js 에 있을 수도 있다.
+  // 이름이 나오는 자리마다 앞뒤를 떠서 담고, 스크립트 파일 목록도 같이 남긴다.
+  const around = [...r.text.matchAll(/fn_apmView/g)]
+    .slice(0, 4)
+    .map((m) => r.text.slice(Math.max(0, m.index! - 120), m.index! + 320).replace(/\s+/g, " "));
+  const scripts = [...r.text.matchAll(/<script[^>]+src="([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((v) => !/jquery|swiper|slick|analytics|gtag/i.test(v))
+    .slice(0, 10);
+
+  return JSON.stringify({ around, scripts }).slice(0, 1800);
 }
 
 // ── 수집 ───────────────────────────────────────────────────
@@ -293,6 +303,10 @@ export type SiteRun = {
   reason?: string;
   /** 상세 주소를 만드는 법. 아직 모를 때 여기에 단서를 남긴다. */
   viewFn?: string;
+  /** 더 팔 것이 남았나. 남았으면 한 번 더 부르면 이어 읽는다. */
+  more?: boolean;
+  from?: number;
+  to?: number;
   elapsedMs: number;
 };
 
@@ -303,7 +317,18 @@ export type SiteRun = {
  * 않는다(offset 에 비례해 느려져 마지막은 60초를 넘긴다). 사이트 목록은
  * 최신이 1쪽에 있다. robots.txt 가 허용하고, 앞쪽 몇 쪽만 하루 한 번 본다.
  */
-export async function ingestSite(pages = 5, budgetMs = 40_000): Promise<SiteRun> {
+/** 이 날짜보다 오래된 쪽이 나오면 그만 판다. */
+export const SITE_SINCE = "2026-08-01";
+
+type SiteCursor = { nextPage: number; done: boolean; updated: string };
+
+async function readSiteCursor(db: ReturnType<typeof svc>): Promise<SiteCursor> {
+  const { data } = await db.from("site_settings").select("value").eq("key", "gojobs_site_cursor").maybeSingle();
+  const v = data?.value as SiteCursor | undefined;
+  return v?.nextPage ? v : { nextPage: 1, done: false, updated: new Date().toISOString() };
+}
+
+export async function ingestSite(pages = 30, budgetMs = 40_000): Promise<SiteRun> {
   const t0 = Date.now();
   const run: SiteRun = { ok: false, saved: 0, pages: [], paging: null, elapsedMs: 0 };
 
@@ -314,22 +339,33 @@ export async function ingestSite(pages = 5, budgetMs = 40_000): Promise<SiteRun>
 
   const db = svc();
   const now = new Date().toISOString();
-  let firstIdOfPage1: string | null = null;
+  let firstId: string | null = null;
 
-  for (let page = 1; page <= pages; page++) {
+  // 이어 읽는다. 매번 1쪽부터 다시 읽으면 같은 50건만 쌓인다.
+  // 끝까지(기준일 이전까지) 갔으면 다음 날은 다시 1쪽부터 — 새 공고를 얹는다.
+  const cur = await readSiteCursor(db);
+  const start = cur.done ? 1 : cur.nextPage;
+  let page = start;
+  let read = 0;
+  let reachedOld = false;
+
+  for (; read < pages; page++, read++) {
     if (Date.now() - t0 > budgetMs - 6_000) break;
     const r = await fetchList(page);
     if (!r.ok) {
       run.pages.push({ page, got: 0, saved: 0, reason: r.reason });
       break;
     }
-    if (page === 1) firstIdOfPage1 = r.jobs[0]?.id ?? null;
-    else if (r.jobs[0]?.id === firstIdOfPage1) {
-      // 2쪽이 1쪽과 같다 = pageIndex 가 안 먹는다. 더 돌아도 같은 것만 온다.
+    if (firstId === null) firstId = r.jobs[0]?.id ?? null;
+    else if (r.jobs[0]?.id === firstId) {
+      // 다음 쪽이 앞 쪽과 같다 = pageIndex 가 안 먹는다. 더 돌아도 같은 것만 온다.
       run.paging = false;
-      run.pages.push({ page, got: r.jobs.length, saved: 0, reason: "1쪽과 같음 — 쪽 넘김이 GET 으로는 안 됩니다" });
+      run.pages.push({ page, got: r.jobs.length, saved: 0, reason: "앞 쪽과 같음 — 쪽 넘김이 안 됩니다" });
       break;
-    } else run.paging = true;
+    } else {
+      run.paging = true;
+      firstId = r.jobs[0]?.id ?? null;
+    }
 
     const rows = r.jobs.map((j) => ({
       id: `gojobs:${j.id}`,
@@ -352,7 +388,22 @@ export async function ingestSite(pages = 5, budgetMs = 40_000): Promise<SiteRun>
 
     run.pages.push({ page, got: r.jobs.length, saved: uniq.length });
     run.saved += uniq.length;
+
+    // 기준일보다 오래된 공고가 나오기 시작하면 거기까지다.
+    const oldest = r.jobs.map((j) => j.regDate).filter(Boolean).sort()[0];
+    if (oldest && oldest < SITE_SINCE) { reachedOld = true; break; }
   }
+
+  const done = reachedOld || run.paging === false;
+  await db.from("site_settings").upsert(
+    { key: "gojobs_site_cursor",
+      value: { nextPage: done ? 1 : page, done, updated: now } as never,
+      updated_at: now },
+    { onConflict: "key" },
+  ).then(() => {}, () => {});
+  run.more = !done;
+  run.from = start;
+  run.to = page - 1;
 
   // 상세 주소를 아직 못 만든다. 짐작으로 주소를 쓰면 눌러도 엉뚱한 데로
   // 간다. 답은 페이지 안의 fn_apmView 가 갖고 있으니 꺼내서 DB 에 적어 둔다
