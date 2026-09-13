@@ -15,6 +15,9 @@ import { parseItems } from "./openapi";
 
 const KEY = (process.env.DATA_GO_KR_KEY ?? "").trim();
 const ROWS = 100;
+/** 한 번 호출에서 쓸 수 있는 시간. Vercel 함수 상한(60초)보다 넉넉히 짧게. */
+const BUDGET_MS = 40_000;
+const FETCH_MS = 8_000;
 export const SINCE_DEFAULT = "2026-08-01";
 
 type Source = "gojobs" | "worldjob";
@@ -60,18 +63,21 @@ function svc() {
 
 const serviceKey = () => (/%[0-9A-Fa-f]{2}/.test(KEY) ? KEY : encodeURIComponent(KEY));
 
-async function fetchPage(url: string, page: number): Promise<string | null> {
+/** 실패 이유를 삼키지 않는다. 화면에서 "왜 안 되는지"를 보여 줘야 한다. */
+async function fetchPage(url: string, page: number): Promise<{ xml: string } | { err: string }> {
   const full = `${url}?serviceKey=${serviceKey()}&numOfRows=${ROWS}&pageNo=${page}`;
+  let last = "";
   for (let i = 0; i < 2; i++) {
     try {
-      const res = await fetch(full, { cache: "no-store", signal: AbortSignal.timeout(12000) });
+      const res = await fetch(full, { cache: "no-store", signal: AbortSignal.timeout(FETCH_MS) });
       const text = await res.text();
-      if (res.ok && text.trim()) return text;
-    } catch {
-      /* 다시 */
+      if (res.ok && text.trim()) return { xml: text };
+      last = `응답 ${res.status}${text.trim() ? "" : " (빈 본문)"}`;
+    } catch (e) {
+      last = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
     }
   }
-  return null;
+  return { err: last || "알 수 없는 실패" };
 }
 
 function resultError(xml: string) {
@@ -113,7 +119,30 @@ export type RunReport = {
   source: Source; ok: boolean; reason?: string; total?: number; lastPage?: number;
   pages: { page: number; saved: number; oldest: string | null; newest: string | null }[];
   keys?: string[]; sample?: Record<string, string>; saved: number; cursor?: Cursor;
+  /** 시간이 모자라 중간에 멈췄나. true 면 한 번 더 누르면 이어 읽는다. */
+  timeUp?: boolean;
+  elapsedMs?: number;
 };
+
+/** 연결과 항목 이름만 빠르게 본다. 한 쪽만 읽으므로 몇 초면 끝난다. */
+export async function probe(name: Source): Promise<RunReport> {
+  const conf = SRC[name];
+  const t0 = Date.now();
+  const base: RunReport = { source: name, ok: false, pages: [], saved: 0 };
+  if (!KEY) return { ...base, reason: "DATA_GO_KR_KEY 미설정" };
+  const r = await fetchPage(conf.url, 1);
+  if ("err" in r) return { ...base, reason: `연결 실패 — ${r.err}`, elapsedMs: Date.now() - t0 };
+  const err = resultError(r.xml);
+  if (err) return { ...base, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 };
+  const items = parseItems(r.xml, conf.item);
+  const total = Number(r.xml.match(/<totalCount>\s*(\d+)/)?.[1]) || items.length;
+  return {
+    ...base, ok: true, total, lastPage: Math.max(1, Math.ceil(total / ROWS)),
+    keys: items[0] ? Object.keys(items[0]) : [],
+    sample: items[0],
+    elapsedMs: Date.now() - t0,
+  };
+}
 
 async function readCursor(db: ReturnType<typeof svc>): Promise<Record<string, Cursor>> {
   const { data } = await db.from("site_settings").select("value").eq("key", "jobs_cursor").maybeSingle();
@@ -126,16 +155,19 @@ async function writeCursor(db: ReturnType<typeof svc>, all: Record<string, Curso
 /** 한 소스를 pagesPerRun 쪽까지 읽는다. */
 export async function ingest(name: Source, opts: { pages?: number; since?: string; reset?: boolean } = {}): Promise<RunReport> {
   const conf = SRC[name];
+  const t0 = Date.now();
   const pagesPerRun = opts.pages ?? 6;
   const since = opts.since ?? SINCE_DEFAULT;
   const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
-  if (!KEY) return { ...report, reason: "DATA_GO_KR_KEY 미설정" };
+  if (!KEY) return { ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 };
   const db = svc();
 
-  const first = await fetchPage(conf.url, 1);
-  if (!first) return { ...report, reason: "첫 쪽을 못 받았다 (연결 실패)" };
+  const probed = await fetchPage(conf.url, 1);
+  if ("err" in probed)
+    return { ...report, reason: `첫 쪽을 못 받았다 — ${probed.err}`, elapsedMs: Date.now() - t0 };
+  const first = probed.xml;
   const err = resultError(first);
-  if (err) return { ...report, reason: err };
+  if (err) return { ...report, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 };
   const firstItems = parseItems(first, conf.item);
   const total = Number(first.match(/<totalCount>\s*(\d+)/)?.[1]) || firstItems.length;
   const lastPage = Math.max(1, Math.ceil(total / ROWS));
@@ -154,12 +186,19 @@ export async function ingest(name: Source, opts: { pages?: number; since?: strin
   let read = 0;
   let stop = false;
   while (page >= 1 && read < budget && !stop) {
-    const xml = page === 1 ? first : await fetchPage(conf.url, page);
-    if (!xml) { page--; read++; continue; }
+    // 시간이 모자라면 여기까지 저장하고 쪽 번호를 남긴 채 돌아간다.
+    if (Date.now() - t0 > BUDGET_MS) { report.timeUp = true; break; }
+    let xml: string;
+    if (page === 1) xml = first;
+    else {
+      const got = await fetchPage(conf.url, page);
+      if ("err" in got) { report.pages.push({ page, saved: 0, oldest: null, newest: null }); page--; read++; continue; }
+      xml = got.xml;
+    }
     const rows = parseItems(xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
     if (rows.length) {
       const { error } = await db.from("job_posts").upsert(rows as never[], { onConflict: "id" });
-      if (error) return { ...report, reason: `저장 실패: ${error.message}` };
+      if (error) return { ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
     }
     const dates = rows.map((r) => r[conf.orderKey] as string | null).filter((x): x is string => !!x).sort();
     const oldest = dates[0] ?? null, newest = dates[dates.length - 1] ?? null;
@@ -168,10 +207,11 @@ export async function ingest(name: Source, opts: { pages?: number; since?: strin
     if (oldest && oldest < since) stop = true;
     page--; read++;
   }
-  const done = stop || page < 1 || cur.done;
+  const done = report.timeUp ? cur.done : stop || page < 1 || cur.done;
   cursors[name] = { nextPage: done ? lastPage : page, lastPage, total, done, updated: new Date().toISOString() };
   await writeCursor(db, cursors);
   report.cursor = cursors[name];
   report.ok = true;
+  report.elapsedMs = Date.now() - t0;
   return report;
 }
