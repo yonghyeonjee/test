@@ -39,6 +39,35 @@ const BASE: Metadata = {
   formatDetection: { telephone: false },
 };
 
+const SITE_JSONLD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE_NAME,
+      alternateName: ["나라지원 정부지원금", "정부지원금 조회"],
+      inLanguage: "ko-KR",
+      description:
+        "전국 지자체와 중앙부처의 정부지원금·복지서비스를 사는 곳과 나이로 찾아 주는 곳.",
+      publisher: { "@id": `${SITE_URL}/#org` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/policies?q={search_term_string}` },
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#org`,
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
+    },
+  ],
+};
+
 /** 관리자 설정(SEO)을 합쳐 낸다. 확인 토큰·설명·색인 여부가 여기서 바뀐다. */
 export async function generateMetadata(): Promise<Metadata> {
   const { seo } = await getSiteConfig();
@@ -95,6 +124,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
+        {/*
+          검색엔진에 "이 사이트의 이름은 나라지원"이라고 알려 준다.
+          이름이 흔한 말이라(나라 + 지원) 이게 없으면 정부24 같은 데에
+          묻힌다. 검색창 표시(SearchAction)도 같이 신청해 둔다.
+        */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSONLD) }}
+        />
         <GtmNoScript />
         <GtmScript />
         <Suspense fallback={null}>
