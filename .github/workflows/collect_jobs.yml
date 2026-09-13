@@ -1,0 +1,43 @@
+name: collect-jobs
+
+# 채용 공고. 매일 아침 9시(KST) + 수동 실행.
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "gojobs | worldjob (비우면 둘 다)"
+        required: false
+        default: ""
+      since:
+        description: "이 날짜보다 오래된 쪽이 나오면 멈춘다 (YYYY-MM-DD)"
+        required: false
+        default: "2026-08-01"
+      max_pages:
+        description: "소스당 최대 쪽수"
+        required: false
+        default: "60"
+  schedule:
+    - cron: "0 0 * * *"    # UTC 00:00 = KST 09:00
+
+concurrency:
+  group: collect-jobs
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: 채용 공고 수집
+        env:
+          DATA_GO_KR_KEY:       ${{ secrets.DATA_GO_KR_KEY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SINCE:                ${{ inputs.since || '2026-08-01' }}
+          MAX_PAGES:            ${{ inputs.max_pages || '60' }}
+        run: python -u pipeline/collect_jobs.py ${{ inputs.source }}

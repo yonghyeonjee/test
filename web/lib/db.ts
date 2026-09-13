@@ -252,6 +252,7 @@ export async function listByArea(sido: string, limit = 100) {
     .select("*")
     .eq("kind", "welfare")
     .eq("sido", sido)
+    .order("first_seen_at", { ascending: false })
     .order("norm_confidence", { ascending: false })
     .limit(limit);
   return (data ?? []) as Program[];
@@ -264,6 +265,7 @@ export async function listByTopic(topic: string, limit = 60) {
     .select("*")
     .eq("kind", "welfare")
     .contains("topics", [topic])
+    .order("first_seen_at", { ascending: false })
     .order("norm_confidence", { ascending: false })
     .limit(limit);
   return (data ?? []) as Program[];

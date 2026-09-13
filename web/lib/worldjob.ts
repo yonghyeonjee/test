@@ -1,5 +1,5 @@
 import { callOpenApiXml } from "./openapi";
-import { applyStatus, type ApplyStatus } from "./db";
+import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 
 /**
  * 해외취업 우수일자리 (한국산업인력공단 월드잡플러스, worldjob30).
@@ -62,7 +62,48 @@ function toJob(r: Record<string, string>): OverseasJob | null {
 
 export type OverseasBoard = { ok: boolean; reason: string | null; jobs: OverseasJob[]; total: number };
 
+function sortOverseas(jobs: OverseasJob[]) {
+  const rank: Record<ApplyStatus, number> = { ongoing: 0, always: 0, upcoming: 1, closed: 2 };
+  return jobs.sort(
+    (a, b) =>
+      rank[a.status] - rank[b.status] ||
+      (a.status === "closed"
+        ? (b.start ?? "").localeCompare(a.start ?? "")
+        : (a.end ?? "9999").localeCompare(b.end ?? "9999")),
+  );
+}
+
+/** 매일 아침 수집한 표에서 최신순으로. 비어 있으면 API 를 직접 부른다. */
+async function overseasFromStore(nation?: string, q?: string): Promise<OverseasBoard | null> {
+  if (!dbConfigured) return null;
+  try {
+    let query = db
+      .from("job_posts")
+      .select("title,org,nation,sectors,industry,career,lang,visa,headcount,start_date,end_date", { count: "exact" })
+      .eq("source", "worldjob")
+      .order("start_date", { ascending: false, nullsFirst: false })
+      .limit(600);
+    if (nation) query = query.eq("nation", nation);
+    if (q) query = query.ilike("title", `%${q}%`);
+    const { data, count } = await query;
+    const rows = (data ?? []) as Record<string, string | null>[];
+    if (!rows.length) return null;
+    const jobs: OverseasJob[] = rows.map((r) => ({
+      id: `${r.title}|${r.org ?? ""}|${r.start_date ?? ""}`,
+      title: r.title ?? "", company: r.org, nation: r.nation, job: r.sectors, industry: r.industry,
+      career: r.career, lang: r.lang, visa: r.visa, headcount: r.headcount,
+      start: r.start_date, end: r.end_date, agency: null,
+      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
+    }));
+    return { ok: true, reason: null, jobs: sortOverseas(jobs), total: count ?? jobs.length };
+  } catch {
+    return null;
+  }
+}
+
 export async function getOverseasJobs(nation?: string, q?: string): Promise<OverseasBoard> {
+  const stored = await overseasFromStore(nation, q);
+  if (stored) return stored;
   const params: Record<string, string | number> = { numOfRows: ROWS, pageNo: 1 };
   if (nation) params.searchNationNm = nation;
   if (q) params.searchRctntcSj = q;
@@ -86,9 +127,7 @@ export async function getOverseasJobs(nation?: string, q?: string): Promise<Over
     seen.add(j.id);
     jobs.push(j);
   }
-  const rank: Record<ApplyStatus, number> = { ongoing: 0, always: 0, upcoming: 1, closed: 2 };
-  jobs.sort((a, b) => rank[a.status] - rank[b.status] || (a.end ?? "9999").localeCompare(b.end ?? "9999"));
-  return { ok: jobs.length > 0, reason: jobs.length ? null : "조회 결과가 비어 있습니다.", jobs, total: first.total };
+  return { ok: jobs.length > 0, reason: jobs.length ? null : "조회 결과가 비어 있습니다.", jobs: sortOverseas(jobs), total: first.total };
 }
 
 export function nationFacet(jobs: OverseasJob[]) {
