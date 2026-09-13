@@ -433,3 +433,91 @@ export async function probePaging(name: Source = "gojobs"): Promise<PageProbe[]>
   }));
   return [wadl, ...results];
 }
+
+// ── 과거 공고 채록 ─────────────────────────────────────────
+
+/**
+ * 나라일터의 지난 공고를 앞쪽부터 훑는다.
+ *
+ * 이 API 는 오래된 것부터 준다. 그동안은 최신을 얻으려고 마지막 쪽을
+ * 팠는데, 응답 시간이 offset 에 비례해서 뒤쪽은 아예 안 왔다. 그런데
+ * 뒤집어 보면 — 앞쪽은 빠르고, 앞쪽에 있는 것이 바로 과거 공고다.
+ * 최신은 사이트에서 받고(gojobsSite), 과거는 여기서 API 로 받는다.
+ *
+ * 사이트를 수만 쪽 긁는 것보다 이쪽이 낫다. 허락받고 쓰는 길이고,
+ * 한 번에 1,000건씩 오니 남의 서버에 훨씬 덜 미안하다.
+ */
+export async function ingestArchive(
+  opts: { budgetMs?: number; rows?: number } = {},
+): Promise<RunReport> {
+  const name: Source = "gojobs";
+  const conf = SRC[name];
+  const t0 = Date.now();
+  const budgetMs = opts.budgetMs ?? BUDGET_MS;
+  const rows = opts.rows ?? 1000;
+  const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
+  if (!KEY) return { ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 };
+  const db = svc();
+
+  const { data } = await db.from("site_settings").select("value")
+    .eq("key", "gojobs_archive_cursor").maybeSingle();
+  const cur = (data?.value as { nextPage?: number; done?: boolean } | null) ?? {};
+  let page = Math.max(1, cur.nextPage ?? 1);
+  let stalled = false;
+
+  while (!stalled) {
+    const left = budgetMs - (Date.now() - t0);
+    if (left < 8_000) { report.timeUp = true; break; }
+
+    const got = await fetchPage(conf.url, page, rows, Math.min(25_000, left - 2_000), 1);
+    if ("err" in got) {
+      report.pages.push({ page, saved: 0, oldest: null, newest: null, err: got.err });
+      // 여기서부터는 깊이 때문에 안 온다. 쪽 번호는 그대로 두고 다음에 다시.
+      stalled = true;
+      break;
+    }
+    const err = resultError(got.xml);
+    if (err) { report.reason = `API 오류 — ${err}`; break; }
+
+    const parsed = parseItems(got.xml, conf.item)
+      .map((d) => toRow(name, d)).filter((r): r is Row => !!r);
+    if (!parsed.length) {
+      // 더 없는 쪽까지 왔다 = 끝까지 훑었다.
+      report.pages.push({ page, saved: 0, oldest: null, newest: null, err: "항목 없음(끝)" });
+      page = 1;
+      break;
+    }
+    const byId = new Map<string, Row>();
+    for (const r of parsed) byId.set(String(r.id), r);
+    const uniq = [...byId.values()];
+
+    const { error } = await db.from("job_posts").upsert(uniq as never[], { onConflict: "id" });
+    if (error) return { ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
+
+    const dates = uniq.map((r) => r.reg_date as string | null)
+      .filter((x): x is string => !!x).sort();
+    report.pages.push({
+      page, saved: uniq.length,
+      oldest: dates[0] ?? null, newest: dates[dates.length - 1] ?? null,
+    });
+    report.saved += uniq.length;
+    page++;
+  }
+
+  await db.from("site_settings").upsert(
+    { key: "gojobs_archive_cursor",
+      value: { nextPage: page, rows, stalled, updated: new Date().toISOString() } as never,
+      updated_at: new Date().toISOString() },
+    { onConflict: "key" },
+  ).then(() => {}, () => {});
+
+  report.ok = report.saved > 0;
+  if (!report.ok && !report.reason)
+    report.reason = stalled
+      ? `${page}쪽부터는 응답이 오지 않습니다 (깊이 한계). 여기까지가 API 로 받을 수 있는 과거입니다.`
+      : "받아온 것이 없습니다";
+  report.lastPage = page;
+  report.timeUp = report.timeUp || !stalled;
+  report.elapsedMs = Date.now() - t0;
+  return report;
+}

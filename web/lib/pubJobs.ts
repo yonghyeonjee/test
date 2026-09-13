@@ -304,12 +304,20 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
   }
 }
 
-/** 사이트맵에 올릴 공고. 최근 등록순 위에서부터. */
+/**
+ * 사이트맵에 올릴 공고. 최근 등록순 위에서부터.
+ *
+ * 과거 공고를 수십만 건 받아 오므로 전부 올리면 안 된다. 오래전에 끝난
+ * 공고는 사람에게도 검색엔진에도 쓸모가 없다. 최근 1년치 안에서만 고른다.
+ */
 export async function getTopJobIds(limit = 400): Promise<string[]> {
   if (!dbConfigured) return [];
+  const yearAgo = new Date();
+  yearAgo.setDate(yearAgo.getDate() - 365);
   try {
     const { data } = await db
       .from("job_posts").select("source_id").eq("source", "gojobs")
+      .gte("reg_date", yearAgo.toISOString().slice(0, 10))
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
     return ((data ?? []) as { source_id: string }[]).map((r) => r.source_id);

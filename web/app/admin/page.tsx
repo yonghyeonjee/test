@@ -105,6 +105,8 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   // 수집 대상마다 건수·최신·마지막 수집 시각. 표가 없거나 비어 있어도 0 으로 보인다.
   const WHERE: Record<CollectKey, { table: string; filter?: [string, string]; dateCol?: string }> = {
     gojobs: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
+    // 과거 채록도 같은 표에 쌓인다. 타일은 같은 숫자를 보여 주되 단추만 따로다.
+    gojobs_archive: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
     worldjob: { table: "job_posts", filter: ["source", "worldjob"], dateCol: "start_date" },
     license: { table: "license_items" },
     agency_business: { table: "agency_items", filter: ["kind", "business"], dateCol: "start_date" },
