@@ -135,7 +135,7 @@ function unescapeXml(s: string) {
  * 명세의 응답 예제에 </ obligfldcd > 처럼 공백이 섞인 닫는 태그가 있어
  * 그것도 받아 준다.
  */
-function parseItems(xml: string, tag = "item"): Record<string, string>[] {
+export function parseItems(xml: string, tag = "item"): Record<string, string>[] {
   const rows: Record<string, string>[] = [];
   const block = new RegExp(`<${tag}>([\\s\\S]*?)</\\s*${tag}\\s*>`, "g");
   const field = /<([A-Za-z_][\w.-]*)>([\s\S]*?)<\/\s*\1\s*>/g;
