@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { COLLECT_KEYS, type CollectKey, type CollectResult } from "./collectorMeta";
 import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alioplus";
-import { ingest, type LastRun } from "./jobsIngest";
+import { ingest, ingestArchive, type LastRun } from "./jobsIngest";
 import { ingestSite } from "./gojobsSite";
 import { getLicenses } from "./qnet";
 import { getRentRates } from "./rentRate";
@@ -123,6 +123,17 @@ export async function collectOne(
         more: r.more ?? false,
         reason: r.from ? `${r.from}~${r.to}쪽` : undefined,
       };
+    }
+    // 과거 공고는 API 를 앞쪽부터 훑는다. 앞쪽이 곧 오래된 것이고, 앞쪽은 빠르다.
+    if (key === "gojobs_archive") {
+      const r = await ingestArchive({ budgetMs: opts.budgetMs ?? 40_000 });
+      if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
+      const span = r.pages.length
+        ? `${r.pages[0].page}~${r.pages[r.pages.length - 1].page}쪽` +
+          (r.pages[0].oldest ? ` · ${r.pages[0].oldest}부터` : "")
+        : undefined;
+      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
+               more: Boolean(r.timeUp), reason: span };
     }
     if (key === "worldjob") {
       const r = await ingest(key, { pages: opts.pages ?? 4, by: "admin", budgetMs: opts.budgetMs });

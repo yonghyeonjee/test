@@ -22,11 +22,23 @@ export function generateStaticParams() {
 
 type P = { params: { id: string } };
 
+/** n일 전 날짜(YYYY-MM-DD). */
+function ymdAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
   if (!job) return { title: "채용 공고를 찾지 못했습니다", robots: { index: false, follow: true } };
   const where = [job.region, job.org].filter(Boolean).join(" ");
+  // 2008년치까지 받아 오면 공고가 수십만 건이 된다. 오래전에 끝난 공고를
+  // 전부 색인에 밀어 넣으면 검색엔진이 사이트 전체를 얕게 본다. 자료로는
+  // 남겨 두되(들어오면 보인다), 1년 넘게 지난 것은 색인하지 않는다.
+  const stale = Boolean(job.end && job.end < ymdAgo(365));
   return {
+    ...(stale ? { robots: { index: false, follow: true } } : {}),
     title: `${job.title}${where ? ` — ${where} 채용` : " — 공공기관 채용"}`,
     description: jobSummary(job),
     keywords: [

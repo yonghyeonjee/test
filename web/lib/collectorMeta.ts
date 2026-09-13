@@ -7,11 +7,12 @@
  */
 
 export type CollectKey =
-  | "gojobs" | "worldjob"
+  | "gojobs" | "gojobs_archive" | "worldjob"
   | "license" | "agency_business" | "agency_event" | "agency_facility" | "jeonse";
 
 export const COLLECT_LABEL: Record<CollectKey, string> = {
-  gojobs: "나라일터 채용",
+  gojobs: "나라일터 채용 (최신)",
+  gojobs_archive: "나라일터 과거 공고",
   worldjob: "해외취업",
   license: "국가자격 종목",
   agency_business: "공공기관 사업",
