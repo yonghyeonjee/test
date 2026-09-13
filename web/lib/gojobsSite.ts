@@ -78,22 +78,48 @@ function robotsVerdict(txt: string) {
   return { blocked, rules: rules.length ? rules.join(" | ") : "우리에게 걸리는 규칙 없음" };
 }
 
-/** HTML 의 뼈대를 요약한다. 파서를 쓰려면 진짜 모양을 봐야 한다. */
+const strip = (h: string) =>
+  h.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+
+/**
+ * HTML 의 뼈대를 요약한다. 파서를 쓰려면 진짜 모양을 봐야 한다.
+ *
+ * 처음에는 "td 가 든 첫 줄"을 집었는데 그건 검색 폼이었다. 화면 위쪽에
+ * 검색 상자가 표로 짜여 있어서 목록보다 먼저 나온다. 그래서 표를 하나씩
+ * 다 보고, 머리글로 어느 것이 목록인지 가린다.
+ */
 function outline(html: string) {
-  const count = (re: RegExp) => (html.match(re) ?? []).length;
-  const heads = [...html.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)]
-    .map((m) => m[1].replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .slice(0, 15);
-  const rows = [...html.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/gi)].map((m) => m[0]);
-  // 머리글 줄이 아니라 실제 자료가 든 첫 줄을 고른다.
-  const body = rows.find((r) => /<td/i.test(r));
-  return [
-    `길이 ${html.length.toLocaleString()}자`,
-    `table ${count(/<table[^>]*>/gi)} · tr ${rows.length} · li ${count(/<li[^>]*>/gi)}`,
-    heads.length ? `표 머리글: ${heads.join(" / ")}` : "표 머리글 없음",
-    body ? `첫 자료 줄:\n${body.replace(/\s+/g, " ").slice(0, 1200)}` : "td 가 든 줄을 못 찾음",
-  ].join("\n");
+  const tables = [...html.matchAll(/<table[\s\S]*?<\/table>/gi)].map((m) => m[0]);
+  const out: string[] = [
+    `길이 ${html.length.toLocaleString()}자 · table ${tables.length} · ` +
+    `tr ${(html.match(/<tr[^>]*>/gi) ?? []).length} · li ${(html.match(/<li[^>]*>/gi) ?? []).length}`,
+  ];
+
+  tables.forEach((t, i) => {
+    const heads = [...t.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)].map((m) => strip(m[1])).filter(Boolean);
+    // 목록 줄은 th 없이 td 만 있고, 입력 상자가 없다.
+    const rows = [...t.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/gi)].map((m) => m[0]);
+    const dataRows = rows.filter((r) => /<td/i.test(r) && !/<th/i.test(r) && !/<input|<select/i.test(r));
+    out.push(
+      `\n[표 ${i + 1}] 머리글: ${heads.join(" / ") || "없음"}` +
+      `\n  줄 ${rows.length} · 자료 줄 ${dataRows.length}` +
+      (dataRows[0] ? `\n  첫 자료 줄(원본):\n  ${dataRows[0].replace(/\s+/g, " ").slice(0, 900)}` : "") +
+      (dataRows[1] ? `\n  둘째 자료 줄(글자만): ${strip(dataRows[1]).slice(0, 300)}` : ""),
+    );
+  });
+
+  // 상세로 넘어가는 주소 모양. 이게 있어야 공고마다 원문을 걸 수 있다.
+  const hrefs = [...new Set(
+    [...html.matchAll(/(?:href|onclick)="([^"]*(?:\.do|fn_[A-Za-z]+\()[^"]*)"/g)]
+      .map((m) => m[1].replace(/\s+/g, " ").slice(0, 120)),
+  )].slice(0, 14);
+  out.push(`\n[링크 모양] ${hrefs.length ? "\n  " + hrefs.join("\n  ") : "없음"}`);
+
+  // 전체 건수와 쪽 넘김 단서.
+  const cnt = html.match(/총\s*<?[^>]*>?\s*([\d,]+)\s*<?[^>]*>?\s*건/);
+  out.push(`\n[건수 표시] ${cnt ? cnt[0].replace(/<[^>]*>/g, "") : "못 찾음"}`);
+
+  return out.join("\n");
 }
 
 /**
