@@ -61,18 +61,28 @@ function svc() {
 
 const serviceKey = () => (/%[0-9A-Fa-f]{2}/.test(KEY) ? KEY : encodeURIComponent(KEY));
 
-/** 실패 이유를 삼키지 않는다. 화면에서 "왜 안 되는지"를 보여 줘야 한다. */
-async function fetchPage(url: string, page: number): Promise<{ xml: string } | { err: string }> {
+/**
+ * 실패 이유를 삼키지 않는다. 화면에서 "왜 안 되는지"를 보여 줘야 한다.
+ *
+ * 뒤쪽 쪽번호는 앞쪽보다 눈에 띄게 느리다(2,900쪽짜리라 더 그렇다).
+ * 8초로 끊고 두 번 재시도하면 한 쪽에 16초를 버리고도 아무것도 못 얻는다.
+ * 그래서 시간은 넉넉히 주되 재시도는 한 번만 한다.
+ */
+async function fetchPage(
+  url: string, page: number, ms = FETCH_MS, tries = 2,
+): Promise<{ xml: string } | { err: string }> {
   const full = `${url}?serviceKey=${serviceKey()}&numOfRows=${ROWS}&pageNo=${page}`;
   let last = "";
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < tries; i++) {
     try {
-      const res = await fetch(full, { cache: "no-store", signal: AbortSignal.timeout(FETCH_MS) });
+      const res = await fetch(full, { cache: "no-store", signal: AbortSignal.timeout(ms) });
       const text = await res.text();
       if (res.ok && text.trim()) return { xml: text };
       last = `응답 ${res.status}${text.trim() ? "" : " (빈 본문)"}`;
     } catch (e) {
-      last = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+      last = e instanceof Error
+        ? (e.name === "TimeoutError" ? `${Math.round(ms / 1000)}초 안에 응답 없음` : `${e.name}: ${e.message}`)
+        : String(e);
     }
   }
   return { err: last || "알 수 없는 실패" };
@@ -133,7 +143,9 @@ function toRow(name: Source, d: Record<string, string>): Row | null {
 export type Cursor = { nextPage: number; lastPage: number; total: number; done: boolean; updated: string };
 export type RunReport = {
   source: Source; ok: boolean; reason?: string; total?: number; lastPage?: number;
-  pages: { page: number; saved: number; oldest: string | null; newest: string | null }[];
+  pages: { page: number; saved: number; oldest: string | null; newest: string | null;
+           /** 그 쪽을 못 받았으면 이유. 저장 0건과 "못 받음"을 구분한다. */
+           err?: string }[];
   keys?: string[]; sample?: Record<string, string>; saved: number; cursor?: Cursor;
   /** 시간이 모자라 중간에 멈췄나. true 면 한 번 더 누르면 이어 읽는다. */
   timeUp?: boolean;
@@ -184,10 +196,14 @@ export type LastRun = {
  * 끝날 때 한 번 적어 두면 새로고침만 해도 "돌다가 죽었는지, 실패했는지,
  * 끝났는지"를 알 수 있다.
  */
+const RUN_KEY = (source: string) => `last_run_${source}`;
+
 async function writeRun(db: ReturnType<typeof svc>, run: LastRun) {
   try {
+    // 소스마다 다른 줄에 적는다. 한 줄에 몰아 넣으면 나란히 돌 때
+    // 읽고-고쳐-쓰는 사이에 서로의 기록을 덮어쓴다.
     await db.from("site_settings").upsert(
-      { key: "jobs_last_run", value: run as never, updated_at: new Date().toISOString() },
+      { key: RUN_KEY(run.source), value: run as never, updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );
   } catch {
@@ -195,19 +211,25 @@ async function writeRun(db: ReturnType<typeof svc>, run: LastRun) {
   }
 }
 
-export async function readLastRun(): Promise<LastRun | null> {
+/** 소스별 마지막 실행 기록. 최근에 시작한 것부터. */
+export async function readLastRuns(): Promise<LastRun[]> {
   try {
-    const { data } = await svc().from("site_settings").select("value").eq("key", "jobs_last_run").maybeSingle();
-    return (data?.value as LastRun) ?? null;
+    const { data } = await svc().from("site_settings").select("key,value").like("key", "last_run_%");
+    const runs = (data ?? []).map((r) => r.value as LastRun).filter((r) => r?.source);
+    return runs.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   } catch {
-    return null;
+    return [];
   }
 }
 
 /** 한 소스를 pagesPerRun 쪽까지 읽는다. */
 export async function ingest(
   name: Source,
-  opts: { pages?: number; since?: string; reset?: boolean; by?: "cron" | "admin" } = {},
+  opts: {
+    pages?: number; since?: string; reset?: boolean; by?: "cron" | "admin";
+    /** 이 호출에 쓸 수 있는 시간. 여럿을 나란히 돌릴 때 부르는 쪽이 정한다. */
+    budgetMs?: number;
+  } = {},
 ): Promise<RunReport> {
   const conf = SRC[name];
   const t0 = Date.now();
@@ -225,6 +247,10 @@ export async function ingest(
     return report;
   };
   const pagesPerRun = opts.pages ?? 6;
+  const budgetMs = opts.budgetMs ?? BUDGET_MS;
+  // 뒤쪽 쪽번호는 느리다. 첫 쪽은 짧게 끊어 빨리 실패를 알고, 뒤쪽은 기다려 준다.
+  const deepMs = Math.min(20_000, Math.max(FETCH_MS, Math.floor(budgetMs / 3)));
+  let fails = 0;
   const since = opts.since ?? SINCE_DEFAULT;
   const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
   if (!KEY) return fail({ ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 });
@@ -255,12 +281,19 @@ export async function ingest(
   let stop = false;
   while (page >= 1 && read < budget && !stop) {
     // 시간이 모자라면 여기까지 저장하고 쪽 번호를 남긴 채 돌아간다.
-    if (Date.now() - t0 > BUDGET_MS) { report.timeUp = true; break; }
+    if (Date.now() - t0 > budgetMs) { report.timeUp = true; break; }
     let xml: string;
     if (page === 1) xml = first;
     else {
-      const got = await fetchPage(conf.url, page);
-      if ("err" in got) { report.pages.push({ page, saved: 0, oldest: null, newest: null }); page--; read++; continue; }
+      const got = await fetchPage(conf.url, page, deepMs, 1);
+      if ("err" in got) {
+        report.pages.push({ page, saved: 0, oldest: null, newest: null, err: got.err });
+        fails++;
+        page--; read++;
+        // 뒤쪽이 연달아 막히면 남은 예산을 거기 다 버린다. 끊고 돌아간다.
+        if (fails >= 2) { report.timeUp = true; break; }
+        continue;
+      }
       xml = got.xml;
     }
     const rows = parseItems(xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);

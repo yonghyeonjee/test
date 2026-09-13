@@ -105,12 +105,19 @@ async function stopRequested() {
 }
 
 /** 하나를 돌린다. 예외는 결과로 바꿔 돌려준다 — 하나가 죽어도 나머지는 돈다. */
-export async function collectOne(key: CollectKey, opts: { pages?: number } = {}): Promise<CollectResult> {
+export async function collectOne(
+  key: CollectKey, opts: { pages?: number; budgetMs?: number } = {},
+): Promise<CollectResult> {
   const t0 = Date.now();
   try {
     if (key === "gojobs" || key === "worldjob") {
-      const r = await ingest(key, { pages: opts.pages ?? 4, by: "admin" });
+      const r = await ingest(key, { pages: opts.pages ?? 4, by: "admin", budgetMs: opts.budgetMs });
       if (!r.ok) throw new Error(r.reason ?? "실패");
+      // 한 쪽도 못 받았으면 "0건 저장"이 아니라 실패다. 이유를 그대로 올린다.
+      const errs = r.pages.filter((pg) => pg.err);
+      if (r.saved === 0 && errs.length)
+        return { key, ok: false, saved: 0, elapsedMs: Date.now() - t0,
+                 reason: `${errs.length}쪽을 못 받았습니다 — ${errs[0].err}` };
       return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: !r.cursor?.done };
     }
     const run =
@@ -124,25 +131,43 @@ export async function collectOne(key: CollectKey, opts: { pages?: number } = {})
   }
 }
 
+/** 정해진 시간을 넘기면 기다리지 않고 그렇게 보고한다. 남은 일은 다음 호출이 잇는다. */
+function withDeadline(key: CollectKey, budgetMs: number, work: Promise<CollectResult>) {
+  const t0 = Date.now();
+  return Promise.race([
+    work,
+    new Promise<CollectResult>((resolve) =>
+      setTimeout(() => resolve({
+        key, ok: false, saved: 0, elapsedMs: Date.now() - t0,
+        reason: "시간이 모자라 멈췄습니다 — 다시 누르면 이어집니다",
+      }), budgetMs),
+    ),
+  ]);
+}
+
 /**
- * 전부 돌린다. 시간 예산을 넘기면 남은 것은 건너뛰고 그렇게 보고한다.
- * 한 번에 다 못 해도 다음 호출이 이어받으므로 화면이 멈추는 것보다 낫다.
+ * 전부 돌린다. **나란히** 돌린다.
+ *
+ * 차례로 돌렸더니 나라일터 하나가 예산 45초를 통째로 먹고, 나머지 여섯은
+ * 손도 못 대고 "시간이 모자라 건너뜀"만 나왔다. 하는 일이 거의 다 남의 서버를
+ * 기다리는 것(네트워크)이라 차례를 지킬 이유가 없다. 한꺼번에 띄우면 전체가
+ * 가장 느린 하나만큼만 걸린다.
+ *
+ * 대신 하나가 늘어져 함수 상한(60초)을 넘기지 않게 각자에게 마감을 준다.
  */
 export async function collectAll(budgetMs = 45_000, keys: CollectKey[] = COLLECT_KEYS): Promise<CollectResult[]> {
-  const t0 = Date.now();
-  const out: CollectResult[] = [];
-  for (const key of keys) {
-    if (await stopRequested()) {
-      out.push({ key, ok: false, saved: 0, reason: "중지 눌림 — 건너뜀", elapsedMs: 0 });
-      continue;
-    }
-    if (Date.now() - t0 > budgetMs) {
-      out.push({ key, ok: false, saved: 0, reason: "시간이 모자라 건너뜀 — 다시 누르면 이어집니다", elapsedMs: 0 });
-      continue;
-    }
-    out.push(await collectOne(key, { pages: 3 }));
-  }
-  return out;
+  if (await stopRequested())
+    return keys.map((key) => ({ key, ok: false, saved: 0, reason: "중지 눌림 — 건너뜀", elapsedMs: 0 }));
+
+  return Promise.all(
+    keys.map((key) =>
+      withDeadline(key, budgetMs, collectOne(key, { pages: 3, budgetMs: budgetMs - 3_000 }))
+        .catch((e): CollectResult => ({
+          key, ok: false, saved: 0, elapsedMs: 0,
+          reason: e instanceof Error ? e.message : String(e),
+        })),
+    ),
+  );
 }
 
 export type { LastRun };

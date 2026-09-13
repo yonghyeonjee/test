@@ -35,5 +35,9 @@ export type LastRunView = {
   startedAt: string;
   finishedAt?: string;
   by: "cron" | "admin";
-  report?: { ok: boolean; saved: number; reason?: string; timeUp?: boolean };
+  report?: {
+    ok: boolean; saved: number; reason?: string; timeUp?: boolean;
+    /** 쪽마다의 결과. err 이 있으면 그 쪽을 아예 못 받은 것이다. */
+    pages?: { page: number; saved: number; err?: string }[];
+  };
 };
