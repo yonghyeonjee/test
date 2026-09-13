@@ -8,13 +8,14 @@
 
 export type CollectKey =
   | "gojobs" | "gojobs_archive" | "worldjob"
-  | "license" | "agency_business" | "agency_event" | "agency_facility" | "jeonse";
+  | "license" | "exam" | "agency_business" | "agency_event" | "agency_facility" | "jeonse";
 
 export const COLLECT_LABEL: Record<CollectKey, string> = {
   gojobs: "나라일터 채용 (최신)",
   gojobs_archive: "나라일터 과거 공고",
   worldjob: "해외취업",
   license: "국가자격 종목",
+  exam: "자격시험 일정",
   agency_business: "공공기관 사업",
   agency_event: "공공기관 행사",
   agency_facility: "공공기관 시설",

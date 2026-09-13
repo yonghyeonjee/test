@@ -45,9 +45,8 @@ export default function JobList({ board, filter, action = "/jobs" }: {
     );
   }
 
-  const { regions, hires } = facets(board.jobs);
+  const { regions, hires, openN } = facets(board.jobs, filter);
   const list = filterJobs(board.jobs, filter);
-  const openN = board.jobs.filter((j) => j.status !== "closed").length;
 
   return (
     <div className="mt-6">
@@ -81,12 +80,28 @@ export default function JobList({ board, filter, action = "/jobs" }: {
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[13px]">
           {regions.slice(0, 20).map((r) => (
             <Link key={r.v}
-                  href={href("/jobs", filter, { region: filter.region === r.v ? undefined : r.v })}
+                  href={href(action, filter, { region: filter.region === r.v ? undefined : r.v })}
                   className={`transition-colors hover:text-brand ${
                     filter.region === r.v ? "font-bold text-brand" : "text-muted"}`}>
               {r.v}<span className="num ml-1 text-[11px] text-faint">{r.n}</span>
             </Link>
           ))}
+        </div>
+      )}
+
+      {(filter.q || filter.region || filter.hire || filter.open) && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="text-muted">걸린 조건</span>
+          {[filter.q && `"${filter.q}"`, filter.region, filter.hire, filter.open && "접수 중만"]
+            .filter(Boolean)
+            .map((t) => (
+              <span key={String(t)} className="rounded-pill bg-brandSoft px-2.5 py-1 font-semibold text-brand">
+                {t}
+              </span>
+            ))}
+          <Link href={action} className="text-muted underline underline-offset-4 hover:text-brand">
+            모두 지우기
+          </Link>
         </div>
       )}
 

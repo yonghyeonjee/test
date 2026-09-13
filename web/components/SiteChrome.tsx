@@ -26,7 +26,13 @@ const NAV: NavItem[] = [
       { href: "/money/student-loan", label: "학자금 이자지원" },
     ],
   },
-  { href: "/license", label: "자격증" },
+  {
+    href: "/license", label: "자격증",
+    sub: [
+      { href: "/license", label: "종목 전체" },
+      { href: "/license/schedule", label: "시험 일정" },
+    ],
+  },
   {
     href: "/jobs", label: "채용",
     sub: [

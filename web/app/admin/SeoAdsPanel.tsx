@@ -40,7 +40,7 @@ export function SeoPanel({ initial }: { initial: Seo }) {
         확인 토큰은 &lt;meta name=&quot;…-site-verification&quot;&gt; 로 모든 화면 head 에 나갑니다. 값만 넣으세요.
       </p>
       <div className="mt-4 grid gap-4 sm:grid-cols-3">
-        {([["naver", "네이버 서치어드바이저"], ["google", "구글 서치콘솔"], ["bing", "빙 웹마스터"]] as const).map(([k, label]) => (
+        {([["naver", "네이버 서치어드바이저"], ["google", "구글 서치콘솔"], ["bing", "빙 웹마스터"], ["daum", "다음 웹마스터도구 (robots.txt 에 들어갑니다)"]] as const).map(([k, label]) => (
           <div key={k}>
             <label className="block text-xs font-bold text-muted">{label}</label>
             <input value={v[k]} onChange={f(k)} className={`${input} mt-1.5 font-mono text-xs`} placeholder="content 값" />

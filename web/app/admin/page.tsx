@@ -109,6 +109,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     gojobs_archive: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
     worldjob: { table: "job_posts", filter: ["source", "worldjob"], dateCol: "start_date" },
     license: { table: "license_items" },
+    exam: { table: "exam_rounds", dateCol: "doc_reg_end" },
     agency_business: { table: "agency_items", filter: ["kind", "business"], dateCol: "start_date" },
     agency_event: { table: "agency_items", filter: ["kind", "event"], dateCol: "start_date" },
     agency_facility: { table: "agency_items", filter: ["kind", "facility"] },
