@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
-import { probeJobsApi, runCollectAll, runCollectOne, stopCollect } from "./actions";
+import { probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, stopCollect } from "./actions";
 
 export type SourceStat = { key: CollectKey; n: number; newest: string | null; fetched: string | null };
 
@@ -170,6 +170,22 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
                 className={`btn btn-ghost ${btn} !border-alert !text-alert`}>중지</button>
         <button onClick={() => runMany("연결 확인", () => probeJobsApi())} disabled={!!busy}
                 className={`btn btn-ghost ${btn}`}>연결 확인 (빠름)</button>
+        <button
+          onClick={() => runMany("쪽 넘김 점검", async () => {
+            const r = await probePagingLimits();
+            const body = r.probes
+              .map((x) =>
+                `${x.ok ? "○" : "✕"} ${x.label} (${x.page}쪽) — ` +
+                (x.ok ? `${x.got}건 · idx ${x.firstIdx}~${x.lastIdx}` : x.reason) +
+                ` · ${(x.ms / 1000).toFixed(1)}초`)
+              .join("\n");
+            return { error: r.error ?? (body || "결과 없음") };
+          })}
+          disabled={!!busy}
+          className={`btn btn-ghost ${btn}`}
+        >
+          쪽 넘김 점검
+        </button>
       </div>
       <p className="mt-2 text-xs text-faint">
         중지는 지금 돌고 있는 항목을 끝내고 그다음부터 멈춥니다. 이미 나간 요청은 되돌릴 수 없습니다.

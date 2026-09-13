@@ -333,3 +333,72 @@ export async function ingest(
   await writeRun(db, { source: name, state: "done", startedAt, finishedAt: new Date().toISOString(), by, report });
   return report;
 }
+
+// ── 쪽 넘김 점검 ───────────────────────────────────────────
+
+export type PageProbe = {
+  label: string;
+  rows: number;
+  page: number;
+  ok: boolean;
+  /** 받은 건수. 0 이면 응답은 왔지만 항목이 없었다는 뜻이다. */
+  got: number;
+  firstIdx: string | null;
+  lastIdx: string | null;
+  reason?: string;
+  ms: number;
+};
+
+/**
+ * 뒤쪽 쪽번호를 정말 못 받는지, 어디부터 못 받는지 한 번에 본다.
+ *
+ * 나라일터는 오래된 것부터 주고 최신은 맨 뒤에 있는데, 지금까지 뒤쪽 쪽은
+ * 한 번도 성공한 적이 없다(2888~2892 전부 시간 초과). 느린 것인지 아예
+ * 안 되는 것인지 추측으로 시간을 더 늘려 봐야 답이 안 나온다.
+ *
+ * 앞·중간·뒤를 한꺼번에 찔러 보고 어디까지 되는지 표로 돌려준다.
+ * 나란히 던지므로 가장 느린 하나만큼만 걸린다.
+ */
+export async function probePaging(name: Source = "gojobs"): Promise<PageProbe[]> {
+  const conf = SRC[name];
+  if (!KEY) return [{ label: "인증키", rows: 0, page: 0, ok: false, got: 0,
+                      firstIdx: null, lastIdx: null, reason: "DATA_GO_KR_KEY 미설정", ms: 0 }];
+
+  // 전체 건수를 먼저 안다. 마지막 쪽이 어디인지 알아야 찔러 볼 수 있다.
+  const head = await fetchPage(conf.url, 1, 1, 10_000, 1);
+  if ("err" in head)
+    return [{ label: "첫 쪽", rows: 1, page: 1, ok: false, got: 0,
+              firstIdx: null, lastIdx: null, reason: head.err, ms: 0 }];
+  const total = Number(head.xml.match(/<totalCount>\s*(\d+)/)?.[1]) || 0;
+
+  const at = (rows: number, frac: number) =>
+    Math.max(1, Math.ceil((total / rows) * frac));
+
+  const plan: { label: string; rows: number; page: number }[] = [
+    { label: "100건 · 2쪽 (넘김 자체)", rows: 100, page: 2 },
+    { label: "100건 · 1/4 지점", rows: 100, page: at(100, 0.25) },
+    { label: "100건 · 중간", rows: 100, page: at(100, 0.5) },
+    { label: "100건 · 3/4 지점", rows: 100, page: at(100, 0.75) },
+    { label: "100건 · 마지막", rows: 100, page: at(100, 1) },
+    { label: "1000건 · 마지막", rows: 1000, page: at(1000, 1) },
+    { label: "1000건 · 마지막 직전", rows: 1000, page: Math.max(1, at(1000, 1) - 1) },
+    { label: "5000건 · 마지막", rows: 5000, page: at(5000, 1) },
+  ];
+
+  return Promise.all(plan.map(async (p) => {
+    const t0 = Date.now();
+    const r = await fetchPage(conf.url, p.page, p.rows, 25_000, 1);
+    const ms = Date.now() - t0;
+    if ("err" in r) return { ...p, ok: false, got: 0, firstIdx: null, lastIdx: null, reason: r.err, ms };
+    const err = resultError(r.xml);
+    if (err) return { ...p, ok: false, got: 0, firstIdx: null, lastIdx: null, reason: `API 오류 — ${err}`, ms };
+    const items = parseItems(r.xml, conf.item);
+    return {
+      ...p, ok: items.length > 0, got: items.length,
+      firstIdx: items[0]?.idx ?? null,
+      lastIdx: items[items.length - 1]?.idx ?? null,
+      reason: items.length ? undefined : "응답은 왔지만 항목이 비어 있음",
+      ms,
+    };
+  }));
+}

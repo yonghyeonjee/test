@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
 import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "@/lib/collectors";
-import { ingest, probe, type RunReport } from "@/lib/jobsIngest";
+import { ingest, probe, type RunReport, probePaging, type PageProbe } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 /** 쓰기는 서비스 키로만. 브라우저에 절대 내려가지 않는다. */
@@ -167,6 +167,19 @@ async function setStop(on: boolean) {
 }
 
 /** 연결과 항목 이름만 빠르게 확인한다. */
+/**
+ * 뒤쪽 쪽번호가 어디부터 안 되는지 본다. 25초 안에 끝난다.
+ * 이 표를 보고 "몇 건씩, 어느 쪽까지" 읽을지 정한다.
+ */
+export async function probePagingLimits(): Promise<{ error: string | null; probes: PageProbe[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", probes: [] };
+  try {
+    return { error: null, probes: await probePaging("gojobs") };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e), probes: [] };
+  }
+}
+
 export async function probeJobsApi(): Promise<{ error: string | null; reports: RunReport[] }> {
   if (!isLoggedIn()) return { error: "로그인이 필요합니다.", reports: [] };
   const reports: RunReport[] = [];
