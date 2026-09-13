@@ -12,8 +12,7 @@ const ago = (iso: string) => {
 };
 
 /** 마지막 채용 수집 기록. 함수가 죽어도 DB 에 남아 새로고침으로 보인다. */
-function LastRunLine({ run }: { run: LastRunView | null }) {
-  if (!run) return null;
+function LastRunLine({ run }: { run: LastRunView }) {
   const label = run.source === "gojobs" ? "나라일터" : "월드잡";
   const who = run.by === "cron" ? "자동" : "수동";
   if (run.state === "running") {
@@ -27,11 +26,17 @@ function LastRunLine({ run }: { run: LastRunView | null }) {
     );
   }
   const ok = run.state === "done" && run.report?.ok;
+  const failedPages = (run.report?.pages ?? []).filter((pg) => pg.err);
   return (
     <p className={`mt-3 rounded-ctl px-3 py-2 text-xs ${ok ? "bg-brandSoft text-brand" : "bg-alertSoft text-alert"}`}>
       {label} {who} · {ago(run.startedAt)} ·{" "}
       {ok ? `${run.report?.saved ?? 0}건 저장${run.report?.timeUp ? " (중간에 멈춤 — 다시 누르면 이어집니다)" : ""}`
           : `실패 — ${run.report?.reason ?? "이유 미기록"}`}
+      {failedPages.length > 0 && (
+        <span className="mt-1 block opacity-80">
+          못 받은 쪽 {failedPages.length}개 — {failedPages[0].page}쪽: {failedPages[0].err}
+        </span>
+      )}
     </p>
   );
 }
@@ -42,7 +47,7 @@ function LastRunLine({ run }: { run: LastRunView | null }) {
  * 채용·자격증·공공기관·금리 모두 매일 09:00 크론이 같은 일을 한다.
  * 이 화면은 처음 채울 때와 문제가 있을 때 쓴다.
  */
-export default function CollectPanel({ stats, lastRun }: { stats: SourceStat[]; lastRun: LastRunView | null }) {
+export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[]; lastRuns: LastRunView[] }) {
   const [busy, setBusy] = useState("");
   const [out, setOut] = useState("");
 
@@ -77,7 +82,7 @@ export default function CollectPanel({ stats, lastRun }: { stats: SourceStat[]; 
         여러 번 눌러야 8월까지 채워집니다.
       </p>
 
-      <LastRunLine run={lastRun} />
+      {lastRuns.map((r) => <LastRunLine key={r.source} run={r} />)}
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((s) => (

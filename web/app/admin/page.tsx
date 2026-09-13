@@ -6,7 +6,7 @@ import SettingsPanel from "./SettingsPanel";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
 import CollectPanel, { type SourceStat } from "./CollectPanel";
 import { COLLECT_KEYS, type CollectKey } from "@/lib/collectorMeta";
-import { readLastRun } from "@/lib/jobsIngest";
+import { readLastRuns } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -127,7 +127,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       return { key, n: 0, newest: null, fetched: null };
     }
   }));
-  const lastRun = await readLastRun();
+  const lastRuns = await readLastRuns();
 
   const visitRows = (visits.data ?? []) as Row[];
 
@@ -356,7 +356,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </div>
       </div>
 
-      <CollectPanel stats={jobStats} lastRun={lastRun} />
+      <CollectPanel stats={jobStats} lastRuns={lastRuns} />
       <SeoPanel initial={parseSeo(st.get("seo"))} />
       <AdsPanel initial={parseAds(st.get("ads"))} />
 
