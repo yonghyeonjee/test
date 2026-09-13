@@ -52,7 +52,13 @@ const NAV: NavItem[] = [
     ],
   },
   { href: "/free", label: "무료 서비스" },
-  { href: "/blog", label: "지원금 안내" },
+  {
+    href: "/blog", label: "지원금 안내",
+    sub: [
+      { href: "/blog", label: "안내 글 전체" },
+      { href: "/blog/income", label: "소득 기준 계산기" },
+    ],
+  },
   { href: "/about", label: "소개" },
 ];
 

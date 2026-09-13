@@ -1,5 +1,6 @@
 import { ageLabel, applyStatus, daysLeft, STATUS_LABEL, type Area, type Detail } from "./db";
 import { hasStructure } from "./govText";
+import { manwon, standardFor, tableYear } from "./medianIncome";
 
 /**
  * 상세 화면을 "표"가 아니라 "글"로 읽히게 하는 문장들.
@@ -119,6 +120,25 @@ export function programIntro(p: Detail): string[] {
   return out;
 }
 
+/**
+ * "기준 중위소득 180% 이하" 뒤에 붙일 금액 보기.
+ *
+ * 퍼센트만 적힌 문장은 아무것도 알려 주지 않는다. 흔한 가구 크기 몇 개만
+ * 금액으로 보여 준다. 올해 고시 표가 없으면 아무 말도 하지 않는다 —
+ * 낡은 금액을 적느니 안 적는 편이 낫다.
+ */
+function incomeExample(pct: number) {
+  const year = tableYear();
+  if (year === null) return "";
+  const parts = [1, 2, 4]
+    .map((n) => {
+      const m = standardFor(n, pct, year);
+      return m === null ? null : `${n}인 가구 월 ${manwon(m)}`;
+    })
+    .filter(Boolean);
+  return parts.length ? ` ${year}년 기준으로 ${parts.join(", ")} 정도입니다.` : "";
+}
+
 /** "이런 분이 해당됩니다" 점검 목록. */
 export function programChecks(p: Detail) {
   const out: string[] = [];
@@ -161,12 +181,13 @@ export function programFaq(p: Detail): QA[] {
   out.push({
     q: "소득 기준이 있나요?",
     a: p.income_pct
-      ? `네. 가구 소득이 기준 중위소득 ${p.income_pct}% 이하여야 합니다. 가구원 수에 따라 금액이 다르니 주민센터나 복지로에서 우리 집 기준을 확인하세요.`
+      ? `네. 가구 소득이 기준 중위소득 ${p.income_pct}% 이하여야 합니다.${incomeExample(p.income_pct)} 다만 실제 심사는 연봉이 아니라 재산까지 환산해 더한 소득인정액으로 하므로, 경계선이라면 주민센터나 복지로에서 확인하세요.`
       : "화면에 추려진 소득 기준은 없습니다. 다만 원문에 재산·소득 요건이 있을 수 있으니 신청 전에 확인하세요.",
   });
   out.push({
     q: "언제까지 신청해야 하나요?",
-    a: `${period(p)}. 현재 상태는 '${STATUS_LABEL[applyStatus(p)]}'입니다.`,
+    // period() 가 마침표까지 붙여 돌려준다. 여기서 또 붙이면 "남았습니다.." 가 된다.
+    a: `${period(p)} 현재 상태는 '${STATUS_LABEL[applyStatus(p)]}'입니다.`,
   });
   out.push({
     q: "어디서 어떻게 신청하나요?",
