@@ -164,3 +164,210 @@ export async function probeSite(): Promise<SiteProbe[]> {
   out.push({ step: "HTML 뼈대", ok: true, detail: outline(page.text), ms: 0 });
   return out;
 }
+
+// ── 목록 읽기 ──────────────────────────────────────────────
+
+export type SiteJob = {
+  /** fn_apmView('020','303444') 의 뒤 숫자. 공고를 가리키는 번호다. */
+  id: string;
+  /** 앞 숫자. 기관 계통 코드로 보인다. 상세 주소를 만들 때 같이 쓴다. */
+  sys: string;
+  title: string;
+  org: string | null;
+  /** 제목 앞 아이콘의 alt. "교육", "지방자치단체" 같은 기관 유형이다. */
+  cate: string | null;
+  regDate: string | null;
+  endDate: string | null;
+};
+
+const cell = (h: string) => h.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ")
+  .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+  .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, " ").trim();
+
+const ymd = (v: string) => v.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? null;
+
+/**
+ * 목록 표에서 공고를 읽어 낸다.
+ *
+ * 표는 두 개다. 첫째는 화면 위쪽 검색 상자고, 우리가 볼 것은 둘째다.
+ * 머리글이 번호/공고명/기관명/공고게시일/접수마감일/조회 인 표를 고른다.
+ *
+ * 줄 모양(2026-09 확인):
+ *   <td>1</td>
+ *   <td class="ta_l elip"><div><img alt="교육"/></div>
+ *       <a href="javascript:fn_apmView('020', '303444')"> 제목 </a></td>
+ *   <td>인천광역시교육청 … 인천송림초등학교</td>
+ *   <td>2026-09-12</td> <td>2026-09-15</td> <td>65</td>
+ */
+export function parseList(html: string): SiteJob[] {
+  const tables = [...html.matchAll(/<table[\s\S]*?<\/table>/gi)].map((m) => m[0]);
+  const table = tables.find((t) => /공고게시일/.test(t) && /접수마감일/.test(t));
+  if (!table) return [];
+
+  const out: SiteJob[] = [];
+  for (const m of table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
+    const row = m[1];
+    if (/<th/i.test(row)) continue;
+    const view = row.match(/fn_apmView\(\s*'([^']+)'\s*,\s*'([^']+)'\s*\)/);
+    if (!view) continue;
+    const tds = [...row.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((t) => t[1]);
+    if (tds.length < 5) continue;
+
+    const title = cell(tds[1].replace(/<div>[\s\S]*?<\/div>/i, ""));
+    if (!title) continue;
+
+    out.push({
+      sys: view[1],
+      id: view[2],
+      title,
+      org: cell(tds[2]) || null,
+      cate: tds[1].match(/alt="([^"]*)"/)?.[1]?.trim() || null,
+      regDate: ymd(cell(tds[3])),
+      endDate: ymd(cell(tds[4])),
+    });
+  }
+  return out;
+}
+
+/**
+ * 목록 한 쪽을 받아 읽는다.
+ *
+ * 쪽 넘김이 GET 으로 되는지 아직 모른다. 전자정부 표준틀은 대개
+ * pageIndex 를 쓰므로 그걸로 시도하고, 1쪽과 같은 것이 오면 부르는 쪽이
+ * 알아채도록 첫 공고 번호를 함께 돌려준다.
+ */
+export async function fetchList(page = 1): Promise<
+  { ok: true; jobs: SiteJob[]; ms: number } | { ok: false; reason: string; ms: number }
+> {
+  const url = page > 1 ? `${LIST_URL}&pageIndex=${page}` : LIST_URL;
+  const r = await get(url, 20_000);
+  if (!r.ok) return { ok: false, reason: "err" in r ? r.err! : `응답 ${r.status}`, ms: r.ms };
+  const jobs = parseList(r.text);
+  if (!jobs.length) return { ok: false, reason: "목록 줄을 못 찾았습니다", ms: r.ms };
+  return { ok: true, jobs, ms: r.ms };
+}
+
+/**
+ * 상세 주소를 어떻게 만드는지는 페이지 안의 fn_apmView 가 알고 있다.
+ * 그 함수 본문을 그대로 꺼내 온다 — 짐작으로 주소를 만들지 않는다.
+ */
+export async function readViewFn(): Promise<string> {
+  const r = await get(LIST_URL, 20_000);
+  if (!r.ok) return "err" in r ? r.err! : `응답 ${r.status}`;
+  const m = r.text.match(/function\s+fn_apmView\s*\([^)]*\)\s*\{[\s\S]{0,700}?\n\s*\}/);
+  return m ? m[0].replace(/\s+/g, " ").slice(0, 700) : "fn_apmView 정의를 못 찾음";
+}
+
+// ── 수집 ───────────────────────────────────────────────────
+
+import { createClient } from "@supabase/supabase-js";
+
+function svc() {
+  const key = process.env.SUPABASE_SERVICE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!key || !url) throw new Error("SUPABASE_SERVICE_KEY / NEXT_PUBLIC_SUPABASE_URL 미설정");
+  return createClient(url, key, { auth: { persistSession: false } });
+}
+
+/** 기관 이름에서 시·도를 읽어 낸다. 사이트도 근무지를 따로 주지 않는다. */
+const SIDO = ["서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시",
+  "울산광역시", "세종특별자치시", "경기도", "강원특별자치도", "강원도", "충청북도", "충청남도",
+  "전북특별자치도", "전라북도", "전라남도", "경상북도", "경상남도", "제주특별자치도"];
+const SHORT: Record<string, string> = { 서울: "서울특별시", 부산: "부산광역시", 대구: "대구광역시",
+  인천: "인천광역시", 광주: "광주광역시", 대전: "대전광역시", 울산: "울산광역시", 세종: "세종특별자치시",
+  경기: "경기도", 강원: "강원특별자치도", 충북: "충청북도", 충남: "충청남도", 전북: "전북특별자치도",
+  전남: "전라남도", 경북: "경상북도", 경남: "경상남도", 제주: "제주특별자치도" };
+function sidoOf(text: string): string | null {
+  for (const s of SIDO)
+    if (text.includes(s)) return s.replace("강원도", "강원특별자치도").replace("전라북도", "전북특별자치도");
+  for (const [k, v] of Object.entries(SHORT)) if (text.startsWith(k)) return v;
+  return null;
+}
+
+export type SiteRun = {
+  ok: boolean;
+  saved: number;
+  pages: { page: number; got: number; saved: number; reason?: string }[];
+  /** 쪽 넘김이 GET 으로 되나. 2쪽이 1쪽과 같으면 false. */
+  paging: boolean | null;
+  reason?: string;
+  /** 상세 주소를 만드는 법. 아직 모를 때 여기에 단서를 남긴다. */
+  viewFn?: string;
+  elapsedMs: number;
+};
+
+/**
+ * 나라일터 목록에서 최신 공고를 받아 job_posts 에 넣는다.
+ *
+ * API 는 오래된 것부터 주고 최신이 2,901쪽 뒤인데 그 깊이가 응답하지
+ * 않는다(offset 에 비례해 느려져 마지막은 60초를 넘긴다). 사이트 목록은
+ * 최신이 1쪽에 있다. robots.txt 가 허용하고, 앞쪽 몇 쪽만 하루 한 번 본다.
+ */
+export async function ingestSite(pages = 5, budgetMs = 40_000): Promise<SiteRun> {
+  const t0 = Date.now();
+  const run: SiteRun = { ok: false, saved: 0, pages: [], paging: null, elapsedMs: 0 };
+
+  // 지킬 것부터. 막아 두었으면 아무것도 하지 않는다.
+  const rb = await get(`${BASE}/robots.txt`, 8_000);
+  if (rb.ok && robotsVerdict(rb.text).blocked)
+    return { ...run, reason: "robots.txt 가 막고 있어 받지 않습니다.", elapsedMs: Date.now() - t0 };
+
+  const db = svc();
+  const now = new Date().toISOString();
+  let firstIdOfPage1: string | null = null;
+
+  for (let page = 1; page <= pages; page++) {
+    if (Date.now() - t0 > budgetMs - 6_000) break;
+    const r = await fetchList(page);
+    if (!r.ok) {
+      run.pages.push({ page, got: 0, saved: 0, reason: r.reason });
+      break;
+    }
+    if (page === 1) firstIdOfPage1 = r.jobs[0]?.id ?? null;
+    else if (r.jobs[0]?.id === firstIdOfPage1) {
+      // 2쪽이 1쪽과 같다 = pageIndex 가 안 먹는다. 더 돌아도 같은 것만 온다.
+      run.paging = false;
+      run.pages.push({ page, got: r.jobs.length, saved: 0, reason: "1쪽과 같음 — 쪽 넘김이 GET 으로는 안 됩니다" });
+      break;
+    } else run.paging = true;
+
+    const rows = r.jobs.map((j) => ({
+      id: `gojobs:${j.id}`,
+      source: "gojobs",
+      source_id: j.id,
+      title: j.title.slice(0, 500),
+      org: j.org,
+      region: sidoOf(j.org ?? ""),
+      hire: j.cate,
+      reg_date: j.regDate,
+      end_date: j.endDate,
+      url: null,
+      raw: { sys: j.sys, from: "site" },
+      fetched_at: now,
+    }));
+    const seen = new Set<string>();
+    const uniq = rows.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)));
+    const { error } = await db.from("job_posts").upsert(uniq as never[], { onConflict: "id" });
+    if (error) return { ...run, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
+
+    run.pages.push({ page, got: r.jobs.length, saved: uniq.length });
+    run.saved += uniq.length;
+  }
+
+  // 상세 주소를 아직 못 만든다. 짐작으로 주소를 쓰면 눌러도 엉뚱한 데로
+  // 간다. 답은 페이지 안의 fn_apmView 가 갖고 있으니 꺼내서 DB 에 적어 둔다
+  // — 사람이 옮겨 적을 필요 없이 다음에 그대로 읽어 붙인다.
+  if (run.saved > 0) {
+    run.viewFn = await readViewFn().catch(() => "읽지 못함");
+    await db.from("site_settings").upsert(
+      { key: "gojobs_view_fn", value: { at: now, fn: run.viewFn } as never,
+        updated_at: now },
+      { onConflict: "key" },
+    ).then(() => {}, () => {});
+  }
+
+  run.ok = run.saved > 0;
+  if (!run.ok && !run.reason) run.reason = run.pages[0]?.reason ?? "받아온 것이 없습니다";
+  run.elapsedMs = Date.now() - t0;
+  return run;
+}

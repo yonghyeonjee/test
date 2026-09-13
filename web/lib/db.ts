@@ -248,7 +248,7 @@ export async function getArea(sido: string) {
 }
 
 export async function listByArea(sido: string, limit = 100) {
-  const { data } = await db
+  const { data, error } = await db
     .from("programs_public")
     .select("*")
     .eq("kind", "welfare")
@@ -256,12 +256,13 @@ export async function listByArea(sido: string, limit = 100) {
     .order("first_seen_at", { ascending: false })
     .order("norm_confidence", { ascending: false })
     .limit(limit);
+  if (error) throw new Error(`지역 목록: ${error.message}`);
   return (data ?? []) as Program[];
 }
 
 /** 분야(topics) 하나로 전국 목록. 확신도 순. */
 export async function listByTopic(topic: string, limit = 60) {
-  const { data } = await db
+  const { data, error } = await db
     .from("programs_public")
     .select("*")
     .eq("kind", "welfare")
@@ -269,6 +270,9 @@ export async function listByTopic(topic: string, limit = 60) {
     .order("first_seen_at", { ascending: false })
     .order("norm_confidence", { ascending: false })
     .limit(limit);
+  // 오류를 삼키면 "건수는 74건인데 목록은 0건" 같은 모양이 조용히 생긴다.
+  // 실제로 뷰에 없는 칸(first_seen_at)으로 정렬하다 그렇게 됐다.
+  if (error) throw new Error(`분야 목록: ${error.message}`);
   return (data ?? []) as Program[];
 }
 

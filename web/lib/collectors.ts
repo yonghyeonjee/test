@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { COLLECT_KEYS, type CollectKey, type CollectResult } from "./collectorMeta";
 import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alioplus";
 import { ingest, type LastRun } from "./jobsIngest";
+import { ingestSite } from "./gojobsSite";
 import { getLicenses } from "./qnet";
 import { getRentRates } from "./rentRate";
 
@@ -110,7 +111,19 @@ export async function collectOne(
 ): Promise<CollectResult> {
   const t0 = Date.now();
   try {
-    if (key === "gojobs" || key === "worldjob") {
+    // 나라일터는 사이트에서 받는다. API 는 오래된 것부터 주고 최신이
+    // 2,901쪽 뒤인데 그 깊이가 응답하지 않는다(offset 에 비례해 느려져
+    // 마지막 쪽은 60초를 넘긴다 — 함수 상한이 60초다). 재 봤고, 안 된다.
+    if (key === "gojobs") {
+      const r = await ingestSite(5, opts.budgetMs ?? 40_000);
+      if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
+      // 쪽 넘김이 안 되면 1쪽(최신 10건)만 매일 쌓인다. 그것도 쓸모는 있지만
+      // 그렇다는 사실은 알려 준다.
+      const note = r.paging === false ? " · 1쪽만 됩니다(쪽 넘김 불가)" : "";
+      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
+               more: r.paging !== false, reason: note || undefined };
+    }
+    if (key === "worldjob") {
       const r = await ingest(key, { pages: opts.pages ?? 4, by: "admin", budgetMs: opts.budgetMs });
       if (!r.ok) throw new Error(r.reason ?? "실패");
       // 한 쪽도 못 받았으면 "0건 저장"이 아니라 실패다. 이유를 그대로 올린다.
