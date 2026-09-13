@@ -63,6 +63,7 @@ function toJob(r: Record<string, string>): OverseasJob | null {
 export type OverseasBoard = { ok: boolean; reason: string | null; jobs: OverseasJob[]; total: number };
 
 function sortOverseas(jobs: OverseasJob[]) {
+  if (!jobs.some((j) => j.start || j.end)) return jobs;
   const rank: Record<ApplyStatus, number> = { ongoing: 0, always: 0, upcoming: 1, closed: 2 };
   return jobs.sort(
     (a, b) =>
@@ -107,17 +108,17 @@ export async function getOverseasJobs(nation?: string, q?: string): Promise<Over
   const params: Record<string, string | number> = { numOfRows: ROWS, pageNo: 1 };
   if (nation) params.searchNationNm = nation;
   if (q) params.searchRctntcSj = q;
-  const first = await callOpenApiXml(URL, params, 21600, { itemTag: "ITEM" });
-  if (!first.ok) return { ok: false, reason: first.reason, jobs: [], total: 0 };
+  // 이 API 도 오래된 것부터 준다. 마지막 쪽부터 거꾸로 읽어야 최신이 나온다.
+  const head = await callOpenApiXml(URL, { ...params, numOfRows: 1 }, 21600, { itemTag: "ITEM" });
+  if (!head.ok) return { ok: false, reason: head.reason, jobs: [], total: 0 };
 
-  const rows = [...first.rows];
-  const pages = Math.min(PAGES, Math.ceil(first.total / ROWS));
-  const rest = await Promise.all(
-    Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
-      callOpenApiXml(URL, { ...params, pageNo: i + 2 }, 21600, { itemTag: "ITEM" }),
-    ),
+  const lastPage = Math.max(1, Math.ceil(head.total / ROWS));
+  const wanted = Array.from({ length: Math.min(PAGES, lastPage) }, (_, i) => lastPage - i);
+  const got = await Promise.all(
+    wanted.map((p) => callOpenApiXml(URL, { ...params, pageNo: p }, 21600, { itemTag: "ITEM" })),
   );
-  for (const r of rest) if (r.ok) rows.push(...r.rows);
+  const rows = got.flatMap((r) => (r.ok ? r.rows : []));
+  const first = { total: head.total };
 
   const seen = new Set<string>();
   const jobs: OverseasJob[] = [];
