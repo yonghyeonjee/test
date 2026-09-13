@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import GovText from "@/components/GovText";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
 import Faq from "@/components/Faq";
@@ -94,7 +95,7 @@ function Section({ title, body }: { title: string; body: string | null }) {
   return (
     <>
       <h2 className="mt-9 border-b-2 border-line2 pb-2 text-sm font-bold">{title}</h2>
-      <p className="mt-4 whitespace-pre-line text-sm leading-relaxed">{body}</p>
+      <GovText body={body} />
     </>
   );
 }
