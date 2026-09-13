@@ -1,9 +1,44 @@
 "use client";
 
 import { useState } from "react";
+import type { LastRun } from "@/lib/jobsIngest";
 import { probeJobsApi, runJobsIngest } from "./actions";
 
 type Stat = { source: string; n: number; newest: string | null; fetched: string | null };
+
+const ago = (iso: string) => {
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  return m < 1 ? "방금" : m < 60 ? `${m}분 전` : `${Math.round(m / 60)}시간 전`;
+};
+
+/**
+ * 마지막 실행 기록. 함수가 시간 초과로 죽으면 화면에는 아무것도 안 남으므로,
+ * DB 에 적어 둔 것을 새로고침만 해도 보이게 한다.
+ */
+function LastRunLine({ run }: { run: LastRun | null }) {
+  if (!run) return <p className="mt-3 text-xs text-faint">아직 실행 기록이 없습니다.</p>;
+  const label = run.source === "gojobs" ? "나라일터" : "월드잡";
+  const who = run.by === "cron" ? "자동" : "수동";
+  if (run.state === "running") {
+    const stale = Date.now() - new Date(run.startedAt).getTime() > 90_000;
+    return (
+      <p className={`mt-3 rounded-ctl px-3 py-2 text-xs ${stale ? "bg-alertSoft text-alert" : "bg-brandSoft text-brand"}`}>
+        {stale
+          ? `${label} ${who} 수집이 ${ago(run.startedAt)} 시작한 뒤 끝나지 않았습니다. 시간 초과로 죽었을 가능성이 큽니다. 다시 눌러 보세요.`
+          : `${label} ${who} 수집이 도는 중입니다 (${ago(run.startedAt)} 시작). 잠시 뒤 새로고침하세요.`}
+      </p>
+    );
+  }
+  const ok = run.state === "done" && run.report?.ok;
+  return (
+    <p className={`mt-3 rounded-ctl px-3 py-2 text-xs ${ok ? "bg-brandSoft text-brand" : "bg-alertSoft text-alert"}`}>
+      {label} {who} 수집 · {ago(run.startedAt)} ·{" "}
+      {ok
+        ? `${run.report?.saved ?? 0}건 저장${run.report?.timeUp ? " (시간이 모자라 중간에 멈춤 — 다시 누르면 이어집니다)" : ""}`
+        : `실패 — ${run.report?.reason ?? "이유 미기록"}`}
+    </p>
+  );
+}
 
 /**
  * 채용 수집을 손으로 돌리고 결과를 본다.
@@ -12,7 +47,7 @@ type Stat = { source: string; n: number; newest: string | null; fetched: string 
  * useTransition 을 쓰지 않는 이유는 실패를 잡아 화면에 적기 위해서다. 오류를
  * 삼키면 "눌렀는데 멈췄다"로 보인다.
  */
-export default function JobsIngestPanel({ stats }: { stats: Stat[] }) {
+export default function JobsIngestPanel({ stats, lastRun }: { stats: Stat[]; lastRun: LastRun | null }) {
   const [busy, setBusy] = useState("");
   const [out, setOut] = useState("");
 
@@ -39,6 +74,8 @@ export default function JobsIngestPanel({ stats }: { stats: Stat[] }) {
         매일 09:00(KST) Vercel Cron 이 돌립니다. 처음 채울 때는 아래 단추를 몇 번 눌러 8월까지
         거슬러 올라갑니다. 한 번에 40초까지만 읽고 멈추므로, 끊겨도 다시 누르면 이어집니다.
       </p>
+
+      <LastRunLine run={lastRun} />
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {stats.map((s) => (

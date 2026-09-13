@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   const reports = [];
   for (const s of sources) {
     try {
-      reports.push(await ingest(s, { pages, since, reset }));
+      reports.push(await ingest(s, { pages, since, reset, by: fromCron ? "cron" : "admin" }));
     } catch (e) {
       reports.push({ source: s, ok: false, reason: e instanceof Error ? e.message : String(e), pages: [], saved: 0 });
     }
