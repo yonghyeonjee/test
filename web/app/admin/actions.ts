@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
-import { ingest, type RunReport } from "@/lib/jobsIngest";
+import { ingest, probe, type RunReport } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 /** 쓰기는 서비스 키로만. 브라우저에 절대 내려가지 않는다. */
@@ -120,6 +120,20 @@ export async function runJobsIngest(
   revalidatePath("/admin");
   revalidatePath("/jobs");
   revalidatePath("/jobs/overseas");
+  return { error: null, reports };
+}
+
+/** 연결과 항목 이름만 빠르게 확인한다. */
+export async function probeJobsApi(): Promise<{ error: string | null; reports: RunReport[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", reports: [] };
+  const reports: RunReport[] = [];
+  for (const s of ["gojobs", "worldjob"] as const) {
+    try {
+      reports.push(await probe(s));
+    } catch (e) {
+      reports.push({ source: s, ok: false, reason: e instanceof Error ? e.message : String(e), pages: [], saved: 0 });
+    }
+  }
   return { error: null, reports };
 }
 
