@@ -71,17 +71,40 @@ type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 
-function Row({ title, sub, items, more }: {
-  title: string; sub?: string; items: Program[]; more?: string;
+function Row({ title, sub, items, more, wide }: {
+  title: string; sub?: string; items: Program[]; more?: string; wide?: boolean;
 }) {
   if (!items.length) return null;
   return (
     <section className="mt-10 min-w-0">
       <SectionHead title={title} sub={sub} more={more} />
-      <div className="grid gap-3">
+      <div className={`grid gap-3 ${wide ? "sm:grid-cols-2" : ""}`}>
         {items.map((p) => <ProgramEntry key={p.id} p={p} compact />)}
       </div>
     </section>
+  );
+}
+
+/**
+ * 마감 임박과 새 공고를 나란히 놓는 자리.
+ *
+ * 마감 임박이 0건인 날이 있다(마감일이 적힌 공고가 그 기간에 없을 때).
+ * 그럴 때 2열을 그대로 두면 한 칸이 통째로 비어 화면 절반이 허옇게 남는다.
+ * 남은 한 줄만 있으면 폭을 다 쓰고, 대신 카드를 2열로 깔아 더 보여 준다.
+ */
+function RowPair({ rows }: {
+  rows: { title: string; sub: string; items: Program[] }[];
+}) {
+  const shown = rows.filter((r) => r.items.length);
+  if (!shown.length) return null;
+  const solo = shown.length === 1;
+  return (
+    <div className={`grid gap-x-6 ${solo ? "" : "md:grid-cols-2"}`}>
+      {shown.map((r) => (
+        <Row key={r.title} title={r.title} sub={r.sub} more="/policies"
+             items={r.items.slice(0, solo ? 8 : 5)} wide={solo} />
+      ))}
+    </div>
   );
 }
 
@@ -201,7 +224,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
                 household, n: results.length, entry: via });
 
-  const { closing, fresh, closingCount } = bundle;
+  const { closing, closingFallback, fresh, closingCount } = bundle;
 
   return (
     <>
@@ -283,14 +306,15 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
 
           <AdSlot name="home_mid" />
 
-          <div className="grid gap-x-6 md:grid-cols-2">
-            <Row title="놓치면 내년까지 기다려야 합니다"
-                 sub={`${settings.closingDays}일 이내 마감`} items={closing.slice(0, 5)}
-                 more="/policies" />
-            <Row title="이번 주에 새로 올라왔어요"
-                 sub={`최근 ${settings.newDays}일`} items={fresh.slice(0, 5)}
-                 more="/policies" />
-          </div>
+          <RowPair rows={[
+            { title: "놓치면 내년까지 기다려야 합니다",
+              sub: closingFallback
+                ? "마감일이 가까운 순"
+                : `${settings.closingDays}일 이내 마감`,
+              items: closing },
+            { title: "이번 주에 새로 올라왔어요",
+              sub: `최근 ${settings.newDays}일`, items: fresh },
+          ]} />
 
           <section className="mt-14">
             <SectionHead title="어디에 해당되시나요"
