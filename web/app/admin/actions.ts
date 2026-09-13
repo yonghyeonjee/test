@@ -141,7 +141,9 @@ export async function runCollectAll(keys?: CollectKey[]): Promise<{ error: strin
 export async function runCollectOne(key: CollectKey): Promise<{ error: string | null; results: CollectResult[] }> {
   if (!isLoggedIn()) return { error: "로그인이 필요합니다.", results: [] };
   await setStop(false);
-  const r = await collectOne(key, { pages: 4 });
+  // 함수 상한이 60초다. 한 항목만 돌려도 예산을 줘야 뒤쪽 쪽을 기다리다
+  // 통째로 죽지 않는다. 못 끝낸 만큼은 다음에 누르면 이어받는다.
+  const r = await collectOne(key, { pages: 4, budgetMs: 45_000 });
   revalidatePath("/", "layout");
   return { error: null, results: [r] };
 }
