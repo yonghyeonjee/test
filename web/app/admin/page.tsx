@@ -7,6 +7,7 @@ import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
 import CollectPanel, { type SourceStat } from "./CollectPanel";
 import { COLLECT_KEYS, type CollectKey } from "@/lib/collectorMeta";
 import { readLastRuns } from "@/lib/jobsIngest";
+import { checkSchema, EXPECTED_FUNCTIONS, EXPECTED_RELATIONS } from "@/lib/schemaHealth";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -144,6 +145,10 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     }
   }));
   const lastRuns = await readLastRuns();
+  // 화면이 기대는 함수·표가 실제로 있는지. match_welfare 가 조용히 사라져
+  // 지역 선택이 며칠 죽어 있던 일이 있어 맨 위에 둔다.
+  const health = await checkSchema(db as never);
+  const broken = health.rows.filter((r) => r.problem);
 
   const visitRows = (visits.data ?? []) as Row[];
 
@@ -228,6 +233,46 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           const { logout } = await import("./actions"); await logout(); }}>
           <button className="text-xs text-muted hover:text-brand">로그아웃</button>
         </form>
+      </div>
+
+      {/* 스키마 점검. 멀쩡하면 한 줄, 문제가 있으면 무엇이 문제인지 펼친다. */}
+      <div className={`mt-4 rounded-card border p-4 ${
+        health.error || broken.length
+          ? "border-red-300 bg-red-50"
+          : "border-line bg-ground/40"}`}>
+        <div className="flex items-baseline justify-between gap-3">
+          <b className="text-sm">데이터베이스 점검</b>
+          <span className="num text-xs text-muted">
+            함수 {EXPECTED_FUNCTIONS.length} · 표 {EXPECTED_RELATIONS.length}
+          </span>
+        </div>
+        {health.error ? (
+          <p className="mt-2 text-[13px] leading-relaxed text-red-700">
+            점검하지 못했습니다 — {health.error}
+            <br />
+            schema_health 함수가 없으면 마이그레이션을 먼저 적용하세요.
+          </p>
+        ) : broken.length === 0 ? (
+          <p className="mt-1.5 text-[13px] text-muted">
+            화면이 부르는 것이 모두 살아 있습니다.
+          </p>
+        ) : (
+          <>
+            <p className="mt-2 text-[13px] font-semibold text-red-700">
+              {broken.length}개가 문제입니다. 이 중 하나라도 화면에서 부르면 500 이 납니다.
+            </p>
+            <ul className="mt-2 space-y-1">
+              {broken.map((r) => (
+                <li key={r.name} className="text-[13px] text-red-700">
+                  <code className="font-semibold">{r.name}</code>
+                  <span className="ml-1.5 text-red-600/80">
+                    ({r.kind === "function" ? "함수" : "표"}) {r.problem}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">

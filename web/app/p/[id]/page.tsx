@@ -6,7 +6,7 @@ import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
-import { programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
+import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
@@ -147,8 +147,14 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <p className="text-sm font-bold">{where}</p>
       <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-tight">{p.title}</h1>
 
-      {/* 필드로 만든 요약 문단. 표보다 먼저 "나한테 해당되나, 언제까지"를 말한다. */}
-      <p className="mt-4 text-[15.5px] leading-[1.8] text-ink2">{programIntro(p)}</p>
+      {/* 필드로 만든 요약. 표보다 먼저 "나한테 해당되나, 언제까지"를 말한다.
+          한 덩어리로 이어 붙이면 열 줄짜리 벽이 되어 아무도 안 읽는다.
+          문장 단위로 끊어 문단으로 놓는다. */}
+      <div className="mt-4 space-y-2.5 text-[15.5px] leading-[1.8] text-ink2">
+        {programIntro(p).map((t) => (
+          <p key={t.slice(0, 24)} className="break-keep">{t}</p>
+        ))}
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <span className={`badge ${STATUS_BADGE[status]}`}>
@@ -166,7 +172,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
       {status === "upcoming" && p.apply_start && (
         <p className="num mt-5 inline-block border-l-[3px] border-gold pl-3 text-sm font-bold text-gold">
-          {p.apply_start} 접수 시작 예정
+          {korDate(p.apply_start)} 접수 시작 예정
         </p>
       )}
 
@@ -209,7 +215,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         <Row label="접수기간">
           {p.is_always_on || !p.apply_end
             ? "상시 접수"
-            : `${p.apply_start ? p.apply_start + " ~ " : "~ "}${p.apply_end}`}
+            : `${p.apply_start ? korDate(p.apply_start) + " ~ " : "~ "}${korDate(p.apply_end)}`}
         </Row>
         {p.org_name && <Row label="담당">{p.dept_name || p.org_name}</Row>}
         {p.contact && <Row label="문의">{p.contact}</Row>}
