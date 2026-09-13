@@ -8,6 +8,8 @@ import JobsIngestPanel from "./JobsIngestPanel";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
+// 수집 서버 액션이 공공 API 를 여러 쪽 읽는다. 기본 10초로는 모자란다.
+export const maxDuration = 60;
 export const metadata = { robots: { index: false, follow: false } };
 
 function svc() {
