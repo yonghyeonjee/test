@@ -4,7 +4,8 @@ import LoginForm from "./LoginForm";
 import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
-import JobsIngestPanel from "./JobsIngestPanel";
+import CollectPanel, { type SourceStat } from "./CollectPanel";
+import { COLLECT_KEYS, type CollectKey } from "@/lib/collectors";
 import { readLastRun } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
@@ -101,10 +102,30 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       .limit(1000),
     db.from("visit_log").select("*").gte("at", since).limit(5000),
   ]);
-  const jobStats = await Promise.all(["gojobs", "worldjob"].map(async (source) => {
-    const { count } = await db.from("job_posts").select("id", { count: "exact", head: true }).eq("source", source);
-    const { data } = await db.from("job_posts").select("reg_date,fetched_at").eq("source", source).order("fetched_at", { ascending: false }).limit(1).maybeSingle();
-    return { source, n: count ?? 0, newest: (data?.reg_date as string | null) ?? null, fetched: (data?.fetched_at as string | null) ?? null };
+  // 수집 대상마다 건수·최신·마지막 수집 시각. 표가 없거나 비어 있어도 0 으로 보인다.
+  const WHERE: Record<CollectKey, { table: string; filter?: [string, string]; dateCol?: string }> = {
+    gojobs: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
+    worldjob: { table: "job_posts", filter: ["source", "worldjob"], dateCol: "start_date" },
+    license: { table: "license_items" },
+    agency_business: { table: "agency_items", filter: ["kind", "business"], dateCol: "start_date" },
+    agency_event: { table: "agency_items", filter: ["kind", "event"], dateCol: "start_date" },
+    agency_facility: { table: "agency_items", filter: ["kind", "facility"] },
+    jeonse: { table: "rate_rows" },
+  };
+  const jobStats: SourceStat[] = await Promise.all(COLLECT_KEYS.map(async (key) => {
+    const w = WHERE[key];
+    try {
+      let c = db.from(w.table).select("*", { count: "exact", head: true });
+      if (w.filter) c = c.eq(w.filter[0], w.filter[1]);
+      const { count } = await c;
+      let q = db.from(w.table).select(`fetched_at${w.dateCol ? `,${w.dateCol}` : ""}`).order("fetched_at", { ascending: false }).limit(1);
+      if (w.filter) q = q.eq(w.filter[0], w.filter[1]);
+      const { data } = await q.maybeSingle();
+      const row = (data ?? {}) as Record<string, string | null>;
+      return { key, n: count ?? 0, newest: w.dateCol ? (row[w.dateCol] ?? null) : null, fetched: row.fetched_at ?? null };
+    } catch {
+      return { key, n: 0, newest: null, fetched: null };
+    }
   }));
   const lastRun = await readLastRun();
 
@@ -335,7 +356,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </div>
       </div>
 
-      <JobsIngestPanel stats={jobStats} lastRun={lastRun} />
+      <CollectPanel stats={jobStats} lastRun={lastRun} />
       <SeoPanel initial={parseSeo(st.get("seo"))} />
       <AdsPanel initial={parseAds(st.get("ads"))} />
 

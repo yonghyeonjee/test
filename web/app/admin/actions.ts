@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
+import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "@/lib/collectors";
 import { ingest, probe, type RunReport } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
@@ -121,6 +122,46 @@ export async function runJobsIngest(
   revalidatePath("/jobs");
   revalidatePath("/jobs/overseas");
   return { error: null, reports };
+}
+
+/**
+ * 전체 수집. 채용부터 자격증·공공기관·금리까지 한 번에.
+ *
+ * 중지 단추는 stop 플래그를 DB 에 세운다. 이미 도는 함수를 밖에서 죽일 수는
+ * 없지만, 다음 항목으로 넘어가기 전에 이 값을 보고 멈춘다.
+ */
+export async function runCollectAll(keys?: CollectKey[]): Promise<{ error: string | null; results: CollectResult[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", results: [] };
+  await setStop(false);
+  const results = await collectAll(45_000, keys ?? COLLECT_KEYS);
+  revalidatePath("/", "layout");
+  return { error: null, results };
+}
+
+export async function runCollectOne(key: CollectKey): Promise<{ error: string | null; results: CollectResult[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", results: [] };
+  await setStop(false);
+  const r = await collectOne(key, { pages: 4 });
+  revalidatePath("/", "layout");
+  return { error: null, results: [r] };
+}
+
+/** 수집을 멈춘다. 도는 중인 항목은 끝내고 그다음부터 멈춘다. */
+export async function stopCollect(): Promise<{ error: string | null }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다." };
+  await setStop(true);
+  return { error: null };
+}
+
+async function setStop(on: boolean) {
+  try {
+    await admin().from("site_settings").upsert(
+      { key: "collect_stop", value: { on, at: new Date().toISOString() } as never, updated_at: new Date().toISOString() },
+      { onConflict: "key" },
+    );
+  } catch {
+    /* 중지 표시 실패로 수집을 막지 않는다 */
+  }
 }
 
 /** 연결과 항목 이름만 빠르게 확인한다. */

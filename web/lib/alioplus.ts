@@ -114,6 +114,8 @@ export const SIDO_SHORT = [
 
 // ── 화면용 정규화 ─────────────────────────────────────────
 
+export type { AlioResult as AlioCallResult };
+
 export type AlioItem = {
   id: string;
   title: string;
