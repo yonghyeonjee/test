@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -316,7 +317,7 @@ export type Bundle = {
  * 나눠서 부르면 조회 9번이고, Vercel 함수와 DB 가 멀면 왕복만 1.5초가 넘는다.
  * 서버에서 한 번에 묶어 오면 130ms 안에 끝난다.
  */
-export async function getHomeBundle(): Promise<Bundle> {
+async function loadHomeBundle(): Promise<Bundle> {
   const { data } = await db.rpc("home_bundle");
   const b = (data ?? {}) as Record<string, any>;
 
@@ -372,6 +373,18 @@ export async function getHomeBundle(): Promise<Bundle> {
     fresh: (b.fresh ?? []) as Program[],
   };
 }
+
+/**
+ * 첫 화면은 검색어(searchParams)를 읽어서 요청마다 새로 그린다. 그래서
+ * 캐시를 걸지 않으면 누가 들어올 때마다 DB 를 한 번씩 다녀온다 — 서울에서
+ * 휴대폰으로 열면 이 왕복만으로 눈에 띄게 느리다.
+ *
+ * 자료 자체는 모두에게 같으니 15분에 한 번만 다녀오면 된다. 화면 그리는
+ * 일은 그대로 두고, 자료 가져오는 일만 캐시한다.
+ */
+export const getHomeBundle = unstable_cache(loadHomeBundle, ["home-bundle"], {
+  revalidate: 900,
+});
 
 
 export async function feedClosing(kind: string | null = null, limit = 8) {

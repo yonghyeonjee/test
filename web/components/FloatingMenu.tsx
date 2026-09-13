@@ -35,11 +35,15 @@ export default function FloatingMenu() {
   }, [open]);
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
+    // 이 상자는 접혀 있을 때도 갈래 여섯 개만큼(세로 300px 남짓) 자리를
+    // 차지한다. 배경이 없어도 상자는 상자라, 그 위를 누르면 뒤에 있는 카드가
+    // 아니라 이 상자가 받아 버린다 — 오른쪽 아래가 통째로 안 눌렸다.
+    // 상자는 누름을 통과시키고, 실제로 누를 것들만 다시 받게 한다.
+    <div className="pointer-events-none fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
       {/* 펼쳐진 갈래 */}
       <ul
         className={`flex flex-col items-end gap-1.5 transition-all duration-200 ${
-          open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
+          open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
         aria-hidden={!open}
       >
         {ITEMS.map((it, i) => (
@@ -73,8 +77,9 @@ export default function FloatingMenu() {
         aria-expanded={open}
         aria-label={open ? "메뉴 닫기" : "바로가기 메뉴"}
         onClick={() => setOpen((o) => !o)}
-        className={`flex h-13 w-13 items-center justify-center rounded-pill text-white shadow-lift
-                    transition-all duration-200 ${open ? "rotate-45 bg-deep" : "bg-brand hover:bg-brandDeep"}`}
+        className={`pointer-events-auto flex h-13 w-13 items-center justify-center rounded-pill
+                    text-white shadow-lift transition-all duration-200
+                    ${open ? "rotate-45 bg-deep" : "bg-brand hover:bg-brandDeep"}`}
         style={{ width: 52, height: 52 }}
       >
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2"

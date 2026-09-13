@@ -9,6 +9,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness } from "@/lib/alioplus";
+import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
 import { AGENCY_FAQ } from "@/lib/pageFaq";
 
@@ -55,11 +56,15 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
     life: one(searchParams.life), cate: one(searchParams.cate),
     svc: one(searchParams.svc), q: one(searchParams.q),
   };
-  const res = await callAlio("business", {
+  // 매일 받아 둔 것을 먼저 본다. 알리오가 늦거나 막혀도 화면은 산다.
+  // DB 가 비어 있을 때만(첫 수집 전) 직접 부른다.
+  const stored = await agencyFromStore("business",
+    { q: current.q, byCode: [current.life, current.cate, current.svc] });
+  const res = stored ? { ok: true as const, rows: [] } : await callAlio("business", {
     schLifeCycle: current.life ?? "", schFstCateCd: current.cate ?? "",
     schSvcCate: current.svc ?? "", schBsnNa: current.q ?? "",
   });
-  const items = res.ok ? res.rows.map(toBusiness).filter((x): x is NonNullable<typeof x> => !!x) : [];
+  const items = stored ?? (res.ok ? res.rows.map(toBusiness).filter((x): x is NonNullable<typeof x> => !!x) : []);
 
   return (
     <div className="pb-4">

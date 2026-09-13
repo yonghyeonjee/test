@@ -61,7 +61,8 @@ export async function callAlio(
       body: body.toString(),
       next: { revalidate },
       // 알리오 쪽도 매달리면 빌드가 통째로 죽는다. 시간 제한을 건다.
-      signal: AbortSignal.timeout(Number(process.env.OPENAPI_TIMEOUT_MS ?? 8000)),
+      // 한 번에 수백~천 건을 보내는 쪽이라 8초로는 빠듯하다. 여유를 준다.
+      signal: AbortSignal.timeout(Number(process.env.ALIO_TIMEOUT_MS ?? 20000)),
     });
     if (!res.ok) return { ok: false, reason: `응답 코드 ${res.status}` };
     const text = await res.text();
