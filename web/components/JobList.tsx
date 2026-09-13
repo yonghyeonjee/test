@@ -103,7 +103,8 @@ export default function JobList({ board, filter }: { board: JobBoard; filter: Jo
             const inner = (
               <>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>
+                  {(j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
+                  {j.reg && <span className="num badge badge-quiet">{dot(j.reg)} 등록</span>}
                   {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
                   {j.recruit && <span className="badge badge-quiet">{j.recruit}</span>}
                 </div>

@@ -1,5 +1,5 @@
 import { callOpenApiXml } from "./openapi";
-import { applyStatus, type ApplyStatus } from "./db";
+import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 
 /**
  * 공공기관 채용정보 (인사혁신처 나라일터, PblJobService).
@@ -91,11 +91,59 @@ function toJob(r: Record<string, string>): Job | null {
     end,
     reg: isoDate(pick(r, ALIAS.reg)),
     url: pick(r, ALIAS.url),
-    status: applyStatus({ apply_start: start, apply_end: end, is_always_on: false }),
+    // 날짜가 없는 공고는 "진행 중"이라고 단정하지 않는다
+    status: start || end ? applyStatus({ apply_start: start, apply_end: end, is_always_on: false }) : "always",
   };
 }
 
+type Stored = {
+  source_id: string; title: string; org: string | null; region: string | null; hire: string | null;
+  recruit: string | null; sectors: string | null; headcount: string | null;
+  start_date: string | null; end_date: string | null; reg_date: string | null; url: string | null;
+};
+
+/**
+ * 매일 아침 수집해 둔 표에서 최신순으로 읽는다. 표가 비어 있으면(첫 배포·
+ * 수집 실패) 예전처럼 API 를 직접 부른다.
+ */
+async function fromStore(): Promise<JobBoard | null> {
+  if (!dbConfigured) return null;
+  try {
+    const { data, count } = await db
+      .from("job_posts")
+      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "exact" })
+      .eq("source", "gojobs")
+      .order("reg_date", { ascending: false, nullsFirst: false })
+      .order("end_date", { ascending: false, nullsFirst: false })
+      .limit(600);
+    const rows = (data ?? []) as Stored[];
+    if (!rows.length) return null;
+    const jobs: Job[] = rows.map((r) => ({
+      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire, recruit: r.recruit,
+      sectors: r.sectors, headcount: r.headcount, start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
+      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
+    }));
+    return { ok: true, reason: null, jobs: sortJobs(jobs), total: count ?? jobs.length };
+  } catch {
+    return null;
+  }
+}
+
+/** 접수 중(마감 임박 순) → 예정 → 마감. 같은 묶음 안에서는 최신 등록 순. */
+function sortJobs(jobs: Job[]) {
+  const rank: Record<ApplyStatus, number> = { ongoing: 0, always: 0, upcoming: 1, closed: 2 };
+  return jobs.sort(
+    (a, b) =>
+      rank[a.status] - rank[b.status] ||
+      (a.status === "closed"
+        ? (b.reg ?? b.end ?? "").localeCompare(a.reg ?? a.end ?? "")
+        : (a.end ?? "9999").localeCompare(b.end ?? "9999") || (b.reg ?? "").localeCompare(a.reg ?? "")),
+  );
+}
+
 export async function getJobs(): Promise<JobBoard> {
+  const stored = await fromStore();
+  if (stored) return stored;
   const first = await callOpenApiXml(URL, { numOfRows: ROWS, pageNo: 1 }, 21600);
   if (!first.ok) return { ok: false, reason: first.reason, jobs: [], total: 0 };
 
@@ -121,15 +169,7 @@ export async function getJobs(): Promise<JobBoard> {
     return { ok: false, reason: "응답 항목을 읽지 못했습니다.", jobs: [], total: first.total };
   }
 
-  // 접수 중인 것을 마감 임박순으로 앞에, 예정·마감은 뒤로.
-  const rank: Record<ApplyStatus, number> = { ongoing: 0, always: 0, upcoming: 1, closed: 2 };
-  jobs.sort(
-    (a, b) =>
-      rank[a.status] - rank[b.status] ||
-      (a.end ?? "9999").localeCompare(b.end ?? "9999") ||
-      (b.reg ?? "").localeCompare(a.reg ?? ""),
-  );
-  return { ok: true, reason: null, jobs, total: first.total };
+  return { ok: true, reason: null, jobs: sortJobs(jobs), total: first.total };
 }
 
 /** "서울,경기" / "서울 경기" / "전국" 처럼 오는 근무지를 시·도 조각으로. */
