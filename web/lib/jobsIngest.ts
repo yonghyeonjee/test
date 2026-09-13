@@ -291,11 +291,16 @@ export async function ingest(
   let stop = false;
   while (page >= 1 && read < budget && !stop) {
     // 시간이 모자라면 여기까지 저장하고 쪽 번호를 남긴 채 돌아간다.
-    if (Date.now() - t0 > budgetMs) { report.timeUp = true; break; }
+    // 남은 시간보다 오래 기다리면 안 된다. 예산을 "시작 전"에만 보고
+    // 기다리는 시간은 따로 정하면, 두 쪽만 실패해도 함수 상한(60초)을 넘겨
+    // 통째로 죽는다 — 실제로 그래서 "Cannot read properties of undefined"가
+    // 떴다. 서버 함수가 죽으면 화면은 결과 자체를 못 받는다.
+    const left = budgetMs - (Date.now() - t0);
+    if (left < 6_000) { report.timeUp = true; break; }
     let xml: string;
     if (page === 1) xml = first;
     else {
-      const got = await fetchPage(conf.url, page, rows_, deepMs, 1);
+      const got = await fetchPage(conf.url, page, rows_, Math.min(deepMs, left - 2_000), 1);
       if ("err" in got) {
         report.pages.push({ page, saved: 0, oldest: null, newest: null, err: got.err });
         fails++;
