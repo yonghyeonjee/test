@@ -42,18 +42,29 @@ export async function getLicenses(): Promise<LicenseBoard> {
   const res = await callOpenApiXml(URL, {}, 7 * 86400, { keyParam: "ServiceKey" });
   if (!res.ok) return { ok: false, reason: res.reason, all: [], series: [] };
 
+  // ?? 는 null 만 걸러서 빈 문자열이 그대로 지나간다. 이 API 는 없는 값을
+  // <obligfldnm></obligfldnm> 처럼 빈 태그로 주기 때문에, 화면에 이름 없는
+  // 묶음이 생겼다("(빈칸) 100종목"). 공백까지 없는 값으로 본다.
+  const val = (v: string | undefined, fallback = "") => {
+    const t = (v ?? "").trim();
+    return t || fallback;
+  };
+
   const all: License[] = [];
   for (const r of res.rows) {
-    const name = (r.jmfldnm ?? "").trim();
+    const name = val(r.jmfldnm);
     if (!name) continue;
+    const kindName = val(r.qualgbnm);
     all.push({
-      code: r.jmcd ?? "",
+      code: val(r.jmcd),
       name,
-      kind: r.qualgbcd ?? "",
-      kindName: r.qualgbnm ?? "",
-      series: r.seriesnm ?? "기타",
-      field: r.obligfldnm ?? "기타",
-      subField: r.mdobligfldnm ?? "",
+      kind: val(r.qualgbcd),
+      kindName,
+      series: val(r.seriesnm, "기타"),
+      // 국가전문자격(청소년상담사·관광통역안내사 등)은 대직무분야가 없다.
+      // 없는 것을 "기타"로 뭉뚱그리지 말고 무엇인지 그대로 적는다.
+      field: val(r.obligfldnm, kindName || "국가전문자격"),
+      subField: val(r.mdobligfldnm),
     });
   }
   all.sort((a, b) => a.name.localeCompare(b.name, "ko"));
@@ -88,7 +99,7 @@ export function groupByField(list: License[]) {
       field,
       n: Array.from(sub.values()).reduce((a, v) => a + v.length, 0),
       subs: Array.from(sub.entries())
-        .map(([subField, items]) => ({ subField, items }))
+        .map(([subField, items]) => ({ subField: subField || "분류 없음", items }))
         .sort((a, b) => b.items.length - a.items.length),
     }))
     .sort((a, b) => b.n - a.n);

@@ -13,6 +13,11 @@ export type Seo = {
   naver: string;
   google: string;
   bing: string;
+  /**
+   * 다음 웹마스터도구. 이쪽은 meta 가 아니라 robots.txt 안에 주석 한 줄로
+   * 넣는다 — "#DaumWebMasterTool:…" 형태 그대로.
+   */
+  daum: string;
   /** 비우면 코드의 기본 설명을 쓴다. */
   description: string;
   keywords: string;
@@ -36,9 +41,10 @@ export const AD_SLOT_LABEL: Record<AdSlotName, string> = {
 
 export const EMPTY_SLOT: AdSlotCfg = { on: false, kind: "html", html: "", img: "", href: "", alt: "" };
 
-/** 네이버 확인 토큰은 DB 가 비어 있어도 나가야 한다. 코드에 기본값을 둔다. */
-const DEFAULT_SEO: Seo = {
+/** 확인 토큰은 DB 가 비어 있거나 못 읽어도 나가야 한다. 코드에 기본값을 둔다. */
+export const DEFAULT_SEO: Seo = {
   naver: "a910f9a9fb3d311d3ebe25d0d7f821df89c3bb12",
+  daum: "c5c205ec2131c804e16bafa3971f389b5c56e8e4b4e42a153a178f743f21252d:TTrNsDNWeyJBX4OQHE95rw==",
   google: "", bing: "", description: "", keywords: "", index: true,
 };
 
@@ -49,6 +55,7 @@ export function parseSeo(v: unknown): Seo {
   const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
   return {
     naver: str(o.naver, DEFAULT_SEO.naver),
+    daum: str(o.daum, DEFAULT_SEO.daum),
     google: str(o.google), bing: str(o.bing),
     description: str(o.description), keywords: str(o.keywords),
     index: bool(o.index, true),

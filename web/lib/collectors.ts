@@ -4,6 +4,7 @@ import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alio
 import { ingestArchive, type LastRun } from "./jobsIngest";
 import { ingestSite } from "./gojobsSite";
 import { getLicenses } from "./qnet";
+import { EXAM_GRADES, fetchGrade, toRow as toExamRow } from "./qnetExam";
 import { getRentRates } from "./rentRate";
 
 /**
@@ -46,6 +47,23 @@ async function collectLicense(): Promise<{ saved: number }> {
   }));
   await upsert("license_items", rows, "code");
   return { saved: rows.length };
+}
+
+// ── 국가기술자격 시험 일정 ──────────────────────────────────
+/**
+ * 등급 넷을 나란히 받는다. 하나가 실패해도 나머지는 저장한다 —
+ * 넷 다 실패했을 때만 실패로 본다.
+ */
+async function collectExam(): Promise<{ saved: number }> {
+  const got = await Promise.all(EXAM_GRADES.map((g) => fetchGrade(g)));
+  const rounds = got.flatMap((r) => (r.ok ? r.rounds : []));
+  if (!rounds.length) {
+    const why = got.find((r) => !r.ok);
+    throw new Error(why && !why.ok ? why.reason : "회차를 받지 못했다");
+  }
+  const byId = new Map(rounds.map((r) => [r.id, toExamRow(r)]));
+  await upsert("exam_rounds", [...byId.values()], "id");
+  return { saved: byId.size };
 }
 
 // ── 공공기관 사업·행사·시설 ─────────────────────────────────
@@ -158,6 +176,7 @@ export async function collectOne(
     }
     const run =
       key === "license" ? collectLicense
+      : key === "exam" ? collectExam
       : key === "jeonse" ? collectJeonse
       : () => collectAgency(key.replace("agency_", "") as "business" | "event" | "facility");
     const { saved } = await run();

@@ -190,15 +190,31 @@ export function filterJobs(jobs: Job[], f: JobFilter) {
 }
 
 /** 걸러 볼 수 있는 값 목록. 많이 나오는 순. */
-export function facets(jobs: Job[]) {
+/**
+ * 거르기 칩에 붙일 건수.
+ *
+ * 지금까지는 전체에서 셌다. 그래서 "방호"로 찾아 7건이 남았는데 칩에는
+ * 서울 63 · 국가 311 이 그대로 붙어 있었다 — 누르면 7건이 아니라 63건이
+ * 나온다는 뜻이니 숫자가 거짓말을 한 셈이다.
+ *
+ * 이제 지금 걸린 조건을 적용한 뒤에 센다. 다만 자기 자신 차원은 빼고
+ * 센다 — 서울을 고른 채로 지역 칩을 셀 때 서울만 남기고 세면 다른 지역이
+ * 전부 0이 되어 옮겨 갈 수가 없다. 검색 목록에서 흔히 쓰는 방식이다.
+ */
+export function facets(jobs: Job[], f: JobFilter = {}) {
   const count = (vals: (string | null)[]) => {
     const m = new Map<string, number>();
     for (const v of vals) if (v) m.set(v, (m.get(v) ?? 0) + 1);
     return Array.from(m.entries()).sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v, n }));
   };
+  // 지역 칩을 셀 때는 지역 조건을 빼고, 고용형태 칩을 셀 때는 고용형태를 뺀다.
+  const forRegion = filterJobs(jobs, { ...f, region: undefined });
+  const forHire = filterJobs(jobs, { ...f, hire: undefined });
   return {
-    regions: count(jobs.flatMap((j) => regionTokens(j.region))),
-    hires: count(jobs.map((j) => j.hire)),
+    regions: count(forRegion.flatMap((j) => regionTokens(j.region))),
+    hires: count(forHire.map((j) => j.hire)),
+    /** "접수 중만" 칩에 붙일 수. 여기도 접수 여부를 뺀 나머지 조건 기준. */
+    openN: filterJobs(jobs, { ...f, open: false }).filter((j) => j.status !== "closed").length,
   };
 }
 

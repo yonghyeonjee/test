@@ -7,7 +7,9 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import LicenseList from "@/components/LicenseList";
+import ExamDeadlines from "@/components/ExamDeadlines";
 import { getLicenses } from "@/lib/qnet";
+import { getExamRounds, upcoming } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { LICENSE_FAQ } from "@/lib/pageFaq";
 
@@ -41,6 +43,8 @@ type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 
 export default async function LicensePage({ searchParams }: { searchParams: SP }) {
+  // 마감일이 먼저다. 종목 목록보다 위에 놓는다.
+  const soon = upcoming(await getExamRounds());
   const board = await getLicenses();
   const picked = one(searchParams.series) ?? "";
   const tech = board.all.filter((l) => l.kind === "T").length;
@@ -71,6 +75,8 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
           </div>
         )}
       </PageBanner>
+
+      <ExamDeadlines items={soon} />
 
       <LicenseList board={board} picked={picked} />
 
