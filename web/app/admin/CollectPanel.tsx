@@ -195,7 +195,7 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
     <section className="card mt-6 p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-bold">공공 API 수집 <span className="ml-1 font-normal text-faint">v3</span></h2>
-        <span className="text-xs text-faint">매일 09:00(KST) 자동</span>
+        <span className="text-xs text-faint">최신 100건 매일 09:00 · 과거는 하루 5번 이어서</span>
       </div>
       <p className="mt-1 text-xs text-faint">
         자동으로도 돌지만, 여기서 전체 또는 항목 하나만 지금 받아올 수 있습니다.

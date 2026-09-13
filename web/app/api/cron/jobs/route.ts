@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { isLoggedIn } from "@/lib/auth";
-import { collectAll, COLLECT_KEYS, type CollectKey } from "@/lib/collectors";
-import { ingest } from "@/lib/jobsIngest";
+import { collectAll, collectOne, COLLECT_KEYS, type CollectKey } from "@/lib/collectors";
 
 /**
- * 채용 공고 수집 진입점. Vercel Cron(매일 09:00 KST)이 CRON_SECRET 으로,
- * 관리자가 화면의 단추로 부른다. 그 밖에는 401.
+ * 수집 진입점. 두 손님이 온다.
  *
- *   /api/cron/jobs?pages=6&since=2026-08-01&source=gojobs&reset=1
+ *  - Vercel Cron, 매일 09:00 KST, source 없이  → 전부 나란히(최신 100건씩)
+ *  - GitHub Actions, 하루 다섯 번, source 붙여  → 그 하나만, 과거를 이어서
+ *
+ * 둘 다 CRON_SECRET 으로 온다. 관리자가 로그인한 채로 불러도 된다. 그 밖에는 401.
+ * 응답의 more 가 true 면 아직 남은 것이 있다 — 부르는 쪽이 다시 부른다.
  */
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -18,26 +20,16 @@ export async function GET(req: Request) {
   const fromCron = !!secret && auth === `Bearer ${secret}`;
   if (!fromCron && !isLoggedIn()) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const u = new URL(req.url);
-  const pages = Math.min(12, Math.max(1, Number(u.searchParams.get("pages") ?? 6)));
-  const since = u.searchParams.get("since") ?? undefined;
-  const reset = u.searchParams.get("reset") === "1";
-  const only = u.searchParams.get("source");
-  const sources = (only === "gojobs" || only === "worldjob" ? [only] : ["gojobs", "worldjob"]) as ("gojobs" | "worldjob")[];
+  const only = new URL(req.url).searchParams.get("source");
+  const at = new Date().toISOString();
 
-  // 소스를 콕 집지 않으면 공공 API 전부를 돈다 (자격증·공공기관·금리 포함).
   if (!only) {
     const results = await collectAll(45_000, COLLECT_KEYS as CollectKey[]);
-    return NextResponse.json({ at: new Date().toISOString(), results });
+    return NextResponse.json({ at, results });
   }
+  if (!(COLLECT_KEYS as string[]).includes(only))
+    return NextResponse.json({ error: `모르는 source: ${only}`, known: COLLECT_KEYS }, { status: 400 });
 
-  const reports = [];
-  for (const s of sources) {
-    try {
-      reports.push(await ingest(s, { pages, since, reset, by: fromCron ? "cron" : "admin" }));
-    } catch (e) {
-      reports.push({ source: s, ok: false, reason: e instanceof Error ? e.message : String(e), pages: [], saved: 0 });
-    }
-  }
-  return NextResponse.json({ at: new Date().toISOString(), reports });
+  const r = await collectOne(only as CollectKey, { budgetMs: 45_000 });
+  return NextResponse.json({ at, results: [r], more: Boolean(r.ok && r.more) });
 }

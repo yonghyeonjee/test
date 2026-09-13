@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { COLLECT_KEYS, type CollectKey, type CollectResult } from "./collectorMeta";
 import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alioplus";
-import { ingest, ingestArchive, type LastRun } from "./jobsIngest";
+import { ingestArchive, type LastRun } from "./jobsIngest";
 import { ingestSite } from "./gojobsSite";
 import { getLicenses } from "./qnet";
 import { getRentRates } from "./rentRate";
@@ -111,39 +111,49 @@ export async function collectOne(
 ): Promise<CollectResult> {
   const t0 = Date.now();
   try {
-    // 나라일터는 사이트에서 받는다. API 는 오래된 것부터 주고 최신이
-    // 2,901쪽 뒤인데 그 깊이가 응답하지 않는다(offset 에 비례해 느려져
-    // 마지막 쪽은 60초를 넘긴다 — 함수 상한이 60초다). 재 봤고, 안 된다.
+    // 나라일터 최신: 사이트 1~10쪽(100건). API 는 오래된 것부터 주고 최신이
+    // 2,901쪽 뒤인데 그 깊이가 응답하지 않는다 — 재 봤고, 안 된다.
     if (key === "gojobs") {
-      // 한 쪽에 1.6초쯤 걸린다. 예산이 허락하는 만큼 판다.
-      const r = await ingestSite(30, opts.budgetMs ?? 40_000);
+      const r = await ingestSite({ mode: "recent", budgetMs: opts.budgetMs ?? 40_000 });
       if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
-      return {
-        key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
-        more: r.more ?? false,
-        reason: r.from ? `${r.from}~${r.to}쪽` : undefined,
-      };
+      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: false,
+               reason: `${r.from}~${r.to}쪽` };
     }
-    // 과거 공고는 API 를 앞쪽부터 훑는다. 앞쪽이 곧 오래된 것이고, 앞쪽은 빠르다.
+    // 나라일터 과거: API 를 앞쪽부터 걷는다(앞쪽이 과거고, 앞쪽은 빠르다).
+    // 깊이 한계에 막히면 그다음부터는 사이트를 이어서 더 깊이 판다 —
+    // 둘 다 같은 번호(gojobs:<idx>)로 저장되므로 겹쳐도 한 건이다.
     if (key === "gojobs_archive") {
-      const r = await ingestArchive({ budgetMs: opts.budgetMs ?? 40_000 });
+      const budget = opts.budgetMs ?? 40_000;
+      const { data } = await svc().from("site_settings").select("value")
+        .eq("key", "gojobs_archive_cursor").maybeSingle();
+      const apiStalled = Boolean((data?.value as { stalled?: boolean } | null)?.stalled);
+
+      if (!apiStalled) {
+        const r = await ingestArchive("gojobs", { budgetMs: budget });
+        if (r.saved > 0) {
+          const first = r.pages[0], last = r.pages[r.pages.length - 1];
+          return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
+                   more: Boolean(r.timeUp) || Boolean(r.stalled),
+                   reason: `API ${first.page}~${last.page}쪽` + (first.oldest ? ` · ${first.oldest}부터` : "") +
+                           (r.stalled ? " · 여기부터는 사이트로" : "") };
+        }
+        if (!r.stalled) throw new Error(r.reason ?? "받아온 것이 없습니다");
+        // 막혔고 한 건도 못 받았다 → 바로 사이트로 넘어간다.
+      }
+      const r = await ingestSite({ mode: "past", budgetMs: budget });
       if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
-      const span = r.pages.length
-        ? `${r.pages[0].page}~${r.pages[r.pages.length - 1].page}쪽` +
-          (r.pages[0].oldest ? ` · ${r.pages[0].oldest}부터` : "")
-        : undefined;
-      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
-               more: Boolean(r.timeUp), reason: span };
+      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: r.more ?? false,
+               reason: `사이트 ${r.from}~${r.to}쪽` };
     }
+    // 월드잡은 최신순으로 준다(1쪽 표본이 2026-07, 마지막 쪽이 2015).
+    // 1쪽을 늘 먼저 읽어 오늘 기준 최신 100건을 챙기고, 커서부터 이어 걷는다.
+    // 43쪽뿐이라 며칠이면 전부 모이고, 그 뒤로는 한 바퀴씩 다시 돈다.
     if (key === "worldjob") {
-      const r = await ingest(key, { pages: opts.pages ?? 4, by: "admin", budgetMs: opts.budgetMs });
+      const r = await ingestArchive("worldjob", { alwaysFirst: true, budgetMs: opts.budgetMs });
       if (!r.ok) throw new Error(r.reason ?? "실패");
-      // 한 쪽도 못 받았으면 "0건 저장"이 아니라 실패다. 이유를 그대로 올린다.
-      const errs = r.pages.filter((pg) => pg.err);
-      if (r.saved === 0 && errs.length)
-        return { key, ok: false, saved: 0, elapsedMs: Date.now() - t0,
-                 reason: `${errs.length}쪽을 못 받았습니다 — ${errs[0].err}` };
-      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: !r.cursor?.done };
+      const first = r.pages[0], last = r.pages[r.pages.length - 1];
+      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: Boolean(r.timeUp),
+               reason: first && last ? `${first.page}~${last.page}쪽` : undefined };
     }
     const run =
       key === "license" ? collectLicense

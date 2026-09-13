@@ -1,0 +1,60 @@
+name: collect-past
+
+# 과거 자료를 하루 다섯 번 이어서 모은다.
+#
+# 실제 받아오는 일은 Vercel(서울)이 한다 — data.go.kr 이 해외 IP 를 막아서
+# 여기서 직접 부르면 연결조차 안 된다. 여기서는 우리 사이트의 수집 주소를
+# 두드리기만 한다. 서버 함수가 한 번에 45초까지만 돌기 때문에, 응답의
+# more 가 true 인 동안 같은 주소를 다시 부른다.
+#
+# Vercel 의 무료 요금제는 크론을 하루 한 번만 허용한다. 그래서 하루 다섯 번은
+# 여기서 돌린다. 매일 09:00 KST 의 "최신 100건" 수집은 Vercel 크론이 따로 한다.
+#
+# 필요한 secret: CRON_SECRET (Vercel 환경변수와 같은 값)
+
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "하나만 (비우면 과거 채록 둘 다)"
+        required: false
+        default: ""
+        type: choice
+        options: ["", "gojobs_archive", "worldjob"]
+  schedule:
+    # UTC 01,06,11,16,21 = KST 10,15,20,01,06. 09:00 KST 의 Vercel 크론과 겹치지 않게.
+    - cron: "0 1,6,11,16,21 * * *"
+
+concurrency:
+  group: collect-past
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 이어서 받기
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ONLY: ${{ inputs.source }}
+        run: |
+          set -u
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET secret 이 비어 있습니다. GitHub → Settings → Secrets → Actions 에 넣어 주세요."
+            exit 1
+          fi
+          sources="${ONLY:-gojobs_archive worldjob}"
+          for src in $sources; do
+            echo "== $src"
+            for round in $(seq 1 15); do
+              body=$(curl -sS --max-time 70 \
+                -H "Authorization: Bearer $CRON_SECRET" \
+                "$SITE/api/cron/jobs?source=$src") || { echo "  요청 실패(회차 $round)"; break; }
+              echo "  회차 $round: $(echo "$body" | jq -c '.results[0] | {ok, saved, reason, more}' 2>/dev/null || echo "$body" | head -c 300)"
+              more=$(echo "$body" | jq -r '.more // false' 2>/dev/null)
+              [ "$more" = "true" ] || break
+              sleep 2
+            done
+          done

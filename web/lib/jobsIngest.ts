@@ -24,7 +24,6 @@ const rowsOf = (name: string) => ROWS_BY[name] ?? 100;
 /** 한 번 호출에서 쓸 수 있는 시간. Vercel 함수 상한(60초)보다 넉넉히 짧게. */
 const BUDGET_MS = 40_000;
 const FETCH_MS = 8_000;
-export const SINCE_DEFAULT = "2026-08-01";
 
 type Source = "gojobs" | "worldjob";
 const SRC: Record<Source, { url: string; item: string; alias: Record<string, string[]>; orderKey: string }> = {
@@ -228,117 +227,6 @@ export async function readLastRuns(): Promise<LastRun[]> {
   }
 }
 
-/** 한 소스를 pagesPerRun 쪽까지 읽는다. */
-export async function ingest(
-  name: Source,
-  opts: {
-    pages?: number; since?: string; reset?: boolean; by?: "cron" | "admin";
-    /** 이 호출에 쓸 수 있는 시간. 여럿을 나란히 돌릴 때 부르는 쪽이 정한다. */
-    budgetMs?: number;
-  } = {},
-): Promise<RunReport> {
-  const conf = SRC[name];
-  const t0 = Date.now();
-  const startedAt = new Date().toISOString();
-  const by = opts.by ?? "admin";
-  let db0: ReturnType<typeof svc> | null = null;
-  try {
-    db0 = svc();
-    await writeRun(db0, { source: name, state: "running", startedAt, by });
-  } catch {
-    /* 아래에서 다시 잡는다 */
-  }
-  const fail = async (report: RunReport) => {
-    if (db0) await writeRun(db0, { source: name, state: "failed", startedAt, finishedAt: new Date().toISOString(), by, report });
-    return report;
-  };
-  const pagesPerRun = opts.pages ?? 6;
-  const budgetMs = opts.budgetMs ?? BUDGET_MS;
-  // 뒤쪽 쪽번호는 느리다. 첫 쪽은 짧게 끊어 빨리 실패를 알고, 뒤쪽은 기다려 준다.
-  // 뒤쪽 쪽번호는 20초를 넘기기도 한다. 예산의 3/4까지 기다려 준다.
-  const deepMs = Math.min(30_000, Math.max(FETCH_MS, Math.floor(budgetMs * 0.75)));
-  let fails = 0;
-  const since = opts.since ?? SINCE_DEFAULT;
-  const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
-  if (!KEY) return fail({ ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 });
-  const db = svc();
-
-  const rows_ = rowsOf(name);
-  const probed = await fetchPage(conf.url, 1, rows_);
-  if ("err" in probed)
-    return fail({ ...report, reason: `첫 쪽을 못 받았다 — ${probed.err}`, elapsedMs: Date.now() - t0 });
-  const first = probed.xml;
-  const err = resultError(first);
-  if (err) return fail({ ...report, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 });
-  const firstItems = parseItems(first, conf.item);
-  const total = Number(first.match(/<totalCount>\s*(\d+)/)?.[1]) || firstItems.length;
-  const lastPage = Math.max(1, Math.ceil(total / rows_));
-  report.total = total; report.lastPage = lastPage;
-  if (firstItems[0]) { report.keys = Object.keys(firstItems[0]); report.sample = firstItems[0]; }
-
-  const cursors = await readCursor(db);
-  let cur = cursors[name];
-  // 처음이거나 다시 시작하거나, 이미 끝까지 읽었으면 최신 쪽부터 다시(새 공고를 얹는다)
-  // cur.lastPage 가 다르면 쪽 크기나 전체 건수가 바뀐 것이다. 옛 쪽 번호는
-  // 다른 자리를 가리키므로 버리고 맨 뒤(최신)부터 다시 잡는다.
-  if (!cur || opts.reset || cur.done || cur.lastPage !== lastPage) {
-    cur = { nextPage: lastPage, lastPage, total, done: cur?.done ?? false, updated: new Date().toISOString() };
-    if (cur.done) cur.nextPage = lastPage; // 최신 두세 쪽만
-  }
-  const budget = cur.done ? Math.min(pagesPerRun, 3) : pagesPerRun;
-  let page = Math.min(cur.nextPage, lastPage);
-  let read = 0;
-  let stop = false;
-  while (page >= 1 && read < budget && !stop) {
-    // 시간이 모자라면 여기까지 저장하고 쪽 번호를 남긴 채 돌아간다.
-    // 남은 시간보다 오래 기다리면 안 된다. 예산을 "시작 전"에만 보고
-    // 기다리는 시간은 따로 정하면, 두 쪽만 실패해도 함수 상한(60초)을 넘겨
-    // 통째로 죽는다 — 실제로 그래서 "Cannot read properties of undefined"가
-    // 떴다. 서버 함수가 죽으면 화면은 결과 자체를 못 받는다.
-    const left = budgetMs - (Date.now() - t0);
-    if (left < 6_000) { report.timeUp = true; break; }
-    let xml: string;
-    if (page === 1) xml = first;
-    else {
-      const got = await fetchPage(conf.url, page, rows_, Math.min(deepMs, left - 2_000), 1);
-      if ("err" in got) {
-        report.pages.push({ page, saved: 0, oldest: null, newest: null, err: got.err });
-        fails++;
-        page--; read++;
-        // 뒤쪽이 연달아 막히면 남은 예산을 거기 다 버린다. 끊고 돌아간다.
-        if (fails >= 2) { report.timeUp = true; break; }
-        continue;
-      }
-      xml = got.xml;
-    }
-    const parsed = parseItems(xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
-    // 한 upsert 안에 같은 id 가 두 번 들어가면 Postgres 가 통째로 거부한다
-    // ("ON CONFLICT DO UPDATE command cannot affect row a second time").
-    // 월드잡은 제목+기관+시작일로 id 를 만드는데 같은 공고가 겹쳐 온다.
-    const byId = new Map<string, Row>();
-    for (const r of parsed) byId.set(String(r.id), r);
-    const rows = [...byId.values()];
-    if (rows.length) {
-      const { error } = await db.from("job_posts").upsert(rows as never[], { onConflict: "id" });
-      if (error) return fail({ ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 });
-    }
-    const dates = rows.map((r) => r[conf.orderKey] as string | null).filter((x): x is string => !!x).sort();
-    const oldest = dates[0] ?? null, newest = dates[dates.length - 1] ?? null;
-    report.pages.push({ page, saved: rows.length, oldest, newest });
-    report.saved += rows.length;
-    if (oldest && oldest < since) stop = true;
-    page--; read++;
-  }
-  const done = report.timeUp ? cur.done : stop || page < 1 || cur.done;
-  cursors[name] = { nextPage: done ? lastPage : page, lastPage, total, done, updated: new Date().toISOString() };
-  await writeCursor(db, cursors);
-  report.cursor = cursors[name];
-  report.ok = true;
-  report.elapsedMs = Date.now() - t0;
-  await writeRun(db, { source: name, state: "done", startedAt, finishedAt: new Date().toISOString(), by, report });
-  return report;
-}
-
 // ── 쪽 넘김 점검 ───────────────────────────────────────────
 
 export type PageProbe = {
@@ -434,79 +322,100 @@ export async function probePaging(name: Source = "gojobs"): Promise<PageProbe[]>
   return [wadl, ...results];
 }
 
-// ── 과거 공고 채록 ─────────────────────────────────────────
+// ── 앞쪽부터 걷기 ─────────────────────────────────────────
+
+export type WalkOpts = {
+  budgetMs?: number;
+  rows?: number;
+  /**
+   * 매 회차 1쪽을 먼저 읽는다. 최신순으로 주는 API(월드잡)에서는 1쪽이
+   * 곧 "오늘 기준 최신 100건"이라, 커서가 어디 있든 그것부터 챙긴다.
+   * 오래된 순으로 주는 API(나라일터)에는 켜지 않는다 — 1쪽은 2008년이다.
+   */
+  alwaysFirst?: boolean;
+  /** 커서를 무시하고 1쪽부터 다시. */
+  reset?: boolean;
+};
 
 /**
- * 나라일터의 지난 공고를 앞쪽부터 훑는다.
+ * API 를 1쪽부터 앞으로 걷는다. 어디까지 걸었는지 site_settings 에 남기고
+ * 다음 회차가 이어 걷는다. 끝(빈 쪽)에 닿으면 1쪽으로 되감는다 — 그다음
+ * 회차부터는 전체를 다시 훑어 바뀐 것을 얹는다.
  *
- * 이 API 는 오래된 것부터 준다. 그동안은 최신을 얻으려고 마지막 쪽을
- * 팠는데, 응답 시간이 offset 에 비례해서 뒤쪽은 아예 안 왔다. 그런데
- * 뒤집어 보면 — 앞쪽은 빠르고, 앞쪽에 있는 것이 바로 과거 공고다.
- * 최신은 사이트에서 받고(gojobsSite), 과거는 여기서 API 로 받는다.
- *
- * 사이트를 수만 쪽 긁는 것보다 이쪽이 낫다. 허락받고 쓰는 길이고,
- * 한 번에 1,000건씩 오니 남의 서버에 훨씬 덜 미안하다.
+ * 나라일터(오래된 순): 앞쪽이 과거다. 응답 시간이 offset 에 비례하므로
+ *   어느 깊이부터는 안 온다. 그러면 stalled 로 표시하고 거기서 멈춘다.
+ *   최신은 사이트(gojobsSite)가 맡는다.
+ * 월드잡(최신순): 앞쪽이 최신이다. 43쪽뿐이라 며칠이면 다 걷는다.
  */
 export async function ingestArchive(
-  opts: { budgetMs?: number; rows?: number } = {},
-): Promise<RunReport> {
-  const name: Source = "gojobs";
+  name: Source = "gojobs",
+  opts: WalkOpts = {},
+): Promise<RunReport & { stalled?: boolean; nextPage?: number }> {
   const conf = SRC[name];
   const t0 = Date.now();
+  const startedAt = new Date().toISOString();
   const budgetMs = opts.budgetMs ?? BUDGET_MS;
-  const rows = opts.rows ?? 1000;
+  const rows = opts.rows ?? rowsOf(name);
+  const cursorKey = `${name}_archive_cursor`;
   const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
   if (!KEY) return { ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 };
   const db = svc();
+  await writeRun(db, { source: name, state: "running", startedAt, by: "admin" });
 
-  const { data } = await db.from("site_settings").select("value")
-    .eq("key", "gojobs_archive_cursor").maybeSingle();
-  const cur = (data?.value as { nextPage?: number; done?: boolean } | null) ?? {};
-  let page = Math.max(1, cur.nextPage ?? 1);
+  const { data } = await db.from("site_settings").select("value").eq("key", cursorKey).maybeSingle();
+  const cur = (data?.value as { nextPage?: number; stalled?: boolean } | null) ?? {};
+  let page = opts.reset ? 1 : Math.max(1, cur.nextPage ?? 1);
   let stalled = false;
+  let wrapped = false;
 
-  while (!stalled) {
+  // 읽을 쪽의 순서. alwaysFirst 면 1쪽을 앞에 끼운다(커서가 1이 아닐 때만).
+  const queue: number[] = [];
+  if (opts.alwaysFirst && page !== 1) queue.push(1);
+
+  const readOne = async (pg: number): Promise<"ok" | "stalled" | "end" | "fail"> => {
     const left = budgetMs - (Date.now() - t0);
-    if (left < 8_000) { report.timeUp = true; break; }
-
-    const got = await fetchPage(conf.url, page, rows, Math.min(25_000, left - 2_000), 1);
+    if (left < 8_000) return "fail";
+    const got = await fetchPage(conf.url, pg, rows, Math.min(25_000, left - 2_000), 1);
     if ("err" in got) {
-      report.pages.push({ page, saved: 0, oldest: null, newest: null, err: got.err });
-      // 여기서부터는 깊이 때문에 안 온다. 쪽 번호는 그대로 두고 다음에 다시.
-      stalled = true;
-      break;
+      report.pages.push({ page: pg, saved: 0, oldest: null, newest: null, err: got.err });
+      return "stalled";
     }
     const err = resultError(got.xml);
-    if (err) { report.reason = `API 오류 — ${err}`; break; }
-
-    const parsed = parseItems(got.xml, conf.item)
-      .map((d) => toRow(name, d)).filter((r): r is Row => !!r);
+    if (err) { report.reason = `API 오류 — ${err}`; return "fail"; }
+    const parsed = parseItems(got.xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
     if (!parsed.length) {
-      // 더 없는 쪽까지 왔다 = 끝까지 훑었다.
-      report.pages.push({ page, saved: 0, oldest: null, newest: null, err: "항목 없음(끝)" });
-      page = 1;
-      break;
+      report.pages.push({ page: pg, saved: 0, oldest: null, newest: null, err: "항목 없음(끝)" });
+      return "end";
     }
     const byId = new Map<string, Row>();
     for (const r of parsed) byId.set(String(r.id), r);
     const uniq = [...byId.values()];
-
     const { error } = await db.from("job_posts").upsert(uniq as never[], { onConflict: "id" });
-    if (error) return { ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
-
-    const dates = uniq.map((r) => r.reg_date as string | null)
-      .filter((x): x is string => !!x).sort();
-    report.pages.push({
-      page, saved: uniq.length,
-      oldest: dates[0] ?? null, newest: dates[dates.length - 1] ?? null,
-    });
+    if (error) { report.reason = `저장 실패: ${error.message}`; return "fail"; }
+    const dates = uniq.map((r) => r[conf.orderKey] as string | null).filter((x): x is string => !!x).sort();
+    report.pages.push({ page: pg, saved: uniq.length, oldest: dates[0] ?? null, newest: dates[dates.length - 1] ?? null });
     report.saved += uniq.length;
-    page++;
+    return "ok";
+  };
+
+  // 1쪽 먼저(있으면). 결과에 상관없이 커서는 건드리지 않는다.
+  for (const pg of queue) if ((await readOne(pg)) === "fail") break;
+
+  // 그다음 커서부터 이어 걷는다.
+  let timeUp = false;
+  for (;;) {
+    const left = budgetMs - (Date.now() - t0);
+    if (left < 8_000) { timeUp = true; break; }
+    const r = await readOne(page);
+    if (r === "ok") { page++; continue; }
+    if (r === "stalled") { stalled = true; break; }
+    if (r === "end") { wrapped = true; page = 1; break; }
+    break; // fail
   }
 
   await db.from("site_settings").upsert(
-    { key: "gojobs_archive_cursor",
-      value: { nextPage: page, rows, stalled, updated: new Date().toISOString() } as never,
+    { key: cursorKey,
+      value: { nextPage: page, rows, stalled, wrapped, updated: new Date().toISOString() } as never,
       updated_at: new Date().toISOString() },
     { onConflict: "key" },
   ).then(() => {}, () => {});
@@ -517,7 +426,10 @@ export async function ingestArchive(
       ? `${page}쪽부터는 응답이 오지 않습니다 (깊이 한계). 여기까지가 API 로 받을 수 있는 과거입니다.`
       : "받아온 것이 없습니다";
   report.lastPage = page;
-  report.timeUp = report.timeUp || !stalled;
+  // 아직 더 걸을 것이 있나: 시간이 모자라 멈췄을 때만. 막혔거나 한 바퀴 돌았으면 없다.
+  report.timeUp = timeUp && !stalled && !wrapped;
   report.elapsedMs = Date.now() - t0;
-  return report;
+  await writeRun(db, { source: name, state: report.ok ? "done" : "failed", startedAt,
+                       finishedAt: new Date().toISOString(), by: "admin", report });
+  return { ...report, stalled, nextPage: page };
 }

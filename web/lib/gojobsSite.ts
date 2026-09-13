@@ -317,10 +317,13 @@ export type SiteRun = {
  * 않는다(offset 에 비례해 느려져 마지막은 60초를 넘긴다). 사이트 목록은
  * 최신이 1쪽에 있다. robots.txt 가 허용하고, 앞쪽 몇 쪽만 하루 한 번 본다.
  */
-/** 이 날짜보다 오래된 쪽이 나오면 그만 판다. */
-export const SITE_SINCE = "2026-08-01";
-
 type SiteCursor = { nextPage: number; done: boolean; updated: string };
+
+export type SiteMode =
+  /** 1쪽부터 열 쪽(100건). 커서를 건드리지 않는다. 매일 아침이 이것이다. */
+  | "recent"
+  /** 커서부터 이어서 더 깊이. 끝까지 모으는 용도다. */
+  | "past";
 
 async function readSiteCursor(db: ReturnType<typeof svc>): Promise<SiteCursor> {
   const { data } = await db.from("site_settings").select("value").eq("key", "gojobs_site_cursor").maybeSingle();
@@ -328,7 +331,12 @@ async function readSiteCursor(db: ReturnType<typeof svc>): Promise<SiteCursor> {
   return v?.nextPage ? v : { nextPage: 1, done: false, updated: new Date().toISOString() };
 }
 
-export async function ingestSite(pages = 30, budgetMs = 40_000): Promise<SiteRun> {
+export async function ingestSite(
+  opts: { mode?: SiteMode; pages?: number; budgetMs?: number } = {},
+): Promise<SiteRun> {
+  const mode: SiteMode = opts.mode ?? "recent";
+  const pages = opts.pages ?? (mode === "recent" ? 10 : 30);
+  const budgetMs = opts.budgetMs ?? 40_000;
   const t0 = Date.now();
   const run: SiteRun = { ok: false, saved: 0, pages: [], paging: null, elapsedMs: 0 };
 
@@ -341,19 +349,23 @@ export async function ingestSite(pages = 30, budgetMs = 40_000): Promise<SiteRun
   const now = new Date().toISOString();
   let firstId: string | null = null;
 
-  // 이어 읽는다. 매번 1쪽부터 다시 읽으면 같은 50건만 쌓인다.
-  // 끝까지(기준일 이전까지) 갔으면 다음 날은 다시 1쪽부터 — 새 공고를 얹는다.
-  const cur = await readSiteCursor(db);
-  const start = cur.done ? 1 : cur.nextPage;
+  // recent: 늘 1쪽부터. 오늘 기준 최신 100건을 매일 챙긴다.
+  // past: 이어 읽는다. 매번 1쪽부터 다시 읽으면 같은 것만 쌓인다.
+  //       끝까지 갔으면(done) 1쪽으로 되감아 전체를 다시 훑는다.
+  const cur = mode === "past" ? await readSiteCursor(db) : null;
+  const start = cur && !cur.done ? cur.nextPage : 1;
   let page = start;
   let read = 0;
-  let reachedOld = false;
+  let ended = false;
 
   for (; read < pages; page++, read++) {
     if (Date.now() - t0 > budgetMs - 6_000) break;
     const r = await fetchList(page);
     if (!r.ok) {
       run.pages.push({ page, got: 0, saved: 0, reason: r.reason });
+      // "목록 줄을 못 찾았습니다"는 대개 끝을 지난 것이다. 응답 자체가 안 온
+      // 것과 구분해 둔다 — 끝이면 되감고, 아니면 다음에 같은 쪽을 다시 본다.
+      if (/목록 줄/.test(r.reason)) ended = true;
       break;
     }
     if (firstId === null) firstId = r.jobs[0]?.id ?? null;
@@ -389,19 +401,20 @@ export async function ingestSite(pages = 30, budgetMs = 40_000): Promise<SiteRun
     run.pages.push({ page, got: r.jobs.length, saved: uniq.length });
     run.saved += uniq.length;
 
-    // 기준일보다 오래된 공고가 나오기 시작하면 거기까지다.
-    const oldest = r.jobs.map((j) => j.regDate).filter(Boolean).sort()[0];
-    if (oldest && oldest < SITE_SINCE) { reachedOld = true; break; }
   }
 
-  const done = reachedOld || run.paging === false;
-  await db.from("site_settings").upsert(
-    { key: "gojobs_site_cursor",
-      value: { nextPage: done ? 1 : page, done, updated: now } as never,
-      updated_at: now },
-    { onConflict: "key" },
-  ).then(() => {}, () => {});
-  run.more = !done;
+  if (mode === "past") {
+    const done = ended || run.paging === false;
+    await db.from("site_settings").upsert(
+      { key: "gojobs_site_cursor",
+        value: { nextPage: done ? 1 : page, done, updated: now } as never,
+        updated_at: now },
+      { onConflict: "key" },
+    ).then(() => {}, () => {});
+    run.more = !done;
+  } else {
+    run.more = false;
+  }
   run.from = start;
   run.to = page - 1;
 
