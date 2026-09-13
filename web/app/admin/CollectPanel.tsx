@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
-import { probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, stopCollect } from "./actions";
+import { probeGojobsSite, probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, stopCollect } from "./actions";
 
 export type SourceStat = { key: CollectKey; n: number; newest: string | null; fetched: string | null };
 
@@ -79,6 +79,8 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
     setTile((t) => ({ ...t, [key]: undefined }));
     try {
       const r = await runCollectOne(key);
+      // 서버 함수가 시간 초과로 죽으면 아무것도 안 돌아온다.
+      if (!r) throw new Error("서버가 응답하기 전에 끊겼습니다 (시간 초과). 다시 누르면 이어집니다.");
       const got = r.results?.[0];
       if (got) setTile((t) => ({ ...t, [key]: got }));
       else setOut(r.error ?? "결과가 비어 있습니다.");
@@ -102,6 +104,7 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
     const t0 = Date.now();
     try {
       const r = await fn();
+      if (!r) throw new Error("서버가 응답하기 전에 끊겼습니다 (시간 초과). 다시 누르면 이어집니다.");
       if (r.results?.length) {
         setTile(Object.fromEntries(r.results.map((x) => [x.key, x])));
         setOut(r.error ?? "");
@@ -185,6 +188,19 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
           className={`btn btn-ghost ${btn}`}
         >
           쪽 넘김 점검
+        </button>
+        <button
+          onClick={() => runMany("사이트 점검", async () => {
+            const r = await probeGojobsSite();
+            const body = r.steps
+              .map((x) => `${x.ok ? "○" : "✕"} ${x.step}${x.ms ? ` · ${(x.ms / 1000).toFixed(1)}초` : ""}\n${x.detail}`)
+              .join("\n\n");
+            return { error: r.error ?? (body || "결과 없음") };
+          })}
+          disabled={!!busy}
+          className={`btn btn-ghost ${btn}`}
+        >
+          나라일터 사이트 점검
         </button>
       </div>
       <p className="mt-2 text-xs text-faint">

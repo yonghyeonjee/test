@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
 import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "@/lib/collectors";
+import { probeSite, type SiteProbe } from "@/lib/gojobsSite";
 import { ingest, probe, type RunReport, probePaging, type PageProbe } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
@@ -177,6 +178,16 @@ export async function probePagingLimits(): Promise<{ error: string | null; probe
     return { error: null, probes: await probePaging("gojobs") };
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e), probes: [] };
+  }
+}
+
+/** 나라일터 사이트에서 직접 받아올 수 있는지 본다. robots.txt 부터 본다. */
+export async function probeGojobsSite(): Promise<{ error: string | null; steps: SiteProbe[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", steps: [] };
+  try {
+    return { error: null, steps: await probeSite() };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e), steps: [] };
   }
 }
 
