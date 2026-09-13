@@ -10,7 +10,7 @@ import { parseGovText, type Block } from "@/lib/govText";
  * 단서는 눈에 덜 띄게 옆으로 물려 둔다. 원문에서 단서는 대개 바로 앞
  * 항목에 붙는 말이라, 앞엣것 아래에 들여쓴다.
  */
-function Group({ blocks }: { blocks: Block[] }) {
+function Group({ blocks, asHeading }: { blocks: Block[]; asHeading: boolean }) {
   const first = blocks[0];
 
   if (first.kind === "field")
@@ -42,7 +42,7 @@ function Group({ blocks }: { blocks: Block[] }) {
             <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed">
               <span className="num mt-[3px] w-6 shrink-0 rounded-[6px] bg-brandSoft px-1 py-0.5
                                text-center text-[11px] font-bold text-brand">
-                {b.n.replace(")", "")}
+                {b.n.replace(/[).]$/, "")}
               </span>
               <span className="min-w-0 flex-1 break-keep">{b.text}</span>
             </li>
@@ -63,13 +63,26 @@ function Group({ blocks }: { blocks: Block[] }) {
       </div>
     );
 
+  // "- 제출서류" 처럼 뒤에 목록을 거느리면 소제목이다. 그런데 뒤에 아무것도
+  // 안 붙는 줄도 같은 모양으로 온다 — "ㅇ매월 말 지급" 같은 것이 그렇다.
+  // 그걸 굵은 제목으로 세우면 다음 칸의 제목처럼 보인다. 거느린 것이 있을
+  // 때만 제목으로 쓰고, 아니면 그냥 한 줄로 둔다.
   if (first.kind === "head")
-    return (
+    return asHeading ? (
       <>
         {lines.map((t, i) => (
           <p key={i} className="mt-4 text-[14.5px] font-bold">{t}</p>
         ))}
       </>
+    ) : (
+      <ul className="mt-3 space-y-1.5">
+        {lines.map((t, i) => (
+          <li key={i} className="flex gap-2 text-[14px] leading-relaxed">
+            <span aria-hidden="true" className="mt-[9px] size-1 shrink-0 rounded-full bg-brand/60" />
+            <span className="min-w-0 flex-1 break-keep">{t}</span>
+          </li>
+        ))}
+      </ul>
     );
 
   return (
@@ -93,5 +106,13 @@ export default function GovText({ body }: { body: string | null }) {
     else groups.push([b]);
   }
 
-  return <div>{groups.map((g, i) => <Group key={i} blocks={g} />)}</div>;
+  // 소제목인지 아닌지는 뒤에 무엇이 오느냐로 갈린다.
+  const leads = new Set(["item", "field", "note"]);
+  return (
+    <div>
+      {groups.map((g, i) => (
+        <Group key={i} blocks={g} asHeading={leads.has(groups[i + 1]?.[0]?.kind ?? "")} />
+      ))}
+    </div>
+  );
 }

@@ -12,10 +12,18 @@ import { manwon, standardFor, tableYear } from "./medianIncome";
 
 export type QA = { q: string; a: string };
 
-/** 받침 유무로 조사를 고른다. "청년은" / "어르신은" 처럼. */
-export function josa(word: string, pair: "은는" | "이가" | "을를" | "과와") {
+/**
+ * 받침 유무로 조사를 고른다. "청년은" / "어르신은" 처럼.
+ *
+ * "으로/로" 는 규칙이 하나 더 있다 — 받침이 ㄹ 이면 "로" 를 쓴다
+ * ("서울로", "물로"). 그래서 종성 번호를 따로 본다.
+ */
+export function josa(word: string, pair: "은는" | "이가" | "을를" | "과와" | "으로") {
   const last = word.charCodeAt(word.length - 1);
-  const has = last >= 0xac00 && last <= 0xd7a3 ? (last - 0xac00) % 28 !== 0 : false;
+  const korean = last >= 0xac00 && last <= 0xd7a3;
+  const jong = korean ? (last - 0xac00) % 28 : 0;
+  const has = korean ? jong !== 0 : false;
+  if (pair === "으로") return word + (!has || jong === 8 ? "로" : "으로");
   const [a, b] = pair === "은는" ? ["은", "는"] : pair === "이가" ? ["이", "가"] : pair === "을를" ? ["을", "를"] : ["과", "와"];
   return word + (has ? a : b);
 }
@@ -104,7 +112,8 @@ export function programIntro(p: Detail): string[] {
       ? `${josa(where, "이가")} 운영하는`
       : `${josa(org, "이가")} ${where}에서 운영하는`;
 
-  const out = [`${josa(p.title, "은는")} ${runBy} ${topicKeyword(p)}으로, ${target}입니다.`];
+  // 예전에는 "…으로" 를 붙여 놓아 "노인 복지으로" 가 나왔다.
+  const out = [`${josa(p.title, "은는")} ${runBy} ${josa(topicKeyword(p), "으로")}, ${target}입니다.`];
 
   // 아래에서 제대로 보여 주는 원문을 여기서 또 자르지 않는다.
   const raw = p.benefit_text ?? p.summary;

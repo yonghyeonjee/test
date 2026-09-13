@@ -56,11 +56,24 @@ function splitNumbered(src: string) {
     }
 
     // 괄호 밖에서만, 그리고 숫자 한가운데가 아닐 때만 번호로 본다.
-    if (depth === 0 && !/\d/.test(src[i - 1] ?? "")) {
-      const m = src.slice(i).match(/^(\d{1,2})\)\s*(?=\S)/);
-      if (m) {
-        out += `\n${m[1]}) `;
-        i += m[0].length - 1;
+    const prev = src[i - 1] ?? "";
+    if (depth === 0 && !/[\d.]/.test(prev)) {
+      // "1)" 꼴
+      const paren = src.slice(i).match(/^(\d{1,2})\)\s*(?=\S)/);
+      if (paren) {
+        out += `\n${paren[1]}) `;
+        i += paren[0].length - 1;
+        continue;
+      }
+      // "1." 꼴. 날짜("2025. 1. 1. 부터")와 갈라야 한다.
+      //  - 뒤에 또 숫자가 오면 날짜다: "2025. 1. 1" 의 앞 두 마디.
+      //  - 여기까지 써 놓은 것이 "숫자." 로 끝나도 날짜다: "2025. 1. " 다음의
+      //    마지막 "1. 부터" 가 그렇다. 뒤만 봐서는 목록과 구별되지 않는다.
+      const dated = /\d\.$/.test(out.replace(/\s+$/, ""));
+      const dot = dated ? null : src.slice(i).match(/^(\d{1,2})\.\s+(?=[^\d\s])/);
+      if (dot) {
+        out += `\n${dot[1]}. `;
+        i += dot[0].length - 1;
         continue;
       }
     }
@@ -82,6 +95,10 @@ function breakUp(src: string) {
   // "▤ 주택기준 : …" 이 안 잡혀 요약 문단 한가운데 그대로 박혀 있었다.
   // 가운뎃점(·)은 넣지 않는다. "청년·신혼" 처럼 낱말 안에서 쓰인다.
   s = s.replace(/\s*([*※○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣])\s*(?=\S)/g, "\n$1 ");
+  // ㅇ·ㅁ 은 공문서에서 제일 흔한 머리표인데 빠져 있었다. 실제로
+  // "ㅇ보훈예우수당 : 월 12만원ㅇ매월 말 지급" 이 한 줄로 붙어 나왔다.
+  // 낱자라 낱말에 섞일 일이 거의 없지만, 뒤에 글자가 바로 붙을 때만 본다.
+  s = s.replace(/\s*([ㅇㅁ])\s*(?=[가-힣A-Za-z0-9(「【[])/g, "\n$1 ");
 
   return s.split("\n").map((l) => l.trim()).filter(Boolean);
 }
@@ -103,13 +120,13 @@ function asField(line: string): Block | null {
 export function parseGovText(src: string | null | undefined): Block[] {
   if (!src?.trim()) return [];
   return breakUp(src).map((line): Block => {
-    const num = line.match(/^(\d{1,2}\)|[①-⑳])\s*(.*)$/);
+    const num = line.match(/^(\d{1,2}[).]|[①-⑳])\s*(.*)$/);
     if (num) return { kind: "item", n: num[1], text: num[2] };
 
     if (/^[*※]/.test(line))
       return { kind: "note", text: line.replace(/^[*※]\s*/, "") };
 
-    const bullet = line.match(/^[-○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣]\s*(.*)$/);
+    const bullet = line.match(/^[-○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣ㅇㅁ]\s*(.*)$/);
     if (bullet) {
       const rest = bullet[1];
       // "접수처 : 주소지 동 행정복지센터" → 이름과 값으로.
