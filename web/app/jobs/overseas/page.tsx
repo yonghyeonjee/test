@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArtJobs } from "@/components/Art";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
-import JobsTabs from "@/components/JobsTabs";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -76,7 +75,6 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
           </div>
         )}
       </PageBanner>
-      <JobsTabs active="/jobs/overseas" />
 
       {!all.ok ? (
         <div className="card mt-6 p-8 text-center">

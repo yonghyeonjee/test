@@ -6,16 +6,45 @@ import BigText from "./BigText";
 import { HeaderFx } from "./Motion";
 import TopSearch from "./TopSearch";
 
-const NAV = [
+/**
+ * 주 메뉴. sub 가 있는 항목은 그 안에 들어갔을 때 아래에 갈래 줄이 하나
+ * 더 붙는다 — 채용 안에 무엇이 있는지 화면 안까지 들어가 봐야 알던 것을
+ * 메뉴에서 바로 보이게 한다.
+ */
+type NavItem = { href: string; label: string; sub?: { href: string; label: string }[] };
+
+const NAV: NavItem[] = [
   { href: "/", label: "지원금 찾기" },
   { href: "/topic", label: "분야별" },
   { href: "/#areas", label: "지역별" },
   { href: "/?tab=business", label: "기업지원" },
   { href: "/policies", label: "전체 정책" },
-  { href: "/money", label: "생활금융" },
+  {
+    href: "/money", label: "생활금융",
+    sub: [
+      { href: "/money/jeonse", label: "전세대출 금리" },
+      { href: "/money/student-loan", label: "학자금 이자지원" },
+    ],
+  },
   { href: "/license", label: "자격증" },
-  { href: "/jobs", label: "채용" },
-  { href: "/agency", label: "공공기관" },
+  {
+    href: "/jobs", label: "채용",
+    sub: [
+      { href: "/jobs", label: "공공기관 채용" },
+      { href: "/jobs/region", label: "지역별 채용" },
+      { href: "/jobs/overseas", label: "해외취업" },
+      { href: "/jobs/majors", label: "학과별 취업률" },
+    ],
+  },
+  {
+    href: "/agency", label: "공공기관",
+    sub: [
+      { href: "/agency", label: "기관 사업" },
+      { href: "/agency/events", label: "행사·교육" },
+      { href: "/agency/facilities", label: "시설 이용" },
+    ],
+  },
+  { href: "/free", label: "무료 서비스" },
   { href: "/blog", label: "지원금 안내" },
   { href: "/about", label: "소개" },
 ];
@@ -29,6 +58,8 @@ function useIsAdmin() {
 export function SiteHeader({ index = {} }: { index?: Record<string, { sido: string; full: string }> }) {
   const path = usePathname();
   if (path?.startsWith("/admin")) return null;
+  // 지금 들어와 있는 묶음. 그 묶음의 갈래 줄을 아래에 한 줄 더 편다.
+  const open = NAV.find((n) => n.sub && (path === n.href || path?.startsWith(n.href + "/")));
   const current = (href: string) => {
     const base = href.split("?")[0].split("#")[0];
     if (base === "/") return path === "/" && !href.includes("?");
@@ -68,6 +99,28 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
           </Link>
         ))}
       </nav>
+
+      {open && (
+        <nav
+          aria-label={`${open.label} 하위 메뉴`}
+          className="-mx-5 flex gap-1 overflow-x-auto border-b border-line px-3 pb-1 pt-2
+                     text-[13px] [scrollbar-width:none] sm:mx-0 [&::-webkit-scrollbar]:hidden"
+        >
+          {open.sub!.map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              aria-current={path === t.href ? "page" : undefined}
+              className={`shrink-0 rounded-pill px-3 py-1.5 font-semibold transition-colors ${
+                path === t.href
+                  ? "bg-brandSoft text-brand"
+                  : "text-muted hover:bg-ground hover:text-brand"}`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </nav>
+      )}
     </header>
   );
 }
@@ -76,8 +129,8 @@ export function SiteFooter() {
   if (useIsAdmin()) return null;
   const cols: { h: string; items: [string, string][] }[] = [
     { h: "찾기", items: [["내 조건으로 찾기", "/"], ["기업 지원사업", "/?tab=business"], ["정책 전체", "/policies"], ["지역별", "/#areas"]] },
-    { h: "정보", items: [["채용·취업", "/jobs"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
-    { h: "안내", items: [["지원금 안내 글", "/blog"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
+    { h: "정보", items: [["채용·취업", "/jobs"], ["지역별 채용", "/jobs/region"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
+    { h: "안내", items: [["무료 서비스", "/free"], ["지원금 안내 글", "/blog"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];
   const sources: [string, string][] = [
     ["복지로", "https://www.bokjiro.go.kr"], ["기업마당", "https://www.bizinfo.go.kr"],

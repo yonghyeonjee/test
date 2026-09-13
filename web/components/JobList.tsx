@@ -6,7 +6,7 @@ const BADGE: Record<string, string> = {
   ongoing: "badge-open", always: "badge-open", upcoming: "badge-soon", closed: "badge-closed",
 };
 
-function href(f: JobFilter, patch: Partial<JobFilter>) {
+function href(base: string, f: JobFilter, patch: Partial<JobFilter>) {
   const n = { ...f, ...patch };
   const p = new URLSearchParams();
   if (n.q) p.set("q", n.q);
@@ -14,7 +14,7 @@ function href(f: JobFilter, patch: Partial<JobFilter>) {
   if (n.hire) p.set("hire", n.hire);
   if (n.open) p.set("open", "1");
   const s = p.toString();
-  return s ? `/jobs?${s}` : "/jobs";
+  return s ? `${base}?${s}` : base;
 }
 
 /**
@@ -23,7 +23,12 @@ function href(f: JobFilter, patch: Partial<JobFilter>) {
  * 걸러 주는 값은 데이터에서 뽑는다. 없는 지역을 칩으로 늘어놓으면 눌러도
  * 빈 화면만 나온다. 검색어는 서버 렌더 GET 폼이라 자바스크립트가 없어도 된다.
  */
-export default function JobList({ board, filter }: { board: JobBoard; filter: JobFilter }) {
+export default function JobList({ board, filter, action = "/jobs" }: {
+  board: JobBoard;
+  filter: JobFilter;
+  /** 거르기 링크와 검색 폼이 향할 곳. 지역별 목록은 그 지역 주소를 준다. */
+  action?: string;
+}) {
   if (!board.ok) {
     return (
       <div className="card mt-6 p-8 text-center">
@@ -46,7 +51,7 @@ export default function JobList({ board, filter }: { board: JobBoard; filter: Jo
 
   return (
     <div className="mt-6">
-      <form action="/jobs" method="get" className="flex gap-2">
+      <form action={action} method="get" className="flex gap-2">
         {filter.region && <input type="hidden" name="region" value={filter.region} />}
         {filter.hire && <input type="hidden" name="hire" value={filter.hire} />}
         {filter.open && <input type="hidden" name="open" value="1" />}
@@ -61,22 +66,22 @@ export default function JobList({ board, filter }: { board: JobBoard; filter: Jo
       </form>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={href(filter, { open: !filter.open })}
+        <Link href={href(action, filter, { open: !filter.open })}
               className={`chip ${filter.open ? "chip-on" : ""}`}>
           접수 중만 <span className="num text-[11.5px] opacity-70">{openN}</span>
         </Link>
         {hires.slice(0, 6).map((h) => (
-          <Link key={h.v} href={href(filter, { hire: filter.hire === h.v ? undefined : h.v })}
+          <Link key={h.v} href={href(action, filter, { hire: filter.hire === h.v ? undefined : h.v })}
                 className={`chip ${filter.hire === h.v ? "chip-on" : ""}`}>
             {h.v} <span className="num text-[11.5px] opacity-70">{h.n}</span>
           </Link>
         ))}
       </div>
-      {regions.length > 0 && (
+      {action === "/jobs" && regions.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[13px]">
           {regions.slice(0, 20).map((r) => (
             <Link key={r.v}
-                  href={href(filter, { region: filter.region === r.v ? undefined : r.v })}
+                  href={href("/jobs", filter, { region: filter.region === r.v ? undefined : r.v })}
                   className={`transition-colors hover:text-brand ${
                     filter.region === r.v ? "font-bold text-brand" : "text-muted"}`}>
               {r.v}<span className="num ml-1 text-[11px] text-faint">{r.n}</span>
@@ -99,7 +104,7 @@ export default function JobList({ board, filter }: { board: JobBoard; filter: Jo
       {list.length === 0 ? (
         <div className="card p-8 text-center">
           <p className="leading-relaxed text-muted">조건에 맞는 공고가 없습니다.</p>
-          <Link href="/jobs" className="btn btn-ghost mt-5">조건 지우기</Link>
+          <Link href={action} className="btn btn-ghost mt-5">조건 지우기</Link>
         </div>
       ) : (
         <ul className="grid gap-3">
@@ -124,14 +129,13 @@ export default function JobList({ board, filter }: { board: JobBoard; filter: Jo
                 )}
               </>
             );
+            // 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
+            // 안 주는 공고가 많아 예전에는 눌러도 아무 일이 없었다.
             return (
               <li key={j.id}>
-                {j.url ? (
-                  <a href={j.url} target="_blank" rel="noopener noreferrer"
-                     className="card card-link block p-5">{inner}</a>
-                ) : (
-                  <div className="card block p-5">{inner}</div>
-                )}
+                <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="card card-link block p-5">
+                  {inner}
+                </Link>
               </li>
             );
           })}

@@ -5,7 +5,6 @@ import MidAd from "@/components/MidAd";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
-import JobsTabs from "@/components/JobsTabs";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -76,7 +75,6 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
         )}
       </PageBanner>
 
-      <JobsTabs active="/jobs" />
       <JobList board={board} filter={filter} />
       <MidAd name="detail_mid" context="job" seed="jobs" className="mt-10" />
 

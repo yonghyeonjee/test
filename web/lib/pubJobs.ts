@@ -201,3 +201,119 @@ export function facets(jobs: Job[]) {
     hires: count(jobs.map((j) => j.hire)),
   };
 }
+
+// ── 공고 하나 / 지역별 ─────────────────────────────────────
+
+/**
+ * 공고 하나. 상세 페이지가 쓴다.
+ *
+ * 목록에 없는 것까지 보여 주려고 raw 도 같이 읽는다. 나라일터는 항목을
+ * 코드로만 주는 게 있어(areacode·type01·type02) 뜻을 아직 모른다.
+ * 모르는 코드를 그럴싸한 이름인 척 보여 주지 않는다 — 안 보여 준다.
+ */
+export async function getJob(sourceId: string): Promise<Job | null> {
+  if (!dbConfigured) return null;
+  try {
+    const { data } = await db
+      .from("job_posts")
+      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+      .eq("source", "gojobs")
+      .eq("source_id", sourceId)
+      .maybeSingle();
+    if (!data) return null;
+    const r = data as Stored;
+    return {
+      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
+      recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
+      start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
+      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** 같은 기관, 없으면 같은 지역의 다른 공고. 상세 페이지 아래에 붙인다. */
+export async function getRelatedJobs(job: Job, limit = 6): Promise<Job[]> {
+  if (!dbConfigured) return [];
+  const run = async (col: "org" | "region", v: string) => {
+    const { data } = await db
+      .from("job_posts")
+      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+      .eq("source", "gojobs").eq(col, v).neq("source_id", job.id)
+      .order("reg_date", { ascending: false, nullsFirst: false })
+      .limit(limit);
+    return (data ?? []) as Stored[];
+  };
+  let rows: Stored[] = [];
+  if (job.org) rows = await run("org", job.org);
+  if (rows.length < 3 && job.region) rows = rows.concat(await run("region", job.region));
+  const seen = new Set<string>();
+  return rows
+    .filter((r) => (seen.has(r.source_id) ? false : (seen.add(r.source_id), true)))
+    .slice(0, limit)
+    .map((r) => ({
+      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
+      recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
+      start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
+      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
+    }));
+}
+
+/** 공고가 실제로 있는 시·도와 건수. 지역별 목차가 쓴다. */
+export async function getJobRegions(): Promise<{ sido: string; n: number }[]> {
+  if (!dbConfigured) return [];
+  try {
+    const { data } = await db
+      .from("job_posts").select("region").eq("source", "gojobs").not("region", "is", null)
+      .limit(5000);
+    const m = new Map<string, number>();
+    for (const r of (data ?? []) as { region: string }[])
+      m.set(r.region, (m.get(r.region) ?? 0) + 1);
+    return [...m.entries()].map(([sido, n]) => ({ sido, n })).sort((a, b) => b.n - a.n);
+  } catch {
+    return [];
+  }
+}
+
+/** 한 시·도의 공고. */
+export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoard> {
+  if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
+  try {
+    const { data, count } = await db
+      .from("job_posts")
+      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
+              { count: "exact" })
+      .eq("source", "gojobs").eq("region", sido)
+      .order("reg_date", { ascending: false, nullsFirst: false })
+      .limit(limit);
+    const rows = (data ?? []) as Stored[];
+    const jobs: Job[] = rows.map((r) => ({
+      id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
+      recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
+      start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
+      status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
+    }));
+    return {
+      ok: jobs.length > 0,
+      reason: jobs.length ? null : "아직 이 지역 공고를 받아오지 못했습니다.",
+      jobs: sortJobs(jobs), total: count ?? jobs.length,
+    };
+  } catch {
+    return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0 };
+  }
+}
+
+/** 사이트맵에 올릴 공고. 최근 등록순 위에서부터. */
+export async function getTopJobIds(limit = 400): Promise<string[]> {
+  if (!dbConfigured) return [];
+  try {
+    const { data } = await db
+      .from("job_posts").select("source_id").eq("source", "gojobs")
+      .order("reg_date", { ascending: false, nullsFirst: false })
+      .limit(limit);
+    return ((data ?? []) as { source_id: string }[]).map((r) => r.source_id);
+  } catch {
+    return [];
+  }
+}

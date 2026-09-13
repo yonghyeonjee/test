@@ -31,25 +31,6 @@ export const metadata: Metadata = {
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;
 
-export const TABS = [
-  { href: "/agency", label: "지원사업" },
-  { href: "/agency/events", label: "행사·교육" },
-  { href: "/agency/facilities", label: "이용 시설" },
-];
-
-export function AgencyTabs({ active }: { active: string }) {
-  return (
-    <nav className="mt-6 flex gap-2 border-b border-line">
-      {TABS.map((t) => (
-        <Link key={t.href} href={t.href}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-semibold ${
-                t.href === active ? "border-brand text-brand" : "border-transparent text-muted hover:text-brand"}`}>
-          {t.label}
-        </Link>
-      ))}
-    </nav>
-  );
-}
 
 export default async function AgencyPage({ searchParams }: { searchParams: SP }) {
   const current = {
@@ -74,7 +55,6 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
         sub="장학금·직업훈련·의료지원처럼 공공기관이 직접 운영하는 사업입니다. 지자체 공고와 다른 곳에서 나와 따로 찾아야 했던 것들입니다."
         art={<ArtAgency />}
       />
-      <AgencyTabs active="/agency" />
       <AgencyList
         base="/agency" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[
