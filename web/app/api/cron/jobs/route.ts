@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isLoggedIn } from "@/lib/auth";
+import { collectAll, COLLECT_KEYS, type CollectKey } from "@/lib/collectors";
 import { ingest } from "@/lib/jobsIngest";
 
 /**
@@ -23,6 +24,12 @@ export async function GET(req: Request) {
   const reset = u.searchParams.get("reset") === "1";
   const only = u.searchParams.get("source");
   const sources = (only === "gojobs" || only === "worldjob" ? [only] : ["gojobs", "worldjob"]) as ("gojobs" | "worldjob")[];
+
+  // 소스를 콕 집지 않으면 공공 API 전부를 돈다 (자격증·공공기관·금리 포함).
+  if (!only) {
+    const results = await collectAll(45_000, COLLECT_KEYS as CollectKey[]);
+    return NextResponse.json({ at: new Date().toISOString(), results });
+  }
 
   const reports = [];
   for (const s of sources) {

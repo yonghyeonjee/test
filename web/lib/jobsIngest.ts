@@ -25,19 +25,17 @@ const SRC: Record<Source, { url: string; item: string; alias: Record<string, str
   gojobs: {
     url: "https://apis.data.go.kr/1760000/PblJobService/getList",
     item: "item",
+    // 실제 응답 항목(2026-09 확인):
+    // areacode enddate idx insttname moddate readnum regdate title type01 type02
     alias: {
-      source_id: ["idx", "pbancNo", "id", "seq"],
-      title: ["title", "pbancNm", "subject", "recrutPbancTtl"],
-      org: ["orgName", "instNm", "ognNm", "orgNm", "instName"],
-      region: ["workRegion", "workRegionNm", "region", "workRgnNm"],
-      hire: ["hireType", "hireTypeNm", "emplymType", "hireTypeLst"],
-      recruit: ["recruitType", "recruitTypeNm", "careerType", "recrutSe"],
-      sectors: ["sectors", "ncsCdNmLst", "field", "sector"],
-      headcount: ["recruitNum", "rcritNmpr", "recrutNope"],
-      start_date: ["startDate", "pbancBgngDt", "receiptStart", "pbancBgngYmd"],
-      end_date: ["endDate", "pbancEndDt", "receiptEnd", "pbancEndYmd"],
-      reg_date: ["regDate", "regDt", "registDt", "regDttm"],
-      url: ["srcUrl", "url", "detailUrl", "link", "homepage"],
+      source_id: ["idx"],
+      title: ["title"],
+      org: ["insttname"],
+      end_date: ["enddate"],
+      reg_date: ["regdate"],
+      area_code: ["areacode"],
+      type01: ["type01"],
+      type02: ["type02"],
     },
     orderKey: "reg_date",
   },
@@ -87,6 +85,20 @@ function resultError(xml: string) {
   return null;
 }
 
+/** 기관명에서 시·도를 읽어 낸다. "경상북도 소방본부" → "경상북도" */
+const SIDO = ["서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시", "대전광역시",
+  "울산광역시", "세종특별자치시", "경기도", "강원특별자치도", "강원도", "충청북도", "충청남도",
+  "전북특별자치도", "전라북도", "전라남도", "경상북도", "경상남도", "제주특별자치도"];
+const SHORT: Record<string, string> = { 서울: "서울특별시", 부산: "부산광역시", 대구: "대구광역시",
+  인천: "인천광역시", 광주: "광주광역시", 대전: "대전광역시", 울산: "울산광역시", 세종: "세종특별자치시",
+  경기: "경기도", 강원: "강원특별자치도", 충북: "충청북도", 충남: "충청남도", 전북: "전북특별자치도",
+  전남: "전라남도", 경북: "경상북도", 경남: "경상남도", 제주: "제주특별자치도" };
+function sidoOf(text: string): string | null {
+  for (const s of SIDO) if (text.includes(s)) return s.replace("강원도", "강원특별자치도").replace("전라북도", "전북특별자치도");
+  for (const [k, v] of Object.entries(SHORT)) if (text.startsWith(k)) return v;
+  return null;
+}
+
 const iso = (v: string | null) => {
   const m = v?.match(/(\d{4})[.\-/]?(\d{2})[.\-/]?(\d{2})/);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
@@ -104,8 +116,12 @@ function toRow(name: Source, d: Record<string, string>): Row | null {
   if (!title) return null;
   const sid = pick(d, a.source_id) ?? title;
   const row: Row = { source: name, source_id: sid.slice(0, 400), title: title.slice(0, 500), raw: d, fetched_at: new Date().toISOString() };
-  for (const col of ["org", "region", "hire", "recruit", "sectors", "headcount", "url", "nation", "lang", "visa", "career", "industry"])
+  for (const col of ["org", "region", "hire", "recruit", "sectors", "headcount", "url",
+                     "nation", "lang", "visa", "career", "industry", "area_code", "type01", "type02"])
     if (a[col]) row[col] = pick(d, a[col]);
+  // 나라일터는 근무지를 코드(areacode)로만 준다. 기관명에 시·도가 적힌 경우가
+  // 많아 거기서 읽어 낸다. 못 읽으면 비운다 — 코드를 지역인 척 보이지 않는다.
+  if (name === "gojobs") row.region = sidoOf(String(row.org ?? ""));
   for (const col of ["start_date", "end_date", "reg_date"]) if (a[col]) row[col] = iso(pick(d, a[col]));
   row.id = name === "worldjob"
     ? `worldjob:${title}|${row.org ?? ""}|${row.start_date ?? ""}`.slice(0, 500)
