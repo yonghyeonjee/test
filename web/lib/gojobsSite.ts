@@ -19,7 +19,10 @@ const BASE = "https://www.gojobs.go.kr";
 export const LIST_URL =
   `${BASE}/apmList.do?menuNo=401&mngrMenuYn=N&selMenuNo=400&upperMenuNo=`;
 
-const UA = "NarajiwonBot/1.0 (+https://jiwon.knowhow-it.com; 공공채용 공고 안내)";
+// HTTP 헤더는 바이트 하나에 한 글자씩만 담는다(ByteString). 한글을 넣으면
+// fetch 가 부르기도 전에 TypeError 로 죽는다 — 실제로 그렇게 죽었다.
+// 헤더에 들어가는 값은 무조건 ASCII 로만 쓴다.
+const UA = "NarajiwonBot/1.0 (+https://jiwon.knowhow-it.com)";
 
 export type SiteProbe = {
   step: string;
