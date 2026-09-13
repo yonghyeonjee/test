@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
-import { probeGojobsSite, probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, stopCollect } from "./actions";
+import { probeGojobsSite, probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, runInBackground, stopCollect } from "./actions";
 
 export type SourceStat = { key: CollectKey; n: number; newest: string | null; fetched: string | null };
 
@@ -92,7 +92,25 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
    */
   const MAX_ROUNDS = 40;
 
+  /**
+   * 먼저 GitHub Actions 에 넘겨 본다. 넘어가면 창을 닫아도 된다 — 거기서
+   * 남은 것이 없을 때까지 돈다. 여기서는 숫자만 가끔 다시 읽는다.
+   * 토큰이 없어 못 넘기면 false 를 돌려주고, 부르는 쪽이 창 안에서 돈다.
+   */
+  const handOff = async (what: CollectKey | "all", label: string) => {
+    const r = await runInBackground(what);
+    if (!r.configured) return false;
+    if (!r.ok) { setOut(`GitHub 에 넘기지 못했습니다 — ${r.reason}\n창 안에서 이어 돌립니다.`); return false; }
+    setOut(`${label} 을(를) GitHub Actions 에 넘겼습니다. 이 창은 닫아도 됩니다.\n` +
+           `진행: ${r.url}\n아래 숫자는 20초마다 다시 읽습니다.`);
+    // 5분 동안 20초마다 건수를 새로 읽는다. 그 뒤로는 새로고침으로.
+    let n = 0;
+    const id = setInterval(() => { refresh(); if (++n >= 15) clearInterval(id); }, 20_000);
+    return true;
+  };
+
   const runOne = async (key: CollectKey) => {
+    if (await handOff(key, COLLECT_LABEL[key])) return;
     setBusy(key);
     setTile((t) => ({ ...t, [key]: undefined }));
     stopRef.current = false;
@@ -150,6 +168,7 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
 
   /** 전체를 돌리고, 아직 남았다는 항목만 골라 다시 돌린다. */
   const runAll = async () => {
+    if (await handOff("all", "전체 수집")) return;
     stopRef.current = false;
     setBusy("*");
     setTile({});
@@ -200,7 +219,8 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
       <p className="mt-1 text-xs text-faint">
         자동으로도 돌지만, 여기서 전체 또는 항목 하나만 지금 받아올 수 있습니다.
         서버는 한 번에 45초까지만 도는데, <b>남은 것이 없을 때까지 알아서 이어
-        돌립니다</b> — 도는 동안 이 창은 열어 두세요. 멈추려면 중지를 누릅니다.
+        돌립니다.</b> GitHub 토큰이 있으면 Actions 에 넘겨 창을 닫아도 되고, 없으면
+        이 창이 돌리니 열어 두세요. 멈추려면 중지를 누릅니다.
       </p>
 
       {lastRuns.map((r) => <LastRunLine key={r.source} run={r} />)}
