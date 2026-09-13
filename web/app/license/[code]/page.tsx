@@ -17,13 +17,15 @@ import { SITE_URL } from "@/lib/seo";
 export const revalidate = 604800;
 export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  try {
-    const b = await getLicenses();
-    return b.all.filter((l) => l.code).map((l) => ({ code: l.code }));
-  } catch {
-    return [];
-  }
+/**
+ * 빌드 때는 하나도 만들지 않는다.
+ *
+ * 종목이 600개가 넘어 전부 미리 만들면 배포가 몇 분씩 길어지고, 그동안
+ * 공공 API 가 한 번이라도 흔들리면 배포 전체가 실패한다. 첫 요청 때 만들어
+ * 캐시하면 사용자 한 명만 조금 기다리고 그다음부터는 똑같이 빠르다.
+ */
+export function generateStaticParams(): { code: string }[] {
+  return [];
 }
 
 async function find(code: string): Promise<{ l: License; same: License[] } | null> {

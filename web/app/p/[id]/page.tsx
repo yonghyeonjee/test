@@ -35,10 +35,11 @@ import { programRelated } from "@/lib/related";
 import { SITE_URL as SITE } from "@/lib/seo";
 
 export async function generateStaticParams() {
-  // 실패해도 빈 배열이면 된다. dynamicParams 가 켜져 있어
-  // 요청이 들어올 때 만들어진다.
+  // 많이 보는 것만 미리 만든다. 400개를 미리 만들면 배포가 몇 분 길어지고,
+  // 그 사이 DB 가 한 번 흔들리면 배포가 통째로 실패한다. 나머지는
+  // dynamicParams 로 요청이 들어올 때 만들어진다.
   try {
-    return (await getTopSourceIds(400)).map((id) => ({ id }));
+    return (await getTopSourceIds(40)).map((id) => ({ id }));
   } catch {
     return [];
   }
