@@ -115,13 +115,14 @@ export async function collectOne(
     // 2,901쪽 뒤인데 그 깊이가 응답하지 않는다(offset 에 비례해 느려져
     // 마지막 쪽은 60초를 넘긴다 — 함수 상한이 60초다). 재 봤고, 안 된다.
     if (key === "gojobs") {
-      const r = await ingestSite(5, opts.budgetMs ?? 40_000);
+      // 한 쪽에 1.6초쯤 걸린다. 예산이 허락하는 만큼 판다.
+      const r = await ingestSite(30, opts.budgetMs ?? 40_000);
       if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
-      // 쪽 넘김이 안 되면 1쪽(최신 10건)만 매일 쌓인다. 그것도 쓸모는 있지만
-      // 그렇다는 사실은 알려 준다.
-      const note = r.paging === false ? " · 1쪽만 됩니다(쪽 넘김 불가)" : "";
-      return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
-               more: r.paging !== false, reason: note || undefined };
+      return {
+        key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0,
+        more: r.more ?? false,
+        reason: r.from ? `${r.from}~${r.to}쪽` : undefined,
+      };
     }
     if (key === "worldjob") {
       const r = await ingest(key, { pages: opts.pages ?? 4, by: "admin", budgetMs: opts.budgetMs });

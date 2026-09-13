@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
 import { probeGojobsSite, probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, stopCollect } from "./actions";
 
@@ -50,7 +50,9 @@ function TileResult({ r }: { r: CollectResult }) {
     <p className={`mt-1.5 rounded-ctl px-2 py-1.5 text-xs leading-relaxed
                    ${r.ok ? "bg-brandSoft text-brand" : "bg-alertSoft text-alert"}`}>
       {r.ok
-        ? `방금 ${r.saved.toLocaleString()}건 받았습니다${r.more ? " · 더 남았습니다" : ""}`
+        ? `방금 ${r.saved.toLocaleString()}건 받았습니다` +
+          (r.reason ? ` · ${r.reason}` : "") +
+          (r.more ? " · 이어서 받는 중" : "")
         : `실패 — ${r.reason}`}
       <span className="ml-1 opacity-70">({secs(r.elapsedMs)})</span>
     </p>
@@ -70,26 +72,54 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
   const [busy, setBusy] = useState("");
   const [tile, setTile] = useState<Partial<Record<CollectKey, CollectResult>>>({});
   const [out, setOut] = useState("");
+  /** 이어서 돌고 있는 회차. 0 이면 안 돌고 있다. */
+  const [round, setRound] = useState(0);
+  /** 중지를 눌렀나. 다음 회차로 넘어가기 전에 본다. */
+  const stopRef = useRef(false);
 
   /** 돈 뒤에 건수·수집 시각을 다시 읽어 온다. 새로고침 없이 타일이 갱신된다. */
   const refresh = () => startTransition(() => router.refresh());
 
+  /**
+   * 한 항목을 돌린다. "더 남았습니다"가 오면 스스로 다시 부른다.
+   *
+   * 서버 함수는 60초에서 끊긴다. 그래서 한 번에 다 못 받고 "8.2초에 50건,
+   * 더 남음"으로 끝난다. 사람이 그때마다 다시 누르게 두지 않는다 —
+   * 남은 것이 없다고 할 때까지, 또는 중지를 누를 때까지 이어서 돌린다.
+   *
+   * 도는 동안 창을 열어 두어야 한다(브라우저가 다음 회차를 부른다).
+   * 자동 수집(매일 09:00)은 이것과 별개로 그대로 돈다.
+   */
+  const MAX_ROUNDS = 40;
+
   const runOne = async (key: CollectKey) => {
     setBusy(key);
     setTile((t) => ({ ...t, [key]: undefined }));
-    try {
-      const r = await runCollectOne(key);
-      // 서버 함수가 시간 초과로 죽으면 아무것도 안 돌아온다.
-      if (!r) throw new Error("서버가 응답하기 전에 끊겼습니다 (시간 초과). 다시 누르면 이어집니다.");
-      const got = r.results?.[0];
-      if (got) setTile((t) => ({ ...t, [key]: got }));
-      else setOut(r.error ?? "결과가 비어 있습니다.");
-    } catch (e) {
-      setTile((t) => ({ ...t, [key]: {
-        key, ok: false, saved: 0, elapsedMs: 0,
-        reason: e instanceof Error ? e.message : String(e),
-      } }));
+    stopRef.current = false;
+    let total = 0;
+
+    for (let round = 1; round <= MAX_ROUNDS; round++) {
+      setRound(round);
+      let got: CollectResult | undefined;
+      try {
+        const r = await runCollectOne(key);
+        // 서버 함수가 시간 초과로 죽으면 아무것도 안 돌아온다.
+        if (!r) throw new Error("서버가 응답하기 전에 끊겼습니다 (시간 초과). 다시 누르면 이어집니다.");
+        got = r.results?.[0];
+        if (!got) { setOut(r.error ?? "결과가 비어 있습니다."); break; }
+      } catch (e) {
+        got = { key, ok: false, saved: 0, elapsedMs: 0,
+                reason: e instanceof Error ? e.message : String(e) };
+      }
+
+      total += got.saved;
+      setTile((t) => ({ ...t, [key]: { ...got!, saved: total } }));
+      refresh();
+
+      if (!got.ok || !got.more || stopRef.current) break;
     }
+
+    setRound(0);
     setBusy("");
     refresh();
   };
@@ -118,6 +148,48 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
     refresh();
   };
 
+  /** 전체를 돌리고, 아직 남았다는 항목만 골라 다시 돌린다. */
+  const runAll = async () => {
+    stopRef.current = false;
+    setBusy("*");
+    setTile({});
+    setOut("");
+    const total: Partial<Record<CollectKey, number>> = {};
+    let keys: CollectKey[] | undefined = undefined;
+
+    for (let r = 1; r <= MAX_ROUNDS; r++) {
+      setRound(r);
+      let res: CollectResult[] = [];
+      try {
+        const out = await runCollectAll(keys);
+        if (!out) throw new Error("서버가 응답하기 전에 끊겼습니다 (시간 초과).");
+        if (out.error) { setOut(out.error); break; }
+        res = out.results ?? [];
+      } catch (e) {
+        setOut(e instanceof Error ? e.message : String(e));
+        break;
+      }
+
+      setTile((t) => {
+        const next = { ...t };
+        for (const x of res) {
+          total[x.key] = (total[x.key] ?? 0) + x.saved;
+          next[x.key] = { ...x, saved: total[x.key]! };
+        }
+        return next;
+      });
+      refresh();
+
+      // 다음 회차는 아직 남았다는 것만 돌린다.
+      keys = res.filter((x) => x.ok && x.more).map((x) => x.key);
+      if (!keys.length || stopRef.current) break;
+    }
+
+    setRound(0);
+    setBusy("");
+    refresh();
+  };
+
   const btn = "px-4 py-2 text-sm disabled:opacity-50";
   return (
     <section className="card mt-6 p-5">
@@ -127,8 +199,8 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
       </div>
       <p className="mt-1 text-xs text-faint">
         자동으로도 돌지만, 여기서 전체 또는 항목 하나만 지금 받아올 수 있습니다.
-        한 번에 45초까지만 돌고 멈추며, 끊겨도 다시 누르면 이어집니다.
-        채용은 쪽수가 많아 여러 번 눌러야 8월까지 채워집니다.
+        서버는 한 번에 45초까지만 도는데, <b>남은 것이 없을 때까지 알아서 이어
+        돌립니다</b> — 도는 동안 이 창은 열어 두세요. 멈추려면 중지를 누릅니다.
       </p>
 
       {lastRuns.map((r) => <LastRunLine key={r.source} run={r} />)}
@@ -155,7 +227,7 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
                   className="shrink-0 rounded-pill border border-brand px-3 py-1.5 text-xs font-bold
                              text-brand transition-colors hover:bg-brandSoft disabled:opacity-40"
                 >
-                  {busy === s.key ? "받는 중…" : "지금 수집"}
+                  {busy === s.key ? (round > 1 ? `${round}회차…` : "받는 중…") : "지금 수집"}
                 </button>
               </div>
               {tile[s.key] && !running && <TileResult r={tile[s.key]!} />}
@@ -165,11 +237,14 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button onClick={() => runMany("전체 수집", () => runCollectAll())} disabled={!!busy}
+        <button onClick={() => runAll()} disabled={!!busy}
                 className={`btn btn-primary ${btn}`}>
-          {busy === "*" ? "전체 받는 중…" : "전체 수집 시작"}
+          {busy === "*" ? (round > 1 ? `전체 ${round}회차…` : "전체 받는 중…") : "전체 수집 시작"}
         </button>
-        <button onClick={() => runMany("중지", async () => { const r = await stopCollect(); return { ...r, results: [] }; })}
+        <button onClick={() => {
+                  stopRef.current = true;
+                  void runMany("중지", async () => { const r = await stopCollect(); return { ...r, results: [] }; });
+                }}
                 className={`btn btn-ghost ${btn} !border-alert !text-alert`}>중지</button>
         <button onClick={() => runMany("연결 확인", () => probeJobsApi())} disabled={!!busy}
                 className={`btn btn-ghost ${btn}`}>연결 확인 (빠름)</button>
