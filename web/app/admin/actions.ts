@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
+import { ingest, type RunReport } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
 /** 쓰기는 서비스 키로만. 브라우저에 절대 내려가지 않는다. */
@@ -92,6 +93,34 @@ export async function saveJsonSetting(key: "seo" | "ads", value: unknown) {
   revalidatePath("/", "layout");
   revalidatePath("/admin");
   return { error: null };
+}
+
+/**
+ * 채용 공고를 손으로 수집한다.
+ *
+ * 서버 액션은 지금 보고 있는 /admin 으로 POST 되므로 path=/admin 인 관리자
+ * 쿠키가 그대로 실린다. fetch 로 /api/cron/jobs 를 부르면 그 쿠키가 안 가서
+ * 401 이 났다. 크론은 그 경로를 Bearer 로 계속 쓴다.
+ */
+export async function runJobsIngest(
+  source: "gojobs" | "worldjob" | "both",
+  pages: number,
+  reset: boolean,
+): Promise<{ error: string | null; reports: RunReport[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", reports: [] };
+  const list: ("gojobs" | "worldjob")[] = source === "both" ? ["gojobs", "worldjob"] : [source];
+  const reports: RunReport[] = [];
+  for (const s of list) {
+    try {
+      reports.push(await ingest(s, { pages, reset }));
+    } catch (e) {
+      reports.push({ source: s, ok: false, reason: e instanceof Error ? e.message : String(e), pages: [], saved: 0 });
+    }
+  }
+  revalidatePath("/admin");
+  revalidatePath("/jobs");
+  revalidatePath("/jobs/overseas");
+  return { error: null, reports };
 }
 
 /** 목록에서 특정 사업을 내린다 (확신도를 0 으로) */
