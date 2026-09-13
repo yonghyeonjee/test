@@ -376,6 +376,31 @@ export async function probePaging(name: Source = "gojobs"): Promise<PageProbe[]>
               firstIdx: null, lastIdx: null, reason: head.err, ms: 0 }];
   const total = Number(head.xml.match(/<totalCount>\s*(\d+)/)?.[1]) || 0;
 
+  // 이 서비스에 getList 말고 다른 조회가 있는지 본다. 날짜로 거르거나
+  // 최신순으로 주는 조회가 하나라도 있으면 깊은 쪽을 팔 이유가 없어진다.
+  // data.go.kr 은 WADL 로 조회 목록과 항목을 알려 준다.
+  const wadl = await (async (): Promise<PageProbe> => {
+    const t0 = Date.now();
+    const base = conf.url.replace(/\/[^/]+$/, "");
+    try {
+      const res = await fetch(`${base}?_wadl&_type=xml`, {
+        cache: "no-store", signal: AbortSignal.timeout(12_000),
+      });
+      const xml = await res.text();
+      const ops = [...xml.matchAll(/<resource[^>]*path="([^"]+)"/g)].map((m) => m[1]);
+      const params = [...new Set([...xml.matchAll(/<param[^>]*name="([^"]+)"/g)].map((m) => m[1]))];
+      const detail = ops.length
+        ? `조회: ${ops.join(", ")} / 항목: ${params.join(", ")}`
+        : `WADL 을 못 읽음 (응답 ${res.status}, ${xml.length}자)`;
+      return { label: `서비스 목록 — ${detail}`, rows: 0, page: 0, ok: ops.length > 0,
+               got: ops.length, firstIdx: null, lastIdx: null, ms: Date.now() - t0 };
+    } catch (e) {
+      return { label: "서비스 목록(WADL)", rows: 0, page: 0, ok: false, got: 0,
+               firstIdx: null, lastIdx: null,
+               reason: e instanceof Error ? e.message : String(e), ms: Date.now() - t0 };
+    }
+  })();
+
   const at = (rows: number, frac: number) =>
     Math.max(1, Math.ceil((total / rows) * frac));
 
@@ -390,7 +415,7 @@ export async function probePaging(name: Source = "gojobs"): Promise<PageProbe[]>
     { label: "5000건 · 마지막", rows: 5000, page: at(5000, 1) },
   ];
 
-  return Promise.all(plan.map(async (p) => {
+  const results = await Promise.all(plan.map(async (p) => {
     const t0 = Date.now();
     const r = await fetchPage(conf.url, p.page, p.rows, 25_000, 1);
     const ms = Date.now() - t0;
@@ -406,4 +431,5 @@ export async function probePaging(name: Source = "gojobs"): Promise<PageProbe[]>
       ms,
     };
   }));
+  return [wadl, ...results];
 }

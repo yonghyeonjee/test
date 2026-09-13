@@ -178,7 +178,8 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
             const r = await probePagingLimits();
             const body = r.probes
               .map((x) =>
-                `${x.ok ? "○" : "✕"} ${x.label} (${x.page}쪽) — ` +
+                `${x.ok ? "○" : "✕"} ${x.label}${x.page ? ` (${x.page}쪽)` : ""}` +
+                (x.page ? " — " : " ") +
                 (x.ok ? `${x.got}건 · idx ${x.firstIdx}~${x.lastIdx}` : x.reason) +
                 ` · ${(x.ms / 1000).toFixed(1)}초`)
               .join("\n");
