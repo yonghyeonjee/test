@@ -87,7 +87,11 @@ export default function JobList({ board, filter }: { board: JobBoard; filter: Jo
 
       <div className="mb-3 mt-8 flex items-baseline justify-between">
         <h2 className="text-[1.0625rem] font-bold">
-          {filter.q || filter.region || filter.hire || filter.open ? "조건에 맞는 공고" : "최근 공고"}
+          {filter.q || filter.region || filter.hire || filter.open
+            ? "조건에 맞는 공고"
+            : board.jobs.some((j) => j.reg || j.end)
+              ? "최근 공고"
+              : "공고 목록"}
         </h2>
         <span className="num text-sm text-muted">{list.length}건</span>
       </div>

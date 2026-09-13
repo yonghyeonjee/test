@@ -129,8 +129,15 @@ async function fromStore(): Promise<JobBoard | null> {
   }
 }
 
-/** 접수 중(마감 임박 순) → 예정 → 마감. 같은 묶음 안에서는 최신 등록 순. */
+/**
+ * 접수 중(마감 임박 순) → 예정 → 마감. 같은 묶음 안에서는 최신 등록 순.
+ *
+ * 날짜를 하나도 못 읽는 응답이 있다. 그때는 정렬 기준이 없으므로 받은
+ * 순서를 그대로 둔다 — 부르는 쪽이 이미 최신 쪽부터 담아 놓는다.
+ */
 function sortJobs(jobs: Job[]) {
+  const dated = jobs.some((j) => j.end || j.reg || j.start);
+  if (!dated) return jobs;
   const rank: Record<ApplyStatus, number> = { ongoing: 0, always: 0, upcoming: 1, closed: 2 };
   return jobs.sort(
     (a, b) =>
@@ -141,20 +148,25 @@ function sortJobs(jobs: Job[]) {
   );
 }
 
+/**
+ * 표가 비었을 때 API 를 직접 부른다.
+ *
+ * 이 API 는 오래된 것부터 준다. 첫 쪽을 읽으면 2008년 공고가 "최근 공고"로
+ * 올라온다. 그래서 전체 쪽수를 먼저 알아낸 뒤 마지막 쪽부터 거꾸로 읽는다.
+ */
 export async function getJobs(): Promise<JobBoard> {
   const stored = await fromStore();
   if (stored) return stored;
-  const first = await callOpenApiXml(URL, { numOfRows: ROWS, pageNo: 1 }, 21600);
-  if (!first.ok) return { ok: false, reason: first.reason, jobs: [], total: 0 };
+  const head = await callOpenApiXml(URL, { numOfRows: 1, pageNo: 1 }, 21600);
+  if (!head.ok) return { ok: false, reason: head.reason, jobs: [], total: 0 };
 
-  const rows = [...first.rows];
-  const pages = Math.min(PAGES, Math.ceil(first.total / ROWS));
-  const rest = await Promise.all(
-    Array.from({ length: pages - 1 }, (_, i) =>
-      callOpenApiXml(URL, { numOfRows: ROWS, pageNo: i + 2 }, 21600),
-    ),
+  const lastPage = Math.max(1, Math.ceil(head.total / ROWS));
+  const wanted = Array.from({ length: Math.min(PAGES, lastPage) }, (_, i) => lastPage - i);
+  const got = await Promise.all(
+    wanted.map((p) => callOpenApiXml(URL, { numOfRows: ROWS, pageNo: p }, 21600)),
   );
-  for (const r of rest) if (r.ok) rows.push(...r.rows);
+  const rows = got.flatMap((r) => (r.ok ? r.rows : []));
+  const first = { total: head.total };
 
   const jobs: Job[] = [];
   const seen = new Set<string>();
