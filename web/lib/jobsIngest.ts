@@ -14,7 +14,13 @@ import { parseItems } from "./openapi";
  */
 
 const KEY = (process.env.DATA_GO_KR_KEY ?? "").trim();
-const ROWS = 100;
+/**
+ * 한 쪽에 몇 건씩 받나. 나라일터는 29만 건짜리라 100씩이면 2,901쪽이고,
+ * 최신은 맨 뒤에 있다. 그 깊이의 쪽은 응답이 14초 안에 안 온다.
+ * 한 쪽을 크게 받아 쪽수를 열 배 줄인다 — 한 번 성공하면 1,000건이 들어온다.
+ */
+const ROWS_BY: Record<string, number> = { gojobs: 1000, worldjob: 100 };
+const rowsOf = (name: string) => ROWS_BY[name] ?? 100;
 /** 한 번 호출에서 쓸 수 있는 시간. Vercel 함수 상한(60초)보다 넉넉히 짧게. */
 const BUDGET_MS = 40_000;
 const FETCH_MS = 8_000;
@@ -69,9 +75,9 @@ const serviceKey = () => (/%[0-9A-Fa-f]{2}/.test(KEY) ? KEY : encodeURIComponent
  * 그래서 시간은 넉넉히 주되 재시도는 한 번만 한다.
  */
 async function fetchPage(
-  url: string, page: number, ms = FETCH_MS, tries = 2,
+  url: string, page: number, rows: number, ms = FETCH_MS, tries = 2,
 ): Promise<{ xml: string } | { err: string }> {
-  const full = `${url}?serviceKey=${serviceKey()}&numOfRows=${ROWS}&pageNo=${page}`;
+  const full = `${url}?serviceKey=${serviceKey()}&numOfRows=${rows}&pageNo=${page}`;
   let last = "";
   for (let i = 0; i < tries; i++) {
     try {
@@ -158,14 +164,14 @@ export async function probe(name: Source): Promise<RunReport> {
   const t0 = Date.now();
   const base: RunReport = { source: name, ok: false, pages: [], saved: 0 };
   if (!KEY) return { ...base, reason: "DATA_GO_KR_KEY 미설정" };
-  const r = await fetchPage(conf.url, 1);
+  const r = await fetchPage(conf.url, 1, rowsOf(name));
   if ("err" in r) return { ...base, reason: `연결 실패 — ${r.err}`, elapsedMs: Date.now() - t0 };
   const err = resultError(r.xml);
   if (err) return { ...base, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 };
   const items = parseItems(r.xml, conf.item);
   const total = Number(r.xml.match(/<totalCount>\s*(\d+)/)?.[1]) || items.length;
   return {
-    ...base, ok: true, total, lastPage: Math.max(1, Math.ceil(total / ROWS)),
+    ...base, ok: true, total, lastPage: Math.max(1, Math.ceil(total / rowsOf(name))),
     keys: items[0] ? Object.keys(items[0]) : [],
     sample: items[0],
     elapsedMs: Date.now() - t0,
@@ -249,14 +255,16 @@ export async function ingest(
   const pagesPerRun = opts.pages ?? 6;
   const budgetMs = opts.budgetMs ?? BUDGET_MS;
   // 뒤쪽 쪽번호는 느리다. 첫 쪽은 짧게 끊어 빨리 실패를 알고, 뒤쪽은 기다려 준다.
-  const deepMs = Math.min(20_000, Math.max(FETCH_MS, Math.floor(budgetMs / 3)));
+  // 뒤쪽 쪽번호는 20초를 넘기기도 한다. 예산의 3/4까지 기다려 준다.
+  const deepMs = Math.min(30_000, Math.max(FETCH_MS, Math.floor(budgetMs * 0.75)));
   let fails = 0;
   const since = opts.since ?? SINCE_DEFAULT;
   const report: RunReport = { source: name, ok: false, pages: [], saved: 0 };
   if (!KEY) return fail({ ...report, reason: "DATA_GO_KR_KEY 미설정", elapsedMs: 0 });
   const db = svc();
 
-  const probed = await fetchPage(conf.url, 1);
+  const rows_ = rowsOf(name);
+  const probed = await fetchPage(conf.url, 1, rows_);
   if ("err" in probed)
     return fail({ ...report, reason: `첫 쪽을 못 받았다 — ${probed.err}`, elapsedMs: Date.now() - t0 });
   const first = probed.xml;
@@ -264,14 +272,16 @@ export async function ingest(
   if (err) return fail({ ...report, reason: `API 오류 — ${err}`, elapsedMs: Date.now() - t0 });
   const firstItems = parseItems(first, conf.item);
   const total = Number(first.match(/<totalCount>\s*(\d+)/)?.[1]) || firstItems.length;
-  const lastPage = Math.max(1, Math.ceil(total / ROWS));
+  const lastPage = Math.max(1, Math.ceil(total / rows_));
   report.total = total; report.lastPage = lastPage;
   if (firstItems[0]) { report.keys = Object.keys(firstItems[0]); report.sample = firstItems[0]; }
 
   const cursors = await readCursor(db);
   let cur = cursors[name];
   // 처음이거나 다시 시작하거나, 이미 끝까지 읽었으면 최신 쪽부터 다시(새 공고를 얹는다)
-  if (!cur || opts.reset || cur.done || cur.lastPage !== lastPage && cur.done) {
+  // cur.lastPage 가 다르면 쪽 크기나 전체 건수가 바뀐 것이다. 옛 쪽 번호는
+  // 다른 자리를 가리키므로 버리고 맨 뒤(최신)부터 다시 잡는다.
+  if (!cur || opts.reset || cur.done || cur.lastPage !== lastPage) {
     cur = { nextPage: lastPage, lastPage, total, done: cur?.done ?? false, updated: new Date().toISOString() };
     if (cur.done) cur.nextPage = lastPage; // 최신 두세 쪽만
   }
@@ -285,7 +295,7 @@ export async function ingest(
     let xml: string;
     if (page === 1) xml = first;
     else {
-      const got = await fetchPage(conf.url, page, deepMs, 1);
+      const got = await fetchPage(conf.url, page, rows_, deepMs, 1);
       if ("err" in got) {
         report.pages.push({ page, saved: 0, oldest: null, newest: null, err: got.err });
         fails++;
@@ -296,7 +306,13 @@ export async function ingest(
       }
       xml = got.xml;
     }
-    const rows = parseItems(xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
+    const parsed = parseItems(xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
+    // 한 upsert 안에 같은 id 가 두 번 들어가면 Postgres 가 통째로 거부한다
+    // ("ON CONFLICT DO UPDATE command cannot affect row a second time").
+    // 월드잡은 제목+기관+시작일로 id 를 만드는데 같은 공고가 겹쳐 온다.
+    const byId = new Map<string, Row>();
+    for (const r of parsed) byId.set(String(r.id), r);
+    const rows = [...byId.values()];
     if (rows.length) {
       const { error } = await db.from("job_posts").upsert(rows as never[], { onConflict: "id" });
       if (error) return fail({ ...report, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 });

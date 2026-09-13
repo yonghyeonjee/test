@@ -1,4 +1,3 @@
-import { callOpenApiXml } from "./openapi";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 
 /**
@@ -10,9 +9,6 @@ import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
  * ITEM 이고 결과 코드가 ERR_CD 인 점이 다른 포털 서비스와 다르다.
  */
 
-const URL = "http://apis.data.go.kr/B490007/worldjob30/openApi30";
-const ROWS = 100;
-const PAGES = 5;
 
 export type OverseasJob = {
   id: string;
@@ -103,32 +99,17 @@ async function overseasFromStore(nation?: string, q?: string): Promise<OverseasB
 }
 
 export async function getOverseasJobs(nation?: string, q?: string): Promise<OverseasBoard> {
+  // 여기도 DB 만 본다. 이유는 pubJobs.getJobs 주석 참고 — 마지막 쪽을 여러 번
+  // 부르느라 화면이 뼈대만 띄운 채 멈춰 있었다. 받아오는 일은 매일 09:00
+  // 크론과 관리자 화면이 맡는다.
   const stored = await overseasFromStore(nation, q);
   if (stored) return stored;
-  const params: Record<string, string | number> = { numOfRows: ROWS, pageNo: 1 };
-  if (nation) params.searchNationNm = nation;
-  if (q) params.searchRctntcSj = q;
-  // 이 API 도 오래된 것부터 준다. 마지막 쪽부터 거꾸로 읽어야 최신이 나온다.
-  const head = await callOpenApiXml(URL, { ...params, numOfRows: 1 }, 21600, { itemTag: "ITEM" });
-  if (!head.ok) return { ok: false, reason: head.reason, jobs: [], total: 0 };
-
-  const lastPage = Math.max(1, Math.ceil(head.total / ROWS));
-  const wanted = Array.from({ length: Math.min(PAGES, lastPage) }, (_, i) => lastPage - i);
-  const got = await Promise.all(
-    wanted.map((p) => callOpenApiXml(URL, { ...params, pageNo: p }, 21600, { itemTag: "ITEM" })),
-  );
-  const rows = got.flatMap((r) => (r.ok ? r.rows : []));
-  const first = { total: head.total };
-
-  const seen = new Set<string>();
-  const jobs: OverseasJob[] = [];
-  for (const r of rows) {
-    const j = toJob(r);
-    if (!j || seen.has(j.id)) continue;
-    seen.add(j.id);
-    jobs.push(j);
-  }
-  return { ok: jobs.length > 0, reason: jobs.length ? null : "조회 결과가 비어 있습니다.", jobs: sortOverseas(jobs), total: first.total };
+  return {
+    ok: false,
+    reason: "아직 일자리를 받아오지 못했습니다. 매일 오전 9시에 새로 받아 옵니다.",
+    jobs: [],
+    total: 0,
+  };
 }
 
 export function nationFacet(jobs: OverseasJob[]) {

@@ -1,4 +1,3 @@
-import { callOpenApiXml } from "./openapi";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 
 /**
@@ -13,9 +12,6 @@ import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
  * 항목 이름을 로그로 남겨 두어 Vercel 로그에서 바로잡을 수 있게 한다.
  */
 
-const URL = "https://apis.data.go.kr/1760000/PblJobService/getList";
-const ROWS = 100;
-const PAGES = 5;
 
 export type Job = {
   id: string;
@@ -149,39 +145,25 @@ function sortJobs(jobs: Job[]) {
 }
 
 /**
- * 표가 비었을 때 API 를 직접 부른다.
+ * 화면은 DB 만 본다.
  *
- * 이 API 는 오래된 것부터 준다. 첫 쪽을 읽으면 2008년 공고가 "최근 공고"로
- * 올라온다. 그래서 전체 쪽수를 먼저 알아낸 뒤 마지막 쪽부터 거꾸로 읽는다.
+ * 예전에는 표가 비면 여기서 API 를 직접 불렀다. 그런데 이 API 는 오래된
+ * 것부터 주고 최신은 2,901쪽 뒤에 있다. 그 깊이의 쪽은 응답이 14초를
+ * 넘긴다 — 그걸 여섯 쪽 부르니 화면이 30초 넘게 뼈대만 보이고 멈춰 있었다.
+ * 누가 들어올 때마다 그 값을 치를 이유가 없다.
+ *
+ * 받아오는 일은 매일 09:00 크론과 관리자 화면이 한다. 아직 못 받았으면
+ * 비었다고 솔직히 말하고 빨리 끝낸다.
  */
 export async function getJobs(): Promise<JobBoard> {
   const stored = await fromStore();
   if (stored) return stored;
-  const head = await callOpenApiXml(URL, { numOfRows: 1, pageNo: 1 }, 21600);
-  if (!head.ok) return { ok: false, reason: head.reason, jobs: [], total: 0 };
-
-  const lastPage = Math.max(1, Math.ceil(head.total / ROWS));
-  const wanted = Array.from({ length: Math.min(PAGES, lastPage) }, (_, i) => lastPage - i);
-  const got = await Promise.all(
-    wanted.map((p) => callOpenApiXml(URL, { numOfRows: ROWS, pageNo: p }, 21600)),
-  );
-  const rows = got.flatMap((r) => (r.ok ? r.rows : []));
-  const first = { total: head.total };
-
-  const jobs: Job[] = [];
-  const seen = new Set<string>();
-  for (const r of rows) {
-    const j = toJob(r);
-    if (!j || seen.has(j.id)) continue;
-    seen.add(j.id);
-    jobs.push(j);
-  }
-  if (!jobs.length) {
-    console.warn("[pubJobs] 항목 이름이 안 맞는다. 첫 건:", Object.keys(rows[0] ?? {}));
-    return { ok: false, reason: "응답 항목을 읽지 못했습니다.", jobs: [], total: first.total };
-  }
-
-  return { ok: true, reason: null, jobs: sortJobs(jobs), total: first.total };
+  return {
+    ok: false,
+    reason: "아직 공고를 받아오지 못했습니다. 매일 오전 9시에 새로 받아 옵니다.",
+    jobs: [],
+    total: 0,
+  };
 }
 
 /** "서울,경기" / "서울 경기" / "전국" 처럼 오는 근무지를 시·도 조각으로. */
