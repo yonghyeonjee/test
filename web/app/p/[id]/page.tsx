@@ -7,6 +7,7 @@ import ProgramEntry from "@/components/ProgramEntry";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
 import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
+import { manwon, standardFor, tableYear } from "@/lib/medianIncome";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
@@ -103,6 +104,9 @@ function Section({ title, body }: { title: string; body: string | null }) {
 export default async function ProgramPage({ params }: { params: { id: string } }) {
   const p = await getProgram(decodeURIComponent(params.id));
   if (!p) return notFound();
+  // 올해 고시 표가 있을 때만 금액을 적는다. 없으면 퍼센트만 적고 만다 —
+  // 낡은 금액을 보여 주는 것이 제일 나쁘다.
+  const incomeYear = tableYear();
 
   const related = await getRelated(p);
   const left = daysLeft(p);
@@ -204,7 +208,30 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <dl className="mt-1">
         <Row label="지역">{where}</Row>
         {age && <Row label="나이">{age}</Row>}
-        {p.income_pct && <Row label="소득">기준 중위소득 {p.income_pct}% 이하</Row>}
+        {p.income_pct && (
+          <Row label="소득">
+            기준 중위소득 {p.income_pct}% 이하
+            {/* 퍼센트만 적혀 있으면 내가 되는지 알 수 없다. 금액으로 같이 적는다. */}
+            {incomeYear !== null && (
+              <>
+                <span className="mt-1 block text-[13px] text-muted">
+                  {[1, 2, 4].map((n) => {
+                    const m = standardFor(n, p.income_pct!, incomeYear);
+                    return m === null ? null : (
+                      <span key={n} className="mr-2.5 inline-block whitespace-nowrap">
+                        {n}인 <b className="num font-semibold text-ink2">월 {manwon(m)}</b>
+                      </span>
+                    );
+                  })}
+                </span>
+                <Link href="/blog/income"
+                      className="mt-1 inline-block text-[13px] text-brand hover:underline">
+                  우리 집 기준 계산해 보기 →
+                </Link>
+              </>
+            )}
+          </Row>
+        )}
         {!!p.employment?.length && <Row label="취업상태">{p.employment.join(", ")}</Row>}
         {!!p.household?.length && <Row label="해당 가구">{p.household.join(", ")}</Row>}
         {!!p.biz_target?.length && <Row label="사업체">{p.biz_target.join(", ")}</Row>}

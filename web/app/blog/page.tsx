@@ -24,7 +24,23 @@ export default function BlogIndex() {
         정리했습니다.
       </p>
 
-      <div className="mt-8 grid gap-3">
+      {/* 계산기는 읽는 글이 아니라 쓰는 도구다. 글 목록 위에 따로 둔다. */}
+      <Link href="/blog/income"
+            className="card card-link mt-8 flex items-center gap-4 p-5">
+        <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">
+          계산기
+        </span>
+        <span className="min-w-0">
+          <b className="block text-[15.5px] leading-snug">
+            &ldquo;기준 중위소득 180% 이하&rdquo;는 얼마일까
+          </b>
+          <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
+            연소득과 가구원 수를 넣으면 몇 %인지, 어느 기준선에 드는지 바로 봅니다.
+          </span>
+        </span>
+      </Link>
+
+      <div className="mt-3 grid gap-3">
         {POSTS.map((p) => (
           <Link
             key={p.slug}
