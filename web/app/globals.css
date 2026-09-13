@@ -103,8 +103,10 @@
            font-extrabold cursor-pointer transition-colors
            bg-brandSoft text-brand hover:bg-brand hover:text-white;
   }
+  /* 아직 안 고른 빈칸. 배경이 없어서 .blank 의 좌우 여백이 그대로 틈으로
+     보인다 — "어느 지역  에 사는" 처럼 조사 앞이 벌어졌다. 여백을 줄인다. */
   .blank-empty {
-    @apply bg-transparent text-faint underline decoration-line2 decoration-dashed
+    @apply bg-transparent px-1 text-faint underline decoration-line2 decoration-dashed
            decoration-2 underline-offset-[7px] hover:bg-transparent
            hover:text-brand hover:decoration-brand;
   }

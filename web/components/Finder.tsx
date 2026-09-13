@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 
+// 밑말은 짧아야 한다. 휴대폰에서 단추 하나가 화면의 절반이라
+// "골라서 찾기 — 쉬워요"가 "쉬워 / 요"로 잘려 보였다.
 const MODES = [
-  { key: "pick", label: "선택으로 찾기", hint: "골라서 찾기 — 쉬워요" },
-  { key: "search", label: "검색으로 찾기", hint: "한 줄로 적어서 찾기" },
+  { key: "pick", label: "선택으로 찾기", hint: "눌러서 고르기" },
+  { key: "search", label: "검색으로 찾기", hint: "한 줄로 적기" },
 ] as const;
 
 type Mode = (typeof MODES)[number]["key"];
@@ -48,14 +50,15 @@ export default function Finder({
               type="button"
               aria-selected={on}
               onClick={() => setMode(m.key)}
-              className={`relative rounded-ctl px-3 py-2.5 text-[15px] font-bold leading-tight
+              className={`relative break-keep rounded-ctl px-2 py-2.5 text-[14.5px] font-bold
+                          leading-tight sm:px-3 sm:text-[15px]
                           transition-colors duration-300 ${
                             on ? "text-white" : "text-muted hover:text-brand"
                           }`}
             >
               {m.label}
               <small
-                className={`mt-0.5 block text-[11px] font-normal ${
+                className={`mt-0.5 block whitespace-nowrap text-[11px] font-normal ${
                   on ? "text-[#C7C3EA]" : "text-faint"
                 }`}
               >
