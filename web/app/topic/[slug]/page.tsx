@@ -33,7 +33,12 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 export default async function TopicPage({ params }: { params: { slug: string } }) {
   const t = topicBySlug(params.slug);
   if (!t) notFound();
-  const list = await listByTopic(t.key, 60).catch(() => []);
+  // 조용히 [] 로 넘기면 무엇이 잘못됐는지 아무 데도 안 남는다.
+  // 화면은 그대로 "목록 없음"으로 두되, 이유는 로그에 찍는다.
+  const list = await listByTopic(t.key, 60).catch((e) => {
+    console.error("[topic]", t.slug, e);
+    return [];
+  });
   const others = TOPICS.filter((x) => x.slug !== t.slug).slice(0, 8);
 
   return (

@@ -105,7 +105,11 @@ export default async function AreaPage({ params }: { params: { sido: string } })
   const sido = decodeURIComponent(params.sido);
   const [area, list, all] = await Promise.all([
     getArea(sido),
-    listByArea(sido),
+    // 목록을 못 읽어도 화면(지역 요약·안내글)은 살린다. 이유는 로그에 남긴다.
+    listByArea(sido).catch((e) => {
+      console.error("[area]", sido, e);
+      return [];
+    }),
     getAreas(),
   ]);
   if (!area) return notFound();
