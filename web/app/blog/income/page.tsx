@@ -24,23 +24,31 @@ export const metadata: Metadata = {
   alternates: { canonical: "/blog/income" },
 };
 
-/** 복지로가 직접 굴리는 진단·모의계산. 확정은 여기서 한다. */
+/**
+ * 복지로가 직접 굴리는 진단·모의계산. 확정은 여기서 한다.
+ *
+ * 휴대폰 주소(m.bokjiro)로 건다. 들어오는 사람 대부분이 휴대폰이다.
+ */
 const BOKJIRO = [
   {
-    href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/SelfDiagnosisYouthHousView.do",
-    label: "청년 주거 자가진단",
+    href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/mkclInsertNblgPage.do",
+    label: "기초생활수급자 모의계산",
+    desc: "생계·의료·주거·교육급여를 받을 수 있는지",
   },
   {
-    href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/mkclInsertNblgPage.do",
-    label: "국민기초생활보장 모의계산",
+    href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/mkclInsertEmhecsPage.do",
+    label: "초·중·고 교육비지원 모의계산",
+    desc: "자녀 학비·급식비·방과후 활동비 지원",
   },
   {
     href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/mkclInsertBspnPage.do",
     label: "기초연금 모의계산",
+    desc: "만 65세 이상, 얼마를 받을 수 있는지",
   },
   {
-    href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/mkclInsertEmhecsPage.do",
-    label: "그 밖의 모의계산",
+    href: "https://m.bokjiro.go.kr/ssis-tem/twatbz/mkclAsis/SelfDiagnosisYouthHousView.do",
+    label: "청년 주거 자가진단",
+    desc: "청년 월세·전세 지원에 해당하는지",
   },
 ];
 
@@ -127,10 +135,10 @@ export default function IncomePage() {
           {BOKJIRO.map((b) => (
             <li key={b.href}>
               <a href={b.href} target="_blank" rel="noopener noreferrer"
-                 className="card card-link block p-4 text-[14.5px] font-semibold">
-                {b.label}
-                <span className="mt-0.5 block text-[12.5px] font-normal text-muted">
-                  복지로에서 열기
+                 className="card card-link block p-4">
+                <b className="block text-[14.5px] leading-snug">{b.label}</b>
+                <span className="mt-1 block text-[12.5px] leading-relaxed text-muted">
+                  {b.desc}
                 </span>
               </a>
             </li>
