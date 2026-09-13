@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { COLLECT_LABEL, type CollectKey, type CollectResult } from "@/lib/collectors";
-import type { LastRun } from "@/lib/jobsIngest";
+import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
 import { probeJobsApi, runCollectAll, runCollectOne, stopCollect } from "./actions";
 
 export type SourceStat = { key: CollectKey; n: number; newest: string | null; fetched: string | null };
@@ -13,7 +12,7 @@ const ago = (iso: string) => {
 };
 
 /** 마지막 채용 수집 기록. 함수가 죽어도 DB 에 남아 새로고침으로 보인다. */
-function LastRunLine({ run }: { run: LastRun | null }) {
+function LastRunLine({ run }: { run: LastRunView | null }) {
   if (!run) return null;
   const label = run.source === "gojobs" ? "나라일터" : "월드잡";
   const who = run.by === "cron" ? "자동" : "수동";
@@ -43,7 +42,7 @@ function LastRunLine({ run }: { run: LastRun | null }) {
  * 채용·자격증·공공기관·금리 모두 매일 09:00 크론이 같은 일을 한다.
  * 이 화면은 처음 채울 때와 문제가 있을 때 쓴다.
  */
-export default function CollectPanel({ stats, lastRun }: { stats: SourceStat[]; lastRun: LastRun | null }) {
+export default function CollectPanel({ stats, lastRun }: { stats: SourceStat[]; lastRun: LastRunView | null }) {
   const [busy, setBusy] = useState("");
   const [out, setOut] = useState("");
 
@@ -70,7 +69,7 @@ export default function CollectPanel({ stats, lastRun }: { stats: SourceStat[]; 
   return (
     <section className="card mt-6 p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-bold">공공 API 수집</h2>
+        <h2 className="text-sm font-bold">공공 API 수집 <span className="ml-1 font-normal text-faint">v2</span></h2>
         <span className="text-xs text-faint">매일 09:00(KST) 자동 · 아래는 수동</span>
       </div>
       <p className="mt-1 text-xs text-faint">

@@ -5,7 +5,7 @@ import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
 import CollectPanel, { type SourceStat } from "./CollectPanel";
-import { COLLECT_KEYS, type CollectKey } from "@/lib/collectors";
+import { COLLECT_KEYS, type CollectKey } from "@/lib/collectorMeta";
 import { readLastRun } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 

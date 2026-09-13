@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { COLLECT_KEYS, type CollectKey, type CollectResult } from "./collectorMeta";
 import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alioplus";
 import { ingest, type LastRun } from "./jobsIngest";
 import { getLicenses } from "./qnet";
@@ -15,27 +16,8 @@ import { getRentRates } from "./rentRate";
  * 여기서는 한 번에 다 받아 오는 것들을 맡는다.
  */
 
-export type CollectKey =
-  | "gojobs" | "worldjob"
-  | "license" | "agency_business" | "agency_event" | "agency_facility" | "jeonse";
-
-export type CollectResult = {
-  key: CollectKey; ok: boolean; saved: number; reason?: string; elapsedMs: number;
-  /** 이어 읽을 것이 남았나 (채용만) */
-  more?: boolean;
-};
-
-export const COLLECT_LABEL: Record<CollectKey, string> = {
-  gojobs: "나라일터 채용",
-  worldjob: "해외취업",
-  license: "국가자격 종목",
-  agency_business: "공공기관 사업",
-  agency_event: "공공기관 행사",
-  agency_facility: "공공기관 시설",
-  jeonse: "전세대출 금리",
-};
-
-export const COLLECT_KEYS = Object.keys(COLLECT_LABEL) as CollectKey[];
+export { COLLECT_KEYS, COLLECT_LABEL } from "./collectorMeta";
+export type { CollectKey, CollectResult } from "./collectorMeta";
 
 function svc() {
   const key = process.env.SUPABASE_SERVICE_KEY;
