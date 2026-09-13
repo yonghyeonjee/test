@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
 import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "@/lib/collectors";
+import { dispatchCollect } from "@/lib/ghDispatch";
 import { probeSite, type SiteProbe } from "@/lib/gojobsSite";
 import { probe, type RunReport, probePaging, type PageProbe } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
@@ -95,6 +96,20 @@ export async function saveJsonSetting(key: "seo" | "ads", value: unknown) {
   revalidatePath("/", "layout");
   revalidatePath("/admin");
   return { error: null };
+}
+
+/**
+ * 수집을 GitHub Actions 에 넘긴다. 창을 닫아도 거기서 끝까지 돈다.
+ * 토큰이 없으면 null — 화면이 예전처럼 창 안에서 회차를 돌린다.
+ */
+export async function runInBackground(
+  source: CollectKey | "all",
+): Promise<{ configured: boolean; ok: boolean; url?: string; reason?: string }> {
+  if (!isLoggedIn()) return { configured: false, ok: false, reason: "로그인이 필요합니다." };
+  await setStop(false);
+  const r = await dispatchCollect(source);
+  if (r === null) return { configured: false, ok: false };
+  return r.ok ? { configured: true, ok: true, url: r.url } : { configured: true, ok: false, reason: r.reason };
 }
 
 /**

@@ -114,7 +114,8 @@ export async function collectOne(
     // 나라일터 최신: 사이트 1~10쪽(100건). API 는 오래된 것부터 주고 최신이
     // 2,901쪽 뒤인데 그 깊이가 응답하지 않는다 — 재 봤고, 안 된다.
     if (key === "gojobs") {
-      const r = await ingestSite({ mode: "recent", budgetMs: opts.budgetMs ?? 40_000 });
+      // 한 쪽 10건, 1.6초쯤. 예산 안에서 스물다섯 쪽(250건)까지 — 100건보다 넉넉히.
+      const r = await ingestSite({ mode: "recent", pages: 25, budgetMs: opts.budgetMs ?? 40_000 });
       if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
       return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: false,
                reason: `${r.from}~${r.to}쪽` };
