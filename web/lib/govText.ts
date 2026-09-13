@@ -27,18 +27,61 @@ export type Block =
 
 const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 
+/**
+ * "1) 2) …" 목록 번호 앞에서 줄을 끊는다.
+ *
+ * 정규식만으로는 괄호 안의 숫자를 가려내지 못했다. "보증금 + (월임대료×12)
+ * ÷ 제한 산정률" 의 "12)" 를 목록 번호로 읽어 한 문장을 두 동강 냈다.
+ * 앞 글자만 봐서는 알 수 없다 — 괄호가 열려 있는지를 세어야 한다.
+ *
+ * 그래서 한 글자씩 훑으며 괄호 깊이를 센다. 깊이가 0일 때 나오는
+ * "숫자)" 만 목록 번호로 본다.
+ */
+function splitNumbered(src: string) {
+  let out = "";
+  let depth = 0;
+
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+
+    if (c === "(" || c === "（") {
+      depth++;
+      out += c;
+      continue;
+    }
+    if ((c === ")" || c === "）") && depth > 0) {
+      depth--;
+      out += c;
+      continue;
+    }
+
+    // 괄호 밖에서만, 그리고 숫자 한가운데가 아닐 때만 번호로 본다.
+    if (depth === 0 && !/\d/.test(src[i - 1] ?? "")) {
+      const m = src.slice(i).match(/^(\d{1,2})\)\s*(?=\S)/);
+      if (m) {
+        out += `\n${m[1]}) `;
+        i += m[0].length - 1;
+        continue;
+      }
+    }
+    out += c;
+  }
+  return out;
+}
+
 /** 표시 앞에서 줄을 끊는다. 표시는 붙어 오기도 한다 ("…등 불가- 제출서류"). */
 function breakUp(src: string) {
   let s = src.replace(/\s+/g, " ").trim();
 
-  // 1) 2) … — 여는 괄호나 숫자 뒤가 아닐 때만. "1부(…)" 같은 것은 건드리지 않는다.
-  s = s.replace(/(?<![(（\d])\s*(\d{1,2}\))\s*(?=\S)/g, "\n$1 ");
+  s = splitNumbered(s);
   // ①②③ …
   s = s.replace(new RegExp(`\\s*([${CIRCLED}])\\s*`, "g"), "\n$1 ");
   // - 항목. 뒤에 한글·영문이 와야 한다(날짜 2025-01, 범위 표기와 구분).
   s = s.replace(/\s*[-−]\s+(?=[가-힣A-Za-z])/g, "\n- ");
-  // * ※ ○ □ ▶ ◦ 단서·머리표
-  s = s.replace(/\s*([*※○□▶◦])\s*(?=\S)/g, "\n$1 ");
+  // 머리표. 부처마다 쓰는 글자가 다르다 — 실제로 본 것을 모두 넣는다.
+  // "▤ 주택기준 : …" 이 안 잡혀 요약 문단 한가운데 그대로 박혀 있었다.
+  // 가운뎃점(·)은 넣지 않는다. "청년·신혼" 처럼 낱말 안에서 쓰인다.
+  s = s.replace(/\s*([*※○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣])\s*(?=\S)/g, "\n$1 ");
 
   return s.split("\n").map((l) => l.trim()).filter(Boolean);
 }
@@ -66,7 +109,7 @@ export function parseGovText(src: string | null | undefined): Block[] {
     if (/^[*※]/.test(line))
       return { kind: "note", text: line.replace(/^[*※]\s*/, "") };
 
-    const bullet = line.match(/^[-○□▶◦]\s*(.*)$/);
+    const bullet = line.match(/^[-○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣]\s*(.*)$/);
     if (bullet) {
       const rest = bullet[1];
       // "접수처 : 주소지 동 행정복지센터" → 이름과 값으로.

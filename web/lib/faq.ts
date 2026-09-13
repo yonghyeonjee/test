@@ -1,4 +1,5 @@
 import { ageLabel, applyStatus, daysLeft, STATUS_LABEL, type Area, type Detail } from "./db";
+import { hasStructure } from "./govText";
 
 /**
  * 상세 화면을 "표"가 아니라 "글"로 읽히게 하는 문장들.
@@ -50,27 +51,72 @@ function who(p: Detail) {
   return out;
 }
 
-function period(p: Detail) {
-  if (p.is_always_on || !p.apply_end) return "따로 마감 없이 상시 접수합니다";
-  const left = daysLeft(p);
-  const st = applyStatus(p);
-  if (st === "closed") return `${p.apply_end}에 접수가 끝났습니다`;
-  if (st === "upcoming" && p.apply_start) return `${p.apply_start}부터 접수를 시작합니다`;
-  if (left !== null && left >= 0) return `${p.apply_end}까지 접수하며, 오늘 기준 ${left === 0 ? "마감일" : `${left}일 남았`}습니다`;
-  return `${p.apply_end}까지 접수합니다`;
+/** 2026-12-31 → 2026년 12월 31일. 숫자만 늘어놓은 날짜는 눈에 안 들어온다. */
+export function korDate(iso: string | null | undefined) {
+  const m = (iso ?? "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}년 ${Number(m[2])}월 ${Number(m[3])}일` : (iso ?? "");
 }
 
-/** 머리글 아래 요약 문단. */
-export function programIntro(p: Detail) {
+/**
+ * 접수 기간 한 문장.
+ *
+ * 예전에는 부르는 쪽이 "접수는 " 을 앞에 붙이고 여기서도 "접수하며" 라고
+ * 해서 "접수는 2026-12-31까지 접수하며" 가 됐다. 여기서 문장을 통째로
+ * 만든다.
+ */
+function period(p: Detail) {
+  if (p.is_always_on || !p.apply_end) return "따로 마감 없이 상시 접수합니다.";
+  const end = korDate(p.apply_end);
+  const left = daysLeft(p);
+  const st = applyStatus(p);
+  if (st === "closed") return `${end}에 접수가 끝났습니다.`;
+  if (st === "upcoming" && p.apply_start)
+    return `${korDate(p.apply_start)}부터 접수를 시작해 ${end}에 마감합니다.`;
+  if (left === 0) return `오늘이 마감일입니다. ${end}까지 접수합니다.`;
+  if (left !== null && left > 0) return `${end}까지 접수합니다. 오늘 기준 ${left}일 남았습니다.`;
+  return `${end}까지 접수합니다.`;
+}
+
+/**
+ * 머리글 아래 요약. 문단을 나눠 돌려준다.
+ *
+ * 예전에는 세 문장을 한 덩어리로 이어 붙였다. 화면에서는 열 줄짜리 벽이
+ * 됐고, 가운데에 원문을 90자에서 자른 조각까지 끼어 있었다. 그 조각은
+ * "▤ 주택기준 : … 4억원 이하 - 전세전환가액입니다" 처럼 문장 중간에서
+ * 끊긴 채 "입니다" 만 붙어 나왔다.
+ *
+ * 지원 내용은 아래 "지원내용" 칸에서 GovText 가 줄을 살려 제대로 보여
+ * 준다. 여기서 또 자를 이유가 없다 — 뺀다. 원문에 구조가 없고 짧을
+ * 때만 한 줄로 옮긴다.
+ */
+export function programIntro(p: Detail): string[] {
   const where = p.sigungu || p.sido || "전국";
   const w = who(p);
   const target = w.length ? `${w.join(", ")} 대상` : "해당 조건을 갖춘 분";
-  const org = p.org_name ? `${p.org_name}이 ` : "";
-  const benefit = clip(p.benefit_text ?? p.summary, 90);
-  const s1 = `${josa(p.title, "은는")} ${where}에서 ${org}운영하는 ${topicKeyword(p)}으로, ${target}입니다.`;
-  const s2 = benefit ? ` 지원 내용은 ${benefit.replace(/\.$/, "")}입니다.` : "";
-  const s3 = ` 접수는 ${period(p)}.`;
-  return s1 + s2 + s3;
+
+  // "수원시에서 경기도이 운영하는" 이었다. 조사가 받침을 안 보고 "이" 로
+  // 굳어 있었고(경기도 → 경기도가), 곳과 기관을 겹쳐 적어 어색했다.
+  // 기관이 곳과 같으면 한 번만 적는다.
+  const org = p.org_name?.trim();
+  const runBy =
+    !org || org === where
+      ? `${josa(where, "이가")} 운영하는`
+      : `${josa(org, "이가")} ${where}에서 운영하는`;
+
+  const out = [`${josa(p.title, "은는")} ${runBy} ${topicKeyword(p)}으로, ${target}입니다.`];
+
+  // 아래에서 제대로 보여 주는 원문을 여기서 또 자르지 않는다.
+  const raw = p.benefit_text ?? p.summary;
+  if (raw && !hasStructure(raw)) {
+    const benefit = clip(raw, 90).replace(/[.\s]+$/, "");
+    // 원문이 이미 온전한 문장이면("…지원합니다") 그대로 둔다. 앞에
+    // "지원 내용은" 을 붙이고 뒤에 "입니다" 를 또 붙이면
+    // "지원 내용은 …지원합니다입니다" 가 된다.
+    if (benefit) out.push(/(다|함|음|됨|임)$/.test(benefit) ? `${benefit}.` : `지원 내용은 ${benefit}입니다.`);
+  }
+
+  out.push(period(p));
+  return out;
 }
 
 /** "이런 분이 해당됩니다" 점검 목록. */
