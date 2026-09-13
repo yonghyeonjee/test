@@ -10,7 +10,6 @@ import { FCLT_CATE, SIDO_SHORT, callAlio, toFacility } from "@/lib/alioplus";
 import { FACILITIES_INTRO, FACILITIES_FAQ } from "@/lib/pageFaq";
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
-import { AgencyTabs } from "../page";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -49,7 +48,6 @@ export default async function AgencyFacilities({ searchParams }: { searchParams:
         sub="체육관, 강당, 회의실, 주차장. 공공기관 시설 상당수가 개방되어 있고 무료거나 매우 쌉니다. 어디가 열려 있는지 지역별로 봅니다."
         art={<ArtAgency />}
       />
-      <AgencyTabs active="/agency/facilities" />
       <AgencyList
         base="/agency/facilities" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[

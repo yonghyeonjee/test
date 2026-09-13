@@ -10,7 +10,6 @@ import { EVT_CATE, SIDO_SHORT, callAlio, toEvent } from "@/lib/alioplus";
 import { EVENTS_INTRO, EVENTS_FAQ } from "@/lib/pageFaq";
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
-import { AgencyTabs } from "../page";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -55,7 +54,6 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
         sub="무료 강좌, 체험, 견학, 공모전. 공공기관은 국민 참여 행사를 꾸준히 열지만 기관 홈페이지에만 올라와 지나치기 쉽습니다."
         art={<ArtAgency />}
       />
-      <AgencyTabs active="/agency/events" />
       <AgencyList
         base="/agency/events" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[

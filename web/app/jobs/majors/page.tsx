@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArtStudy } from "@/components/Art";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
-import JobsTabs from "@/components/JobsTabs";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -57,7 +56,6 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
           ))}
         </div>
       </PageBanner>
-      <JobsTabs active="/jobs/majors" />
 
       <section className="mt-8">
         <h2 className="text-[1.0625rem] font-bold">3년 흐름</h2>
