@@ -8,6 +8,7 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { FCLT_CATE, SIDO_SHORT, callAlio, toFacility } from "@/lib/alioplus";
 import { FACILITIES_INTRO, FACILITIES_FAQ } from "@/lib/pageFaq";
+import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
 import { AgencyTabs } from "../page";
 
@@ -31,10 +32,14 @@ const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;
 
 export default async function AgencyFacilities({ searchParams }: { searchParams: SP }) {
   const current = { sido: one(searchParams.sido), cate: one(searchParams.cate), q: one(searchParams.q) };
-  const res = await callAlio("facility", {
+  // 매일 받아 둔 것을 먼저 본다. 알리오가 늦거나 막혀도 화면은 산다.
+  // DB 가 비어 있을 때만(첫 수집 전) 직접 부른다.
+  const stored = await agencyFromStore("facility",
+    { sido: current.sido, q: current.q, byCode: [current.cate] });
+  const res = stored ? { ok: true as const, rows: [] } : await callAlio("facility", {
     schSiNa: current.sido ?? "", schFstCateCd: current.cate ?? "", schFacltNa: current.q ?? "",
   });
-  const items = res.ok ? res.rows.map(toFacility).filter((x): x is NonNullable<typeof x> => !!x) : [];
+  const items = stored ?? (res.ok ? res.rows.map(toFacility).filter((x): x is NonNullable<typeof x> => !!x) : []);
 
   return (
     <div className="pb-4">

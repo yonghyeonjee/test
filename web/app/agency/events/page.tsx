@@ -8,6 +8,7 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { EVT_CATE, SIDO_SHORT, callAlio, toEvent } from "@/lib/alioplus";
 import { EVENTS_INTRO, EVENTS_FAQ } from "@/lib/pageFaq";
+import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
 import { AgencyTabs } from "../page";
 
@@ -31,10 +32,14 @@ const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;
 
 export default async function AgencyEvents({ searchParams }: { searchParams: SP }) {
   const current = { sido: one(searchParams.sido), cate: one(searchParams.cate), q: one(searchParams.q) };
-  const res = await callAlio("event", {
+  // 매일 받아 둔 것을 먼저 본다. 알리오가 늦거나 막혀도 화면은 산다.
+  // DB 가 비어 있을 때만(첫 수집 전) 직접 부른다.
+  const stored = await agencyFromStore("event",
+    { sido: current.sido, q: current.q, byCode: [current.cate] });
+  const res = stored ? { ok: true as const, rows: [] } : await callAlio("event", {
     schSiNa: current.sido ?? "", schFstCateCd: current.cate ?? "", schEvtNa: current.q ?? "",
   });
-  const items = res.ok ? res.rows.map(toEvent).filter((x): x is NonNullable<typeof x> => !!x) : [];
+  const items = stored ?? (res.ok ? res.rows.map(toEvent).filter((x): x is NonNullable<typeof x> => !!x) : []);
   // 진행 중·예정을 앞에, 지난 것은 뒤로
   const today = new Date().toISOString().slice(0, 10);
   items.sort((a, b) => {
