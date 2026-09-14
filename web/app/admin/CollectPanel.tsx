@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
-import { probeGojobsSite, probeJobsApi, probePagingLimits, runCollectAll, runCollectOne, runInBackground, stopCollect } from "./actions";
+import { probeGojobsSite, probeJobsApi, probeOpenQuestions, probePagingLimits, runCollectAll, runCollectOne, runInBackground, stopCollect } from "./actions";
 
 export type SourceStat = { key: CollectKey; n: number; newest: string | null; fetched: string | null };
 
@@ -297,6 +297,19 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
           className={`btn btn-ghost ${btn}`}
         >
           나라일터 사이트 점검
+        </button>
+        <button
+          onClick={() => runMany("공개문제 API 점검", async () => {
+            const r = await probeOpenQuestions();
+            const body = r.steps
+              .map((x) => `${x.ok ? "○" : "✕"} ${x.step}${x.ms ? ` · ${(x.ms / 1000).toFixed(1)}초` : ""}\n${x.detail}`)
+              .join("\n\n");
+            return { error: r.error ?? (body || "결과 없음") };
+          })}
+          disabled={!!busy}
+          className={`btn btn-ghost ${btn}`}
+        >
+          공개문제 API 점검
         </button>
       </div>
       <p className="mt-2 text-xs text-faint">

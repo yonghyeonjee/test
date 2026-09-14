@@ -8,7 +8,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getLicenses, type License } from "@/lib/qnet";
-import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, gradeOfSeries, windowState } from "@/lib/qnetExam";
+import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 
 export const revalidate = 3600;
@@ -23,6 +23,51 @@ export const metadata: Metadata = {
 };
 
 const dot = (v: string | null) => (v ? v.replaceAll("-", ".") : "—");
+
+/**
+ * 회차 표 한 덩어리.
+ *
+ * 앞으로 올 것과 지난 것에 같은 표를 쓰되, 지난 것은 접어 둔다.
+ */
+function RoundTable({
+  grade, list, today,
+}: { grade: string; list: ExamRound[]; today: Date }) {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full min-w-[38rem] border-collapse text-[13.5px]">
+        <thead>
+          <tr className="border-b-2 border-line2 text-left text-[12.5px] text-muted">
+            <th className="py-2 pr-3 font-semibold">회차</th>
+            <th className="py-2 pr-3 font-semibold">필기 접수</th>
+            <th className="py-2 pr-3 font-semibold">필기시험</th>
+            <th className="py-2 pr-3 font-semibold">
+              {grade === "기술사" ? "면접 접수" : "실기 접수"}
+            </th>
+            <th className="py-2 font-semibold">합격 발표</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((r) => {
+            // 지금 열려 있는 접수 창이 있으면 그 줄을 눈에 띄게.
+            const open = applyWindows(r).some((w) => windowState(w, today) === "open");
+            return (
+              <tr key={r.id} className={`border-b border-line ${open ? "bg-brandSoft/40" : ""}`}>
+                <td className="py-2.5 pr-3 font-semibold">
+                  {r.round}
+                  {open && <span className="badge badge-open ml-1.5">접수 중</span>}
+                </td>
+                <td className="num py-2.5 pr-3">{dot(r.docRegStart)} ~ {dot(r.docRegEnd)}</td>
+                <td className="num py-2.5 pr-3">{dot(r.docExam)}</td>
+                <td className="num py-2.5 pr-3">{dot(r.pracRegStart)} ~ {dot(r.pracRegEnd)}</td>
+                <td className="num py-2.5">{dot(r.pracPass)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default async function ExamSchedule() {
   const [rounds, licenses] = await Promise.all([
@@ -70,10 +115,11 @@ export default async function ExamSchedule() {
         </div>
       ) : (
         EXAM_GRADES.map((grade) => {
-          const list = rounds
-            .filter((r) => r.grade === grade)
-            .sort((a, b) => (a.docRegStart ?? "9999").localeCompare(b.docRegStart ?? "9999"));
-          if (!list.length) return null;
+          const { upcoming, past, undated } = splitRounds(
+            rounds.filter((r) => r.grade === grade),
+            today,
+          );
+          if (!upcoming.length && !past.length && !undated.length) return null;
           const items = byGrade.get(grade) ?? [];
           return (
             <section key={grade} className="mt-12">
@@ -100,39 +146,32 @@ export default async function ExamSchedule() {
                   </div>
                 </div>
               )}
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[38rem] border-collapse text-[13.5px]">
-                  <thead>
-                    <tr className="border-b-2 border-line2 text-left text-[12.5px] text-muted">
-                      <th className="py-2 pr-3 font-semibold">회차</th>
-                      <th className="py-2 pr-3 font-semibold">필기 접수</th>
-                      <th className="py-2 pr-3 font-semibold">필기시험</th>
-                      <th className="py-2 pr-3 font-semibold">
-                        {grade === "기술사" ? "면접 접수" : "실기 접수"}
-                      </th>
-                      <th className="py-2 font-semibold">합격 발표</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.map((r) => {
-                      // 지금 열려 있는 접수 창이 있으면 그 줄을 눈에 띄게.
-                      const open = applyWindows(r).some((w) => windowState(w, today) === "open");
-                      return (
-                        <tr key={r.id} className={`border-b border-line ${open ? "bg-brandSoft/40" : ""}`}>
-                          <td className="py-2.5 pr-3 font-semibold">
-                            {r.round}
-                            {open && <span className="badge badge-open ml-1.5">접수 중</span>}
-                          </td>
-                          <td className="num py-2.5 pr-3">{dot(r.docRegStart)} ~ {dot(r.docRegEnd)}</td>
-                          <td className="num py-2.5 pr-3">{dot(r.docExam)}</td>
-                          <td className="num py-2.5 pr-3">{dot(r.pracRegStart)} ~ {dot(r.pracRegEnd)}</td>
-                          <td className="num py-2.5">{dot(r.pracPass)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {upcoming.length > 0 ? (
+                <RoundTable grade={grade} list={upcoming} today={today} />
+              ) : (
+                <p className="mt-4 text-[14px] text-muted">
+                  앞으로 남은 회차가 아직 올라오지 않았습니다. 보통 시행 두세 달 전에
+                  공고됩니다.
+                </p>
+              )}
+
+              {/* 지난 회차는 접어 둔다. 필요한 사람은 열어 보면 된다. */}
+              {past.length > 0 && (
+                <details className="mt-4">
+                  <summary className="cursor-pointer list-none text-[13.5px] font-semibold text-muted hover:text-brand">
+                    지난 회차 {past.length}개 보기
+                  </summary>
+                  <RoundTable grade={grade} list={past} today={today} />
+                </details>
+              )}
+
+              {undated.length > 0 && (
+                <div className="mt-4 border-l-2 border-line2 pl-3">
+                  <p className="text-[13px] leading-relaxed text-muted">
+                    날짜가 아직 정해지지 않은 회차: {undated.map((r) => r.round).join(", ")}
+                  </p>
+                </div>
+              )}
             </section>
           );
         })

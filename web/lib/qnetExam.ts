@@ -123,6 +123,45 @@ export function applyWindows(r: ExamRound): Stage[] {
   return out;
 }
 
+/** 이 회차에서 가장 늦은 날. 다 지났는지 가리는 데 쓴다. */
+export function roundEnd(r: ExamRound): string | null {
+  const all = [
+    r.docRegStart, r.docRegEnd, r.docExam, r.docPass,
+    r.docSubmitStart, r.docSubmitEnd,
+    r.pracRegStart, r.pracRegEnd, r.pracExamStart, r.pracExamEnd, r.pracPass,
+  ].filter((v): v is string => Boolean(v));
+  return all.length ? all.sort().at(-1)! : null;
+}
+
+/**
+ * 회차를 앞으로 올 것과 지난 것으로 가른다.
+ *
+ * 그동안 필기 접수일 오름차순으로 통째로 늘어놓았다. 9월에 들어와도 표
+ * 맨 위는 1월 회차였다 — 이미 끝난 것을 먼저 보여 준 셈이다. 사람이
+ * 찾는 것은 "다음에 언제 넣나" 다.
+ *
+ * 날짜가 하나도 없는 회차가 있다("산업별 맞춤형 고교등 필기면제검정").
+ * 날짜 표에 끼워 두면 빈칸만 늘어놓게 되니 따로 뺀다.
+ */
+export function splitRounds(rounds: ExamRound[], today = new Date()) {
+  const upcoming: ExamRound[] = [];
+  const past: ExamRound[] = [];
+  const undated: ExamRound[] = [];
+
+  for (const r of rounds) {
+    const end = roundEnd(r);
+    if (!end) undated.push(r);
+    else if (daysUntil(end, today) >= 0) upcoming.push(r);
+    else past.push(r);
+  }
+
+  const key = (r: ExamRound) => r.docRegStart ?? r.docExam ?? roundEnd(r) ?? "9999";
+  // 앞으로 올 것은 가까운 것부터, 지난 것은 최근 것부터.
+  upcoming.sort((a, b) => key(a).localeCompare(key(b)));
+  past.sort((a, b) => key(b).localeCompare(key(a)));
+  return { upcoming, past, undated };
+}
+
 /** 오늘 기준 남은 날. 지났으면 음수. */
 export function daysUntil(iso: string, today = new Date()): number {
   const t = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
