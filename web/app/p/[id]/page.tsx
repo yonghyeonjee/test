@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import GovText from "@/components/GovText";
+import JsonLd from "@/components/JsonLd";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
 import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
 import { manwon, standardFor, tableYear } from "@/lib/medianIncome";
+import { ORG_ID, pageGraph } from "@/lib/schema";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
@@ -114,27 +116,46 @@ export default async function ProgramPage({ params }: { params: { id: string } }
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "GovernmentService",
+  const path = `/p/${encodeURIComponent(p.source_id)}`;
+  const jsonLd = pageGraph({
+    path,
     name: p.title,
-    description: p.summary ?? undefined,
-    serviceType: p.kind === "welfare" ? "복지서비스" : "기업지원사업",
-    provider: p.org_name
-      ? { "@type": "GovernmentOrganization", name: p.org_name }
-      : undefined,
-    areaServed: p.sido
-      ? { "@type": "AdministrativeArea", name: where }
-      : { "@type": "Country", name: "대한민국" },
-    url: `${SITE}/p/${encodeURIComponent(p.source_id)}`,
-  };
+    description: p.summary,
+    // 화면 위 길잡이와 같은 순서로. "지원 / 경기도" 가 그려져 있다.
+    crumbs: [
+      { name: "지원금 찾기", path: "/" },
+      ...(p.sido ? [{ name: p.sido, path: `/area/${encodeURIComponent(p.sido)}` }] : []),
+      { name: p.title },
+    ],
+    about: {
+      "@type": "GovernmentService",
+      "@id": `${SITE}${path}#service`,
+      name: p.title,
+      ...(p.summary ? { description: p.summary } : {}),
+      serviceType: p.kind === "welfare" ? "복지서비스" : "기업지원사업",
+      ...(p.org_name
+        ? { provider: { "@type": "GovernmentOrganization", name: p.org_name } }
+        : { provider: { "@id": ORG_ID } }),
+      areaServed: p.sido
+        ? { "@type": "AdministrativeArea", name: where }
+        : { "@type": "Country", name: "대한민국" },
+      url: `${SITE}${path}`,
+      // 접수 창구가 온라인이면 그것까지 알려 준다.
+      ...(p.detail_url
+        ? {
+            availableChannel: {
+              "@type": "ServiceChannel",
+              serviceUrl: p.detail_url,
+              name: "공고 원문",
+            },
+          }
+        : {}),
+    },
+  });
 
   return (
     <article>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <JsonLd data={jsonLd} />
 
       <nav className="mb-6 text-xs text-muted">
         <Link href="/" className="hover:text-ink">지원</Link>

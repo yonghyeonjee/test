@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { PostArt } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import type { PromoContext } from "@/lib/promo";
@@ -12,6 +13,7 @@ import ShareButton from "@/components/ShareButton";
 import { getPost, POSTS } from "@/lib/posts";
 import { postRelated } from "@/lib/related";
 import { SITE_URL, t } from "@/lib/seo";
+import { ORG_ID, pageGraph } from "@/lib/schema";
 
 
 /** 글 주제와 이어지는 바깥 자료를 고르는 단서. */
@@ -54,8 +56,35 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   const post = getPost(params.slug);
   if (!post) notFound();
 
+  const path = `/blog/${post.slug}`;
+  const ld = pageGraph({
+    path,
+    name: post.title,
+    description: post.description,
+    dateModified: post.updated,
+    crumbs: [
+      { name: "지원금 안내", path: "/blog" },
+      { name: post.title },
+    ],
+    about: {
+      "@type": "BlogPosting",
+      "@id": `${SITE_URL}${path}#post`,
+      headline: post.title,
+      description: post.description,
+      // 언제 쓴 것인지 모르는 글이 제일 못 미덥다. 고친 날을 적는다.
+      dateModified: post.updated,
+      datePublished: post.updated,
+      inLanguage: "ko-KR",
+      keywords: post.keywords.join(", "),
+      author: { "@id": ORG_ID },
+      publisher: { "@id": ORG_ID },
+      url: `${SITE_URL}${path}`,
+    },
+  });
+
   return (
     <article className="py-4">
+      <JsonLd data={ld} />
       <nav className="text-xs text-muted">
         <Link href="/blog" className="hover:text-brand">
           지원금 안내

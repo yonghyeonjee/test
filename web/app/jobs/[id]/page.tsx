@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -11,6 +12,7 @@ import { STATUS_LABEL } from "@/lib/db";
 import { dot, getJob, getRelatedJobs, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { SITE_URL } from "@/lib/seo";
 
 // 공고는 수만 건이라 미리 만들지 않는다. 처음 열릴 때 만들고 하루 동안 쓴다.
@@ -57,12 +59,21 @@ const Row = ({ k, v }: { k: string; v: string | null }) =>
     </div>
   ) : null;
 
-/** 구글 채용 검색이 읽는 표시. 날짜와 기관이 있을 때만 내보낸다. */
-function jsonLd(job: Job) {
+/**
+ * 구글 채용 검색이 읽는 표시.
+ *
+ * 날짜와 기관만으로는 부족하다. 구글은 description 에 "직무·자격·근무조건"
+ * 이 실제로 담기기를 요구하는데, 우리가 가진 것은 목록에서 긁은 몇 줄뿐이다.
+ * 그래서 근무지·고용형태·모집인원 가운데 하나라도 있어 요약이 알맹이를
+ * 갖출 때만 내보낸다. 빈 껍데기를 400건씩 내보내면 얻는 것보다 잃는 것이
+ * 크다.
+ */
+function jobNode(job: Job) {
   if (!job.reg || !job.org) return null;
+  if (!job.region && !job.hire && !job.headcount) return null;
   return {
-    "@context": "https://schema.org",
     "@type": "JobPosting",
+    "@id": `${SITE_URL}/jobs/${encodeURIComponent(job.id)}#posting`,
     title: job.title,
     description: jobSummary(job),
     datePosted: job.reg,
@@ -78,6 +89,11 @@ function jsonLd(job: Job) {
       : {}),
     url: `${SITE_URL}/jobs/${encodeURIComponent(job.id)}`,
     identifier: { "@type": "PropertyValue", name: "나라일터", value: job.id },
+    ...(job.headcount && /^\d+$/.test(job.headcount)
+      ? { totalJobOpenings: Number(job.headcount) }
+      : {}),
+    // 우리 쪽에서 바로 지원할 수 없다. 원문으로 가야 한다.
+    directApply: false,
   };
 }
 
@@ -85,14 +101,25 @@ export default async function JobDetail({ params }: P) {
   const job = await getJob(decodeURIComponent(params.id));
   if (!job) notFound();
   const related = await getRelatedJobs(job);
-  const ld = jsonLd(job);
+  const ld = pageGraph({
+    path: `/jobs/${encodeURIComponent(job.id)}`,
+    name: job.title,
+    description: jobSummary(job),
+    dateModified: job.reg,
+    // 화면 위 길잡이 그대로: 채용 · {지역}
+    crumbs: [
+      { name: "채용", path: "/jobs" },
+      ...(job.region
+        ? [{ name: job.region, path: `/jobs/region/${encodeURIComponent(job.region)}` }]
+        : []),
+      { name: job.title },
+    ],
+    about: jobNode(job),
+  });
 
   return (
     <article className="pb-4">
-      {ld && (
-        <script type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
-      )}
+      <JsonLd data={ld} />
 
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/jobs" className="hover:text-brand">채용</Link>
