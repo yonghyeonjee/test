@@ -7,7 +7,8 @@ import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
-import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, windowState } from "@/lib/qnetExam";
+import { getLicenses, type License } from "@/lib/qnet";
+import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, gradeOfSeries, windowState } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 
 export const revalidate = 3600;
@@ -24,8 +25,23 @@ export const metadata: Metadata = {
 const dot = (v: string | null) => (v ? v.replaceAll("-", ".") : "—");
 
 export default async function ExamSchedule() {
-  const rounds = await getExamRounds();
+  const [rounds, licenses] = await Promise.all([
+    getExamRounds(),
+    // 회차만 늘어놓으면 "2026년 상시 기능사 20회" 가 무슨 시험인지 알 수
+    // 없다. 등급마다 어떤 종목이 딸려 있는지 함께 보여 준다.
+    getLicenses().then((b) => b.all).catch(() => [] as License[]),
+  ]);
   const today = new Date();
+
+  /** 등급별 종목. 두 API 를 잇는 자리다. */
+  const byGrade = new Map<string, License[]>();
+  for (const l of licenses) {
+    const g = gradeOfSeries(l.series);
+    if (!g) continue;
+    const cur = byGrade.get(g) ?? [];
+    cur.push(l);
+    byGrade.set(g, cur);
+  }
 
   return (
     <div className="pb-4">
@@ -58,9 +74,32 @@ export default async function ExamSchedule() {
             .filter((r) => r.grade === grade)
             .sort((a, b) => (a.docRegStart ?? "9999").localeCompare(b.docRegStart ?? "9999"));
           if (!list.length) return null;
+          const items = byGrade.get(grade) ?? [];
           return (
             <section key={grade} className="mt-12">
               <h2 className="sec-title text-[1.0625rem] font-extrabold">{grade}</h2>
+              {items.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[13.5px] leading-relaxed text-muted">
+                    이 일정으로 치르는 종목 <b className="num text-ink2">{items.length}개</b>.
+                    아래 회차는 종목과 상관없이 같습니다.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1.5 text-[13px]">
+                    {items.slice(0, 10).map((x) => (
+                      <Link key={x.code} href={`/license/${encodeURIComponent(x.code)}`}
+                            className="text-muted transition-colors hover:text-brand">
+                        {x.name}
+                      </Link>
+                    ))}
+                    {items.length > 10 && (
+                      <Link href={`/license?series=${encodeURIComponent(items[0].series)}`}
+                            className="font-semibold text-brand hover:underline">
+                        +{items.length - 10}개 전체
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[38rem] border-collapse text-[13.5px]">
                   <thead>

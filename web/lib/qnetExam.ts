@@ -213,3 +213,34 @@ export function upcoming(rounds: ExamRound[], today = new Date()): Upcoming[] {
     return a.days - b.days;
   });
 }
+
+/**
+ * 종목의 등급(series)과 시험일정의 등급(grade)을 잇는다.
+ *
+ * 두 API 가 등급을 다르게 부른다. 종목 목록은 "기사" 와 "산업기사" 를
+ * 따로 세는데, 일정 API 는 둘을 한 회차로 묶어 "기사·산업기사" 로 준다.
+ * 실제로 같은 날 같이 치르니 묶는 것이 맞다.
+ *
+ * 국가전문자격(공인중개사·세무사 …)은 이 일정 API 가 다루지 않는다.
+ * null 을 주고, 화면은 "시행기관 일정을 따로 확인하세요" 라고 말한다 —
+ * 없는 일정을 아무 회차에나 갖다 붙이면 시험 날짜를 잘못 알려 주게 된다.
+ */
+export function gradeOfSeries(series: string | null | undefined): ExamGrade | null {
+  const s = (series ?? "").trim();
+  if (s === "기술사") return "기술사";
+  if (s === "기능장") return "기능장";
+  if (s === "기능사") return "기능사";
+  if (s === "기사" || s === "산업기사") return "기사·산업기사";
+  return null;
+}
+
+/** 한 등급의 다가오는 신청 창. 종목 상세가 쓴다. */
+export function upcomingForSeries(
+  rounds: ExamRound[],
+  series: string | null | undefined,
+  today = new Date(),
+): Upcoming[] {
+  const grade = gradeOfSeries(series);
+  if (!grade) return [];
+  return upcoming(rounds.filter((r) => r.grade === grade), today);
+}
