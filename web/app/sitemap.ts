@@ -9,7 +9,9 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 
 export const revalidate = 86400;
 
-async function buildData(): Promise<[Awaited<ReturnType<typeof getAreas>>, string[]]> {
+async function buildData(): Promise<
+  [Awaited<ReturnType<typeof getAreas>>, Awaited<ReturnType<typeof getTopSourceIds>>]
+> {
   try {
     return await Promise.all([getAreas(), getTopSourceIds(400)]);
   } catch (e) {
@@ -26,6 +28,19 @@ async function licenseCodes(): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+/**
+ * <lastmod> 에 넣을 날짜.
+ *
+ * 이게 없으면 검색엔진은 460개 주소 가운데 무엇이 새로 바뀌었는지 알 수
+ * 없다. 그래서 다시 기어오는 순서를 정하지 못하고, 새 글이 늦게 잡힌다.
+ * 값이 없거나 이상하면 아예 안 적는다 — 틀린 날짜는 없는 것만 못하다.
+ */
+function day(v: string | null | undefined): Date | undefined {
+  if (!v) return undefined;
+  const d = new Date(v.length <= 10 ? `${v}T00:00:00Z` : v);
+  return Number.isNaN(d.getTime()) ? undefined : d;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -70,6 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/privacy`, changeFrequency: "yearly" as const, priority: 0.2 },
     ...POSTS.map((p) => ({
       url: `${SITE}/blog/${p.slug}`,
+      lastModified: day(p.updated),
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
@@ -78,8 +94,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.9,
     })),
-    ...ids.map((id) => ({
-      url: `${SITE}/p/${encodeURIComponent(id)}`,
+    ...ids.map((p) => ({
+      url: `${SITE}/p/${encodeURIComponent(p.id)}`,
+      lastModified: day(p.updated),
       changeFrequency: "weekly" as const,
       priority: 0.7,
     })),
@@ -99,8 +116,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.6,
     })),
-    ...jobIds.map((id) => ({
-      url: `${SITE}/jobs/${encodeURIComponent(id)}`,
+    ...jobIds.map((j) => ({
+      url: `${SITE}/jobs/${encodeURIComponent(j.id)}`,
+      lastModified: day(j.updated),
       changeFrequency: "weekly" as const,
       priority: 0.6,
     })),

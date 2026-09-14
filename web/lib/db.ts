@@ -204,10 +204,14 @@ export async function getProgram(sourceId: string) {
 export async function getTopSourceIds(limit = 400) {
   const { data } = await db
     .from("programs_public")
-    .select("source_id")
+    .select("source_id,updated_at")
     .order("norm_confidence", { ascending: false })
     .limit(limit);
-  return (data ?? []).map((d) => d.source_id as string);
+  // 사이트맵이 <lastmod> 를 적으려면 언제 바뀌었는지가 있어야 한다.
+  return (data ?? []).map((d) => ({
+    id: d.source_id as string,
+    updated: (d.updated_at as string | null) ?? null,
+  }));
 }
 
 /** 같은 지역의 다른 사업 */
