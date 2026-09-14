@@ -41,7 +41,7 @@ export async function generateStaticParams() {
   // 그 사이 DB 가 한 번 흔들리면 배포가 통째로 실패한다. 나머지는
   // dynamicParams 로 요청이 들어올 때 만들어진다.
   try {
-    return (await getTopSourceIds(40)).map((id) => ({ id }));
+    return (await getTopSourceIds(40)).map((r) => ({ id: r.id }));
   } catch {
     return [];
   }
