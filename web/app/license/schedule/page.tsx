@@ -8,7 +8,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getLicenses, type License } from "@/lib/qnet";
-import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
+import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, GRADE_SLUG, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 
 export const revalidate = 3600;
@@ -122,7 +122,7 @@ export default async function ExamSchedule() {
           if (!upcoming.length && !past.length && !undated.length) return null;
           const items = byGrade.get(grade) ?? [];
           return (
-            <section key={grade} className="mt-12">
+            <section key={grade} id={GRADE_SLUG[grade]} className="mt-12 scroll-mt-24">
               <h2 className="sec-title text-[1.0625rem] font-extrabold">{grade}</h2>
               {items.length > 0 && (
                 <div className="mt-3">
