@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Upcoming } from "@/lib/qnetExam";
+import { GRADE_SLUG, mergeUpcoming, type Upcoming } from "@/lib/qnetExam";
 
 const dot = (iso: string) => iso.replaceAll("-", ".");
 
@@ -11,7 +11,9 @@ const dot = (iso: string) => iso.replaceAll("-", ".");
  */
 export default function ExamDeadlines({ items, limit = 6 }: { items: Upcoming[]; limit?: number }) {
   if (!items.length) return null;
-  const list = items.slice(0, limit);
+  // 날짜가 똑같은 접수 창은 한 장으로. 상시 기능사는 여러 회차가 실기
+  // 접수를 같은 날 함께 열어서, 그대로 두면 같은 카드가 겹쳐 보인다.
+  const list = mergeUpcoming(items).slice(0, limit);
 
   return (
     <section className="mt-8">
@@ -27,25 +29,35 @@ export default function ExamDeadlines({ items, limit = 6 }: { items: Upcoming[];
           // 접수 중이면 마감까지, 아직이면 시작까지.
           const urgent = open && u.days <= 3;
           return (
-            <li key={`${u.round.id}|${u.stage.label}`}
-                className={`card p-4 ${urgent ? "border-alert" : ""}`}>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className={`badge ${open ? (urgent ? "badge-closed" : "badge-open") : "badge-soon"}`}>
-                  {open ? (u.days === 0 ? "오늘 마감" : `D-${u.days}`) : `${u.days}일 뒤 시작`}
+            <li key={`${u.round.grade}|${u.stage.label}|${u.stage.from}`}>
+              {/* 눌러도 아무 일이 없었다. 해당 등급 일정으로 보낸다. */}
+              <Link
+                href={`/license/schedule#${GRADE_SLUG[u.round.grade]}`}
+                className={`card card-link block h-full p-4 ${urgent ? "border-alert" : ""}`}
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`badge ${open ? (urgent ? "badge-closed" : "badge-open") : "badge-soon"}`}>
+                    {open ? (u.days === 0 ? "오늘 마감" : `D-${u.days}`) : `${u.days}일 뒤 시작`}
+                  </span>
+                  <span className="badge badge-quiet">{u.round.grade}</span>
+                  <span className="badge badge-quiet">{u.stage.label}</span>
+                </div>
+                <b className="mt-2 block text-[14.5px] leading-snug">
+                  {u.rounds[0]}
+                  {u.rounds.length > 1 && (
+                    <span className="ml-1 font-normal text-muted">외 {u.rounds.length - 1}개 회차</span>
+                  )}
+                </b>
+                <span className="num mt-1 block text-[13px] text-muted">
+                  접수 {dot(u.stage.from)} ~ {dot(u.stage.to)}
                 </span>
-                <span className="badge badge-quiet">{u.round.grade}</span>
-                <span className="badge badge-quiet">{u.stage.label}</span>
-              </div>
-              <b className="mt-2 block text-[14.5px] leading-snug">{u.round.round}</b>
-              <span className="num mt-1 block text-[13px] text-muted">
-                접수 {dot(u.stage.from)} ~ {dot(u.stage.to)}
-              </span>
-              {u.round.docExam && u.stage.label.startsWith("필기") && (
-                <span className="num mt-0.5 block text-xs text-faint">
-                  시험 {dot(u.round.docExam)}
-                  {u.round.docPass ? ` · 발표 ${dot(u.round.docPass)}` : ""}
-                </span>
-              )}
+                {u.round.docExam && u.stage.label.startsWith("필기") && (
+                  <span className="num mt-0.5 block text-xs text-faint">
+                    시험 {dot(u.round.docExam)}
+                    {u.round.docPass ? ` · 발표 ${dot(u.round.docPass)}` : ""}
+                  </span>
+                )}
+              </Link>
             </li>
           );
         })}

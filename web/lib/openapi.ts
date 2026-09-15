@@ -14,7 +14,15 @@ const KEY = process.env.DATA_GO_KR_KEY ?? "";
 
 export const openApiConfigured = KEY.trim().length > 0;
 
-function serviceKey() {
+/**
+ * 주소에 넣을 인증키.
+ *
+ * 포털은 인코딩된 키를 받는다. 환경변수에 인코딩된 것을 넣었는지 아닌지는
+ * 사람마다 달라서 여기서 가려 준다. 이미 인코딩된 키를 한 번 더 인코딩하면
+ * %2B 가 %252B 가 되어 "등록되지 않은 서비스키(30)" 가 돌아온다 — 실제로
+ * 공개문제 탐침에서 그렇게 403 을 맞았다. 그래서 이 함수 하나만 쓴다.
+ */
+export function serviceKey() {
   const k = KEY.trim();
   // 이미 인코딩된 키면 그대로, 아니면 인코딩해서 넣는다.
   return /%[0-9A-Fa-f]{2}/.test(k) ? k : encodeURIComponent(k);

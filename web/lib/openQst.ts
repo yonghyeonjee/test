@@ -15,6 +15,8 @@
  * 읽은 이름으로 수집기를 짠다.
  */
 
+import { openApiConfigured, serviceKey } from "./openapi";
+
 const BASE = "https://apis.data.go.kr/B490007/openQst";
 
 const TIMEOUT_MS = Number(process.env.OPENAPI_TIMEOUT_MS ?? 8000);
@@ -27,9 +29,10 @@ export type Probe = {
 };
 
 function key() {
-  const k = process.env.DATA_GO_KR_KEY;
-  if (!k) throw new Error("DATA_GO_KR_KEY 가 설정되지 않았습니다.");
-  return k;
+  if (!openApiConfigured) throw new Error("DATA_GO_KR_KEY 가 설정되지 않았습니다.");
+  // 인코딩은 serviceKey() 가 알아서 한다. 여기서 또 하면 두 번 인코딩되어
+  // "등록되지 않은 서비스키" 가 돌아온다.
+  return serviceKey();
 }
 
 async function get(url: string) {
@@ -47,6 +50,25 @@ async function get(url: string) {
         : String(e),
     };
   }
+}
+
+/**
+ * 포털이 돌려주는 오류 코드를 사람 말로.
+ *
+ * 코드만 보고는 내 잘못인지 기다리면 되는 일인지 알 수 없다. 자주 보는
+ * 것만 뜻을 적어 둔다.
+ */
+function hint(text: string): string {
+  const code = text.match(/returnReasonCode[">\s]*([0-9]{1,3})/)?.[1];
+  const map: Record<string, string> = {
+    "30": "이 서비스에 이 키가 아직 등록되지 않았습니다. ① 활용신청이 승인된 서비스가 맞는지 ② 승인 직후면 반영까지 시간이 걸립니다(보통 1시간, 길면 하루) ③ 인증키를 두 번 인코딩하고 있지는 않은지.",
+    "31": "활용기간이 끝났습니다. 연장 신청이 필요합니다.",
+    "22": "오늘 호출 한도를 다 썼습니다. 내일 다시 열립니다.",
+    "20": "이 서비스에 대한 접근이 막혀 있습니다.",
+    "10": "잘못된 요청 파라미터입니다.",
+    "12": "없는 오퍼레이션입니다. 주소를 확인하세요.",
+  };
+  return code && map[code] ? `\n\n→ ${map[code]}` : "";
 }
 
 /** 응답에서 항목 이름만 훑어 준다. 값이 길면 잘라 낸다. */
@@ -120,7 +142,7 @@ function findIds(v: unknown, out: string[] = []): string[] {
  */
 export async function probeOpenQst(): Promise<Probe[]> {
   const out: Probe[] = [];
-  const k = encodeURIComponent(key());
+  const k = key();
 
   // ── 1. 목록 ────────────────────────────────────────────
   const tries: { step: string; qs: string }[] = [
@@ -136,7 +158,7 @@ export async function probeOpenQst(): Promise<Probe[]> {
     out.push({
       step: t.step,
       ok: !bad,
-      detail: "err" in r ? r.err! : `응답 ${r.status}\n${outline(r.text)}`,
+      detail: "err" in r ? r.err! : `응답 ${r.status}\n${outline(r.text)}${hint(r.text)}`,
       ms: r.ms,
     });
     if (!bad) { listText = r.text; break; }
