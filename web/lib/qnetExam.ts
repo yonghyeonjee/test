@@ -123,6 +123,45 @@ export function applyWindows(r: ExamRound): Stage[] {
   return out;
 }
 
+/** 이 회차에서 가장 늦은 날. 다 지났는지 가리는 데 쓴다. */
+export function roundEnd(r: ExamRound): string | null {
+  const all = [
+    r.docRegStart, r.docRegEnd, r.docExam, r.docPass,
+    r.docSubmitStart, r.docSubmitEnd,
+    r.pracRegStart, r.pracRegEnd, r.pracExamStart, r.pracExamEnd, r.pracPass,
+  ].filter((v): v is string => Boolean(v));
+  return all.length ? all.sort().at(-1)! : null;
+}
+
+/**
+ * 회차를 앞으로 올 것과 지난 것으로 가른다.
+ *
+ * 그동안 필기 접수일 오름차순으로 통째로 늘어놓았다. 9월에 들어와도 표
+ * 맨 위는 1월 회차였다 — 이미 끝난 것을 먼저 보여 준 셈이다. 사람이
+ * 찾는 것은 "다음에 언제 넣나" 다.
+ *
+ * 날짜가 하나도 없는 회차가 있다("산업별 맞춤형 고교등 필기면제검정").
+ * 날짜 표에 끼워 두면 빈칸만 늘어놓게 되니 따로 뺀다.
+ */
+export function splitRounds(rounds: ExamRound[], today = new Date()) {
+  const upcoming: ExamRound[] = [];
+  const past: ExamRound[] = [];
+  const undated: ExamRound[] = [];
+
+  for (const r of rounds) {
+    const end = roundEnd(r);
+    if (!end) undated.push(r);
+    else if (daysUntil(end, today) >= 0) upcoming.push(r);
+    else past.push(r);
+  }
+
+  const key = (r: ExamRound) => r.docRegStart ?? r.docExam ?? roundEnd(r) ?? "9999";
+  // 앞으로 올 것은 가까운 것부터, 지난 것은 최근 것부터.
+  upcoming.sort((a, b) => key(a).localeCompare(key(b)));
+  past.sort((a, b) => key(b).localeCompare(key(a)));
+  return { upcoming, past, undated };
+}
+
 /** 오늘 기준 남은 날. 지났으면 음수. */
 export function daysUntil(iso: string, today = new Date()): number {
   const t = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
@@ -212,4 +251,35 @@ export function upcoming(rounds: ExamRound[], today = new Date()): Upcoming[] {
     if (a.state !== b.state) return a.state === "open" ? -1 : 1;
     return a.days - b.days;
   });
+}
+
+/**
+ * 종목의 등급(series)과 시험일정의 등급(grade)을 잇는다.
+ *
+ * 두 API 가 등급을 다르게 부른다. 종목 목록은 "기사" 와 "산업기사" 를
+ * 따로 세는데, 일정 API 는 둘을 한 회차로 묶어 "기사·산업기사" 로 준다.
+ * 실제로 같은 날 같이 치르니 묶는 것이 맞다.
+ *
+ * 국가전문자격(공인중개사·세무사 …)은 이 일정 API 가 다루지 않는다.
+ * null 을 주고, 화면은 "시행기관 일정을 따로 확인하세요" 라고 말한다 —
+ * 없는 일정을 아무 회차에나 갖다 붙이면 시험 날짜를 잘못 알려 주게 된다.
+ */
+export function gradeOfSeries(series: string | null | undefined): ExamGrade | null {
+  const s = (series ?? "").trim();
+  if (s === "기술사") return "기술사";
+  if (s === "기능장") return "기능장";
+  if (s === "기능사") return "기능사";
+  if (s === "기사" || s === "산업기사") return "기사·산업기사";
+  return null;
+}
+
+/** 한 등급의 다가오는 신청 창. 종목 상세가 쓴다. */
+export function upcomingForSeries(
+  rounds: ExamRound[],
+  series: string | null | undefined,
+  today = new Date(),
+): Upcoming[] {
+  const grade = gradeOfSeries(series);
+  if (!grade) return [];
+  return upcoming(rounds.filter((r) => r.grade === grade), today);
 }

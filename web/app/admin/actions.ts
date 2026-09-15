@@ -7,6 +7,7 @@ import { COOKIE_NAME, isLoggedIn, sessionCookie, verify } from "@/lib/auth";
 import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "@/lib/collectors";
 import { dispatchCollect } from "@/lib/ghDispatch";
 import { probeSite, type SiteProbe } from "@/lib/gojobsSite";
+import { probeOpenQst } from "@/lib/openQst";
 import { probe, type RunReport, probePaging, type PageProbe } from "@/lib/jobsIngest";
 import { parseAds, parseSeo } from "@/lib/settings";
 
@@ -165,6 +166,21 @@ export async function probePagingLimits(): Promise<{ error: string | null; probe
     return { error: null, probes: await probePaging("gojobs") };
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e), probes: [] };
+  }
+}
+
+/**
+ * 공개문제 API 가 어떤 이름으로 오는지 찍어 본다.
+ *
+ * 문서에 한글 설명만 있고 영문 파라미터 이름이 없었다. 짐작해서 짜면
+ * 지난번처럼 틀리니, 실제 응답을 보고 짠다.
+ */
+export async function probeOpenQuestions(): Promise<{ error: string | null; steps: SiteProbe[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", steps: [] };
+  try {
+    return { error: null, steps: await probeOpenQst() };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e), steps: [] };
   }
 }
 

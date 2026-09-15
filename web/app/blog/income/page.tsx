@@ -4,10 +4,12 @@ import AdSlot from "@/components/AdSlot";
 import { PostArt } from "@/components/Art";
 import Faq from "@/components/Faq";
 import IncomeEstimator from "@/components/IncomeEstimator";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { manwon, medianIncome, tableYear, won } from "@/lib/medianIncome";
+import { pageGraph } from "@/lib/schema";
 
 export const revalidate = 86400;
 
@@ -57,6 +59,17 @@ export default function IncomePage() {
 
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path: "/blog/income",
+          name: "기준 중위소득 소득 기준 계산기",
+          description: "연소득과 가구원 수로 기준 중위소득 몇 %인지 확인합니다.",
+          crumbs: [
+            { name: "지원금 안내", path: "/blog" },
+            { name: "소득 기준" },
+          ],
+        })}
+      />
       <nav aria-label="위치" className="text-[13px] text-muted">
         <Link href="/blog" className="hover:text-brand">지원금 안내</Link>
         {" · "}

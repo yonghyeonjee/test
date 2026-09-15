@@ -5,12 +5,14 @@ import { ArtJobs } from "@/components/Art";
 import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { dot, getJobsByOrg, getOrgStat, peakMonths } from "@/lib/pubJobs";
-import { jobCanonical, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
+import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 
 // /jobs/org/법무부 · /jobs/org/법무부/hire/국가/page/2
 export const dynamic = "force-dynamic";
@@ -79,6 +81,18 @@ export default async function JobsByOrg({ params }: P) {
         )}
       </PageBanner>
 
+      <JsonLd
+        data={pageGraph({
+          path: jobPath(route),
+          name: `${org} 채용 공고`,
+          collection: true,
+          crumbs: [
+            { name: "채용", path: "/jobs" },
+            { name: "기관별", path: "/jobs/org" },
+            { name: org },
+          ],
+        })}
+      />
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/jobs" className="hover:text-brand">채용</Link>
         {" · "}

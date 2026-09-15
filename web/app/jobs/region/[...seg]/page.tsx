@@ -6,12 +6,14 @@ import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getJobsByRegion } from "@/lib/pubJobs";
-import { jobCanonical, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
+import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 
 // /jobs/region/서울특별시 · /jobs/region/서울특별시/hire/교육/page/2
 export const dynamic = "force-dynamic";
@@ -56,6 +58,18 @@ export default async function JobsByRegion({ params }: P) {
         )}
       </PageBanner>
 
+      <JsonLd
+        data={pageGraph({
+          path: jobPath(route),
+          name: `${sido} 공공기관 채용 공고`,
+          collection: true,
+          crumbs: [
+            { name: "채용", path: "/jobs" },
+            { name: "지역별", path: "/jobs/region" },
+            { name: sido },
+          ],
+        })}
+      />
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/jobs" className="hover:text-brand">채용</Link>
         {" · "}
