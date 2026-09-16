@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { isBot } from "@/lib/bot";
 import { Suspense } from "react";
 import BizSearchBox from "@/components/BizSearchBox";
 import BusinessSentence from "@/components/BusinessSentence";
@@ -170,7 +172,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     const results = asked
       ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry })
       : [];
-    if (asked)
+    // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
+    if (asked && !isBot(headers().get("user-agent")))
       logSearch({ kind: "business", sido, bizTarget, bizField,
                   n: results.length, entry: via });
 
@@ -220,7 +223,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const results = asked
     ? await matchWelfare({ sido, sigungu, age, employment, household })
     : [];
-  if (asked)
+  if (asked && !isBot(headers().get("user-agent")))
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
                 household, n: results.length, entry: via });
 
