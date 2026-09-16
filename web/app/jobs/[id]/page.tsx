@@ -218,6 +218,8 @@ export default async function JobDetail({ params }: P) {
         </section>
       )}
 
+      <AdSlot name="detail_bottom" tall />
+
       <GuideBanner />
       <PromoBanner placement="job-detail" context="job" />
       <RelatedLinks items={jobsRelated()} />

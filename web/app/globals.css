@@ -222,8 +222,10 @@
 /* 광고 지면: 본문과 헷갈리지 않게 표시하고, 높이를 제한해 화면을 밀어내지 않는다 */
 .ad-slot { position: relative; border: 1px dashed #CFCBE6; border-radius: 14px; padding: 18px 16px 14px; max-height: 200px; overflow: hidden; contain: content; }
 .ad-tag { position: absolute; left: 12px; top: -8px; padding: 0 6px; background: #F7F7FB; font-size: 10px; font-weight: 700; letter-spacing: .16em; color: #9C99B4; }
-.ad-html { display: flex; justify-content: center; }
+.ad-html { display: block; text-align: center; }
 .ad-html ins, .ad-html iframe { max-width: 100%; }
+/* 멀티플렉스처럼 세로로 긴 광고. 자르지 않는다. */
+.ad-tall { max-height: none; }
 
 /* 뼈대 반짝임 */
 .sk { border-radius: 8px; background: linear-gradient(90deg, #ECEAF5 25%, #F7F7FB 50%, #ECEAF5 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }

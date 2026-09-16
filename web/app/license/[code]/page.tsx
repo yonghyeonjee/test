@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtLicense } from "@/components/Art";
+import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import MidAd from "@/components/MidAd";
@@ -149,6 +150,8 @@ export default async function LicensePage({ params }: { params: { code: string }
           </div>
         </section>
       )}
+
+      <AdSlot name="detail_bottom" tall />
 
       <GuideBanner title="취업·이직을 준비하신다면 이것도" />
       <RelatedLinks items={licenseRelated()} />
