@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const ITEMS = [
+  // 마감이 걸린 것을 맨 위에 둔다. 나머지와 달리 눈에 띄게 그린다.
+  { href: "/blog/youth-future-savings", label: "HOT 정부지원", hot: true,
+    d: "M12 3c1 3.5-1 5-2.5 6.5C8 11 7 12.5 7 14.5a5 5 0 0010 0c0-3-2-5-2.5-7-1.5 1-2 2.5-2.5 3 0-3 1-6 0-7.5z" },
   { href: "/", label: "내 조건으로 찾기", d: "M9 3a6 6 0 100 12A6 6 0 009 3zm5 11l5 5" },
   { href: "/policies", label: "전체 정책", d: "M4 5h16v14H4z M8 9h8M8 13h5" },
   { href: "/jobs", label: "채용·취업", d: "M3 8h18v12H3z M8 8V5h8v3" },
@@ -51,10 +54,14 @@ export default function FloatingMenu() {
           <li key={it.href} style={{ transitionDelay: open ? `${i * 25}ms` : "0ms" }}
               className="transition-transform">
             <Link href={it.href} onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 rounded-pill border border-line bg-surface/95 py-2 pl-3.5 pr-4
-                             text-[13.5px] font-semibold text-ink2 shadow-lift backdrop-blur
-                             transition-colors hover:border-brand hover:text-brand">
-              <svg viewBox="0 0 24 24" className="h-4 w-4 text-brand" fill="none" stroke="currentColor"
+                  className={`flex items-center gap-2 rounded-pill border py-2 pl-3.5 pr-4
+                             text-[13.5px] font-semibold shadow-lift backdrop-blur transition-colors ${
+                    "hot" in it && it.hot
+                      ? "border-brand bg-brand text-white hover:bg-brandDeep"
+                      : "border-line bg-surface/95 text-ink2 hover:border-brand hover:text-brand"}`}>
+              <svg viewBox="0 0 24 24"
+                   className={`h-4 w-4 ${"hot" in it && it.hot ? "text-white" : "text-brand"}`}
+                   fill="none" stroke="currentColor"
                    strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={it.d} /></svg>
               {it.label}
             </Link>
