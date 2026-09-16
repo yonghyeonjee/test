@@ -104,7 +104,7 @@ export function AdsPanel({ initial }: { initial: Ads }) {
       <h2 className="text-sm font-bold">광고 지면</h2>
       <p className="mt-1 text-xs text-faint">
         본문이 끝난 자리에만 나옵니다. 첫 화면과 목록 사이에는 두지 않습니다. 끄면 자리 자체가 사라집니다.
-        높이는 140px 안쪽으로 잡히고 &quot;광고&quot; 표시가 붙습니다.
+        높이는 200px 안쪽으로 잡히고 &quot;광고&quot; 표시가 붙습니다. 상세 화면 맨 아래 지면만 높이를 막지 않아 멀티플렉스를 넣을 수 있습니다.
       </p>
       <div className="mt-4 grid gap-3">
         {AD_SLOTS.map((n) => (

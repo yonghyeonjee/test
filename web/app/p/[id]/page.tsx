@@ -5,6 +5,7 @@ import GovText from "@/components/GovText";
 import JsonLd from "@/components/JsonLd";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
+import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
 import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
@@ -329,6 +330,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
           )}
         </section>
       )}
+      <AdSlot name="detail_bottom" tall />
+
       <RelatedLinks items={programRelated(p.sido)} />
       <PromoBanner placement="program" context={promoContextForProgram(p)} />
     </article>
