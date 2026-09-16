@@ -9,7 +9,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import LicenseList from "@/components/LicenseList";
 import LicenseFinder from "@/components/LicenseFinder";
 import ExamDeadlines from "@/components/ExamDeadlines";
-import { getLicenses } from "@/lib/qnet";
+import { getLicenses, proBoard, techBoard } from "@/lib/qnet";
 import { getExamRounds, upcoming } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { LICENSE_FAQ } from "@/lib/pageFaq";
@@ -44,27 +44,32 @@ type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 
 export default async function LicensePage({ searchParams }: { searchParams: SP }) {
-  const board = await getLicenses();
+  const all = await getLicenses();
   // 일정은 못 읽어도 화면은 살린다. 이 화면의 본업은 종목 찾기다.
   const soon = await getExamRounds().then(upcoming).catch(() => []);
-  const picked = one(searchParams.series) ?? "";
-  const tech = board.all.filter((l) => l.kind === "T").length;
+  // 목록은 국가기술자격만. 국가전문자격은 등급이 없어 칩이 서른 개 넘게
+  // 깔리므로 /license/pro 로 뺐다. 이름 검색은 둘 다 뒤진다.
+  const board = techBoard(all);
+  const pro = proBoard(all);
+  const asked = one(searchParams.series) ?? "";
+  // 없는 등급으로 걸러 빈 화면이 되지 않게. 국가전문자격 계열이 들어와도 마찬가지.
+  const picked = board.series.some((s) => s.name === asked) ? asked : "";
   const fields = new Set(board.all.map((l) => l.field)).size;
-  const finder = board.all.map((l) => ({ code: l.code, name: l.name, series: l.series, field: l.field }));
+  const finder = all.all.map((l) => ({ code: l.code, name: l.name, series: l.series, field: l.field }));
 
   return (
     <div className="pb-4">
       <PageBanner
         eyebrow="자격증"
         title="국가자격증 찾기"
-        sub="자격증 이름을 넣으면 응시 자격과 다가오는 시험 일정, 학원비·응시료를 지원하는 제도까지 한 번에 나옵니다. 한국산업인력공단이 시행하는 종목 전부입니다."
+        sub="자격증 이름을 넣으면 응시 자격과 다가오는 시험 일정, 학원비·응시료를 지원하는 제도까지 한 번에 나옵니다. 아래 목록은 등급이 있는 국가기술자격이고, 국가전문자격은 따로 모아 두었습니다."
         art={<ArtLicense />}
       >
-        {board.ok && (
+        {all.ok && (
           <div className="mt-7 grid grid-cols-3 gap-3">
             {[
-              { n: board.all.length, label: "시행 종목" },
-              { n: tech, label: "국가기술자격" },
+              { n: board.all.length, label: "국가기술자격" },
+              { n: pro.all.length, label: "국가전문자격" },
               { n: fields, label: "직무 분야" },
             ].map((b) => (
               <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
@@ -79,12 +84,12 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
       </PageBanner>
 
       {/* 들어온 사람은 대개 이름 하나를 들고 온다. 그것부터 받는다. */}
-      {board.ok && <LicenseFinder items={finder} />}
+      {all.ok && <LicenseFinder items={finder} />}
 
       {/* 이 화면이 무엇을 해 주는지 한 줄씩. 처음 온 사람이 헤매지 않게. */}
       <ol className="mt-4 grid gap-2 text-[13.5px] leading-relaxed text-ink2 sm:grid-cols-3">
         {[
-          ["종목 고르기", "위에서 이름으로 찾거나, 아래 분야별 목록에서 고릅니다."],
+          ["종목 고르기", "위에서 이름으로 찾거나, 아래 등급·분야별 목록에서 고릅니다."],
           ["종목 안내 보기", "응시 자격, 시험 과목, 이 등급의 다가오는 접수 일정이 나옵니다."],
           ["큐넷에서 접수", "원서접수와 합격 확인은 한국산업인력공단 큐넷에서 합니다."],
         ].map(([h, d], i) => (
@@ -95,14 +100,31 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
         ))}
       </ol>
 
+      <LicenseList
+        board={board}
+        picked={picked}
+        footer={
+          pro.ok ? (
+            <Link href="/license/pro" className="card card-link mt-6 flex items-baseline justify-between gap-4 p-5">
+              <span>
+                <b className="text-[15px] font-bold">국가전문자격 따로 보기</b>
+                <span className="mt-1 block text-[13px] leading-relaxed text-muted">
+                  공인중개사·감정평가사·청소년상담사처럼 등급 없이 자격마다 따로 시행하는 것들입니다.
+                </span>
+              </span>
+              <span className="num shrink-0 text-xs text-muted">{pro.all.length}종목</span>
+            </Link>
+          ) : null
+        }
+      />
+
+      {/* 일정은 목록 다음이다. 종목부터 고르고 그다음이 접수일이다. */}
       <ExamDeadlines
         items={soon}
         limit={4}
         title="접수 마감이 가까운 시험"
-        intro="등급 단위 일정입니다. 같은 등급의 종목은 같은 날 함께 접수하니, 내 종목의 등급을 보고 맞춰 두세요. 카드를 누르면 그 등급의 전체 일정으로 갑니다."
+        intro="국가기술자격은 등급 단위로 함께 접수합니다. 같은 등급의 종목은 같은 날 열리니, 내 종목의 등급을 보고 맞춰 두세요. 카드를 누르면 그 등급의 전체 일정으로 갑니다."
       />
-
-      <LicenseList board={board} picked={picked} />
 
       <section className="mt-14">
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">

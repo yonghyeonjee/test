@@ -30,6 +30,7 @@ const NAV: NavItem[] = [
     href: "/license", label: "자격증",
     sub: [
       { href: "/license", label: "종목 찾기" },
+      { href: "/license/pro", label: "국가전문자격" },
       { href: "/license/schedule", label: "시험 일정" },
     ],
   },

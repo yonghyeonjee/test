@@ -1,12 +1,15 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { groupByField, type LicenseBoard } from "@/lib/qnet";
 
 /**
- * 종목 목록. 계열 칩으로 거른 뒤 대직무분야 → 중직무분야로 접어 보여 준다.
- * 600개 가까운 종목을 한 번에 펼치면 스크롤만 길어지므로, 분야가 넷 이상이면
+ * 종목 목록. 등급 칩으로 거른 뒤 대직무분야 → 중직무분야로 접어 보여 준다.
+ * 500개 넘는 종목을 한 번에 펼치면 스크롤만 길어지므로, 분야가 넷 이상이면
  * 접어 두고 제목만 보이게 한다.
  */
-export default function LicenseList({ board, picked }: { board: LicenseBoard; picked: string }) {
+export default function LicenseList({ board, picked, footer }: {
+  board: LicenseBoard; picked: string; footer?: ReactNode;
+}) {
   const list = picked ? board.all.filter((l) => l.series === picked) : board.all;
   const groups = groupByField(list);
   if (!board.ok)
@@ -25,7 +28,7 @@ export default function LicenseList({ board, picked }: { board: LicenseBoard; pi
     );
   return (
     <section id="list" className="mt-10">
-          <h2 className="sec-title text-[1.0625rem] font-extrabold">분야별 종목 목록</h2>
+          <h2 className="sec-title text-[1.0625rem] font-extrabold">등급·분야별 종목 목록</h2>
           <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
             등급 칩으로 거른 뒤 분야를 펼치세요. 종목 이름을 누르면 안내 화면으로 갑니다.
           </p>
@@ -85,6 +88,8 @@ export default function LicenseList({ board, picked }: { board: LicenseBoard; pi
               </details>
             ))}
           </div>
+
+          {footer}
     </section>
   );
 }
