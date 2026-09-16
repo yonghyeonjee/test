@@ -1,5 +1,5 @@
 import AdHtml from "./AdHtml";
-import type { AdSlotCfg } from "@/lib/settings";
+import { ADS_ON, type AdSlotCfg } from "@/lib/settings";
 
 /**
  * 광고 하나를 그린다. 관리자가 넣은 HTML 이거나 이미지 배너.
@@ -31,4 +31,5 @@ export default function AdBox({ cfg, className = "", tall = false }: {
 }
 
 export const adReady = (cfg: AdSlotCfg | undefined) =>
-  !!cfg?.on && (cfg.kind === "image" ? !!cfg.img : !!cfg.html.trim());
+  // 스위치가 내려가 있으면 켜 둔 지면이라도 그리지 않는다.
+  ADS_ON && !!cfg?.on && (cfg.kind === "image" ? !!cfg.img : !!cfg.html.trim());
