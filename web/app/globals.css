@@ -220,12 +220,15 @@
 .due > i { display: block; height: 100%; background: linear-gradient(90deg, #5A4BE0, #D9691F); }
 
 /* 광고 지면: 본문과 헷갈리지 않게 표시하고, 높이를 제한해 화면을 밀어내지 않는다 */
-.ad-slot { position: relative; border: 1px dashed #CFCBE6; border-radius: 14px; padding: 18px 16px 14px; max-height: 200px; overflow: hidden; contain: content; }
-.ad-tag { position: absolute; left: 12px; top: -8px; padding: 0 6px; background: #F7F7FB; font-size: 10px; font-weight: 700; letter-spacing: .16em; color: #9C99B4; }
+/* 광고 상자. 본문 카드(.card)와 같은 옷을 입혀 흐름에 섞는다. 점선·회색 띠 없음. */
+.ad-slot { border: 1px solid rgba(230,228,242,.7); border-radius: 14px; background: #fff; padding: 12px 16px 14px; max-height: 220px; overflow: hidden; contain: content; }
+.ad-tag { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: .12em; color: #9C99B4; }
 .ad-html { display: block; text-align: center; }
 .ad-html ins, .ad-html iframe { max-width: 100%; }
 /* 멀티플렉스처럼 세로로 긴 광고. 자르지 않는다. */
 .ad-tall { max-height: none; }
+/* 채울 광고가 없으면 빈 상자를 남기지 않는다. */
+.ad-slot:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
 
 /* 뼈대 반짝임 */
 .sk { border-radius: 8px; background: linear-gradient(90deg, #ECEAF5 25%, #F7F7FB 50%, #ECEAF5 75%); background-size: 200% 100%; animation: sk 1.3s linear infinite; }
