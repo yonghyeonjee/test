@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { isBot } from "@/lib/bot";
+import { getHotSlides } from "@/lib/hotBanner";
 import { Suspense } from "react";
 import BizSearchBox from "@/components/BizSearchBox";
 import BusinessSentence from "@/components/BusinessSentence";
@@ -15,6 +16,7 @@ import SectionHead from "@/components/SectionHead";
 import StatsBand from "@/components/StatsBand";
 import { Reveal } from "@/components/Motion";
 import AdSlot from "@/components/AdSlot";
+import HotBanner from "@/components/HotBanner";
 import { TrustIcon } from "@/components/Infographic";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -228,6 +230,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
                 household, n: results.length, entry: via });
 
   const { closing, closingFallback, fresh, closingCount } = bundle;
+  // 조건을 넣기 전 첫 화면에서만. 결과를 보는 중에 띠가 돌면 방해가 된다.
+  const hot = asked ? [] : await getHotSlides().catch(() => []);
 
   return (
     <>
@@ -258,6 +262,9 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
               />
             </Suspense>
           </Hero>
+          {/* 마감이 걸린 것부터. 무엇이 있는지 모르고 들어온 사람에게는
+              이 띠가 곧 안내다. */}
+          <HotBanner slides={hot} />
           <TopicGrid counts={topicCounts} />
           <QuickMenu />
         </>
