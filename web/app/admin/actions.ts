@@ -9,7 +9,7 @@ import { dispatchCollect } from "@/lib/ghDispatch";
 import { probeSite, type SiteProbe } from "@/lib/gojobsSite";
 import { probeOpenQst } from "@/lib/openQst";
 import { probe, type RunReport, probePaging, type PageProbe } from "@/lib/jobsIngest";
-import { parseAds, parseSeo } from "@/lib/settings";
+import { parseAds, parseAdsOn, parseSeo } from "@/lib/settings";
 
 /** 쓰기는 서비스 키로만. 브라우저에 절대 내려가지 않는다. */
 function admin() {
@@ -87,9 +87,12 @@ export async function saveSetting(key: string, value: string) {
  * JSON 설정(seo, ads) 저장. 모양을 한 번 걸러서 넣는다 — 화면이 기대하는
  * 항목만 남기고 나머지는 버린다. 없던 키면 만든다.
  */
-export async function saveJsonSetting(key: "seo" | "ads", value: unknown) {
+export async function saveJsonSetting(key: "seo" | "ads" | "ads_on", value: unknown) {
   if (!isLoggedIn()) return { error: "로그인이 필요합니다." };
-  const clean = key === "seo" ? parseSeo(value) : parseAds(value);
+  const clean =
+    key === "seo" ? parseSeo(value)
+    : key === "ads" ? parseAds(value)
+    : { on: parseAdsOn(value) };
   const { error } = await admin()
     .from("site_settings")
     .upsert({ key, value: clean as never, updated_at: new Date().toISOString() }, { onConflict: "key" });

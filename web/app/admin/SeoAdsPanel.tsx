@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ADS_ON, AD_SLOTS, AD_SLOT_LABEL, type Ads, type AdSlotName, type Seo } from "@/lib/settings";
+import { AD_SLOTS, AD_SLOT_LABEL, type Ads, type AdSlotName, type Seo } from "@/lib/settings";
 import { refreshCache, saveJsonSetting } from "./actions";
 
 const input = "w-full rounded-ctl border border-line px-3 py-2 text-sm outline-none focus:border-brand";
@@ -97,19 +97,38 @@ function SlotEditor({ name, cfg, onChange }: {
 }
 
 /** 광고 지면 넷. 자리는 코드가 정하고, 켜고 끄기와 내용은 여기서. */
-export function AdsPanel({ initial }: { initial: Ads }) {
+export function AdsPanel({ initial, initialOn }: { initial: Ads; initialOn: boolean }) {
   const [v, setV] = useState<Ads>(initial);
+  const [on, setOn] = useState(initialOn);
   return (
     <section className="card mt-6 p-5">
       <h2 className="text-sm font-bold">광고 지면</h2>
-      {!ADS_ON && (
-        <p className="mt-2 rounded-ctl border border-alert/40 bg-alertSoft px-3 py-2 text-xs leading-relaxed text-alert">
-          지금 광고는 코드에서 내려 두었습니다. 자동광고가 계속 나와서, 애드센스 스크립트가
-          아예 돌지 않게 막아 둔 상태입니다. 아래에서 켜 두어도 화면에는 나오지 않습니다.
-          되살리려면 lib/settings.ts 의 ADS_ON 을 true 로 바꿔 배포하세요.
+
+      {/* 급히 내려야 할 때 배포를 기다리지 않게. 여기가 제일 위다. */}
+      <div className="mt-3 rounded-ctl border border-line bg-ground px-4 py-3">
+        <label className="flex items-center gap-2 text-sm font-bold">
+          <input type="checkbox" checked={on}
+                 onChange={(e) => { setOn(e.target.checked); void saveJsonSetting("ads_on", e.target.checked); }} />
+          광고 내보내기
+        </label>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted">
+          {on
+            ? "아래에서 켜 둔 지면이 화면에 나갑니다. 끄면 지면이 통째로 사라지고 빈 상자도 남지 않습니다 — 본문 중간 자리에는 우리 사이트 배너가 대신 들어갑니다. 이 체크는 누르는 즉시 저장됩니다."
+            : "지금 광고를 내려 둔 상태입니다. 아래에서 켜 두어도 화면에는 나오지 않습니다. 이 체크를 켜면 바로 나갑니다."}
         </p>
-      )}
-      <p className="mt-1 text-xs text-faint">
+      </div>
+
+      <div className="mt-3 rounded-ctl border border-line bg-surface px-4 py-3">
+        <p className="text-xs font-bold text-ink2">자동광고는 여기서 끄는 것이 아닙니다</p>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted">
+          화면 아래 고정 띠처럼 우리가 자리를 정하지 않은 광고는 애드센스 계정 설정에서 나옵니다.
+          이 사이트는 로더 주소에서 client 인자를 떼어 자동광고를 달라고 하지 않지만, 계정 쪽이
+          켜져 있으면 나올 수 있습니다. 애드센스 → 광고 → 사이트별 → knowhow-it.com 에서
+          jiwon.knowhow-it.com 을 페이지 제외로 넣어 두면 1차 도메인은 자동광고를 그대로 쓰면서
+          이 사이트만 수동 지면으로 갑니다.
+        </p>
+      </div>
+      <p className="mt-4 text-xs text-faint">
         본문이 끝난 자리에만 나옵니다. 첫 화면과 목록 사이에는 두지 않습니다. 끄면 자리 자체가 사라집니다.
         높이는 200px 안쪽으로 잡히고 &quot;광고&quot; 표시가 붙습니다. 상세 화면 맨 아래 지면만 높이를 막지 않아 멀티플렉스를 넣을 수 있습니다.
       </p>

@@ -15,8 +15,8 @@ export default async function MidAd({
   seed: string;
   className?: string;
 }) {
-  const { ads } = await getSiteConfig();
+  const { ads, adsOn } = await getSiteConfig();
   const s = ads[name];
-  if (adReady(s)) return <AdBox cfg={s} className={className} />;
+  if (adsOn && adReady(s)) return <AdBox cfg={s} className={className} />;
   return <HouseBanner context={context} placement={name} seed={seed} className={className} />;
 }

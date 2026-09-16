@@ -8,7 +8,7 @@ import CollectPanel, { type SourceStat } from "./CollectPanel";
 import { COLLECT_KEYS, type CollectKey } from "@/lib/collectorMeta";
 import { readLastRuns } from "@/lib/jobsIngest";
 import { checkSchema, EXPECTED_FUNCTIONS, EXPECTED_RELATIONS } from "@/lib/schemaHealth";
-import { parseAds, parseSeo } from "@/lib/settings";
+import { parseAds, parseAdsOn, parseSeo } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 // 수집 서버 액션이 공공 API 를 여러 쪽 읽는다. 기본 10초로는 모자란다.
@@ -458,7 +458,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
       <CollectPanel stats={jobStats} lastRuns={lastRuns} />
       <SeoPanel initial={parseSeo(st.get("seo"))} />
-      <AdsPanel initial={parseAds(st.get("ads"))} />
+      <AdsPanel initial={parseAds(st.get("ads"))} initialOn={parseAdsOn(st.get("ads_on"))} />
 
       <SettingsPanel
         closingDays={String(st.get("closing_days") ?? 14)}

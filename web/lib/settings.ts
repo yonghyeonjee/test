@@ -43,21 +43,25 @@ export const AD_SLOT_LABEL: Record<AdSlotName, string> = {
 export const EMPTY_SLOT: AdSlotCfg = { on: false, kind: "html", html: "", img: "", href: "", alt: "" };
 
 /**
- * 광고를 실제로 내보낼지. 지금은 내려 두었다.
+ * 광고 전체 스위치. 관리자 화면에서 켜고 끈다.
  *
- * 자동광고를 쓰지 않으려고 애드센스 로더 주소에서 ?client= 를 떼어 봤지만
- * 그래도 나왔다. 그럴 만하다 — 로더가 화면에서 한 번 돌면 <ins> 에 적힌
- * 게시자 번호로 계정 설정(자동광고)이 따라붙는다. 우리 쪽에서 확실히
- * 막는 길은 스크립트를 아예 돌리지 않는 것뿐이다.
+ * 한동안 코드에 박아 두었는데, 광고를 급히 내려야 할 때마다 배포를
+ * 기다려야 했다. 켜고 끄는 일은 화면에서 해야 한다. 끄면 지면이 통째로
+ * 사라지고 빈 상자도 남지 않는다. 본문 중간 자리에는 우리 사이트 배너가
+ * 대신 들어간다.
  *
- * 끄면 지면이 통째로 사라진다. 빈 상자도 남지 않고, 본문 중간 자리에는
- * 우리 사이트 배너가 대신 들어간다. 관리자 화면에 넣어 둔 코드와 켜고 끈
- * 상태는 그대로 있으니, 이 값을 true 로 되돌리면 하던 대로 돌아온다.
- *
- * 되돌리기 전에 애드센스 → 광고 → 사이트별에서 knowhow-it.com 의
- * 자동광고를 먼저 꺼 두는 편이 안전하다.
+ * 자동광고는 이 스위치로 막는 것이 아니다. 자동광고를 쓸지 말지는
+ * 애드센스 계정 설정에 달려 있고, 우리 쪽에서는 광고 로더 주소에서
+ * client 인자를 떼어 "자동광고를 달라고 하지 않는" 것까지가 전부다
+ * (components/AdHtml.tsx).
  */
-export const ADS_ON = false;
+export const ADS_ON_DEFAULT = true;
+
+export function parseAdsOn(v: unknown): boolean {
+  if (typeof v === "boolean") return v;
+  const o = (v && typeof v === "object" ? v : null) as { on?: unknown } | null;
+  return typeof o?.on === "boolean" ? o.on : ADS_ON_DEFAULT;
+}
 
 /** 확인 토큰은 DB 가 비어 있거나 못 읽어도 나가야 한다. 코드에 기본값을 둔다. */
 export const DEFAULT_SEO: Seo = {
@@ -94,14 +98,22 @@ export function parseAds(v: unknown): Ads {
   return out;
 }
 
-async function load(): Promise<{ seo: Seo; ads: Ads }> {
-  if (!dbConfigured) return { seo: DEFAULT_SEO, ads: parseAds({}) };
+async function load(): Promise<{ seo: Seo; ads: Ads; adsOn: boolean }> {
+  const empty = { seo: DEFAULT_SEO, ads: parseAds({}), adsOn: ADS_ON_DEFAULT };
+  if (!dbConfigured) return empty;
   try {
-    const { data } = await db.from("settings_public").select("key,value").in("key", ["seo", "ads"]);
+    const { data } = await db
+      .from("settings_public")
+      .select("key,value")
+      .in("key", ["seo", "ads", "ads_on"]);
     const m = new Map((data ?? []).map((d) => [d.key as string, d.value]));
-    return { seo: parseSeo(m.get("seo")), ads: parseAds(m.get("ads")) };
+    return {
+      seo: parseSeo(m.get("seo")),
+      ads: parseAds(m.get("ads")),
+      adsOn: parseAdsOn(m.get("ads_on")),
+    };
   } catch {
-    return { seo: DEFAULT_SEO, ads: parseAds({}) };
+    return empty;
   }
 }
 
