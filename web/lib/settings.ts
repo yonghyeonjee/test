@@ -42,6 +42,23 @@ export const AD_SLOT_LABEL: Record<AdSlotName, string> = {
 
 export const EMPTY_SLOT: AdSlotCfg = { on: false, kind: "html", html: "", img: "", href: "", alt: "" };
 
+/**
+ * 광고를 실제로 내보낼지. 지금은 내려 두었다.
+ *
+ * 자동광고를 쓰지 않으려고 애드센스 로더 주소에서 ?client= 를 떼어 봤지만
+ * 그래도 나왔다. 그럴 만하다 — 로더가 화면에서 한 번 돌면 <ins> 에 적힌
+ * 게시자 번호로 계정 설정(자동광고)이 따라붙는다. 우리 쪽에서 확실히
+ * 막는 길은 스크립트를 아예 돌리지 않는 것뿐이다.
+ *
+ * 끄면 지면이 통째로 사라진다. 빈 상자도 남지 않고, 본문 중간 자리에는
+ * 우리 사이트 배너가 대신 들어간다. 관리자 화면에 넣어 둔 코드와 켜고 끈
+ * 상태는 그대로 있으니, 이 값을 true 로 되돌리면 하던 대로 돌아온다.
+ *
+ * 되돌리기 전에 애드센스 → 광고 → 사이트별에서 knowhow-it.com 의
+ * 자동광고를 먼저 꺼 두는 편이 안전하다.
+ */
+export const ADS_ON = false;
+
 /** 확인 토큰은 DB 가 비어 있거나 못 읽어도 나가야 한다. 코드에 기본값을 둔다. */
 export const DEFAULT_SEO: Seo = {
   naver: "a910f9a9fb3d311d3ebe25d0d7f821df89c3bb12",

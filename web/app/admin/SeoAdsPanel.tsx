@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AD_SLOTS, AD_SLOT_LABEL, type Ads, type AdSlotName, type Seo } from "@/lib/settings";
+import { ADS_ON, AD_SLOTS, AD_SLOT_LABEL, type Ads, type AdSlotName, type Seo } from "@/lib/settings";
 import { refreshCache, saveJsonSetting } from "./actions";
 
 const input = "w-full rounded-ctl border border-line px-3 py-2 text-sm outline-none focus:border-brand";
@@ -102,6 +102,13 @@ export function AdsPanel({ initial }: { initial: Ads }) {
   return (
     <section className="card mt-6 p-5">
       <h2 className="text-sm font-bold">광고 지면</h2>
+      {!ADS_ON && (
+        <p className="mt-2 rounded-ctl border border-alert/40 bg-alertSoft px-3 py-2 text-xs leading-relaxed text-alert">
+          지금 광고는 코드에서 내려 두었습니다. 자동광고가 계속 나와서, 애드센스 스크립트가
+          아예 돌지 않게 막아 둔 상태입니다. 아래에서 켜 두어도 화면에는 나오지 않습니다.
+          되살리려면 lib/settings.ts 의 ADS_ON 을 true 로 바꿔 배포하세요.
+        </p>
+      )}
       <p className="mt-1 text-xs text-faint">
         본문이 끝난 자리에만 나옵니다. 첫 화면과 목록 사이에는 두지 않습니다. 끄면 자리 자체가 사라집니다.
         높이는 200px 안쪽으로 잡히고 &quot;광고&quot; 표시가 붙습니다. 상세 화면 맨 아래 지면만 높이를 막지 않아 멀티플렉스를 넣을 수 있습니다.
