@@ -225,6 +225,14 @@ export async function getExamRounds(): Promise<ExamRound[]> {
   }
 }
 
+/** 등급을 주소에 쓸 수 있는 짧은 이름으로. 한글 앵커는 인코딩이 지저분하다. */
+export const GRADE_SLUG: Record<ExamGrade, string> = {
+  기술사: "pe",
+  기능장: "mc",
+  "기사·산업기사": "e",
+  기능사: "c",
+};
+
 export type Upcoming = {
   round: ExamRound;
   stage: Stage;
@@ -282,4 +290,34 @@ export function upcomingForSeries(
   const grade = gradeOfSeries(series);
   if (!grade) return [];
   return upcoming(rounds.filter((r) => r.grade === grade), today);
+}
+
+
+export type MergedUpcoming = Upcoming & {
+  /** 이 접수 창을 함께 쓰는 회차 이름들. 첫 번째가 대표. */
+  rounds: string[];
+};
+
+/**
+ * 날짜가 똑같은 접수 창을 한 장으로 묶는다.
+ *
+ * 상시 기능사는 회차가 여럿인데 실기 원서접수를 같은 날 함께 연다.
+ * 실제로 "2026년 상시 기능사 19회" 와 "201회" 가 둘 다 9/17~9/18 이다.
+ * 그대로 늘어놓으면 화면에는 등급·단계·날짜가 똑같은 카드가 두 장 나와,
+ * 보는 사람 눈에는 같은 것이 중복된 것으로만 보인다.
+ *
+ * 등급·단계·시작·끝이 같으면 한 창이다. 회차 이름만 모아 함께 적는다.
+ */
+export function mergeUpcoming(items: Upcoming[]): MergedUpcoming[] {
+  const byWindow = new Map<string, MergedUpcoming>();
+  for (const u of items) {
+    const k = `${u.round.grade}|${u.stage.label}|${u.stage.from}|${u.stage.to}`;
+    const hit = byWindow.get(k);
+    if (hit) {
+      if (!hit.rounds.includes(u.round.round)) hit.rounds.push(u.round.round);
+      continue;
+    }
+    byWindow.set(k, { ...u, rounds: [u.round.round] });
+  }
+  return [...byWindow.values()];
 }
