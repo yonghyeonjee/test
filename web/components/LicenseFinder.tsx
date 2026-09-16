@@ -14,7 +14,11 @@ const MAX = 24;
  * 막힌다. 화면에 들어온 사람은 대개 이름 하나를 들고 온다. 이름 한두 글자만
  * 쳐도 바로 좁혀지게 한다. 서버를 거치지 않고 손에 든 목록에서 거른다.
  */
-export default function LicenseFinder({ items }: { items: FinderItem[] }) {
+export default function LicenseFinder({
+  items,
+  placeholder = "예: 정보처리, 지게차, 사회복지사",
+  emptyNote = "이 이름의 종목이 없습니다. 국가전문자격은 따로 모아 두었으니 그 화면에서 찾아보세요.",
+}: { items: FinderItem[]; placeholder?: string; emptyNote?: string }) {
   const [q, setQ] = useState("");
   const key = q.trim().replace(/\s+/g, "").toLowerCase();
 
@@ -39,7 +43,7 @@ export default function LicenseFinder({ items }: { items: FinderItem[] }) {
         id="license-q"
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="예: 정보처리, 지게차, 사회복지사"
+        placeholder={placeholder}
         className="field mt-2 w-full"
         autoComplete="off"
         inputMode="search"
@@ -47,10 +51,7 @@ export default function LicenseFinder({ items }: { items: FinderItem[] }) {
       {key && (
         <div className="mt-3" aria-live="polite">
           {hits.length === 0 ? (
-            <p className="text-[13.5px] leading-relaxed text-muted">
-              이 이름의 종목이 없습니다. 공인중개사·세무사처럼 다른 기관이 시행하는 자격은
-              여기 목록에 없을 수 있습니다.
-            </p>
+            <p className="text-[13.5px] leading-relaxed text-muted">{emptyNote}</p>
           ) : (
             <>
               <p className="text-xs text-muted">

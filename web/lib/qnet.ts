@@ -39,12 +39,24 @@ export type LicenseBoard = {
 /** 기술사부터 기능사까지, 어려운 순. 그 밖의 계열은 뒤에 이름순. */
 const SERIES_ORDER = ["기술사", "기능장", "기사", "산업기사", "기능사"];
 
-/** 계열 건수와 정렬을 한 곳에서. DB 로 읽든 API 로 읽든 결과가 같아야 한다. */
-function board(all: License[], reason: string | null = null): LicenseBoard {
-  all.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+/**
+ * 공단 자료는 산업기사를 따로 세지 않고 "기사" 계열에 함께 넣어 준다.
+ * 실제로 242종목 가운데 117종목이 산업기사인데, 그대로 두면 화면이
+ * "기사 242" 한 덩어리가 되고 종목 안내도 산업기사에게 기사 등급 기준을
+ * 읽어 준다. 등급이 다르면 응시 자격도 다르니 이름을 보고 갈라 준다.
+ *
+ * 이름 끝이 "산업기사" 이거나, 뒤에 (기계분야) 같은 괄호만 붙은 것까지.
+ */
+export function normSeries(series: string, name: string): string {
+  if (series !== "기사") return series;
+  return /산업기사(\s*\([^)]*\))?$/.test(name) ? "산업기사" : series;
+}
+
+/** 계열 건수와 정렬. 등급 계열이 먼저, 그 밖은 이름순. */
+function seriesOf(all: License[]): { name: string; n: number }[] {
   const count = new Map<string, number>();
   for (const l of all) count.set(l.series, (count.get(l.series) ?? 0) + 1);
-  const series = Array.from(count.entries())
+  return Array.from(count.entries())
     .map(([name, n]) => ({ name, n }))
     .sort((a, b) => {
       const ia = SERIES_ORDER.indexOf(a.name);
@@ -52,7 +64,55 @@ function board(all: License[], reason: string | null = null): LicenseBoard {
       if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
       return a.name.localeCompare(b.name, "ko");
     });
-  return { ok: all.length > 0, reason: all.length ? null : reason ?? "종목이 비어 있습니다.", all, series };
+}
+
+/** 계열 건수와 정렬을 한 곳에서. DB 로 읽든 API 로 읽든 결과가 같아야 한다. */
+function board(all: License[], reason: string | null = null): LicenseBoard {
+  all.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  return {
+    ok: all.length > 0,
+    reason: all.length ? null : reason ?? "종목이 비어 있습니다.",
+    all,
+    series: seriesOf(all),
+  };
+}
+
+/**
+ * 국가기술자격만 남긴 보드. 등급(기술사…기능사)으로 거를 수 있는 것들이다.
+ *
+ * 국가전문자격은 등급 체계가 없어 계열 이름이 곧 자격 이름이다. 그대로
+ * 한 화면에 두면 "가맹거래사 1", "감정사 1" 같은 칩이 서른 개 넘게 깔려
+ * 정작 등급 칩이 묻힌다. 화면을 나눈다.
+ */
+export function techBoard(b: LicenseBoard): LicenseBoard {
+  return board(b.all.filter((l) => l.kind === "T"), b.reason);
+}
+
+/** 국가전문자격만 남긴 보드. 시행 기관이 부처마다 달라 따로 본다. */
+export function proBoard(b: LicenseBoard): LicenseBoard {
+  return board(b.all.filter((l) => l.kind !== "T"), b.reason);
+}
+
+/**
+ * 계열(자격) → 종목. 국가전문자격 화면이 쓴다.
+ *
+ * 관광통역안내사처럼 언어별로, 국가유산수리기능자처럼 직능별로 나뉘는
+ * 자격이 있는가 하면 한 종목뿐인 자격이 스물 넘는다. 갈래가 여럿인 것만
+ * 묶어 보이고 하나뿐인 것은 한자리에 모은다.
+ */
+export function groupBySeries(list: License[]) {
+  const map = new Map<string, License[]>();
+  for (const l of list) map.set(l.series, [...(map.get(l.series) ?? []), l]);
+  const groups = Array.from(map.entries())
+    .map(([series, items]) => ({ series, items }))
+    .sort((a, b) => b.items.length - a.items.length || a.series.localeCompare(b.series, "ko"));
+  return {
+    multi: groups.filter((g) => g.items.length > 1),
+    single: groups
+      .filter((g) => g.items.length === 1)
+      .map((g) => g.items[0])
+      .sort((a, b) => a.name.localeCompare(b.name, "ko")),
+  };
 }
 
 /**
@@ -81,7 +141,7 @@ async function fromStore(): Promise<LicenseBoard | null> {
       name: r.name,
       kind: r.kind,
       kindName: r.kind_name ?? "",
-      series: r.series ?? "기타",
+      series: normSeries(r.series ?? "기타", r.name),
       field: r.field ?? "",
       subField: r.sub_field ?? "",
     })));
@@ -115,7 +175,7 @@ export async function getLicenses(): Promise<LicenseBoard> {
       name,
       kind: val(r.qualgbcd),
       kindName,
-      series: val(r.seriesnm, "기타"),
+      series: normSeries(val(r.seriesnm, "기타"), name),
       // 국가전문자격(청소년상담사·관광통역안내사 등)은 대직무분야가 없다.
       // 없는 것을 "기타"로 뭉뚱그리지 말고 무엇인지 그대로 적는다.
       field: val(r.obligfldnm, kindName || "국가전문자격"),
