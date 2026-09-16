@@ -7,6 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import LicenseList from "@/components/LicenseList";
+import LicenseFinder from "@/components/LicenseFinder";
 import ExamDeadlines from "@/components/ExamDeadlines";
 import { getLicenses } from "@/lib/qnet";
 import { getExamRounds, upcoming } from "@/lib/qnetExam";
@@ -22,10 +23,10 @@ import { LICENSE_FAQ } from "@/lib/pageFaq";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "국가자격증 종류 총정리 — 사회복지사·보육교사·기사 등급별 목록",
+  title: "국가자격증 찾기 — 종목별 응시 자격·시험 일정·지원 제도",
   description:
-    "한국산업인력공단이 시행하는 국가기술자격·국가전문자격 종목을 직무 분야와 등급별로 펼쳤습니다. " +
-    "자격증 응시료·학원비를 지원하는 정부 제도와 함께 보실 수 있습니다.",
+    "한국산업인력공단이 시행하는 국가기술자격 600여 종목을 이름으로 찾고, 응시 자격과 다가오는 " +
+    "원서접수 일정을 확인하세요. 자격증 응시료·학원비를 지원하는 정부 제도도 함께 안내합니다.",
   keywords: [
     "국가자격증 종류",
     "사회복지사 자격증",
@@ -43,19 +44,20 @@ type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 
 export default async function LicensePage({ searchParams }: { searchParams: SP }) {
-  // 마감일이 먼저다. 종목 목록보다 위에 놓는다.
-  const soon = upcoming(await getExamRounds());
   const board = await getLicenses();
+  // 일정은 못 읽어도 화면은 살린다. 이 화면의 본업은 종목 찾기다.
+  const soon = await getExamRounds().then(upcoming).catch(() => []);
   const picked = one(searchParams.series) ?? "";
   const tech = board.all.filter((l) => l.kind === "T").length;
   const fields = new Set(board.all.map((l) => l.field)).size;
+  const finder = board.all.map((l) => ({ code: l.code, name: l.name, series: l.series, field: l.field }));
 
   return (
     <div className="pb-4">
       <PageBanner
         eyebrow="자격증"
-        title="국가자격 종목, 전부 한 화면에"
-        sub="무슨 자격증이 있는지부터 알아야 준비할 수 있습니다. 한국산업인력공단이 시행하는 종목을 직무 분야와 등급으로 나눠 두었습니다."
+        title="국가자격증 찾기"
+        sub="자격증 이름을 넣으면 응시 자격과 다가오는 시험 일정, 학원비·응시료를 지원하는 제도까지 한 번에 나옵니다. 한국산업인력공단이 시행하는 종목 전부입니다."
         art={<ArtLicense />}
       >
         {board.ok && (
@@ -76,7 +78,29 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
         )}
       </PageBanner>
 
-      <ExamDeadlines items={soon} />
+      {/* 들어온 사람은 대개 이름 하나를 들고 온다. 그것부터 받는다. */}
+      {board.ok && <LicenseFinder items={finder} />}
+
+      {/* 이 화면이 무엇을 해 주는지 한 줄씩. 처음 온 사람이 헤매지 않게. */}
+      <ol className="mt-4 grid gap-2 text-[13.5px] leading-relaxed text-ink2 sm:grid-cols-3">
+        {[
+          ["종목 고르기", "위에서 이름으로 찾거나, 아래 분야별 목록에서 고릅니다."],
+          ["종목 안내 보기", "응시 자격, 시험 과목, 이 등급의 다가오는 접수 일정이 나옵니다."],
+          ["큐넷에서 접수", "원서접수와 합격 확인은 한국산업인력공단 큐넷에서 합니다."],
+        ].map(([h, d], i) => (
+          <li key={h} className="flex gap-2.5 rounded-card bg-ground px-3.5 py-3">
+            <span className="num shrink-0 font-extrabold text-brand">{i + 1}</span>
+            <span><b className="font-bold">{h}</b> <span className="text-muted">{d}</span></span>
+          </li>
+        ))}
+      </ol>
+
+      <ExamDeadlines
+        items={soon}
+        limit={4}
+        title="접수 마감이 가까운 시험"
+        intro="등급 단위 일정입니다. 같은 등급의 종목은 같은 날 함께 접수하니, 내 종목의 등급을 보고 맞춰 두세요. 카드를 누르면 그 등급의 전체 일정으로 갑니다."
+      />
 
       <LicenseList board={board} picked={picked} />
 
@@ -108,8 +132,8 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
           </p>
           <p>
             시험 일정과 응시 자격의 최종 확인은 큐넷에서 하셔야 합니다. 여기 목록은
-            공단이 공개한 종목 명단을 그대로 옮긴 것이라, 올해 시행 여부나 회차는 담겨
-            있지 않습니다.
+            공단이 공개한 종목 명단을 그대로 옮긴 것이고, 회차 일정은 등급 단위로만
+            공개되어 종목마다 실제 시행 여부가 다를 수 있습니다.
           </p>
         </div>
       </section>
