@@ -92,7 +92,7 @@ export default async function ExamSchedule() {
     <div className="pb-4">
       <PageBanner
         eyebrow="자격증"
-        title="언제까지 신청해야 하는지부터"
+        title="시험 일정, 접수 마감부터"
         sub="원서접수는 정해진 기간에만 열립니다. 하루라도 지나면 다음 회차를 기다려야 합니다."
         art={<ArtLicense />}
       />

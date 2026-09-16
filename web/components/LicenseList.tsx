@@ -24,8 +24,12 @@ export default function LicenseList({ board, picked }: { board: LicenseBoard; pi
       </div>
     );
   return (
-    <>
-          <div className="mt-6 flex flex-wrap gap-2">
+    <section id="list" className="mt-10">
+          <h2 className="sec-title text-[1.0625rem] font-extrabold">분야별 종목 목록</h2>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
+            등급 칩으로 거른 뒤 분야를 펼치세요. 종목 이름을 누르면 안내 화면으로 갑니다.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
             <Link href="/license" className={`chip ${picked ? "" : "chip-on"}`}>
               전체
               <span className="num text-[11.5px] font-bold opacity-70">{board.all.length}</span>
@@ -50,18 +54,18 @@ export default function LicenseList({ board, picked }: { board: LicenseBoard; pi
               <details key={g.field} className="card group p-5" open={groups.length <= 3}>
                 <summary className="flex cursor-pointer list-none items-baseline justify-between gap-4
                                     [&::-webkit-details-marker]:hidden">
-                  <h2 className="text-[15px] font-bold">
+                  <h3 className="text-[15px] font-bold">
                     {g.field}
                     <span className="ml-2 text-xs font-normal text-muted transition-transform
                                      group-open:hidden">펼치기</span>
-                  </h2>
+                  </h3>
                   <span className="num text-xs text-muted">{g.n}종목</span>
                 </summary>
                 <div className="mt-4 space-y-4">
                   {g.subs.map((s) => (
                     <div key={s.subField || "_"}>
                       {s.subField && (
-                        <h3 className="mb-1.5 text-[13px] font-bold text-ink2">{s.subField}</h3>
+                        <h4 className="mb-1.5 text-[13px] font-bold text-ink2">{s.subField}</h4>
                       )}
                       <ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[13.5px]">
                         {s.items.map((l) => (
@@ -81,6 +85,6 @@ export default function LicenseList({ board, picked }: { board: LicenseBoard; pi
               </details>
             ))}
           </div>
-    </>
+    </section>
   );
 }

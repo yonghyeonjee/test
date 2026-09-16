@@ -9,7 +9,11 @@ const dot = (iso: string) => iso.replaceAll("-", ".");
  * 자격증 화면에서 가장 먼저 봐야 할 것은 "무슨 종목이 있나"가 아니라
  * "언제까지 신청해야 하나"다. 놓치면 다음 회차까지 몇 달을 기다린다.
  */
-export default function ExamDeadlines({ items, limit = 6 }: { items: Upcoming[]; limit?: number }) {
+export default function ExamDeadlines({
+  items, limit = 6,
+  title = "지금 신청할 수 있는 시험",
+  intro = "접수 마감이 가까운 순입니다. 원서접수는 정해진 기간에만 열리고, 하루라도 지나면 다음 회차를 기다려야 합니다.",
+}: { items: Upcoming[]; limit?: number; title?: string; intro?: string }) {
   if (!items.length) return null;
   // 날짜가 똑같은 접수 창은 한 장으로. 상시 기능사는 여러 회차가 실기
   // 접수를 같은 날 함께 열어서, 그대로 두면 같은 카드가 겹쳐 보인다.
@@ -17,11 +21,8 @@ export default function ExamDeadlines({ items, limit = 6 }: { items: Upcoming[];
 
   return (
     <section className="mt-8">
-      <h2 className="sec-title text-[1.0625rem] font-extrabold">지금 신청할 수 있는 시험</h2>
-      <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-        접수 마감이 가까운 순입니다. 원서접수는 정해진 기간에만 열리고, 하루라도 지나면
-        다음 회차를 기다려야 합니다.
-      </p>
+      <h2 className="sec-title text-[1.0625rem] font-extrabold">{title}</h2>
+      <p className="mt-2 text-[13.5px] leading-relaxed text-muted">{intro}</p>
 
       <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {list.map((u) => {
