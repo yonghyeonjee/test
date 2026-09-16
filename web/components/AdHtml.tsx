@@ -14,25 +14,21 @@ import { useEffect, useRef } from "react";
  * 있는 것은 <head> 에 한 번만 둔다 — 애드센스 로더는 두 번 넣으면
  * "head tag 는 하나만" 이라며 그 뒤의 push 를 막는다.
  *
- * 자동 광고는 쓰지 않는다. 로더 주소의 ?client= 는 자동 광고를 위한
- * 것이다 — 그게 붙어 있으면 계정 설정에 따라 구글이 화면 아무 데나
- * (아래 고정 띠, 화면 전환 사이 전면) 광고를 끼운다. 떼어 내면 우리가
- * 자리를 정한 <ins> 에만 나온다. 각 <ins> 가 data-ad-client 를 들고 있어
- * 그것으로 충분하다. 페이지 단위 광고를 켜는 push 도 버린다.
+ * 자동광고는 여기서 막지 않는다.
+ *
+ * 한동안 로더 주소에서 ?client= 를 떼어 봤다. 자동광고 코드가 그 인자로
+ * 켜지니 떼면 안 나올 줄 알았는데, 떼고 배포한 뒤에도 화면 아래 고정 띠가
+ * 그대로 나왔다. 막지도 못하면서 애드센스가 주는 코드와 달라지기만 했고,
+ * 우리가 자리를 정해 둔 수동 지면까지 안 채워질 위험이 남았다. 되돌린다.
+ *
+ * 자동광고를 쓸지 말지는 애드센스 계정에서 정한다. 1차 도메인은 자동광고를
+ * 쓰고 이 사이트만 수동 지면으로 두려면, 애드센스 → 광고 → 사이트별 →
+ * knowhow-it.com 에서 jiwon.knowhow-it.com 을 페이지 제외로 넣는다.
+ * 제외는 주소 앞부분으로 맞추므로 하위 도메인만 따로 빠진다.
+ *
+ * 다만 페이지 단위 광고를 켜는 push(enable_page_level_ads)는 코드에 들어
+ * 있으면 그대로 실행되니, 그것만 걸러 낸다.
  */
-const LOADER = /adsbygoogle\.js/;
-
-/** 로더 주소에서 자동 광고용 client 인자를 뗀다. */
-function manualOnly(src: string): string {
-  if (!LOADER.test(src)) return src;
-  try {
-    const u = new URL(src, location.href);
-    u.searchParams.delete("client");
-    return u.toString();
-  } catch {
-    return src;
-  }
-}
 export default function AdHtml({ html }: { html: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -41,14 +37,12 @@ export default function AdHtml({ html }: { html: string }) {
     if (!el) return;
     el.innerHTML = html;
     for (const old of Array.from(el.querySelectorAll("script"))) {
-      const rawSrc = old.getAttribute("src");
-      if (rawSrc) {
+      const src = old.getAttribute("src");
+      if (src) {
         old.remove();
-        const src = manualOnly(rawSrc);
         if (document.querySelector(`script[src="${CSS.escape(src)}"]`)) continue;
         const s = document.createElement("script");
         for (const a of Array.from(old.attributes)) s.setAttribute(a.name, a.value);
-        s.src = src;
         document.head.appendChild(s);
         continue;
       }
