@@ -88,8 +88,34 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     return <p className="card p-6 text-sm">SUPABASE_SERVICE_KEY 가 없습니다.</p>;
 
   const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+  const since7Iso = new Date(Date.now() - 7 * 86400_000).toISOString();
+  // 서울 기준 오늘 0시. 서버가 어디 있든 하루 경계가 같아야 한다.
+  const nowKst = new Date(Date.now() + 9 * 3600_000);
+  const todayStart = new Date(
+    Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth(), nowKst.getUTCDate()) - 9 * 3600_000,
+  ).toISOString();
+
+  /**
+   * 한 줄도 받아 오지 않고 세기만 한다.
+   *
+   * 예전에는 30일치를 통째로 받아 배열 길이로 셌다. PostgREST 가 한 번에
+   * 주는 줄 수는 1,000줄이 상한이라 실제로 1,568건인 날에도 화면에는
+   * 딱 1,000 이 찍혔다. 상한이 값인 척하고 있었다.
+   */
+  const num = async (q: PromiseLike<{ count: number | null }>) => {
+    try {
+      return (await q).count ?? 0;
+    } catch {
+      return 0;
+    }
+  };
+  const head = (table: string) => db.from(table).select("*", { count: "exact", head: true });
+
+  // 줄을 받아 오는 것은 순위와 그래프용 표본이다. 최근 것부터 받는다 —
+  // 정렬 없이 1,000줄을 자르면 어느 1,000줄인지 아무도 모른다.
+  const SAMPLE = 1000;
   const [logs, settings, cov, saved, accounts, visits] = await Promise.all([
-    db.from("search_log").select("*").gte("at", since).limit(5000),
+    db.from("search_log").select("*").gte("at", since).order("at", { ascending: false }).limit(SAMPLE),
     db.from("site_settings").select("key,value"),
     db.from("coverage").select("*"),
     db
@@ -101,8 +127,19 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       .from("save_account")
       .select("device_key,display_name,phone_tail,email,notify_consent")
       .limit(1000),
-    db.from("visit_log").select("*").gte("at", since).limit(5000),
+    db.from("visit_log").select("*").gte("at", since).order("at", { ascending: false }).limit(SAMPLE),
   ]);
+
+  const [nSearch30, nSearchToday, nZero30, nSaved, nVisit30, nVisitToday, nVisit7] =
+    await Promise.all([
+      num(head("search_log").gte("at", since)),
+      num(head("search_log").gte("at", todayStart)),
+      num(head("search_log").gte("at", since).eq("n_results", 0)),
+      num(head("saved_condition")),
+      num(head("visit_log").gte("at", since)),
+      num(head("visit_log").gte("at", todayStart)),
+      num(head("visit_log").gte("at", since7Iso)),
+    ]);
   // 수집 대상마다 건수·최신·마지막 수집 시각. 표가 없거나 비어 있어도 0 으로 보인다.
   const WHERE: Record<CollectKey, { table: string; filter?: [string, string]; dateCol?: string }> = {
     gojobs: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
@@ -219,10 +256,6 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     .sort((a, b) => b.n - a.n)
     .slice(0, 10);
 
-  const today = rows.filter(
-    (r) => new Date(String(r.at)).toDateString() === new Date().toDateString()
-  ).length;
-
   const st = new Map((settings.data ?? []).map((d) => [d.key as string, d.value]));
 
   return (
@@ -277,13 +310,13 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
         {[
-          { k: "오늘 검색", v: today },
-          { k: "30일 검색", v: rows.length },
-          { k: "결과 0건", v: zero.length },
-          { k: "저장한 조건", v: savedRows.length },
-          { k: "오늘 유입", v: visitsToday },
-          { k: "7일 유입", v: visits7 },
-          { k: "30일 유입", v: visitRows.length },
+          { k: "오늘 검색", v: nSearchToday },
+          { k: "30일 검색", v: nSearch30 },
+          { k: "결과 0건", v: nZero30 },
+          { k: "저장한 조건", v: nSaved },
+          { k: "오늘 유입", v: nVisitToday },
+          { k: "7일 유입", v: nVisit7 },
+          { k: "30일 유입", v: nVisit30 },
           {
             k: "노출 사업",
             v: (cov.data ?? []).reduce(
@@ -298,6 +331,12 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           </div>
         ))}
       </div>
+
+      <p className="mt-2 text-xs leading-relaxed text-faint">
+        위 숫자는 데이터베이스에서 직접 센 것입니다. 검색 수는 크롤러를 뺀 사람 기준입니다.
+        {(rows.length >= SAMPLE || visitRows.length >= SAMPLE) &&
+          ` 아래 순위와 그래프는 최근 ${SAMPLE.toLocaleString()}건을 표본으로 합니다.`}
+      </p>
 
       <Panel title="일별 유입자" note="최근 30일 · 탭당 한 번, 사이트 안 이동은 세지 않음">
         <div className="flex h-28 items-end gap-[3px]">

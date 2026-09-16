@@ -24,9 +24,25 @@ export default function BlogIndex() {
         정리했습니다.
       </p>
 
+      {/* 신청 기간이 열려 있는 것부터. 날짜가 걸린 글은 늦으면 소용이 없다. */}
+      <Link href="/blog/youth-future-savings"
+            className="card card-link mt-8 flex items-center gap-4 p-5">
+        <span className="shrink-0 rounded-card bg-brand px-3 py-2 text-[13px] font-bold text-white">
+          신청 중
+        </span>
+        <span className="min-w-0">
+          <b className="block text-[15.5px] leading-snug">
+            청년미래적금 2차, 10월 16일까지 신청합니다
+          </b>
+          <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
+            나이·소득 조건과 정부기여금 6%·12% 차이, 3년 뒤 받는 금액을 계산해 봅니다.
+          </span>
+        </span>
+      </Link>
+
       {/* 계산기는 읽는 글이 아니라 쓰는 도구다. 글 목록 위에 따로 둔다. */}
       <Link href="/blog/income"
-            className="card card-link mt-8 flex items-center gap-4 p-5">
+            className="card card-link mt-3 flex items-center gap-4 p-5">
         <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">
           계산기
         </span>

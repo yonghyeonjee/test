@@ -57,6 +57,7 @@ const NAV: NavItem[] = [
     href: "/blog", label: "지원금 안내",
     sub: [
       { href: "/blog", label: "안내 글 전체" },
+      { href: "/blog/youth-future-savings", label: "청년미래적금" },
       { href: "/blog/income", label: "소득 기준 계산기" },
     ],
   },
