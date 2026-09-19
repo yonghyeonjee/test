@@ -5,7 +5,11 @@ import { useRef, useState, useTransition } from "react";
 import { COLLECT_LABEL, type CollectKey, type CollectResult, type LastRunView } from "@/lib/collectorMeta";
 import { probeGojobsSite, probeJobsApi, probeOpenQuestions, probePagingLimits, runCollectAll, runCollectOne, runInBackground, stopCollect } from "./actions";
 
-export type SourceStat = { key: CollectKey; n: number; newest: string | null; fetched: string | null };
+export type SourceStat = {
+  key: CollectKey; n: number; newest: string | null; fetched: string | null;
+  /** 과거로 어디까지 팠나. 나라일터 과거 타일만 채운다. */
+  depth?: { at: string | null; page: number } | null;
+};
 
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -15,15 +19,23 @@ const ago = (iso: string) => {
 const secs = (ms: number) => `${(ms / 1000).toFixed(1)}초`;
 
 /** 마지막 채용 수집 기록. 함수가 죽어도 DB 에 남아 새로고침으로 보인다. */
+const RUN_LABEL: Record<string, string> = {
+  gojobs: "나라일터 최신",
+  gojobs_archive: "나라일터 과거",
+  worldjob: "해외취업",
+};
+
 function LastRunLine({ run }: { run: LastRunView }) {
-  const label = run.source === "gojobs" ? "나라일터" : "월드잡";
+  const label = RUN_LABEL[run.source] ?? run.source;
   const who = run.by === "cron" ? "자동" : "수동";
   if (run.state === "running") {
+    // 한 번 도는 데 길어야 1분이다. 그보다 오래 "도는 중"이면 죽은 것이다.
+    // 다만 다음에 화면을 열 때 스스로 정리되니 겁줄 필요는 없다.
     const stale = Date.now() - new Date(run.startedAt).getTime() > 90_000;
     return (
-      <p className={`mt-3 rounded-ctl px-3 py-2 text-xs ${stale ? "bg-alertSoft text-alert" : "bg-brandSoft text-brand"}`}>
+      <p className={`mt-3 rounded-ctl px-3 py-2 text-xs ${stale ? "bg-goldSoft text-gold" : "bg-brandSoft text-brand"}`}>
         {stale
-          ? `${label} ${who} 수집이 ${ago(run.startedAt)} 시작한 뒤 끝나지 않았습니다. 시간 초과로 죽었을 가능성이 큽니다.`
+          ? `${label} ${who} 수집이 ${ago(run.startedAt)} 시작해 아직 끝 표시가 없습니다. 시간 초과로 끊긴 것으로 보이며, 다시 누르면 멈춘 자리부터 이어집니다.`
           : `${label} ${who} 수집이 도는 중입니다 (${ago(run.startedAt)} 시작).`}
       </p>
     );
@@ -238,6 +250,11 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
                     {s.newest ? `최신 ${s.newest} · ` : ""}
                     {s.fetched ? `${ago(s.fetched)} 수집` : "수집 기록 없음"}
                   </span>
+                  {s.depth && (
+                    <span className="num mt-0.5 block text-xs text-muted">
+                      과거 {s.depth.at ?? "—"}까지 · {s.depth.page.toLocaleString()}쪽
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"

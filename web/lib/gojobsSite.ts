@@ -431,7 +431,6 @@ export async function ingestSite(
 
   const db = svc();
   const now = new Date().toISOString();
-  let firstId: string | null = null;
 
   // 쪽 크기는 커서에 적어 둔다. 한 번 재 보고 그다음부터는 그대로 쓴다.
   // 열 건짜리로 29만 건을 훑으면 29,000쪽이라 끝이 없다.
@@ -455,7 +454,7 @@ export async function ingestSite(
   // 남의 사이트를 두드리는 횟수만 줄인다.
   const pages = opts.pages ?? (mode === "recent"
     ? Math.max(2, Math.ceil(250 / per))
-    : Math.max(4, Math.ceil(300 / per)));
+    : Math.max(4, Math.ceil(600 / per)));
 
   // recent: 늘 1쪽부터. 오늘 기준 최신을 매일 챙긴다.
   // past: 커서부터 이어 읽는다 = 최신 쪽에서 과거 쪽으로 한 걸음씩.
@@ -468,50 +467,92 @@ export async function ingestSite(
   /** 이번에 읽은 것 가운데 가장 오래된 등록일. 어디까지 팠는지 보여 준다. */
   let oldest: string | null = null;
 
-  for (; read < pages; page++, read++) {
-    if (Date.now() - t0 > budgetMs - 6_000) break;
-    const r = await fetchList(page, unit ?? undefined);
-    if (!r.ok) {
-      run.pages.push({ page, got: 0, saved: 0, reason: r.reason });
-      // "목록 줄을 못 찾았습니다"는 대개 끝을 지난 것이다. 응답 자체가 안 온
-      // 것과 구분해 둔다 — 끝이면 되감고, 아니면 다음에 같은 쪽을 다시 본다.
-      if (/목록 줄/.test(r.reason)) ended = true;
-      break;
-    }
-    if (firstId === null) firstId = r.jobs[0]?.id ?? null;
-    else if (r.jobs[0]?.id === firstId) {
-      // 다음 쪽이 앞 쪽과 같다 = pageIndex 가 안 먹는다. 더 돌아도 같은 것만 온다.
-      run.paging = false;
-      run.pages.push({ page, got: r.jobs.length, saved: 0, reason: "앞 쪽과 같음 — 쪽 넘김이 안 됩니다" });
-      break;
-    } else {
+  /**
+   * 쪽을 여러 개 한꺼번에 받는다.
+   *
+   * 쪽 크기를 못 늘린다 — pageUnit·recordCountPerPage·pageSize·rowSize 넷을
+   * 다 넣어 봤지만 전부 열 건으로 돌아온다. 한 쪽은 열 건 고정이다.
+   * 그런데 한 쪽 받는 데 1~4초가 걸리고 그 대부분이 기다리는 시간이라,
+   * 넷씩 묶어 보내면 같은 시간에 서너 배를 받는다.
+   *
+   * 넷을 넘기지 않는다. 남의 기관 사이트다.
+   */
+  const CONC = 4;
+  let stop = false;
+  /** 앞 쪽의 첫 공고 번호. 다음 쪽이 같으면 쪽 넘김이 안 되는 것이다. */
+  let prevFirst: string | null = null;
+
+  while (read < pages && !stop) {
+    // 받는 것보다 적어 두는 것이 늦으면 아무것도 안 남는다. 끝에 여유를 둔다.
+    if (Date.now() - t0 > budgetMs - 8_000) break;
+
+    const batch: number[] = [];
+    for (let k = 0; k < CONC && read + k < pages; k++) batch.push(page + k);
+
+    const got = await Promise.all(
+      batch.map((pg) =>
+        fetchList(pg, unit ?? undefined).then(
+          (r) => ({ pg, r }),
+          (e: unknown) => ({
+            pg,
+            r: { ok: false as const, reason: e instanceof Error ? e.message : String(e), ms: 0 },
+          }),
+        ),
+      ),
+    );
+
+    // 받아 온 것은 반드시 쪽 번호 순서대로 본다. 앞 쪽에서 끊겼는데 뒤 쪽을
+    // 저장해 버리면 커서 자리에 구멍이 남아 영영 안 메워진다.
+    for (const { pg, r } of got) {
+      if (stop) break;
+      read++;
+
+      if (!r.ok) {
+        run.pages.push({ page: pg, got: 0, saved: 0, reason: r.reason });
+        // "목록 줄을 못 찾았습니다"는 대개 끝을 지난 것이다. 응답 자체가 안 온
+        // 것과 구분해 둔다 — 끝이면 되감고, 아니면 다음에 같은 쪽을 다시 본다.
+        if (/목록 줄/.test(r.reason)) ended = true;
+        stop = true;
+        break;
+      }
+
+      const first = r.jobs[0]?.id ?? null;
+      if (prevFirst !== null && first === prevFirst) {
+        run.paging = false;
+        run.pages.push({ page: pg, got: r.jobs.length, saved: 0, reason: "앞 쪽과 같음 — 쪽 넘김이 안 됩니다" });
+        stop = true;
+        break;
+      }
+      prevFirst = first;
       run.paging = true;
-      firstId = r.jobs[0]?.id ?? null;
+
+      const rows = r.jobs.map((j) => ({
+        id: `gojobs:${j.id}`,
+        source: "gojobs",
+        source_id: j.id,
+        title: j.title.slice(0, 500),
+        org: j.org,
+        region: sidoOf(j.org ?? ""),
+        hire: j.cate,
+        reg_date: j.regDate,
+        end_date: j.endDate,
+        url: null,
+        raw: { sys: j.sys, from: "site" },
+        fetched_at: now,
+      }));
+      const seen = new Set<string>();
+      const uniq = rows.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)));
+      const { error } = await db.from("job_posts").upsert(uniq as never[], { onConflict: "id" });
+      if (error) return { ...run, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
+
+      for (const j of r.jobs) if (j.regDate && (!oldest || j.regDate < oldest)) oldest = j.regDate;
+      run.pages.push({ page: pg, got: r.jobs.length, saved: uniq.length, oldest });
+      run.saved += uniq.length;
+      // 여기까지 저장했다. 다음에는 그다음 쪽부터.
+      page = pg + 1;
     }
-
-    const rows = r.jobs.map((j) => ({
-      id: `gojobs:${j.id}`,
-      source: "gojobs",
-      source_id: j.id,
-      title: j.title.slice(0, 500),
-      org: j.org,
-      region: sidoOf(j.org ?? ""),
-      hire: j.cate,
-      reg_date: j.regDate,
-      end_date: j.endDate,
-      url: null,
-      raw: { sys: j.sys, from: "site" },
-      fetched_at: now,
-    }));
-    const seen = new Set<string>();
-    const uniq = rows.filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true)));
-    const { error } = await db.from("job_posts").upsert(uniq as never[], { onConflict: "id" });
-    if (error) return { ...run, reason: `저장 실패: ${error.message}`, elapsedMs: Date.now() - t0 };
-
-    for (const j of r.jobs) if (j.regDate && (!oldest || j.regDate < oldest)) oldest = j.regDate;
-    run.pages.push({ page, got: r.jobs.length, saved: uniq.length, oldest });
-    run.saved += uniq.length;
   }
+
   run.oldest = oldest;
   run.per = per;
 
