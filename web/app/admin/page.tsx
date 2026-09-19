@@ -182,6 +182,20 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     }
   }));
   const lastRuns = await readLastRuns();
+  // 과거 걷기가 어디까지 내려갔는지. 숫자만 보면 늘고 있는지 알 수 없다.
+  const siteCursor = await (async () => {
+    try {
+      const { data } = await db
+        .from("site_settings").select("value").eq("key", "gojobs_site_cursor").maybeSingle();
+      return (data?.value ?? null) as { at?: string | null; nextPage?: number } | null;
+    } catch {
+      return null;
+    }
+  })();
+  const statsWithDepth: SourceStat[] = jobStats.map((s) =>
+    s.key === "gojobs_archive" && siteCursor?.nextPage
+      ? { ...s, depth: { at: siteCursor.at ?? null, page: siteCursor.nextPage } }
+      : s);
   // 화면이 기대는 함수·표가 실제로 있는지. match_welfare 가 조용히 사라져
   // 지역 선택이 며칠 죽어 있던 일이 있어 맨 위에 둔다.
   const health = await checkSchema(db as never);
@@ -456,7 +470,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </div>
       </div>
 
-      <CollectPanel stats={jobStats} lastRuns={lastRuns} />
+      <CollectPanel stats={statsWithDepth} lastRuns={lastRuns} />
       <SeoPanel initial={parseSeo(st.get("seo"))} />
       <AdsPanel initial={parseAds(st.get("ads"))} initialOn={parseAdsOn(st.get("ads_on"))} />
 

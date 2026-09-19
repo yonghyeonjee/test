@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { COLLECT_KEYS, type CollectKey, type CollectResult } from "./collectorMeta";
 import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alioplus";
-import { ingestArchive, type LastRun } from "./jobsIngest";
-import { ingestSite } from "./gojobsSite";
+import { ingestArchive, writeRun, type LastRun } from "./jobsIngest";
+import { ingestSite, type SiteMode } from "./gojobsSite";
 import { getLicenses } from "./qnet";
 import { EXAM_GRADES, fetchGrade, toRow as toExamRow } from "./qnetExam";
 import { getRentRates } from "./rentRate";
@@ -123,6 +123,48 @@ async function stopRequested() {
   }
 }
 
+/**
+ * 사이트 걷기를 실행 기록과 함께 돌린다.
+ *
+ * 예전에는 사이트 걷기가 기록을 안 남겼다. 그래서 관리자 화면의 나라일터
+ * 줄에는 몇 달 전 API 로 돌린 기록이 그대로 걸려 있었고, 그 기록이 하필
+ * 시간 초과로 "도는 중"인 채 끊긴 것이라 나흘 내내 빨간 띠가 떠 있었다.
+ * 실제로는 매일 잘 돌고 있었는데도.
+ *
+ * 최신과 과거는 서로 다른 줄에 적는다. 한 줄을 같이 쓰면 나중에 돈 쪽이
+ * 앞의 기록을 지운다.
+ */
+async function siteRun(
+  key: "gojobs" | "gojobs_archive",
+  opts: { mode: SiteMode; budgetMs: number },
+) {
+  const db = svc();
+  const startedAt = new Date().toISOString();
+  await writeRun(db, { source: key, state: "running", startedAt, by: "admin" });
+  try {
+    const r = await ingestSite(opts);
+    await writeRun(db, {
+      source: key, state: r.ok ? "done" : "failed", startedAt,
+      finishedAt: new Date().toISOString(), by: "admin",
+      report: {
+        source: "gojobs", ok: r.ok, saved: r.saved, reason: r.reason,
+        lastPage: r.to, timeUp: r.more, elapsedMs: r.elapsedMs,
+        pages: r.pages.map((pg) => ({
+          page: pg.page, saved: pg.saved, oldest: pg.oldest ?? null, newest: null, err: pg.reason,
+        })),
+      },
+    });
+    return r;
+  } catch (e) {
+    await writeRun(db, {
+      source: key, state: "failed", startedAt, finishedAt: new Date().toISOString(), by: "admin",
+      report: { source: "gojobs", ok: false, saved: 0, pages: [],
+                reason: e instanceof Error ? e.message : String(e) },
+    });
+    throw e;
+  }
+}
+
 /** 하나를 돌린다. 예외는 결과로 바꿔 돌려준다 — 하나가 죽어도 나머지는 돈다. */
 export async function collectOne(
   key: CollectKey, opts: { pages?: number; budgetMs?: number } = {},
@@ -134,7 +176,7 @@ export async function collectOne(
     if (key === "gojobs") {
       // 1쪽부터 250건쯤. 한 쪽에 몇 건이 오는지는 ingestSite 가 재 두었다 —
       // 100건씩 오면 세 쪽, 열 건씩 오면 스물다섯 쪽을 돈다.
-      const r = await ingestSite({ mode: "recent", budgetMs: opts.budgetMs ?? 40_000 });
+      const r = await siteRun("gojobs", { mode: "recent", budgetMs: opts.budgetMs ?? 40_000 });
       if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
       return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: false,
                reason: [`${r.from}~${r.to}쪽(쪽당 ${r.per ?? 10}건)`, r.unitNote].filter(Boolean).join(" · ") };
@@ -151,7 +193,7 @@ export async function collectOne(
     // API 걷기는 사이트가 막혔을 때만 쓴다.
     if (key === "gojobs_archive") {
       const budget = opts.budgetMs ?? 40_000;
-      const r = await ingestSite({ mode: "past", budgetMs: budget });
+      const r = await siteRun("gojobs_archive", { mode: "past", budgetMs: budget });
       if (r.ok) {
         const per = r.per ?? 10;
         return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: r.more ?? false,

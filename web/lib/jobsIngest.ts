@@ -203,7 +203,7 @@ export type LastRun = {
  */
 const RUN_KEY = (source: string) => `last_run_${source}`;
 
-async function writeRun(db: ReturnType<typeof svc>, run: LastRun) {
+export async function writeRun(db: ReturnType<typeof svc>, run: LastRun) {
   try {
     // 소스마다 다른 줄에 적는다. 한 줄에 몰아 넣으면 나란히 돌 때
     // 읽고-고쳐-쓰는 사이에 서로의 기록을 덮어쓴다.
@@ -216,11 +216,39 @@ async function writeRun(db: ReturnType<typeof svc>, run: LastRun) {
   }
 }
 
+/**
+ * 시작만 적히고 끝이 안 적힌 기록을 언제부터 죽은 것으로 볼지.
+ *
+ * 한 번 도는 데 길어야 1분이다. 함수가 시간 초과로 죽으면 "끝"을 적을
+ * 틈이 없어 "도는 중"인 채로 남는데, 그대로 두면 나흘이 지나도 관리자
+ * 화면에 빨간 띠가 걸려 있다. 실제로 그렇게 104시간을 걸어 두었다.
+ */
+const STALE_MS = 5 * 60_000;
+
 /** 소스별 마지막 실행 기록. 최근에 시작한 것부터. */
 export async function readLastRuns(): Promise<LastRun[]> {
   try {
-    const { data } = await svc().from("site_settings").select("key,value").like("key", "last_run_%");
+    const db = svc();
+    const { data } = await db.from("site_settings").select("key,value").like("key", "last_run_%");
     const runs = (data ?? []).map((r) => r.value as LastRun).filter((r) => r?.source);
+
+    // 죽은 채로 남은 기록은 읽을 때 정리한다. 다음에 볼 때 또 놀라지 않게
+    // 화면만 고치는 게 아니라 DB 에도 적어 둔다.
+    const now = Date.now();
+    const dead = runs.filter(
+      (r) => r.state === "running" && now - new Date(r.startedAt).getTime() > STALE_MS,
+    );
+    for (const r of dead) {
+      r.state = "failed";
+      r.finishedAt = new Date().toISOString();
+      r.report = {
+        ...(r.report ?? { source: r.source, pages: [], saved: 0 }),
+        ok: false,
+        reason: "시간 초과로 끊겼습니다 — 다시 누르면 멈춘 자리부터 이어집니다.",
+      } as RunReport;
+      await writeRun(db, r);
+    }
+
     return runs.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   } catch {
     return [];
