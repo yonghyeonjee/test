@@ -18,8 +18,10 @@ export default function LicenseFinder({
   items,
   placeholder = "예: 정보처리, 지게차, 사회복지사",
   emptyNote = "이 이름의 종목이 없습니다. 국가전문자격은 따로 모아 두었으니 그 화면에서 찾아보세요.",
-}: { items: FinderItem[]; placeholder?: string; emptyNote?: string }) {
-  const [q, setQ] = useState("");
+  initial = "",
+}: { items: FinderItem[]; placeholder?: string; emptyNote?: string; initial?: string }) {
+  // 채용 공고에서 "관련 자격증"을 누르면 검색어가 채워진 채로 온다.
+  const [q, setQ] = useState(initial);
   const key = q.trim().replace(/\s+/g, "").toLowerCase();
 
   const hits = useMemo(() => {
