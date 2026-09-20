@@ -1,4 +1,5 @@
 import type { Job } from "./pubJobs";
+import type { Role } from "./jobRole";
 
 /**
  * 공고 상세의 글.
@@ -72,9 +73,15 @@ export function jobIntro(job: Job): string[] {
   return out;
 }
 
-export function jobFaq(job: Job): { q: string; a: string }[] {
+export function jobFaq(job: Job, role: Role | null = null): { q: string; a: string }[] {
   const org = job.org ?? "해당 기관";
   const faq: { q: string; a: string }[] = [];
+
+  if (role)
+    faq.push({
+      q: `${role.name} 자리는 무슨 일을 하나요?`,
+      a: `${role.does} 이 공고의 실제 담당 업무는 원문의 업무 내용 항목에 적혀 있습니다.`,
+    });
 
   faq.push({
     q: "이 공고, 지금 지원할 수 있나요?",

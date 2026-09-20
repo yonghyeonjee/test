@@ -84,7 +84,7 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
       </PageBanner>
 
       {/* 들어온 사람은 대개 이름 하나를 들고 온다. 그것부터 받는다. */}
-      {all.ok && <LicenseFinder items={finder} />}
+      {all.ok && <LicenseFinder items={finder} initial={one(searchParams.q) ?? ""} />}
 
       {/* 이 화면이 무엇을 해 주는지 한 줄씩. 처음 온 사람이 헤매지 않게. */}
       <ol className="mt-4 grid gap-2 text-[13.5px] leading-relaxed text-ink2 sm:grid-cols-3">

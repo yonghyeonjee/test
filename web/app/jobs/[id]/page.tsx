@@ -11,6 +11,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { STATUS_LABEL } from "@/lib/db";
 import { dot, getJob, getRelatedJobs, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
+import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { SITE_URL } from "@/lib/seo";
@@ -39,12 +40,16 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 전부 색인에 밀어 넣으면 검색엔진이 사이트 전체를 얕게 본다. 자료로는
   // 남겨 두되(들어오면 보인다), 1년 넘게 지난 것은 색인하지 않는다.
   const stale = Boolean(job.end && job.end < ymdAgo(365));
+  const role = detectRole(job.title, job.org);
+  const detail = detailOf(job.title);
   return {
     ...(stale ? { robots: { index: false, follow: true } } : {}),
     title: `${job.title}${where ? ` — ${where} 채용` : " — 공공기관 채용"}`,
-    description: jobSummary(job),
+    description: role ? `${role.name} 자리입니다. ${jobSummary(job)}` : jobSummary(job),
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
+      role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
+      job.region && role && `${job.region} ${role.name}`,
       "공공기관 채용", "채용 공고", "나라일터",
     ].filter(Boolean) as string[],
     alternates: { canonical: `/jobs/${encodeURIComponent(job.id)}` },
@@ -71,11 +76,16 @@ const Row = ({ k, v }: { k: string; v: string | null }) =>
 function jobNode(job: Job) {
   if (!job.reg || !job.org) return null;
   if (!job.region && !job.hire && !job.headcount) return null;
+  // 합격자 발표·면접 안내는 채용 공고가 아니다. 구글에 구인으로 내보내지 않는다.
+  if (stageOf(job.title) === "final" || stageOf(job.title) === "interview") return null;
+  const role = detectRole(job.title, job.org);
   return {
     "@type": "JobPosting",
     "@id": `${SITE_URL}/jobs/${encodeURIComponent(job.id)}#posting`,
     title: job.title,
-    description: jobSummary(job),
+    description: role ? `${role.name} 자리입니다. ${role.does} ${jobSummary(job)}` : jobSummary(job),
+    ...(role ? { occupationalCategory: role.name } : {}),
+    ...(role?.employment ? { employmentType: role.employment } : {}),
     datePosted: job.reg,
     ...(job.end ? { validThrough: job.end } : {}),
     hiringOrganization: { "@type": "Organization", name: job.org },
@@ -101,6 +111,12 @@ export default async function JobDetail({ params }: P) {
   const job = await getJob(decodeURIComponent(params.id));
   if (!job) notFound();
   const related = await getRelatedJobs(job);
+  const role = detectRole(job.title, job.org);
+  // "무도실무관 (무도실무관)" 처럼 괄호 안이 직무 이름 그대로면 두 번 적지 않는다.
+  const rawDetail = detailOf(job.title);
+  const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
+  const stage = stageOf(job.title);
+  const hireText = job.hire ? HIRE_TEXT[job.hire] : undefined;
   const ld = pageGraph({
     path: `/jobs/${encodeURIComponent(job.id)}`,
     name: job.title,
@@ -154,7 +170,74 @@ export default async function JobDetail({ params }: P) {
         <Row k="등록일" v={dot(job.reg)} />
       </dl>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      {/* 모집이 아닌 공고(합격자 발표·면접 안내)는 지원할 수 없다. 제일 먼저 말한다. */}
+      {stage !== "open" && (
+        <div className={`mt-5 rounded-card border-l-[3px] px-4 py-3 ${
+          stage === "final" || stage === "interview"
+            ? "border-alert bg-alertSoft/60" : "border-brand bg-brandSoft/50"}`}>
+          <b className="block text-[14px] font-bold">{STAGE_TEXT[stage].label}</b>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-ink2">{STAGE_TEXT[stage].body}</p>
+        </div>
+      )}
+
+      {/* 이 자리가 무슨 일인지. 제목에서 읽은 직무의 통례다 — 이 공고의 사실이 아니라는 것을 매번 적는다. */}
+      <section className="mt-10">
+        <h2 className="sec-title text-[1.0625rem] font-extrabold">
+          {role ? `${role.name}${detail ? ` (${detail})` : ""}, 어떤 일인가` : "이 자리는 어떤 채용인가"}
+        </h2>
+        {role ? (
+          <>
+            <p className="mt-4 text-[15px] leading-[1.85] text-ink2">{role.does}</p>
+            <h3 className="mt-5 text-[14px] font-bold">이런 자리에서 대개 요구하는 것</h3>
+            <ul className="mt-2 space-y-1.5 text-[14.5px] leading-relaxed text-ink2">
+              {role.needs.map((n) => (
+                <li key={n} className="flex gap-2.5">
+                  <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
+                  <span>{n}</span>
+                </li>
+              ))}
+            </ul>
+            {role.licenses && role.licenses.length > 0 && (
+              <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
+                관련 국가자격:{" "}
+                {role.licenses.map((q, i) => (
+                  <span key={q}>
+                    {i > 0 && " · "}
+                    <Link href={`/license?q=${encodeURIComponent(q)}`}
+                          className="underline underline-offset-4 hover:text-brand">{q}</Link>
+                  </span>
+                ))}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="mt-4 text-[15px] leading-[1.85] text-ink2">
+            제목만으로는 직무를 특정하기 어려운 공고입니다. 무슨 일을 맡는지는 원문 공고문의
+            담당 업무 항목에 적혀 있습니다.
+          </p>
+        )}
+        {hireText && (
+          <p className="mt-4 text-[14.5px] leading-[1.85] text-ink2">
+            <b className="font-bold">{job.hire} 채용의 절차.</b> {hireText}
+          </p>
+        )}
+        <p className="mt-3 text-xs leading-relaxed text-faint">
+          위 설명은 이 직무의 일반적인 통례입니다. 이 공고의 실제 담당 업무·자격 요건·보수는
+          기관이 올린 원문에만 있습니다.
+        </p>
+      </section>
+
+      <AdSlot name="page_bottom" />
+
+      <section className="mt-12">
+        <h2 className="sec-title text-[1.0625rem] font-extrabold">이 공고, 이렇게 보세요</h2>
+        <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
+          {jobIntro(job).map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
+        </div>
+      </section>
+
+      {/* 바깥으로 나가는 단추는 읽을 것을 다 읽은 뒤에. 위에 두면 읽기 전에 나간다. */}
+      <div className="mt-8 flex flex-wrap gap-2">
         <a
           href={job.url ?? "https://www.gojobs.go.kr"}
           target="_blank"
@@ -179,18 +262,9 @@ export default async function JobDetail({ params }: P) {
         있으니 신청 전에 원문에서 한 번 더 확인하세요.
       </p>
 
-      <AdSlot name="page_bottom" />
-
-      <section className="mt-12">
-        <h2 className="sec-title text-[1.0625rem] font-extrabold">이 공고, 이렇게 보세요</h2>
-        <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
-          {jobIntro(job).map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
-        </div>
-      </section>
-
       <MidAd name="detail_mid" seed={job.id} context="job" />
 
-      <Faq items={jobFaq(job)} />
+      <Faq items={jobFaq(job, role)} />
 
       {related.length > 0 && (
         <section className="mt-14">
