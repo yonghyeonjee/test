@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { GtmNoScript, GtmScript, RouteChange } from "@/components/Gtm";
+import SideRailAd from "@/components/SideRailAd";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import VisitTracker from "@/components/VisitTracker";
 import { HotkeyFocus } from "@/components/Motion";
@@ -150,6 +151,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
           <SiteFooter />
         </div>
+        <SideRailAd />
       </body>
     </html>
   );
