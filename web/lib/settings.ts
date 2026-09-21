@@ -26,7 +26,7 @@ export type Seo = {
 
 export type AdKind = "html" | "image";
 export type AdSlotCfg = { on: boolean; kind: AdKind; html: string; img: string; href: string; alt: string };
-export const AD_SLOTS = ["home_mid", "results_bottom", "post_bottom", "page_bottom", "detail_bottom", "detail_mid", "post_mid"] as const;
+export const AD_SLOTS = ["home_mid", "results_bottom", "post_bottom", "page_bottom", "detail_bottom", "detail_mid", "post_mid", "side_rail"] as const;
 export type AdSlotName = (typeof AD_SLOTS)[number];
 export type Ads = Record<AdSlotName, AdSlotCfg>;
 
@@ -38,6 +38,7 @@ export const AD_SLOT_LABEL: Record<AdSlotName, string> = {
   detail_bottom: "상세 화면(사업·채용·자격증) 맨 아래 — 멀티플렉스처럼 큰 광고, 높이 제한 없음",
   detail_mid: "본문 중간 (사업 상세·지역·채용·통계 화면) — 비우면 우리 사이트 배너",
   post_mid: "안내 글 중간 — 비우면 우리 사이트 배너",
+  side_rail: "넓은 화면 오른쪽 세로 (사이드 레일) — 폭 1536px·높이 880px 이상에서만 (글자 크게 보기에서는 숨김), 160×600 세로 단위 권장",
 };
 
 export const EMPTY_SLOT: AdSlotCfg = { on: false, kind: "html", html: "", img: "", href: "", alt: "" };
