@@ -96,7 +96,7 @@ export default function About() {
         </h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-4">
           {([
-            ["lock", "개인정보 미저장"], ["source", "출처 9곳 명시"], ["link", "원문 링크 필수"], ["clock", "매일 새벽 갱신"],
+            ["lock", "개인정보 미저장"], ["source", "출처 10곳 명시"], ["link", "원문 링크 필수"], ["clock", "매일 새벽 갱신"],
           ] as const).map(([ic, t]) => (
             <div key={ic} className="flex items-center gap-2.5 text-[14px] font-bold text-ink2">
               <TrustIcon name={ic} />{t}

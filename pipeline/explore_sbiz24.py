@@ -1,22 +1,20 @@
 """
-explore_sbiz24.py — 소상공인24(sbiz24.kr) 통합공고 목록이 어느 API 로 오는지 찾는다.
+explore_sbiz24.py — 소상공인24(sbiz24.kr) 통합공고 목록 API 의 요청 모양을 찾는다.
 
-화면은 SPA(#/combinePbancList)라 HTML 에 목록이 없다. 브라우저가 부르는
-JSON API 를 찾아야 한다. 이 샌드박스에서는 그 사이트에 닿지 않아 Actions
-러너에서 돌린다.
+7~8차에서 확정된 것:
+  POST /api/combinePbanc/list  본문 {"search":{...}}  헤더 Origin-Method: GET
+  응답 data.default = { page(Spring Pageable), total, list[] }
 
-  1) robots.txt 를 읽고 /api 가 막혀 있는지 본다.
-  2) 첫 화면 HTML 에서 JS 번들 주소를 뽑아 내려받고, 그 안의 문자열에서
-     "/api/…" 경로와 pbanc·combine 이 든 낱말을 모은다.
-  3) 후보 경로에 GET·POST 를 보내 무엇이 오는지 찍는다.
-
-여기서 찍힌 것을 보고 진짜 수집기를 쓴다. 이 파일은 짐작으로 몇 가지
-경로를 두드려 보지만, 그건 탐침이라 그렇다 — 수집기에는 확인된 것만 넣는다.
+9차: 페이지 넘김과 상세 엔드포인트.
+  화면 공통 그리드 코드가 목록을 부를 때 본문을
+    { sortModel:[], search:{...}, paging:true, startRow:size*(page-1), endRow:size*page }
+  로 만든다(vendor 번들의 `ie.startRow=T*(M-1),ie.endRow=T*M`). 이 모양으로
+  2페이지가 실제로 다른 항목을 주는지, 페이지 크기를 키울 수 있는지 확인한다.
+  상세는 공고 구분(pbancGubun A/B/C/D)별로 후보 경로를 불러 본다.
 """
 
 import json
 import re
-import sys
 from pathlib import Path
 
 import requests
@@ -26,107 +24,122 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 OUT = Path(__file__).resolve().parent.parent / "samples" / "sbiz24"
 OUT.mkdir(parents=True, exist_ok=True)
 S = requests.Session()
-S.headers.update({"User-Agent": UA, "Accept": "application/json, text/plain, */*", "Accept-Language": "ko-KR,ko;q=0.9"})
+S.headers.update({"User-Agent": UA, "Accept": "application/json, text/plain, */*",
+                  "Accept-Language": "ko-KR,ko;q=0.9", "Referer": BASE + "/", "Origin": BASE})
+H = {"Accept": "application/json", "Content-Type": "application/json", "Origin-Method": "GET"}
 
 
-def show(tag, r, n=700):
-    ct = r.headers.get("content-type", "")
-    body = r.text or ""
-    print(f"\n--- {tag}\n    {r.status_code} {ct} {len(body)}자")
-    print("    " + body[:n].replace("\n", "\n    "))
-    try:
-        j = r.json()
-        if isinstance(j, dict):
-            print("    keys:", list(j.keys())[:20])
-            for k, v in j.items():
-                if isinstance(v, list) and v and isinstance(v[0], dict):
-                    print(f"    {k}[0] keys:", list(v[0].keys())[:40])
-                    print(f"    {k}[0]:", json.dumps(v[0], ensure_ascii=False)[:900])
-                elif isinstance(v, dict):
-                    for k2, v2 in v.items():
-                        if isinstance(v2, list) and v2 and isinstance(v2[0], dict):
-                            print(f"    {k}.{k2}[0] keys:", list(v2[0].keys())[:40])
-                            print(f"    {k}.{k2}[0]:", json.dumps(v2[0], ensure_ascii=False)[:900])
-        elif isinstance(j, list) and j and isinstance(j[0], dict):
-            print("    [0] keys:", list(j[0].keys())[:40])
-            print("    [0]:", json.dumps(j[0], ensure_ascii=False)[:900])
-    except Exception:
-        pass
+def post(path, body):
+    r = S.post(BASE + path, json=body, headers=H, timeout=30)
+    j = r.json() if "json" in r.headers.get("content-type", "") else None
+    return r, j
+
+
+def compact(d, n=1500):
+    if not isinstance(d, dict):
+        return json.dumps(d, ensure_ascii=False)[:n]
+    return json.dumps({k: v for k, v in d.items()
+                       if v not in (None, "", [], {}) and not str(k).startswith("fbFieldValue")},
+                      ensure_ascii=False)[:n]
+
+
+def page_body(page, size, search=None):
+    return {"sortModel": [], "search": search or {}, "paging": True,
+            "startRow": size * (page - 1), "endRow": size * page}
+
+
+def pageinfo(j):
+    d = j["data"]["default"]; pg = d.get("page", {}); lst = d.get("list", [])
+    return {"number": pg.get("number"), "size": pg.get("size"), "n": len(lst),
+            "totalPages": pg.get("totalPages"), "total": d.get("total"),
+            "first": (lst[0].get("pbancNm") or "")[:24] if lst else None,
+            "last": (lst[-1].get("pbancNm") or "")[:24] if lst else None}
 
 
 def main():
-    # 1) robots
-    try:
-        r = S.get(f"{BASE}/robots.txt", timeout=20)
-        print("=== robots.txt", r.status_code)
-        print(r.text[:1500])
-    except Exception as e:
-        print("robots.txt 실패:", type(e).__name__, e)
+    S.get(f"{BASE}/", timeout=20)
 
-    # 2) 첫 화면 → JS 번들
-    try:
-        r = S.get(f"{BASE}/", timeout=20)
-        html = r.text
-        print(f"\n=== index {r.status_code} {len(html)}자")
-        (OUT / "index.html").write_text(html, encoding="utf-8")
-    except Exception as e:
-        print("index 실패:", type(e).__name__, e)
-        sys.exit(0)
-
-    scripts = re.findall(r'<script[^>]+src="([^"]+)"', html)
-    print("scripts:", scripts[:30])
-    apis, words = set(), set()
-    for src in scripts:
-        url = src if src.startswith("http") else BASE + (src if src.startswith("/") else "/" + src)
+    print("=== 1) startRow/endRow 페이지 넘김")
+    for page, size in [(1, 10), (2, 10), (1, 100), (2, 100), (1, 300), (1, 1000)]:
         try:
-            js = S.get(url, timeout=30).text
+            r, j = post("/api/combinePbanc/list", page_body(page, size))
+            print(f"  page={page} size={size} → {r.status_code} {pageinfo(j) if j else r.text[:100]}")
         except Exception as e:
-            print("  js 실패", url, type(e).__name__)
-            continue
-        print(f"  js {url} {len(js)}자")
-        for m in re.findall(r'["\'`](/api/[A-Za-z0-9_/\-\.{}$]+)["\'`]', js):
-            apis.add(m)
-        for m in re.findall(r'[A-Za-z]*(?:[Pp]banc|[Cc]ombine)[A-Za-z]*', js):
-            words.add(m)
-        # SPA 가 자주 쓰는 모양: "combinePbancList" 근처의 URL 조각
-        for m in re.finditer(r'[Cc]ombinePbanc[A-Za-z]*', js):
-            a, b = max(0, m.start() - 300), min(len(js), m.end() + 300)
-            snippet = js[a:b].replace("\n", " ")
-            print("  near combinePbanc:", snippet[:600])
-            break
+            print("  실패", page, size, type(e).__name__, e)
 
-    print("\n=== /api/ 경로 후보", len(apis))
-    for a in sorted(apis):
-        print("  ", a)
-    print("\n=== pbanc/combine 낱말", len(words))
-    print("  ", sorted(words)[:80])
-    (OUT / "api-candidates.txt").write_text("\n".join(sorted(apis)), encoding="utf-8")
+    print("\n=== 2) 300건 받아 구분 분포")
+    r, j = post("/api/combinePbanc/list", page_body(1, 300))
+    lst = j["data"]["default"]["list"]
+    (OUT / "combinePbanc_list_300.json").write_text(r.text, encoding="utf-8")
+    dist = {}
+    for x in lst:
+        dist[x.get("pbancGubun")] = dist.get(x.get("pbancGubun"), 0) + 1
+    print("  pbancGubun:", dist)
+    print("  aplyPsbltySe:", {g: sum(1 for x in lst if x.get("aplyPsbltySe") == g) for g in set(x.get("aplyPsbltySe") for x in lst)})
+    print("  bizType:", {g: sum(1 for x in lst if x.get("bizType") == g) for g in set(x.get("bizType") for x in lst)})
+    print("  pbancKindCd:", {g: sum(1 for x in lst if x.get("pbancKindCd") == g) for g in set(x.get("pbancKindCd") for x in lst)})
+    samples = {}
+    for x in lst:
+        g = x.get("pbancGubun")
+        if g and g not in samples:
+            samples[g] = x
+    for g, x in sorted(samples.items()):
+        print(f"\n  [{g}] {compact(x, 900)}")
 
-    # 3) 후보 두드리기 — 목록처럼 보이는 것만
-    picks = [a for a in sorted(apis) if re.search(r"pbanc|combine|list", a, re.I)]
-    guesses = [
-        "/api/pbanc/combinePbancList", "/api/combinePbancList", "/api/pbanc/combine/list",
-        "/api/bsnsPbanc/combinePbancList", "/api/cmmn/pbanc/combinePbancList",
-    ]
-    for p in guesses:
-        if p not in picks:
-            picks.append(p)
-    print("\n=== 두드려 볼 경로", picks[:25])
-    for p in picks[:25]:
-        url = BASE + p.replace("{", "").replace("}", "")
-        for method, kw in [
-            ("GET", {"params": {"page": 1, "size": 10, "pageIndex": 1, "pageNo": 1}}),
-            ("POST", {"json": {"page": 1, "size": 10, "pageIndex": 1, "pageNo": 1, "combine": "combine"}}),
-        ]:
-            try:
-                r = S.request(method, url, timeout=25, **kw)
-            except Exception as e:
-                print(f"\n--- {method} {p}: 실패 {type(e).__name__}")
+    print("\n=== 3) 상세 후보 경로")
+    cands = {
+        "A": ["/api/pbanc/{sn}", "/api/dtlPbanc/{sn}", "/api/pbanc/{sn}/getPbanc", "/api/dtlPbanc/{sn}/getSprtBizSn",
+              "/api/combinePbanc/{sn}", "/api/pbanc/sbiz24Pbanc/{sn}"],
+        "B": ["/api/exltdPbanc/{id}", "/api/extldPbanc/{id}", "/api/exltdPbanc/{id}/getExltdPbanc"],
+        "C": ["/api/loanProduct/{sn}", "/api/loan/loanProduct/{sn}", "/api/pbanc/{sn}"],
+        "D": ["/api/lcgPbanc/{sn}", "/api/pbanc/{sn}", "/api/lcg/lcgPbanc/{sn}"],
+    }
+    for g, x in sorted(samples.items()):
+        sn, pid = x.get("pbancSn"), x.get("pbancId")
+        print(f"\n  --- {g} sn={sn} id={pid} {(x.get('pbancNm') or '')[:30]}")
+        for tpl in cands.get(g, []):
+            path = tpl.replace("{sn}", str(sn)).replace("{id}", str(pid))
+            if "None" in path:
                 continue
-            show(f"{method} {p}", r)
-            if r.ok and "json" in r.headers.get("content-type", ""):
-                safe = re.sub(r"[^A-Za-z0-9]+", "_", p)
-                (OUT / f"{method}{safe}.json").write_text(r.text[:200000], encoding="utf-8")
+            try:
+                r, j = post(path, {"search": {}})
+                d = (j or {}).get("data", {}).get("default") if isinstance(j, dict) else None
+                if isinstance(d, dict):
+                    keys = sorted(k for k, v in d.items() if v not in (None, "", [], {}) and not k.startswith("fbFieldValue"))
+                    print(f"  {path} → {r.status_code} keys={keys}")
+                    print("     " + compact(d, 2500))
+                    (OUT / f"detail_{g}.json").write_text(r.text, encoding="utf-8")
+                else:
+                    print(f"  {path} → {r.status_code} {r.text[:120]!r}")
+            except Exception as e:
+                print("  실패", path, type(e).__name__)
+
+    print("\n=== 4) 상세 화면 청크의 API 바인딩")
+    try:
+        idx = S.get(BASE + "/", timeout=20).text
+        names = sorted(set(re.findall(r'(?:assets/)?[A-Za-z0-9_-]+\.[a-f0-9]{8}\.js', idx)))
+        chunk_names = []
+        for m in re.findall(r'["\']([^"\']*Pt(?:Pbanc|LcgPbanc|LoanProduct)[A-Za-z]*View\.[a-f0-9]{8}\.js)["\']', idx):
+            chunk_names.append(m)
+        # index 에 없으면 main 번들에서 찾는다
+        if not chunk_names:
+            for n in names:
+                if n.startswith("index."):
+                    js = S.get(f"{BASE}/{n}", timeout=30).text
+                    chunk_names = sorted(set(re.findall(r'(Pt(?:Pbanc|LcgPbanc|LoanProduct)[A-Za-z]*View\.[a-f0-9]{8}\.js)', js)))
+                    break
+        print("  chunks:", chunk_names)
+        for n in chunk_names[:4]:
+            n = n.split("/")[-1]
+            js = S.get(f"{BASE}/{n}", timeout=30).text
+            print(f"\n  [{n}] {len(js)}자")
+            print("   apiBind:", re.findall(r'apiBind:\{[^}]{0,160}\}', js)[:6])
+            print("   useResource/W(\"/..\"):", sorted(set(re.findall(r'\b[A-Za-z_$]{1,3}\("(/[A-Za-z][A-Za-z0-9/]+)"\)', js)))[:20])
+            print("   /api 문자열:", sorted(set(re.findall(r'[`"](/api/[^`"$]{2,80})', js)))[:30])
+            for m in list(re.finditer(r'loadData\(', js))[:3]:
+                print("   loadData 근처:", js[max(0, m.start() - 300):m.end() + 200].replace("\n", " "))
+    except Exception as e:
+        print("  실패", type(e).__name__, e)
 
 
 if __name__ == "__main__":

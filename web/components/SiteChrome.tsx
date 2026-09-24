@@ -149,7 +149,7 @@ export function SiteFooter() {
   ];
   const sources: [string, string][] = [
     ["복지로", "https://www.bokjiro.go.kr"], ["기업마당", "https://www.bizinfo.go.kr"],
-    ["나라일터", "https://www.gojobs.go.kr"], ["월드잡플러스", "https://www.worldjob.or.kr"],
+    ["소상공인24", "https://www.sbiz24.kr"], ["나라일터", "https://www.gojobs.go.kr"], ["월드잡플러스", "https://www.worldjob.or.kr"],
     ["큐넷", "https://www.q-net.or.kr"], ["주택금융공사", "https://www.hf.go.kr"],
     ["한국장학재단", "https://www.kosaf.go.kr"], ["알리오 플러스", "https://www.alioplus.go.kr"],
     ["공공데이터포털", "https://www.data.go.kr"],
