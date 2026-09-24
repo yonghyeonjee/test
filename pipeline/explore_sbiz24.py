@@ -68,72 +68,77 @@ def show(tag, r, n=500):
 
 def main():
     """
-    7차: 앱의 http 래퍼가 하는 그대로 부른다.
+    8차: 페이지 파라미터와 항목 필드명을 확정한다.
 
-    6차에서 래퍼를 찾았다. /api/ 주소에 대한 get() 은 실제로는
-      POST url, body={search:{}}, headers={Accept, Content-Type, "Origin-Method":"GET"}
-    다. 응답은 data.default.list 에 목록이 온다. 우리가 보낸 요청에는
-    search 래퍼가 없어서 서버가 500 을 냈던 것으로 보인다.
+    7차에서 POST /api/combinePbanc/list + {search:{}} + Origin-Method:GET 이
+    200 으로 열렸다. 응답의 page 가 Spring Pageable 모양이라 요청 쪽은
+    ?page=&size= 쿼리일 가능성이 크다. 항목은 fbFieldValue1~ 같은 빈 열이
+    앞을 가려 실제 필드가 안 보였다 — 비어 있지 않은 것만 찍는다.
     """
     S.get(f"{BASE}/", timeout=20)
     H = {"Accept": "application/json", "Content-Type": "application/json", "Origin-Method": "GET"}
 
-    def post(path, body, tag=None, n=1400):
+    def post(path, body, params=None):
+        r = S.post(BASE + path, json=body, params=params, headers=H, timeout=30)
+        j = r.json() if "json" in r.headers.get("content-type", "") else None
+        return r, j
+
+    def pageinfo(j):
+        d = j["data"]["default"]; pg = d.get("page", {})
+        lst = d.get("list", [])
+        return {"number": pg.get("number"), "size": pg.get("size"), "n": pg.get("numberOfElements"),
+                "totalPages": pg.get("totalPages"), "total": d.get("total"),
+                "firstSn": lst[0].get("pbancSn") if lst else None, "firstNm": (lst[0].get("pbancNm") or "")[:30] if lst else None}
+
+    print("=== 1) 페이지 파라미터")
+    for params, body in [
+        (None, {"search": {}}),
+        ({"page": 0, "size": 100}, {"search": {}}),
+        ({"page": 1, "size": 100}, {"search": {}}),
+        ({"page": 2, "size": 50}, {"search": {}}),
+        (None, {"search": {}, "page": 1, "size": 100}),
+        (None, {"search": {}, "pageNumber": 1, "pageSize": 100}),
+        ({"page": 0, "size": 500}, {"search": {}}),
+    ]:
         try:
-            r = S.post(BASE + path, json=body, headers=H, timeout=30)
+            r, j = post("/api/combinePbanc/list", body, params)
+            print(f"  params={params} body={json.dumps(body)} → {r.status_code} {pageinfo(j) if j else r.text[:100]}")
         except Exception as e:
-            print(f"\n--- POST {path}: 실패 {type(e).__name__}"); return None
-        show(tag or f"POST {path} {json.dumps(body, ensure_ascii=False)}", r, n)
-        return r
+            print("  실패", params, body, type(e).__name__, e)
 
-    print("\n=== 1) 코드 목록 — 래퍼 모양 검증")
-    r = post("/api/combinePbanc/getPbancTpbiz", {"search": {}})
-    ok_shape = r is not None and r.ok
-    print("\n### 래퍼 모양이 맞나:", ok_shape)
+    print("\n=== 2) 항목 필드 (비어 있지 않은 것만)")
+    r, j = post("/api/combinePbanc/list", {"search": {}}, {"page": 0, "size": 30})
+    lst = j["data"]["default"]["list"]
+    (OUT / "combinePbanc_list_p0.json").write_text(r.text, encoding="utf-8")
+    keys = set()
+    for it in lst:
+        keys.update(k for k, v in it.items() if v not in (None, "", [], {}) and not k.startswith("fbFieldValue"))
+    print("  비어 있지 않은 키 합집합:", sorted(keys))
+    for it in lst[:4]:
+        print("\n  ---")
+        print("  " + json.dumps({k: v for k, v in it.items() if v not in (None, "", [], {}) and not k.startswith("fbFieldValue")},
+                                ensure_ascii=False)[:2500])
+    print("\n  pbancGubun 분포(30건):", {g: sum(1 for x in lst if x.get("pbancGubun") == g) for g in set(x.get("pbancGubun") for x in lst)})
 
-    print("\n=== 2) 통합공고 목록 — 페이지 파라미터 찾기")
-    bodies = [
-        {"search": {}},
-        {"search": {}, "pageIndex": 1, "pageSize": 10},
-        {"search": {}, "page": 1, "size": 10},
-        {"search": {}, "currentPage": 1, "pageSize": 10},
-        {"search": {}, "paging": {"pageIndex": 1, "pageSize": 10}},
-        {"search": {"pageIndex": 1, "pageSize": 10}},
-        {"search": {}, "pageIndex": 2, "pageSize": 10},
-    ]
-    got = None
-    for b in bodies:
-        r = post("/api/combinePbanc/list", b)
-        if r is not None and r.ok and "json" in r.headers.get("content-type", ""):
+    print("\n=== 3) 정렬·조건이 먹는지 (마감임박순, 신청가능만)")
+    for body in [{"search": {"ptPbancSortBy": "DEADLINE"}}, {"search": {"aplySeYn": "Y"}}, {"search": {"ptPbancSortBy": "INSERT"}}]:
+        try:
+            r, j = post("/api/combinePbanc/list", body, {"page": 0, "size": 5})
+            d = j["data"]["default"]
+            print(f"  {json.dumps(body)} → total {d.get('total')} 첫 {[ (x.get('pbancNm') or '')[:18] for x in d['list'][:3] ]}")
+        except Exception as e:
+            print("  실패", body, type(e).__name__)
+
+    print("\n=== 4) 상세 하나 (pbancGubun A 인 것)")
+    a_ = next((x for x in lst if x.get("pbancGubun") == "A" and x.get("pbancSn")), None)
+    if a_:
+        for path in [f"/api/pbanc/{a_['pbancSn']}", f"/api/combinePbanc/{a_['pbancSn']}", f"/api/pbanc/getPbanc/{a_['pbancSn']}"]:
             try:
-                j = r.json()
-                d = j.get("data", {}).get("default", j.get("data", j))
-                lst = d.get("list") if isinstance(d, dict) else None
-                print(f"    → list 길이 {len(lst) if isinstance(lst, list) else '?'}  default keys {list(d.keys())[:20] if isinstance(d, dict) else type(d)}")
-                if isinstance(lst, list) and lst:
-                    got = got or (b, j)
-                    (OUT / f"list_{len(OUT.iterdir().__class__.__name__)}_{abs(hash(json.dumps(b)))%10000}.json").write_text(r.text[:600000], encoding="utf-8")
+                r, j = post(path, {"search": {}})
+                d = (j or {}).get("data", {}).get("default")
+                print(f"  {path} → {r.status_code} " + (json.dumps({k: v for k, v in d.items() if v not in (None, '', [], {}) and not str(k).startswith('fbFieldValue')}, ensure_ascii=False)[:1500] if isinstance(d, dict) else r.text[:120]))
             except Exception as e:
-                print("    json 해석 실패", e)
-
-    if got:
-        b, j = got
-        d = j["data"]["default"] if "data" in j and "default" in j["data"] else j
-        print("\n### 통합공고 첫 항목 전체:")
-        print(json.dumps(d["list"][0], ensure_ascii=False, indent=1)[:4000])
-        print("\n### 첫 3건 요약:")
-        for it in d["list"][:3]:
-            print("   ", {k: it.get(k) for k in ("pbancSn", "pbancNm", "departNm", "rcrtTypeCdNm", "aplyPd", "pbancBgngDt", "pbancEndDt", "regionNm", "bizType", "pbancKindCd", "url", "pbancUrl", "dtlUrl")})
-        print("\n### 총 건수처럼 보이는 키:", {k: v for k, v in d.items() if k != "list"})
-
-    print("\n=== 3) 화면이 조건을 어떻게 붙이는지 (청크 조각)")
-    idx = js_of(re.findall(r'<script[^>]+src="([^"]+)"', S.get(f"{BASE}/", timeout=20).text)[0])
-    ch = re.findall(r'import\("\./(PtCombinePbancList\.[0-9a-f]{6,10}\.js)"\)', idx)
-    if ch:
-        js = js_of(ch[0])
-        around(js, r'url:"/combinePbanc/list"', 2600, 1)
-        around(js, r"setCondition\(", 300, 12)
-        around(js, r"getListByPbancSn|loadData|\.search\(|\.list\(", 500, 6)
+                print("  실패", path, type(e).__name__)
 
 
 if __name__ == "__main__":
