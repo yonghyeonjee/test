@@ -9,7 +9,7 @@ on:
         required: false
         default: ""
         type: choice
-        options: ["", "bokjiro_local", "bokjiro_central", "bizinfo_support", "bizinfo_event"]
+        options: ["", "bokjiro_local", "bokjiro_central", "bizinfo_support", "bizinfo_event", "sbiz24"]
       detail_only:
         description: "상세조회만 보충"
         required: false

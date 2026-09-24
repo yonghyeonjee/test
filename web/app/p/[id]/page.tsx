@@ -304,7 +304,9 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         출처는{" "}
         {p.source.startsWith("bokjiro")
           ? "복지로(한국사회보장정보원)"
-          : "기업마당(중소벤처기업부)"}
+          : p.source === "sbiz24"
+            ? "소상공인24(소상공인시장진흥공단)"
+            : "기업마당(중소벤처기업부)"}
         입니다.
       </p>
 

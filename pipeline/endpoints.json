@@ -2,7 +2,8 @@
   "_README": [
     "확정된 엔드포인트 (2026-09-05, 공공데이터포털 승인 화면 기준)",
     "format: xml | json  — bizinfo 계열은 dataType=json 을 지원합니다.",
-    "__SERVICE_KEY__ / __ROWS__ / __PAGE__ 는 스크립트가 치환합니다."
+    "__SERVICE_KEY__ / __ROWS__ / __PAGE__ 는 스크립트가 치환합니다.",
+    "driver 가 있는 소스는 공공데이터포털이 아니라 전용 모듈(pipeline/<driver>.py)로 가져옵니다."
   ],
 
   "bokjiro_local": {
@@ -61,6 +62,15 @@
       "pageNo": "__PAGE__",
       "numOfRows": "__ROWS__"
     },
+    "format": "json"
+  },
+
+  "sbiz24": {
+    "label": "소상공인24_지원사업 통합조회 (공단·지방정부 공고, 대출상품)",
+    "driver": "sbiz24",
+    "url": "https://www.sbiz24.kr/api/combinePbanc/list",
+    "detail_url": null,
+    "params": {},
     "format": "json"
   }
 }

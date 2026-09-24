@@ -1,5 +1,5 @@
 """
-collect.py — 4개 API를 돌며 원본을 raw_items 에, 매핑 결과를 programs 에 적재
+collect.py — 공공 API 를 돌며 원본을 raw_items 에, 매핑 결과를 programs 에 적재
 
 사용:
     python pipeline/collect.py                      # 전체
@@ -31,6 +31,7 @@ from supabase import create_client
 
 sys.path.insert(0, str(Path(__file__).parent))
 from sources import ADAPTERS  # noqa: E402
+import sbiz24  # noqa: E402
 
 # 로그 버퍼링 해제: 타임아웃으로 강제 종료돼도 진행 상황이 남는다
 try:
@@ -50,6 +51,7 @@ MAX_CALLS = {
     "bokjiro_central": int(os.environ.get("MAX_CALLS_CENTRAL", 900)),
     "bizinfo_support": 300,
     "bizinfo_event": 100,
+    "sbiz24": 600,
 }
 PAGE_ROWS = 100
 SLEEP = 0.12          # 초당 30tps 제한 대비 여유
@@ -173,7 +175,100 @@ def upsert(table, rows, conflict):
     return n
 
 
+def run_sbiz24(name, conf, detail_only=False):
+    """
+    소상공인24 통합조회. 공공데이터포털이 아니라 화면의 내부 API 를 부른다
+    (sbiz24.py 참고). 목록 한 번에 500건, 상세는 공단·지방정부 공고와
+    대출상품만(기업마당 미러인 B 는 bizinfo_support 에 이미 있다).
+    상세 없이는 대상 문구가 없으므로 --detail-only 는 전체 실행과 같다.
+    """
+    print(f"\n{'=' * 64}\n[{name}] {conf['label']}\n{'=' * 64}", flush=True)
+    deadline = time.time() + DEADLINE_MIN * 60
+    run_row = SB.table("ingest_runs").insert(
+        {"source": name, "status": "running"}
+    ).execute().data[0]
+    run_id = run_row["id"]
+
+    q = Quota(MAX_CALLS.get(name, 500))
+    adapt = ADAPTERS[name]
+    s = sbiz24.make_session()
+    fetched = skipped = failed = 0
+    raw_rows, prog_rows = [], []
+
+    def flush():
+        nonlocal raw_rows, prog_rows
+        if raw_rows:
+            upsert("raw_items", raw_rows, "source,source_id")
+        if prog_rows:
+            upsert("programs", prog_rows, "source,source_id")
+            print(f"    저장 {len(prog_rows)}건", flush=True)
+        raw_rows, prog_rows = [], []
+
+    try:
+        todo = []
+        for page, items, total in sbiz24.iter_list(s):
+            if not q.take():
+                break
+            print(f"  목록 page {page}: +{len(items)} / 전체 {total}", flush=True)
+            for it in items:
+                if sbiz24.detail_path(it):
+                    todo.append(it)
+                else:
+                    skipped += 1
+        print(f"  상세 대상 {len(todo)}건 (기업마당 미러 등 건너뜀 {skipped}건)", flush=True)
+
+        dfails = 0
+        for i, it in enumerate(todo, 1):
+            if not q.take():
+                print("  쿼터 소진 — 다음 실행에서 이어집니다", flush=True)
+                break
+            if time.time() > deadline:
+                print(f"  {DEADLINE_MIN}분 경과 — 저장하고 종료합니다", flush=True)
+                break
+            try:
+                d = sbiz24.fetch_detail(s, it)
+                dfails = 0
+            except Exception as e:
+                dfails += 1
+                failed += 1
+                print(f"    skip {it.get('pbancGubun')}{it.get('pbancSn')}: {type(e).__name__}", flush=True)
+                if dfails >= 10:
+                    print("    연속 10회 실패 — 중단하고 저장합니다", flush=True)
+                    break
+                time.sleep(5)
+                continue
+            mapped = adapt(it, d)
+            if not mapped or not mapped.get("source_id"):
+                skipped += 1
+                continue
+            raw_rows.append({"source": name, "source_id": mapped["source_id"],
+                             "payload": {"list": it, "detail": d}})
+            prog_rows.append({k: v for k, v in mapped.items() if v is not None})
+            fetched += 1
+            if i % 50 == 0:
+                print(f"    {i}/{len(todo)}", flush=True)
+            if len(prog_rows) >= 100:
+                flush()
+        flush()
+
+        SB.table("ingest_runs").update({
+            "status": "ok", "fetched": fetched,
+            "finished_at": "now()",
+            "message": f"calls={q.used} skipped={skipped} failed={failed}",
+        }).eq("id", run_id).execute()
+    except Exception as e:
+        msg = mask(e)
+        print(f"  ERROR {type(e).__name__}: {msg}")
+        SB.table("ingest_runs").update({
+            "status": "error", "fetched": fetched,
+            "finished_at": "now()", "message": msg[:500],
+        }).eq("id", run_id).execute()
+        raise
+
+
 def run(name, conf, detail_only=False):
+    if conf.get("driver") == "sbiz24":
+        return run_sbiz24(name, conf, detail_only)
     print(f"\n{'=' * 64}\n[{name}] {conf['label']}\n{'=' * 64}", flush=True)
     deadline = time.time() + DEADLINE_MIN * 60
 
