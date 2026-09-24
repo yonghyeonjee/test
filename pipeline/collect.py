@@ -51,7 +51,7 @@ MAX_CALLS = {
     "bokjiro_central": int(os.environ.get("MAX_CALLS_CENTRAL", 900)),
     "bizinfo_support": 300,
     "bizinfo_event": 100,
-    "sbiz24": 600,
+    "sbiz24": 1200,        # 목록 3 + 상세 770여 건
 }
 PAGE_ROWS = 100
 SLEEP = 0.12          # 초당 30tps 제한 대비 여유
