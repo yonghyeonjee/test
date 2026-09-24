@@ -316,6 +316,18 @@ _SEC_TARGET = re.compile(r"(?:지원|신청|모집|참여|공고)\s*(?:대상|�
 _SEC_CRIT = re.compile(r"(?:(?:신청|참여)\s*자격|(?:신청|지원|참여|자격)\s*(?:요건|조건))\s*[:：]?\s*(.+?)" + _SEC_STOP, re.S)
 
 
+def tidy(text):
+    """
+    소상공인24 본문은 <p> 마다 줄바꿈이 있고 빈 문단이 많아 ' \n \n \n ' 이
+    길게 이어진다. 줄 앞뒤 공백을 걷고 빈 줄은 하나만 남긴다.
+    """
+    if not text:
+        return None
+    text = re.sub(r"[ \t]*\n[ \t]*", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip() or None
+
+
 def section(text, rx, limit=600):
     """공고 본문에서 '□ 지원대상 : …' 같은 항목의 본문만 잘라 온다."""
     if not text:
@@ -343,7 +355,7 @@ def _sbiz_dates(item: dict, detail: dict):
 def _sbiz_pbanc(item: dict, d: dict) -> dict:
     """A 공단지원사업 / D 지방정부사업. 상세는 /api/pbanc/{sn}."""
     g, sn = item.get("pbancGubun"), item.get("pbancSn")
-    body = clean(d.get("pbancDtlCn"))
+    body = tidy(clean(d.get("pbancDtlCn")))
     target = section(body, _SEC_TARGET)
     crit = section(body, _SEC_CRIT)
     who = clean(item.get("rcrtTypeCdNm") or d.get("rcrtTypeCdNm"))

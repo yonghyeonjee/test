@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from sbiz24 import detail_path, list_body  # noqa: E402
-from sources import from_sbiz24, sido_in_text, section, _SEC_TARGET  # noqa: E402
+from sources import from_sbiz24, sido_in_text, section, tidy, _SEC_TARGET  # noqa: E402
 
 A_ITEM = {"pbancSn": 829, "pbancGubun": "A", "pbancNm": "2026년 패션 메이커허브 소공인 코워킹스페이스 입주기업 추가모집 공고",
           "rcrtTypeCdNm": "소상공인", "aplyPsbltySe": "신청가능", "aplyPd": "2026-09-14 ~ 2026-09-28",
@@ -74,6 +74,10 @@ def main():
     bad += check(sido_in_text("「2026년 울산광역시 소상공인 산재보험료 지원사업」공고") == "울산광역시", "울산")
     bad += check(sido_in_text("서울·경기 소상공인 모집") is None, "둘 이상이면 None")
     bad += check(sido_in_text("2026년 소상공인 모집") is None, "없으면 None")
+
+    # 빈 문단 정리
+    t = tidy("제목 \n \n \n \n 본문 \n끝")
+    bad += check(t == "제목\n\n본문\n끝", f"tidy {t!r}")
 
     # 본문 항목 자르기
     sec = section("□ 지원대상 : 서울 소재 소공인\n□ 지원내용 : 입주", _SEC_TARGET)
