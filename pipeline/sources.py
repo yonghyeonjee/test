@@ -453,10 +453,14 @@ def from_sbiz24(item: dict, detail: dict | None) -> dict | None:
     if not detail or item.get("pbancSn") is None:
         return None
     if g in ("A", "D"):
-        return _sbiz_pbanc(item, detail)
-    if g == "C":
-        return _sbiz_loan(item, detail)
-    return None
+        row = _sbiz_pbanc(item, detail)
+    elif g == "C":
+        row = _sbiz_loan(item, detail)
+    else:
+        return None
+    # 목록에는 있는데 상세가 빈 껍데기로 오는 건이 있다(내려간 대출상품 등).
+    # 제목 없는 행은 programs 의 NOT NULL 에 걸리므로 여기서 거른다.
+    return row if row.get("title") else None
 
 
 ADAPTERS = {

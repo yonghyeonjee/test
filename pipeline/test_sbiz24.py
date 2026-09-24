@@ -111,6 +111,9 @@ def main():
     bad += check(c["raw_criteria"] is None and c["contact"].startswith("취급 저축은행"), "C 예외/문의")
     bad += check(c["org_name"] == "SGI서울보증" and c["dept_name"] == "저축은행", "C 기관")
 
+    # 상세가 빈 껍데기(제목 없음)면 버린다
+    bad += check(from_sbiz24({**C_ITEM, "pbancSn": 13, "pbancNm": None}, {"key": "13", "es": "N"}) is None, "빈 상세는 None")
+
     # P/L 접두어로 pbanc 415 와 loanProduct 415 가 안 겹친다
     bad += check(from_sbiz24({**A_ITEM, "pbancSn": 415}, A_DETAIL)["source_id"] != c["source_id"], "sn 충돌")
 
