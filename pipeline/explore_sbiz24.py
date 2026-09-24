@@ -1,17 +1,12 @@
 """
-explore_sbiz24.py — 소상공인24(sbiz24.kr) 통합공고 목록이 어느 API 로 오는지 찾는다.
+explore_sbiz24.py — 소상공인24(sbiz24.kr) 통합공고 목록 API 의 요청 모양을 찾는다.
 
-화면은 SPA(#/combinePbancList)라 HTML 에 목록이 없다. 브라우저가 부르는
-JSON API 를 찾아야 한다. 이 샌드박스에서는 그 사이트에 닿지 않아 Actions
-러너에서 돌린다.
-
-  1) robots.txt 를 읽고 /api 가 막혀 있는지 본다.
-  2) 첫 화면 HTML 에서 JS 번들 주소를 뽑아 내려받고, 그 안의 문자열에서
-     "/api/…" 경로와 pbanc·combine 이 든 낱말을 모은다.
-  3) 후보 경로에 GET·POST 를 보내 무엇이 오는지 찍는다.
-
-여기서 찍힌 것을 보고 진짜 수집기를 쓴다. 이 파일은 짐작으로 몇 가지
-경로를 두드려 보지만, 그건 탐침이라 그렇다 — 수집기에는 확인된 것만 넣는다.
+2차 탐침에서 목록 API 가 /api/pbanc/sbiz24PbancList 라는 것까지 알았다.
+없는 경로는 404 가 오는데 이건 500 이 온다 — 있지만 우리가 보낸 모양이
+틀린 것이다. 이번에는
+  1) 공통 요청 래퍼(axios interceptors)가 무슨 헤더를 붙이는지,
+  2) 목록 화면 청크가 이 API 를 어떤 본문으로 부르는지
+를 코드에서 그대로 찍고, 그 자리에서 몇 가지 모양으로 불러 본다.
 """
 
 import json
@@ -26,128 +21,117 @@ UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 OUT = Path(__file__).resolve().parent.parent / "samples" / "sbiz24"
 OUT.mkdir(parents=True, exist_ok=True)
 S = requests.Session()
-S.headers.update({"User-Agent": UA, "Accept": "application/json, text/plain, */*", "Accept-Language": "ko-KR,ko;q=0.9"})
+S.headers.update({"User-Agent": UA, "Accept": "application/json, text/plain, */*",
+                  "Accept-Language": "ko-KR,ko;q=0.9", "Referer": BASE + "/", "Origin": BASE})
 
 
-def show(tag, r, n=700):
+def js_of(name):
+    url = BASE + "/" + name.lstrip("./")
+    r = S.get(url, timeout=30)
+    print(f"  js {url} {r.status_code} {len(r.text)}자")
+    return r.text
+
+
+def around(js, pat, w=900, limit=6, flags=0):
+    n = 0
+    for m in re.finditer(pat, js, flags):
+        a, b = max(0, m.start() - w), min(len(js), m.end() + w)
+        print(f"\n    >>> {pat!r} @ {m.start()}\n    " + js[a:b].replace("\n", " "))
+        n += 1
+        if n >= limit:
+            break
+    if n == 0:
+        print(f"\n    >>> {pat!r}: 없음")
+
+
+def show(tag, r, n=500):
     ct = r.headers.get("content-type", "")
     body = r.text or ""
-    print(f"\n--- {tag}\n    {r.status_code} {ct} {len(body)}자")
+    print(f"\n--- {tag}\n    {r.status_code} {ct} {len(body)}자  hdrs={dict((k, v) for k, v in r.headers.items() if k.lower() in ('set-cookie', 'x-csrf-token', 'www-authenticate'))}")
     print("    " + body[:n].replace("\n", "\n    "))
     try:
         j = r.json()
-        if isinstance(j, dict):
-            print("    keys:", list(j.keys())[:20])
-            for k, v in j.items():
-                if isinstance(v, list) and v and isinstance(v[0], dict):
-                    print(f"    {k}[0] keys:", list(v[0].keys())[:40])
-                    print(f"    {k}[0]:", json.dumps(v[0], ensure_ascii=False)[:900])
-                elif isinstance(v, dict):
-                    for k2, v2 in v.items():
-                        if isinstance(v2, list) and v2 and isinstance(v2[0], dict):
-                            print(f"    {k}.{k2}[0] keys:", list(v2[0].keys())[:40])
-                            print(f"    {k}.{k2}[0]:", json.dumps(v2[0], ensure_ascii=False)[:900])
-        elif isinstance(j, list) and j and isinstance(j[0], dict):
-            print("    [0] keys:", list(j[0].keys())[:40])
-            print("    [0]:", json.dumps(j[0], ensure_ascii=False)[:900])
+        def walk(o, path="", depth=0):
+            if depth > 3:
+                return
+            if isinstance(o, dict):
+                print(f"    {path or '$'} keys:", list(o.keys())[:25])
+                for k, v in o.items():
+                    walk(v, f"{path}.{k}" if path else k, depth + 1)
+            elif isinstance(o, list) and o and isinstance(o[0], dict):
+                print(f"    {path}[0] keys:", list(o[0].keys())[:40])
+                print(f"    {path}[0]:", json.dumps(o[0], ensure_ascii=False)[:1200])
+        walk(j)
     except Exception:
         pass
 
 
 def main():
-    # 1) robots
-    try:
-        r = S.get(f"{BASE}/robots.txt", timeout=20)
-        print("=== robots.txt", r.status_code)
-        print(r.text[:1500])
-    except Exception as e:
-        print("robots.txt 실패:", type(e).__name__, e)
-
-    # 2) 첫 화면 → JS 번들
-    try:
-        r = S.get(f"{BASE}/", timeout=20)
-        html = r.text
-        print(f"\n=== index {r.status_code} {len(html)}자")
-        (OUT / "index.html").write_text(html, encoding="utf-8")
-    except Exception as e:
-        print("index 실패:", type(e).__name__, e)
-        sys.exit(0)
-
+    html = S.get(f"{BASE}/", timeout=20).text
     scripts = re.findall(r'<script[^>]+src="([^"]+)"', html)
-    print("scripts:", scripts[:30])
+    print("scripts:", scripts)
+    idx = js_of(scripts[0])
 
-    def fetch_js(src):
-        url = src if src.startswith("http") else BASE + "/" + src.lstrip("./")
-        try:
-            js = S.get(url, timeout=30).text
-        except Exception as e:
-            print("  js 실패", url, type(e).__name__)
-            return url, ""
-        print(f"  js {url} {len(js)}자")
-        return url, js
+    print("\n=== 공통 요청 래퍼 (index 번들)")
+    around(idx, r"interceptors\.request\.use", 900, 3)
+    around(idx, r"Use-Encryption", 500, 3)
+    around(idx, r"X-Requested-With|X-CSRF|XSRF|Authorization", 400, 4)
+    around(idx, r"baseURL", 300, 4)
+    around(idx, r'"/api/"|`/api/|\'/api/', 400, 4)
 
-    # 1차 번들 → 공고 화면의 지연 로딩 청크 이름을 찾는다.
-    # Vue 라우터가 import("./PtCombinePbancList.xxxx.js") 처럼 적어 둔다.
-    chunks = set()
-    for src in scripts:
-        url, js = fetch_js(src)
-        (OUT / Path(url).name).write_text(js, encoding="utf-8")
-        for m in re.findall(r'import\("\./([A-Za-z0-9_\-]*(?:[Pp]banc|[Cc]ombine|[Aa]pi|[Hh]ttp|[Rr]equest)[A-Za-z0-9_\-]*\.[0-9a-f]{6,10}\.js)"\)', js):
-            chunks.add(m)
-        # 공통 요청 래퍼가 든 청크(vendor·index)에서 baseURL 을 본다.
-        for m in re.findall(r'baseURL\s*:\s*["\'`]([^"\'`]{1,80})["\'`]', js):
-            print("  baseURL:", m)
-
-    print("\n=== 공고 관련 청크", sorted(chunks))
-    apis = {}
-    for name in sorted(chunks):
-        url, js = fetch_js(name)
-        if not js:
-            continue
+    chunks = sorted(set(re.findall(r'import\("\./((?:PtCombinePbancList|PtPbancList|PtLcgPbancList|PtExtldPbancList)\.[0-9a-f]{6,10}\.js)"\)', idx)))
+    print("\n=== 목록 청크", chunks)
+    for name in chunks:
+        js = js_of(name)
         (OUT / name).write_text(js, encoding="utf-8")
-        for m in re.finditer(r'["\'`](/?api/[A-Za-z0-9_/\-\.{}$]+)["\'`]', js):
-            path = m.group(1)
-            a, b = max(0, m.start() - 420), min(len(js), m.end() + 420)
-            apis.setdefault(path, []).append(js[a:b].replace("\n", " "))
-        # 경로 문자열이 조각나 있을 수 있어, 요청 호출 자리도 따로 본다.
-        for m in re.finditer(r'\.(post|get)\(', js):
-            a, b = max(0, m.start() - 260), min(len(js), m.end() + 360)
-            snip = js[a:b].replace("\n", " ")
-            if "pbanc" in snip.lower() or "api" in snip.lower():
-                print(f"\n  [{name}] .{m.group(1)}( 근처:\n    {snip[:620]}")
+        print(f"\n=== [{name}] 경로처럼 보이는 문자열")
+        print("   ", sorted(set(re.findall(r'["\'`](/[A-Za-z][A-Za-z0-9_/\-]{2,60})["\'`]', js)))[:80])
+        print(f"\n=== [{name}] sbiz24PbancList 근처")
+        around(js, r"sbiz24PbancList", 1500, 4)
+        print(f"\n=== [{name}] apiBind / .post( / .get( / params 근처")
+        around(js, r"apiBind", 700, 3)
+        around(js, r"\.post\(", 700, 4)
+        around(js, r"pageIndex|pageUnit|pageSize|currentPage|recordCount", 500, 4)
+        around(js, r"combine", 400, 4)
 
-    print("\n=== 청크에서 찾은 /api 경로", len(apis))
-    for path, snips in sorted(apis.items()):
-        print(f"\n--- {path}")
-        for sn in snips[:2]:
-            print("    " + sn[:840])
-
-    # 2) 두드리기. 청크에서 찾은 경로 + 근처에서 보인 파라미터 이름을 그대로 쓴다.
-    param_names = set()
-    for snips in apis.values():
-        for sn in snips:
-            for m in re.findall(r'\b(page[A-Za-z]*|[a-z]+Page|pageUnit|pageSize|recordCountPerPage|srch[A-Za-z]*|search[A-Za-z]*|pbanc[A-Za-z]*|combine[A-Za-z]*|sortOrder|sort[A-Za-z]*)\s*:', sn):
-                param_names.add(m)
-    print("\n=== 근처 파라미터 이름", sorted(param_names))
-
-    base_params = {"pageIndex": 1, "pageNo": 1, "page": 1, "currentPage": 1,
-                   "pageUnit": 10, "pageSize": 10, "recordCountPerPage": 10, "size": 10,
-                   "combine": "combine"}
-    picks = [p for p in apis if re.search(r"pbanc|combine|list|search", p, re.I)]
-    print("\n=== 두드려 볼 경로", picks[:30])
-    for p in picks[:30]:
-        url = BASE + "/" + p.lstrip("/").replace("{", "").replace("}", "").replace("$", "")
-        for method, kw in [("GET", {"params": base_params}), ("POST", {"json": base_params}),
-                           ("POST", {"data": base_params})]:
+    # 몇 가지 모양으로 불러 본다
+    url = BASE + "/api/pbanc/sbiz24PbancList"
+    bodies = [
+        {"pageIndex": 1, "pageUnit": 10},
+        {"pageIndex": 1, "pageUnit": 10, "combine": "combine"},
+        {"pageIndex": 1, "pageUnit": 10, "pbancKindCd": "", "srchWord": ""},
+        {"page": 1, "rows": 10},
+        {"currentPage": 1, "pageSize": 10},
+        {"start": 0, "length": 10},
+        {},
+    ]
+    hdr_sets = [
+        {},
+        {"X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json;charset=UTF-8"},
+    ]
+    for hs in hdr_sets:
+        for b in bodies:
             try:
-                r = S.request(method, url, timeout=25, **kw)
+                r = S.post(url, json=b, headers=hs, timeout=25)
             except Exception as e:
-                print(f"\n--- {method} {p}: 실패 {type(e).__name__}")
+                print("\n--- POST 실패", b, type(e).__name__)
                 continue
-            show(f"{method}({'form' if 'data' in kw else 'json' if 'json' in kw else 'query'}) {p}", r)
+            show(f"POST {json.dumps(b, ensure_ascii=False)} hdr={list(hs)}", r)
             if r.ok and "json" in r.headers.get("content-type", ""):
-                safe = re.sub(r"[^A-Za-z0-9]+", "_", p)
-                (OUT / f"{method}{safe}.json").write_text(r.text[:200000], encoding="utf-8")
+                (OUT / "sbiz24PbancList.json").write_text(r.text[:400000], encoding="utf-8")
+                print("\n### 됐다. 이 모양으로 수집기를 쓴다.")
+                return
+        for b in bodies[:3]:
+            try:
+                r = S.get(url, params=b, headers=hs, timeout=25)
+            except Exception as e:
+                print("\n--- GET 실패", b, type(e).__name__)
+                continue
+            show(f"GET {b} hdr={list(hs)}", r)
+            if r.ok and "json" in r.headers.get("content-type", ""):
+                (OUT / "sbiz24PbancList.json").write_text(r.text[:400000], encoding="utf-8")
+                print("\n### 됐다. 이 모양으로 수집기를 쓴다.")
+                return
 
 
 if __name__ == "__main__":
