@@ -340,6 +340,20 @@ def section(text, rx, limit=600):
     return body[:limit] or None
 
 
+_PHONE = re.compile(r"0\d{1,2}[-.\s]?\d{3,4}[-.\s]?\d{4}")
+
+
+def contact_from(body):
+    """본문에서 전화번호가 처음 나오는 줄을 문의처로 쓴다. '- 사업문의 : 담당자(02-742-3771)' 같은 줄."""
+    if not body:
+        return None
+    for line in body.split("\n"):
+        if _PHONE.search(line):
+            line = line.strip(" -:：※☞▶•·")
+            return line[:160] or None
+    return None
+
+
 def _sbiz_dates(item: dict, detail: dict):
     """접수기간. 목록의 aplyPd('2026-09-14 ~ 2026-09-28' / '상시')가 우선, 없으면 상세 rcptPd."""
     aply = (item.get("aplyPd") or "").strip()
@@ -373,7 +387,7 @@ def _sbiz_pbanc(item: dict, d: dict) -> dict:
         "summary": (body or "")[:600] or None,
         "detail_url": SBIZ_URL[g].replace("{sn}", str(sn)),
         "org_name": org,
-        "dept_name": clean(d.get("sprtBizTypeNm")),
+        "dept_name": None,   # sprtBizTypeNm 은 내부 분류 라벨이라 화면에 낼 게 못 된다
 
         "sido": sido,
         "sigungu": None,
@@ -383,6 +397,7 @@ def _sbiz_pbanc(item: dict, d: dict) -> dict:
         "is_always_on": always,
 
         "support_type": clean(item.get("bizType")),
+        "contact": contact_from(body),
         "online_apply": True if d.get("pbancAplyYn") in (True, "Y") else None,
         "apply_method": "소상공인24 온라인 신청" if d.get("pbancAplyYn") in (True, "Y") else None,
 
@@ -421,10 +436,16 @@ def _sbiz_loan(item: dict, d: dict) -> dict:
                        ("상환 방법", "rpmtMthdCn"), ("용도", "useUsgVl"), ("취급 기관", "trmtInstNm"),
                        ("기타", "etcRfrncMttrCn")):
         v = clean(d.get(key))
-        if v and v not in ("없음", "-"):
-            if label == "금리" and re.search(r"\d$", v):
-                v += "%"
-            benefit.append(f"{label}: {v}")
+        if not v or v in ("없음", "-"):
+            continue
+        if label == "금리" and re.search(r"\d$", v):
+            v += "%"
+        # 원천 데이터에 금리 방식 칸에 금리 숫자를 다시 적은 상품이 있다
+        if label == "금리 방식" and v == clean(d.get("irVl")):
+            continue
+        if label == "대출 기간" and re.fullmatch(r"\d+", v):
+            v += "년"
+        benefit.append(f"{label}: {v}")
     region = clean(d.get("srvcPvsnRgnVl"))
     return {
         "kind": "business",

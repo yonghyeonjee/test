@@ -95,6 +95,10 @@ def main():
     bad += check(a["online_apply"] is True and a["apply_method"], "A 온라인 신청")
     bad += check(a["support_type"] == "공단지원사업" and a["org_name"] == "소상공인시장진흥공단", "A 유형/기관")
     bad += check("<" not in (a["raw_benefit"] or "") and "&middot;" not in a["raw_benefit"], "A 본문 태그·엔티티 제거")
+    bad += check(a["dept_name"] is None, "A 내부 분류 라벨은 부서로 쓰지 않음")
+    a2 = from_sbiz24(A_ITEM, {**A_DETAIL, "pbancDtlCn": A_DETAIL["pbancDtlCn"] + "\n<p>※ 문의처 ※</p>\n<p>- 사업문의 : 소공인코워킹스페이스 담당자(02-742-3771)</p>"})
+    bad += check(a2["contact"] == "사업문의 : 소공인코워킹스페이스 담당자(02-742-3771)", f"A contact {a2['contact']!r}")
+    bad += check(a["contact"] is None, "전화번호 없으면 contact None")
 
     # D 지방정부 공고
     d = from_sbiz24(D_ITEM, D_DETAIL)
@@ -113,6 +117,8 @@ def main():
     bad += check("나이" not in c["raw_target"], "'없음' 항목은 raw_target 에 넣지 않음")
     bad += check(c["raw_benefit"].startswith("대출 한도 2,000만원\n금리: ~19.99%"), f"C raw_benefit {c['raw_benefit']!r}")
     bad += check(c["raw_criteria"] is None and c["contact"].startswith("취급 저축은행"), "C 예외/문의")
+    c2 = from_sbiz24(C_ITEM, {**C_DETAIL, "irVl": "4.5", "irTypeVl": "4.5", "totalLoanPdCn": "7"})
+    bad += check("금리: 4.5%" in c2["raw_benefit"] and "금리 방식" not in c2["raw_benefit"] and "대출 기간: 7년" in c2["raw_benefit"], f"C 중복 금리 {c2['raw_benefit']!r}")
     bad += check(c["org_name"] == "SGI서울보증" and c["dept_name"] == "저축은행", "C 기관")
 
     # 상세가 빈 껍데기(제목 없음)면 버린다
