@@ -1,0 +1,25 @@
+name: explore-sbiz24
+
+# 소상공인24 통합공고 API 경로 찾기. 손으로만 돌린다.
+on:
+  workflow_dispatch:
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: 탐침
+        run: python -u pipeline/explore_sbiz24.py
+      - name: 응답 보관
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbiz24-samples
+          path: samples/sbiz24/
+          retention-days: 7
