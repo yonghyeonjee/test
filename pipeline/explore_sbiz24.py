@@ -67,63 +67,49 @@ def show(tag, r, n=500):
 
 
 def main():
-    html = S.get(f"{BASE}/", timeout=20).text
-    print("cookies after index:", S.cookies.get_dict())
-    scripts = re.findall(r'<script[^>]+src="([^"]+)"', html)
-    idx = js_of(scripts[0])
-    vendor = re.findall(r'\./(vendor\.[0-9a-f]{6,10}\.js)', idx)
-    print("vendor:", vendor[:2])
+    """
+    5차: 해외 IP 차단인지 판정한다.
 
-    print("\n=== index: 리소스 헬퍼 (useResource / '/api' 접두어 / 암호화 헤더)")
-    around(idx, r"useResource", 700, 4)
-    around(idx, r'"/api"|`/api|\'/api"|"/api/"\+|"api/"', 500, 6)
-    around(idx, r"Use-Req-Encryption", 350, 6)
-    around(idx, r"queue\.push", 500, 2)
+    4차까지 /api 아래 모든 호출이 헤더·본문과 무관하게 같은 500 이었다.
+    파라미터가 없는 코드 목록까지 그랬다. 그렇다면 요청 모양이 아니라
+    부르는 쪽(미국 러너)이 문제일 수 있다. 화면이 켜질 때 반드시 부르는
+    메뉴 API 와, 검색엔진에 노출된 공개 파일 주소로 대조한다. 이것마저
+    500 이면 /api 가 통째로 막힌 것이다.
+    """
+    r = S.get(f"{BASE}/", timeout=20)
+    print("index", r.status_code, "server=", r.headers.get("server"), "via=", r.headers.get("via"), "cookies=", S.cookies.get_dict())
 
-    if vendor:
-        vjs = js_of(vendor[0])
-        print("\n=== vendor: 그리드가 목록을 부르는 자리")
-        around(vjs, r"rowKey", 900, 3)
-        around(vjs, r"initList", 900, 3)
-        around(vjs, r"paging", 700, 4)
-        around(vjs, r"pageSize", 500, 6)
-
-    # 전제조건 가리기: 코드 목록(파라미터 거의 없음)
-    def call(method, path, hs=None, **kw):
-        h = dict(S.headers); h.update(hs or {})
+    def call(method, path, **kw):
         try:
-            r = requests.request(method, BASE + path, headers=h, cookies=S.cookies, timeout=25, **kw)
+            r = S.request(method, BASE + path, timeout=25, **kw)
         except Exception as e:
             print(f"\n--- {method} {path}: 실패 {type(e).__name__}"); return None
-        show(f"{method} {path} hs={list((hs or {}).keys())} {kw.get('params') or kw.get('json') or kw.get('data') or ''}", r, 600)
+        print(f"\n--- {method} {path}\n    {r.status_code} {r.headers.get('content-type','')} {len(r.content)}B")
+        print("    resp headers:", {k: v for k, v in r.headers.items() if k.lower() not in ("date",)})
+        print("    " + (r.text[:300] if "json" in r.headers.get("content-type", "") or "text" in r.headers.get("content-type", "") else "(binary)"))
         return r
 
-    print("\n=== 전제조건 가리기")
-    for hs in [{}, {"Origin": None, "Referer": None}, {"Accept": "*/*"}, {"Authorization": ""},
-               {"X-Requested-With": "XMLHttpRequest"}]:
-        hs2 = {k: v for k, v in hs.items() if v is not None}
-        if hs and any(v is None for v in hs.values()):
-            # Origin/Referer 를 아예 빼고
-            h = {k: v for k, v in S.headers.items() if k not in ("Origin", "Referer")}
-            try:
-                r = requests.get(BASE + "/api/combinePbanc/getPbancTpbiz", headers=h, cookies=S.cookies, timeout=25)
-                show("GET /api/combinePbanc/getPbancTpbiz (Origin/Referer 없이)", r, 600)
-            except Exception as e:
-                print("실패", e)
-            continue
-        call("GET", "/api/combinePbanc/getPbancTpbiz", hs2)
-    call("POST", "/api/combinePbanc/getPbancTpbiz", {}, json={})
+    print("\n=== 대조 1: 화면이 켜질 때 부르는 메뉴 API")
+    for sys_ in ["PT", "pt", "SBIZ24", "sbiz24", "USER"]:
+        call("GET", f"/api/cmmn/gnrl/Menu/{sys_}")
 
-    print("\n=== 목록 부르기")
-    bodies = [{"pageIndex": 1, "pageSize": 10}, {"page": 1, "size": 10}, {"currentPage": 1, "pageSize": 10},
-              {"pageNo": 1, "pageSize": 10}, {"pageIndex": 1, "pageUnit": 10}, {"offset": 0, "limit": 10}, {}]
-    for b in bodies:
-        r = call("GET", "/api/combinePbanc/list", {}, params=b)
-        if r is not None and r.ok and "json" in r.headers.get("content-type", ""):
-            (OUT / "combinePbanc_list.json").write_text(r.text[:400000], encoding="utf-8"); print("\n### 됐다 GET", b); return
-        r = call("POST", "/api/combinePbanc/list", {}, json=b)
-        if r is not None and r.ok and "json" in r.headers.get("content-type", ""):
-            (OUT / "combinePbanc_list.json").write_text(r.text[:400000], encoding="utf-8"); print("\n### 됐다 POST", b); return
+    print("\n=== 대조 2: 검색엔진에 노출된 공개 파일 주소 (구글이 색인한 것 = 누군가는 열었다)")
+    call("GET", "/api/cmmn/file/4edbfcdd-5215-4930-b8b6-b7e8a937b2ee", stream=True)
+    call("HEAD", "/api/cmmn/file/4edbfcdd-5215-4930-b8b6-b7e8a937b2ee")
+
+    print("\n=== 대조 3: 정적 자원과 /api 의 응답 헤더 차이")
+    call("GET", "/robots.txt")
+    call("GET", "/api/robots.txt")
+    call("GET", "/api/")
+    call("GET", "/api")
+
+    print("\n=== 대조 4: 인코딩·언어 헤더 없이 순수하게")
+    h = {"User-Agent": UA}
+    try:
+        r = requests.get(BASE + "/api/combinePbanc/getPbancTpbiz", headers=h, timeout=25)
+        print("\n--- 순수 GET getPbancTpbiz", r.status_code, dict(r.headers), r.text[:200])
+    except Exception as e:
+        print("실패", e)
 
 
 if __name__ == "__main__":
