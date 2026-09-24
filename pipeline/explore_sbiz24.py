@@ -68,48 +68,71 @@ def show(tag, r, n=500):
 
 def main():
     """
-    5차: 해외 IP 차단인지 판정한다.
+    6차: 앱이 요청에 붙이는 헤더를 번들에서 긁어내 그 헤더로 부른다.
 
-    4차까지 /api 아래 모든 호출이 헤더·본문과 무관하게 같은 500 이었다.
-    파라미터가 없는 코드 목록까지 그랬다. 그렇다면 요청 모양이 아니라
-    부르는 쪽(미국 러너)이 문제일 수 있다. 화면이 켜질 때 반드시 부르는
-    메뉴 API 와, 검색엔진에 노출된 공개 파일 주소로 대조한다. 이것마저
-    500 이면 /api 가 통째로 막힌 것이다.
+    5차에서 /api/cmmn/file/… 은 200, 없는 경로 /api/robots.txt 는 404 가
+    아니라 똑같은 500 이었다. 해외 차단이 아니라 JSON API 앞단 필터가
+    라우팅 전에 우리 요청을 거절하는 것이다. 코드에 Origin-Method,
+    sysGroup, headers.common[...] 같은 흔적이 있었다.
     """
     r = S.get(f"{BASE}/", timeout=20)
-    print("index", r.status_code, "server=", r.headers.get("server"), "via=", r.headers.get("via"), "cookies=", S.cookies.get_dict())
+    scripts = re.findall(r'<script[^>]+src="([^"]+)"', r.text)
+    idx = js_of(scripts[0])
+    conf = js_of(scripts[1]) if len(scripts) > 1 else ""
 
-    def call(method, path, **kw):
+    print("\n=== axios 인스턴스를 만드는 자리와 그 설정")
+    around(idx, r"init axios instance with", 900, 2)
+    around(idx, r"Wj\(\{", 700, 4)
+    around(idx, r"isApiUrl", 900, 2)
+    around(idx, r"Ln\.prototype\.get=", 900, 1)
+    around(idx, r"Ln\.prototype\.post=", 700, 1)
+    around(idx, r"Origin-Method", 500, 3)
+    around(idx, r"sysGroup", 400, 5)
+    around(idx, r"headers\.common", 350, 8)
+    print("\n=== UserScriptConf.js (설정 파일) 머리")
+    print("    " + conf[:1500].replace("\n", "\n    "))
+
+    names = set()
+    for pat in [r'headers\.common\[["\']([A-Za-z0-9\-]+)["\']\]', r'headers\.common\.([A-Za-z][A-Za-z0-9]*)\s*=',
+                r'headers\[["\']([A-Za-z0-9\-]+)["\']\]\s*=', r'["\']([A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+)["\']\s*:']:
+        for m in re.findall(pat, idx):
+            if m.lower() not in ("accept", "content-type", "authorization", "accept-language", "cache-control", "content-disposition",
+                                 "x-content-type-options", "x-frame-options", "set-cookie", "user-agent"):
+                names.add(m)
+    names = sorted(names)
+    print("\n=== 번들에서 본 헤더 이름 후보", names[:60])
+
+    url = BASE + "/api/combinePbanc/getPbancTpbiz"
+    def try_headers(hs, tag):
+        h = dict(S.headers); h.update(hs)
         try:
-            r = S.request(method, BASE + path, timeout=25, **kw)
+            r = requests.get(url, headers=h, timeout=25)
         except Exception as e:
-            print(f"\n--- {method} {path}: 실패 {type(e).__name__}"); return None
-        print(f"\n--- {method} {path}\n    {r.status_code} {r.headers.get('content-type','')} {len(r.content)}B")
-        print("    resp headers:", {k: v for k, v in r.headers.items() if k.lower() not in ("date",)})
-        print("    " + (r.text[:300] if "json" in r.headers.get("content-type", "") or "text" in r.headers.get("content-type", "") else "(binary)"))
+            print(f"\n--- {tag}: 실패 {type(e).__name__}"); return None
+        body = r.text[:160].replace("\n", " ")
+        print(f"\n--- {tag}: {r.status_code} {body}")
         return r
 
-    print("\n=== 대조 1: 화면이 켜질 때 부르는 메뉴 API")
-    for sys_ in ["PT", "pt", "SBIZ24", "sbiz24", "USER"]:
-        call("GET", f"/api/cmmn/gnrl/Menu/{sys_}")
-
-    print("\n=== 대조 2: 검색엔진에 노출된 공개 파일 주소 (구글이 색인한 것 = 누군가는 열었다)")
-    call("GET", "/api/cmmn/file/4edbfcdd-5215-4930-b8b6-b7e8a937b2ee", stream=True)
-    call("HEAD", "/api/cmmn/file/4edbfcdd-5215-4930-b8b6-b7e8a937b2ee")
-
-    print("\n=== 대조 3: 정적 자원과 /api 의 응답 헤더 차이")
-    call("GET", "/robots.txt")
-    call("GET", "/api/robots.txt")
-    call("GET", "/api/")
-    call("GET", "/api")
-
-    print("\n=== 대조 4: 인코딩·언어 헤더 없이 순수하게")
-    h = {"User-Agent": UA}
-    try:
-        r = requests.get(BASE + "/api/combinePbanc/getPbancTpbiz", headers=h, timeout=25)
-        print("\n--- 순수 GET getPbancTpbiz", r.status_code, dict(r.headers), r.text[:200])
-    except Exception as e:
-        print("실패", e)
+    print("\n=== 후보 헤더를 하나씩")
+    vals = ["PT", "pt", "sbiz24", "SBIZ24", "true", "1", "GET", "ko"]
+    good = []
+    for n in names[:40]:
+        for v in vals:
+            r = try_headers({n: v}, f"{n}: {v}")
+            if r is not None and r.status_code != 500:
+                good.append((n, v)); break
+    print("\n=== 500 이 아니게 만든 헤더", good)
+    if good:
+        r = try_headers(dict(good), "전부 함께")
+        if r is not None:
+            show("전부 함께", r, 1500)
+            if r.ok and "json" in r.headers.get("content-type", ""):
+                r2 = requests.post(BASE + "/api/combinePbanc/list", headers={**dict(S.headers), **dict(good)},
+                                   json={"pageIndex": 1, "pageSize": 10}, timeout=25)
+                show("POST /api/combinePbanc/list (pageIndex/pageSize)", r2, 2500)
+                r3 = requests.get(BASE + "/api/combinePbanc/list", headers={**dict(S.headers), **dict(good)},
+                                  params={"pageIndex": 1, "pageSize": 10}, timeout=25)
+                show("GET /api/combinePbanc/list (pageIndex/pageSize)", r3, 2500)
 
 
 if __name__ == "__main__":
