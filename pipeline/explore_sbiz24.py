@@ -68,71 +68,72 @@ def show(tag, r, n=500):
 
 def main():
     """
-    6차: 앱이 요청에 붙이는 헤더를 번들에서 긁어내 그 헤더로 부른다.
+    7차: 앱의 http 래퍼가 하는 그대로 부른다.
 
-    5차에서 /api/cmmn/file/… 은 200, 없는 경로 /api/robots.txt 는 404 가
-    아니라 똑같은 500 이었다. 해외 차단이 아니라 JSON API 앞단 필터가
-    라우팅 전에 우리 요청을 거절하는 것이다. 코드에 Origin-Method,
-    sysGroup, headers.common[...] 같은 흔적이 있었다.
+    6차에서 래퍼를 찾았다. /api/ 주소에 대한 get() 은 실제로는
+      POST url, body={search:{}}, headers={Accept, Content-Type, "Origin-Method":"GET"}
+    다. 응답은 data.default.list 에 목록이 온다. 우리가 보낸 요청에는
+    search 래퍼가 없어서 서버가 500 을 냈던 것으로 보인다.
     """
-    r = S.get(f"{BASE}/", timeout=20)
-    scripts = re.findall(r'<script[^>]+src="([^"]+)"', r.text)
-    idx = js_of(scripts[0])
-    conf = js_of(scripts[1]) if len(scripts) > 1 else ""
+    S.get(f"{BASE}/", timeout=20)
+    H = {"Accept": "application/json", "Content-Type": "application/json", "Origin-Method": "GET"}
 
-    print("\n=== axios 인스턴스를 만드는 자리와 그 설정")
-    around(idx, r"init axios instance with", 900, 2)
-    around(idx, r"Wj\(\{", 700, 4)
-    around(idx, r"isApiUrl", 900, 2)
-    around(idx, r"Ln\.prototype\.get=", 900, 1)
-    around(idx, r"Ln\.prototype\.post=", 700, 1)
-    around(idx, r"Origin-Method", 500, 3)
-    around(idx, r"sysGroup", 400, 5)
-    around(idx, r"headers\.common", 350, 8)
-    print("\n=== UserScriptConf.js (설정 파일) 머리")
-    print("    " + conf[:1500].replace("\n", "\n    "))
-
-    names = set()
-    for pat in [r'headers\.common\[["\']([A-Za-z0-9\-]+)["\']\]', r'headers\.common\.([A-Za-z][A-Za-z0-9]*)\s*=',
-                r'headers\[["\']([A-Za-z0-9\-]+)["\']\]\s*=', r'["\']([A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+)["\']\s*:']:
-        for m in re.findall(pat, idx):
-            if m.lower() not in ("accept", "content-type", "authorization", "accept-language", "cache-control", "content-disposition",
-                                 "x-content-type-options", "x-frame-options", "set-cookie", "user-agent"):
-                names.add(m)
-    names = sorted(names)
-    print("\n=== 번들에서 본 헤더 이름 후보", names[:60])
-
-    url = BASE + "/api/combinePbanc/getPbancTpbiz"
-    def try_headers(hs, tag):
-        h = dict(S.headers); h.update(hs)
+    def post(path, body, tag=None, n=1400):
         try:
-            r = requests.get(url, headers=h, timeout=25)
+            r = S.post(BASE + path, json=body, headers=H, timeout=30)
         except Exception as e:
-            print(f"\n--- {tag}: 실패 {type(e).__name__}"); return None
-        body = r.text[:160].replace("\n", " ")
-        print(f"\n--- {tag}: {r.status_code} {body}")
+            print(f"\n--- POST {path}: 실패 {type(e).__name__}"); return None
+        show(tag or f"POST {path} {json.dumps(body, ensure_ascii=False)}", r, n)
         return r
 
-    print("\n=== 후보 헤더를 하나씩")
-    vals = ["PT", "pt", "sbiz24", "SBIZ24", "true", "1", "GET", "ko"]
-    good = []
-    for n in names[:40]:
-        for v in vals:
-            r = try_headers({n: v}, f"{n}: {v}")
-            if r is not None and r.status_code != 500:
-                good.append((n, v)); break
-    print("\n=== 500 이 아니게 만든 헤더", good)
-    if good:
-        r = try_headers(dict(good), "전부 함께")
-        if r is not None:
-            show("전부 함께", r, 1500)
-            if r.ok and "json" in r.headers.get("content-type", ""):
-                r2 = requests.post(BASE + "/api/combinePbanc/list", headers={**dict(S.headers), **dict(good)},
-                                   json={"pageIndex": 1, "pageSize": 10}, timeout=25)
-                show("POST /api/combinePbanc/list (pageIndex/pageSize)", r2, 2500)
-                r3 = requests.get(BASE + "/api/combinePbanc/list", headers={**dict(S.headers), **dict(good)},
-                                  params={"pageIndex": 1, "pageSize": 10}, timeout=25)
-                show("GET /api/combinePbanc/list (pageIndex/pageSize)", r3, 2500)
+    print("\n=== 1) 코드 목록 — 래퍼 모양 검증")
+    r = post("/api/combinePbanc/getPbancTpbiz", {"search": {}})
+    ok_shape = r is not None and r.ok
+    print("\n### 래퍼 모양이 맞나:", ok_shape)
+
+    print("\n=== 2) 통합공고 목록 — 페이지 파라미터 찾기")
+    bodies = [
+        {"search": {}},
+        {"search": {}, "pageIndex": 1, "pageSize": 10},
+        {"search": {}, "page": 1, "size": 10},
+        {"search": {}, "currentPage": 1, "pageSize": 10},
+        {"search": {}, "paging": {"pageIndex": 1, "pageSize": 10}},
+        {"search": {"pageIndex": 1, "pageSize": 10}},
+        {"search": {}, "pageIndex": 2, "pageSize": 10},
+    ]
+    got = None
+    for b in bodies:
+        r = post("/api/combinePbanc/list", b)
+        if r is not None and r.ok and "json" in r.headers.get("content-type", ""):
+            try:
+                j = r.json()
+                d = j.get("data", {}).get("default", j.get("data", j))
+                lst = d.get("list") if isinstance(d, dict) else None
+                print(f"    → list 길이 {len(lst) if isinstance(lst, list) else '?'}  default keys {list(d.keys())[:20] if isinstance(d, dict) else type(d)}")
+                if isinstance(lst, list) and lst:
+                    got = got or (b, j)
+                    (OUT / f"list_{len(OUT.iterdir().__class__.__name__)}_{abs(hash(json.dumps(b)))%10000}.json").write_text(r.text[:600000], encoding="utf-8")
+            except Exception as e:
+                print("    json 해석 실패", e)
+
+    if got:
+        b, j = got
+        d = j["data"]["default"] if "data" in j and "default" in j["data"] else j
+        print("\n### 통합공고 첫 항목 전체:")
+        print(json.dumps(d["list"][0], ensure_ascii=False, indent=1)[:4000])
+        print("\n### 첫 3건 요약:")
+        for it in d["list"][:3]:
+            print("   ", {k: it.get(k) for k in ("pbancSn", "pbancNm", "departNm", "rcrtTypeCdNm", "aplyPd", "pbancBgngDt", "pbancEndDt", "regionNm", "bizType", "pbancKindCd", "url", "pbancUrl", "dtlUrl")})
+        print("\n### 총 건수처럼 보이는 키:", {k: v for k, v in d.items() if k != "list"})
+
+    print("\n=== 3) 화면이 조건을 어떻게 붙이는지 (청크 조각)")
+    idx = js_of(re.findall(r'<script[^>]+src="([^"]+)"', S.get(f"{BASE}/", timeout=20).text)[0])
+    ch = re.findall(r'import\("\./(PtCombinePbancList\.[0-9a-f]{6,10}\.js)"\)', idx)
+    if ch:
+        js = js_of(ch[0])
+        around(js, r'url:"/combinePbanc/list"', 2600, 1)
+        around(js, r"setCondition\(", 300, 12)
+        around(js, r"getListByPbancSn|loadData|\.search\(|\.list\(", 500, 6)
 
 
 if __name__ == "__main__":
