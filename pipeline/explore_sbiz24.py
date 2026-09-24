@@ -75,55 +75,76 @@ def main():
 
     scripts = re.findall(r'<script[^>]+src="([^"]+)"', html)
     print("scripts:", scripts[:30])
-    apis, words = set(), set()
-    for src in scripts:
-        url = src if src.startswith("http") else BASE + (src if src.startswith("/") else "/" + src)
+
+    def fetch_js(src):
+        url = src if src.startswith("http") else BASE + "/" + src.lstrip("./")
         try:
             js = S.get(url, timeout=30).text
         except Exception as e:
             print("  js 실패", url, type(e).__name__)
-            continue
+            return url, ""
         print(f"  js {url} {len(js)}자")
-        for m in re.findall(r'["\'`](/api/[A-Za-z0-9_/\-\.{}$]+)["\'`]', js):
-            apis.add(m)
-        for m in re.findall(r'[A-Za-z]*(?:[Pp]banc|[Cc]ombine)[A-Za-z]*', js):
-            words.add(m)
-        # SPA 가 자주 쓰는 모양: "combinePbancList" 근처의 URL 조각
-        for m in re.finditer(r'[Cc]ombinePbanc[A-Za-z]*', js):
-            a, b = max(0, m.start() - 300), min(len(js), m.end() + 300)
-            snippet = js[a:b].replace("\n", " ")
-            print("  near combinePbanc:", snippet[:600])
-            break
+        return url, js
 
-    print("\n=== /api/ 경로 후보", len(apis))
-    for a in sorted(apis):
-        print("  ", a)
-    print("\n=== pbanc/combine 낱말", len(words))
-    print("  ", sorted(words)[:80])
-    (OUT / "api-candidates.txt").write_text("\n".join(sorted(apis)), encoding="utf-8")
+    # 1차 번들 → 공고 화면의 지연 로딩 청크 이름을 찾는다.
+    # Vue 라우터가 import("./PtCombinePbancList.xxxx.js") 처럼 적어 둔다.
+    chunks = set()
+    for src in scripts:
+        url, js = fetch_js(src)
+        (OUT / Path(url).name).write_text(js, encoding="utf-8")
+        for m in re.findall(r'import\("\./([A-Za-z0-9_\-]*(?:[Pp]banc|[Cc]ombine|[Aa]pi|[Hh]ttp|[Rr]equest)[A-Za-z0-9_\-]*\.[0-9a-f]{6,10}\.js)"\)', js):
+            chunks.add(m)
+        # 공통 요청 래퍼가 든 청크(vendor·index)에서 baseURL 을 본다.
+        for m in re.findall(r'baseURL\s*:\s*["\'`]([^"\'`]{1,80})["\'`]', js):
+            print("  baseURL:", m)
 
-    # 3) 후보 두드리기 — 목록처럼 보이는 것만
-    picks = [a for a in sorted(apis) if re.search(r"pbanc|combine|list", a, re.I)]
-    guesses = [
-        "/api/pbanc/combinePbancList", "/api/combinePbancList", "/api/pbanc/combine/list",
-        "/api/bsnsPbanc/combinePbancList", "/api/cmmn/pbanc/combinePbancList",
-    ]
-    for p in guesses:
-        if p not in picks:
-            picks.append(p)
-    print("\n=== 두드려 볼 경로", picks[:25])
-    for p in picks[:25]:
-        url = BASE + p.replace("{", "").replace("}", "")
-        for method, kw in [
-            ("GET", {"params": {"page": 1, "size": 10, "pageIndex": 1, "pageNo": 1}}),
-            ("POST", {"json": {"page": 1, "size": 10, "pageIndex": 1, "pageNo": 1, "combine": "combine"}}),
-        ]:
+    print("\n=== 공고 관련 청크", sorted(chunks))
+    apis = {}
+    for name in sorted(chunks):
+        url, js = fetch_js(name)
+        if not js:
+            continue
+        (OUT / name).write_text(js, encoding="utf-8")
+        for m in re.finditer(r'["\'`](/?api/[A-Za-z0-9_/\-\.{}$]+)["\'`]', js):
+            path = m.group(1)
+            a, b = max(0, m.start() - 420), min(len(js), m.end() + 420)
+            apis.setdefault(path, []).append(js[a:b].replace("\n", " "))
+        # 경로 문자열이 조각나 있을 수 있어, 요청 호출 자리도 따로 본다.
+        for m in re.finditer(r'\.(post|get)\(', js):
+            a, b = max(0, m.start() - 260), min(len(js), m.end() + 360)
+            snip = js[a:b].replace("\n", " ")
+            if "pbanc" in snip.lower() or "api" in snip.lower():
+                print(f"\n  [{name}] .{m.group(1)}( 근처:\n    {snip[:620]}")
+
+    print("\n=== 청크에서 찾은 /api 경로", len(apis))
+    for path, snips in sorted(apis.items()):
+        print(f"\n--- {path}")
+        for sn in snips[:2]:
+            print("    " + sn[:840])
+
+    # 2) 두드리기. 청크에서 찾은 경로 + 근처에서 보인 파라미터 이름을 그대로 쓴다.
+    param_names = set()
+    for snips in apis.values():
+        for sn in snips:
+            for m in re.findall(r'\b(page[A-Za-z]*|[a-z]+Page|pageUnit|pageSize|recordCountPerPage|srch[A-Za-z]*|search[A-Za-z]*|pbanc[A-Za-z]*|combine[A-Za-z]*|sortOrder|sort[A-Za-z]*)\s*:', sn):
+                param_names.add(m)
+    print("\n=== 근처 파라미터 이름", sorted(param_names))
+
+    base_params = {"pageIndex": 1, "pageNo": 1, "page": 1, "currentPage": 1,
+                   "pageUnit": 10, "pageSize": 10, "recordCountPerPage": 10, "size": 10,
+                   "combine": "combine"}
+    picks = [p for p in apis if re.search(r"pbanc|combine|list|search", p, re.I)]
+    print("\n=== 두드려 볼 경로", picks[:30])
+    for p in picks[:30]:
+        url = BASE + "/" + p.lstrip("/").replace("{", "").replace("}", "").replace("$", "")
+        for method, kw in [("GET", {"params": base_params}), ("POST", {"json": base_params}),
+                           ("POST", {"data": base_params})]:
             try:
                 r = S.request(method, url, timeout=25, **kw)
             except Exception as e:
                 print(f"\n--- {method} {p}: 실패 {type(e).__name__}")
                 continue
-            show(f"{method} {p}", r)
+            show(f"{method}({'form' if 'data' in kw else 'json' if 'json' in kw else 'query'}) {p}", r)
             if r.ok and "json" in r.headers.get("content-type", ""):
                 safe = re.sub(r"[^A-Za-z0-9]+", "_", p)
                 (OUT / f"{method}{safe}.json").write_text(r.text[:200000], encoding="utf-8")
