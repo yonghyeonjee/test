@@ -68,70 +68,62 @@ def show(tag, r, n=500):
 
 def main():
     html = S.get(f"{BASE}/", timeout=20).text
+    print("cookies after index:", S.cookies.get_dict())
     scripts = re.findall(r'<script[^>]+src="([^"]+)"', html)
-    print("scripts:", scripts)
     idx = js_of(scripts[0])
+    vendor = re.findall(r'\./(vendor\.[0-9a-f]{6,10}\.js)', idx)
+    print("vendor:", vendor[:2])
 
-    print("\n=== 공통 요청 래퍼 (index 번들)")
-    around(idx, r"interceptors\.request\.use", 900, 3)
-    around(idx, r"Use-Encryption", 500, 3)
-    around(idx, r"X-Requested-With|X-CSRF|XSRF|Authorization", 400, 4)
-    around(idx, r"baseURL", 300, 4)
-    around(idx, r'"/api/"|`/api/|\'/api/', 400, 4)
+    print("\n=== index: 리소스 헬퍼 (useResource / '/api' 접두어 / 암호화 헤더)")
+    around(idx, r"useResource", 700, 4)
+    around(idx, r'"/api"|`/api|\'/api"|"/api/"\+|"api/"', 500, 6)
+    around(idx, r"Use-Req-Encryption", 350, 6)
+    around(idx, r"queue\.push", 500, 2)
 
-    chunks = sorted(set(re.findall(r'import\("\./((?:PtCombinePbancList|PtPbancList|PtLcgPbancList|PtExtldPbancList)\.[0-9a-f]{6,10}\.js)"\)', idx)))
-    print("\n=== 목록 청크", chunks)
-    for name in chunks:
-        js = js_of(name)
-        (OUT / name).write_text(js, encoding="utf-8")
-        print(f"\n=== [{name}] 경로처럼 보이는 문자열")
-        print("   ", sorted(set(re.findall(r'["\'`](/[A-Za-z][A-Za-z0-9_/\-]{2,60})["\'`]', js)))[:80])
-        print(f"\n=== [{name}] sbiz24PbancList 근처")
-        around(js, r"sbiz24PbancList", 1500, 4)
-        print(f"\n=== [{name}] apiBind / .post( / .get( / params 근처")
-        around(js, r"apiBind", 700, 3)
-        around(js, r"\.post\(", 700, 4)
-        around(js, r"pageIndex|pageUnit|pageSize|currentPage|recordCount", 500, 4)
-        around(js, r"combine", 400, 4)
+    if vendor:
+        vjs = js_of(vendor[0])
+        print("\n=== vendor: 그리드가 목록을 부르는 자리")
+        around(vjs, r"rowKey", 900, 3)
+        around(vjs, r"initList", 900, 3)
+        around(vjs, r"paging", 700, 4)
+        around(vjs, r"pageSize", 500, 6)
 
-    # 몇 가지 모양으로 불러 본다
-    url = BASE + "/api/pbanc/sbiz24PbancList"
-    bodies = [
-        {"pageIndex": 1, "pageUnit": 10},
-        {"pageIndex": 1, "pageUnit": 10, "combine": "combine"},
-        {"pageIndex": 1, "pageUnit": 10, "pbancKindCd": "", "srchWord": ""},
-        {"page": 1, "rows": 10},
-        {"currentPage": 1, "pageSize": 10},
-        {"start": 0, "length": 10},
-        {},
-    ]
-    hdr_sets = [
-        {},
-        {"X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json;charset=UTF-8"},
-    ]
-    for hs in hdr_sets:
-        for b in bodies:
+    # 전제조건 가리기: 코드 목록(파라미터 거의 없음)
+    def call(method, path, hs=None, **kw):
+        h = dict(S.headers); h.update(hs or {})
+        try:
+            r = requests.request(method, BASE + path, headers=h, cookies=S.cookies, timeout=25, **kw)
+        except Exception as e:
+            print(f"\n--- {method} {path}: 실패 {type(e).__name__}"); return None
+        show(f"{method} {path} hs={list((hs or {}).keys())} {kw.get('params') or kw.get('json') or kw.get('data') or ''}", r, 600)
+        return r
+
+    print("\n=== 전제조건 가리기")
+    for hs in [{}, {"Origin": None, "Referer": None}, {"Accept": "*/*"}, {"Authorization": ""},
+               {"X-Requested-With": "XMLHttpRequest"}]:
+        hs2 = {k: v for k, v in hs.items() if v is not None}
+        if hs and any(v is None for v in hs.values()):
+            # Origin/Referer 를 아예 빼고
+            h = {k: v for k, v in S.headers.items() if k not in ("Origin", "Referer")}
             try:
-                r = S.post(url, json=b, headers=hs, timeout=25)
+                r = requests.get(BASE + "/api/combinePbanc/getPbancTpbiz", headers=h, cookies=S.cookies, timeout=25)
+                show("GET /api/combinePbanc/getPbancTpbiz (Origin/Referer 없이)", r, 600)
             except Exception as e:
-                print("\n--- POST 실패", b, type(e).__name__)
-                continue
-            show(f"POST {json.dumps(b, ensure_ascii=False)} hdr={list(hs)}", r)
-            if r.ok and "json" in r.headers.get("content-type", ""):
-                (OUT / "sbiz24PbancList.json").write_text(r.text[:400000], encoding="utf-8")
-                print("\n### 됐다. 이 모양으로 수집기를 쓴다.")
-                return
-        for b in bodies[:3]:
-            try:
-                r = S.get(url, params=b, headers=hs, timeout=25)
-            except Exception as e:
-                print("\n--- GET 실패", b, type(e).__name__)
-                continue
-            show(f"GET {b} hdr={list(hs)}", r)
-            if r.ok and "json" in r.headers.get("content-type", ""):
-                (OUT / "sbiz24PbancList.json").write_text(r.text[:400000], encoding="utf-8")
-                print("\n### 됐다. 이 모양으로 수집기를 쓴다.")
-                return
+                print("실패", e)
+            continue
+        call("GET", "/api/combinePbanc/getPbancTpbiz", hs2)
+    call("POST", "/api/combinePbanc/getPbancTpbiz", {}, json={})
+
+    print("\n=== 목록 부르기")
+    bodies = [{"pageIndex": 1, "pageSize": 10}, {"page": 1, "size": 10}, {"currentPage": 1, "pageSize": 10},
+              {"pageNo": 1, "pageSize": 10}, {"pageIndex": 1, "pageUnit": 10}, {"offset": 0, "limit": 10}, {}]
+    for b in bodies:
+        r = call("GET", "/api/combinePbanc/list", {}, params=b)
+        if r is not None and r.ok and "json" in r.headers.get("content-type", ""):
+            (OUT / "combinePbanc_list.json").write_text(r.text[:400000], encoding="utf-8"); print("\n### 됐다 GET", b); return
+        r = call("POST", "/api/combinePbanc/list", {}, json=b)
+        if r is not None and r.ok and "json" in r.headers.get("content-type", ""):
+            (OUT / "combinePbanc_list.json").write_text(r.text[:400000], encoding="utf-8"); print("\n### 됐다 POST", b); return
 
 
 if __name__ == "__main__":
