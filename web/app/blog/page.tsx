@@ -40,6 +40,21 @@ export default function BlogIndex() {
         </span>
       </Link>
 
+      <Link href="/blog/gojobs-guide"
+            className="card card-link mt-3 flex items-center gap-4 p-5">
+        <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">
+          채용
+        </span>
+        <span className="min-w-0">
+          <b className="block text-[15.5px] leading-snug">
+            나라일터 이용법 — 공고 찾기부터 접수까지, 숫자로 본 순서
+          </b>
+          <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
+            최근 1년 공고 3만 2천 건을 세어 보니 절반이 일주일 안에 마감됩니다. 어떤 자리가 언제 올라오는지.
+          </span>
+        </span>
+      </Link>
+
       {/* 계산기는 읽는 글이 아니라 쓰는 도구다. 글 목록 위에 따로 둔다. */}
       <Link href="/blog/income"
             className="card card-link mt-3 flex items-center gap-4 p-5">
