@@ -49,8 +49,8 @@ export function GojobsHero({ className = "" }: { className?: string }) {
         <rect width="66" height="74" rx="10" fill="rgba(255,255,255,.1)" stroke={hi} />
         <text x="10" y="22" fontSize="11.5" fill={ink} fontWeight="800">나라지원</text>
         <text x="10" y="38" fontSize="8.5" fill={dim}>매일 새로 받아</text>
-        <text x="10" y="50" fontSize="8.5" fill={dim}>지역·기관·직무로</text>
-        <text x="10" y="62" fontSize="8.5" fill={dim}>골라 보기</text>
+        <text x="10" y="50" fontSize="8.5" fill={dim}>지역·기관·</text>
+        <text x="10" y="62" fontSize="8.5" fill={dim}>직무로 골라 보기</text>
       </g>
       <text x="18" y="150" fontSize="8.5" fill={dim}>접수는 공고마다 다릅니다 — 원문에서 확인</text>
     </svg>
