@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JobGone from "@/components/JobGone";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
@@ -34,7 +35,7 @@ function ymdAgo(days: number) {
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
-  // 없는 번호. 쪽은 not-found.tsx 가 지금 접수 중인 공고로 채운다.
+  // 없는 번호. 쪽은 JobGone 이 지금 접수 중인 공고로 채운다.
   if (!job) return {
     title: "내려간 채용 공고 — 지금 접수 중인 공공기관 채용",
     description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
@@ -116,11 +117,11 @@ export default async function JobDetail({ params }: P) {
   const id = decodeURIComponent(params.id);
   const job = await getJob(id);
   if (!job) {
-    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는 404 +
-    // not-found.tsx(지금 접수 중인 공고).
+    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는
+    // 지금 접수 중인 공고로 채운 쪽(JobGone 참고).
     const src = await findJobSource(id).catch(() => null);
     if (src === "worldjob") redirect("/jobs/overseas");
-    notFound();
+    return <JobGone />;
   }
   const related = await getRelatedJobs(job);
   const role = detectRole(job.title, job.org);
