@@ -258,9 +258,42 @@ export async function getJob(sourceId: string): Promise<Job | null> {
       .maybeSingle();
     if (!data) return null;
     return toStoredJob(data as Stored);
-  } catch {
-    return null;
+  } catch (e) {
+    // DB 가 잠깐 안 될 때 null 을 돌려주면 그 공고는 "없는 쪽"(404) 이 된다.
+    // 검색엔진은 그걸 보고 색인에서 지운다. 없는 것과 못 읽은 것은 다르다.
+    throw e;
   }
+}
+
+/**
+ * 어떤 소스에든 이 번호가 있는지. 상세 쪽이 gojobs 에서 못 찾았을 때
+ * 해외채용(worldjob) 번호면 그쪽 목록으로 보내 주려고 본다.
+ */
+export async function findJobSource(sourceId: string): Promise<string | null> {
+  if (!dbConfigured) return null;
+  const { data } = await db
+    .from("job_posts").select("source").eq("source_id", sourceId).limit(1).maybeSingle();
+  return (data as { source: string } | null)?.source ?? null;
+}
+
+/**
+ * 지금 접수 중인 공고 몇 건. 내려간 공고 대신 보여 줄 때 쓴다.
+ *
+ * Next 는 not-found 경계를 그 구역의 모든 쪽 응답에 같이 실어 보낸다.
+ * 즉 이 함수는 상세 쪽이 열릴 때마다 돈다. 목록 전체를 읽지 말고
+ * 마감이 가까운 열 건만 가볍게 묻는다.
+ */
+export async function getOpenJobs(limit = 10): Promise<Job[]> {
+  if (!dbConfigured) return [];
+  const today = new Date().toISOString().slice(0, 10);
+  const { data } = await db
+    .from("job_posts")
+    .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+    .eq("source", "gojobs")
+    .gte("end_date", today)
+    .order("end_date", { ascending: true })
+    .limit(limit);
+  return ((data ?? []) as Stored[]).map(toStoredJob).filter((j) => j.status === "ongoing");
 }
 
 /** 같은 기관, 없으면 같은 지역의 다른 공고. 상세 페이지 아래에 붙인다. */

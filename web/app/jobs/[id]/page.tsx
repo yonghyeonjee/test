@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JobGone from "@/components/JobGone";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { STATUS_LABEL } from "@/lib/db";
-import { dot, getJob, getRelatedJobs, type Job } from "@/lib/pubJobs";
+import { dot, findJobSource, getJob, getRelatedJobs, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { jobsRelated } from "@/lib/related";
@@ -34,7 +35,12 @@ function ymdAgo(days: number) {
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
-  if (!job) return { title: "채용 공고를 찾지 못했습니다", robots: { index: false, follow: true } };
+  // 없는 번호. 쪽은 JobGone 이 지금 접수 중인 공고로 채운다.
+  if (!job) return {
+    title: "내려간 채용 공고 — 지금 접수 중인 공공기관 채용",
+    description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
+    robots: { index: false, follow: true },
+  };
   const where = [job.region, job.org].filter(Boolean).join(" ");
   // 2008년치까지 받아 오면 공고가 수십만 건이 된다. 오래전에 끝난 공고를
   // 전부 색인에 밀어 넣으면 검색엔진이 사이트 전체를 얕게 본다. 자료로는
@@ -108,8 +114,15 @@ function jobNode(job: Job) {
 }
 
 export default async function JobDetail({ params }: P) {
-  const job = await getJob(decodeURIComponent(params.id));
-  if (!job) notFound();
+  const id = decodeURIComponent(params.id);
+  const job = await getJob(id);
+  if (!job) {
+    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는
+    // 지금 접수 중인 공고로 채운 쪽(JobGone 참고).
+    const src = await findJobSource(id).catch(() => null);
+    if (src === "worldjob") redirect("/jobs/overseas");
+    return <JobGone />;
+  }
   const related = await getRelatedJobs(job);
   const role = detectRole(job.title, job.org);
   // "무도실무관 (무도실무관)" 처럼 괄호 안이 직무 이름 그대로면 두 번 적지 않는다.
