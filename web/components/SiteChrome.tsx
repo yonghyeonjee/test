@@ -24,6 +24,7 @@ const NAV: NavItem[] = [
     sub: [
       { href: "/housing", label: "주거 지원 찾기" },
       { href: "/money/jeonse", label: "전세대출 금리" },
+      { href: "/money/home-loan", label: "구입자금 금리" },
       { href: "/money/student-loan", label: "학자금 이자지원" },
     ],
   },

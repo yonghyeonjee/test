@@ -1,0 +1,24 @@
+name: home-loan-rates
+
+# 보금자리론·디딤돌 금리표. 달마다 1일에 바뀌므로 매일 아침 한 번 읽는다.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 22 * * *"    # UTC 22:00 = KST 07:00
+
+jobs:
+  rates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python pipeline/test_home_loan_rates.py
+      - name: 금리표 갱신
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python -u pipeline/home_loan_rates.py
