@@ -9,6 +9,7 @@
  */
 
 import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY } from "./db";
+import { tokenize } from "./keywords";
 
 export type Parsed = {
   sido?: string;
@@ -16,6 +17,8 @@ export type Parsed = {
   age?: number;
   employment?: string;
   household: string[];
+  /** 조건으로 못 알아들은 낱말. 본문 검색어로 쓴다 ("신혼 전세"). */
+  keywords: string[];
   leftover: string[]; // 못 알아들은 낱말
 };
 
@@ -58,7 +61,8 @@ const HH_WORDS: [RegExp, string][] = [
   [/유공자|보훈|참전/, "보훈대상자"],
   [/1인|일인|독거|혼자/, "1인가구"],
   [/임산부|임신|출산/, "임산부"],
-  [/무주택|전세|월세|주거/, "무주택"],
+  // 전세·월세·주거는 가구 상황이 아니라 찾는 것이다. 낱말 검색으로 넘긴다.
+  [/무주택/, "무주택"],
 ];
 
 const EMP_WORDS: [RegExp, string][] = [
@@ -71,6 +75,25 @@ const EMP_WORDS: [RegExp, string][] = [
 ];
 
 /**
+ * 알아들은 조각이 낱말(띄어쓰기 단위)을 거의 다 덮는가.
+ *
+ * "기초수급" 은 기초·수급 두 조각이 덮으니 조건으로 다 쓴 낱말이고,
+ * "스마트공장" 은 '공장' 만 덮으니 시설 조건이면서 검색어로도 남겨야 한다.
+ * 조각을 빼고 절반 넘게 남으면 검색어로 산다.
+ */
+function covers(m: RegExpMatchArray | RegExp | string, token: string) {
+  if (m instanceof RegExp) {
+    const re = new RegExp(m.source, m.flags.includes("g") ? m.flags : m.flags + "g");
+    if (!re.test(token)) return false;
+    re.lastIndex = 0;
+    return token.replace(re, "").length <= token.length / 2;
+  }
+  const piece = typeof m === "string" ? m : m[0];
+  if (!token.includes(piece)) return false;
+  return token.replace(piece, "").length <= token.length / 2;
+}
+
+/**
  * @param sggIndex 시군구 이름 → 시도. "안산" 처럼 '시' 를 뺀 형태도 받는다.
  */
 export function parseQuery(
@@ -78,14 +101,22 @@ export function parseQuery(
   sggIndex: Map<string, { sido: string; full: string }>
 ): Parsed {
   const text = (raw || "").trim();
-  const out: Parsed = { household: [], leftover: [] };
+  const out: Parsed = { household: [], keywords: [], leftover: [] };
   if (!text) return out;
+  // 조건으로 알아들은 조각은 지워 나간다. 끝에 남는 것이 검색어다.
+  // 알아들은 조각이 든 낱말(띄어쓰기 단위)을 통째로 뺀다. "기초수급" 에서
+  // "기초" 만 빼면 "수급" 이 검색어로 남아 엉뚱한 것을 거른다.
+  let rest = text;
+  const eat = (m: RegExpMatchArray | RegExp | string | null) => {
+    if (!m) return;
+    rest = rest.split(/\s+/).filter((t) => !covers(m, t)).join(" ");
+  };
 
   // 1) 나이 — 숫자가 있으면 그것이 우선이다
   const m = text.match(/(\d{1,3})\s*(?:세|살)?/);
   if (m) {
     const n = Number(m[1]);
-    if (n >= 0 && n <= 120) out.age = n;
+    if (n >= 0 && n <= 120) { out.age = n; eat(m); }
   }
 
   // 2) 시군구 먼저. "광주시"(경기)와 "광주"(광역시)가 겹치므로
@@ -96,6 +127,7 @@ export function parseQuery(
       const hit = sggIndex.get(k)!;
       out.sigungu = hit.full;
       out.sido = hit.sido;
+      eat(k);
       break;
     }
   }
@@ -103,40 +135,54 @@ export function parseQuery(
   // 3) 시도
   if (!out.sido) {
     for (const [re, name] of SIDO_WORDS) {
-      if (re.test(text)) {
+      const mm = text.match(new RegExp(re.source + "(?:특별자치도|특별자치시|광역시|특별시|도|시)?"));
+      if (mm) {
         out.sido = name;
+        eat(mm);
         break;
       }
+    }
+  } else {
+    // 시군구가 잡혔어도 "경기 수원" 처럼 시도를 같이 적었을 수 있다
+    for (const [re] of SIDO_WORDS) {
+      const mm = rest.match(new RegExp(re.source + "(?:특별자치도|특별자치시|광역시|특별시|도)?"));
+      if (mm) { eat(mm); break; }
     }
   }
 
   // 4) 취업 상태
   for (const [re, v] of EMP_WORDS) {
-    if (re.test(text)) {
+    const mm = text.match(re);
+    if (mm) {
       out.employment = v;
+      eat(mm);
       break;
     }
   }
 
   // 5) 가구 상황 (여러 개 가능)
   for (const [re, v] of HH_WORDS) {
-    if (re.test(text) && !out.household.includes(v)) out.household.push(v);
+    if (re.test(text) && !out.household.includes(v)) { out.household.push(v); eat(re); }
   }
 
   // 6) 나이 숫자가 없으면 생애주기 낱말로 대신한다
   if (out.age === undefined) {
     for (const [re, n] of AGE_WORDS) {
-      if (re.test(text)) {
+      const mm = text.match(re);
+      if (mm) {
         out.age = n;
+        eat(mm);
         break;
       }
     }
   }
 
-  // 7) 아무것도 못 알아들은 낱말 (안내 문구용)
+  // 7) 남은 낱말은 본문 검색어. "사는", "지원금" 같은 군말은 tokenize 가 거른다.
+  out.keywords = tokenize(rest);
+
   const known =
     (out.sido ? 1 : 0) + (out.age !== undefined ? 1 : 0) +
-    (out.employment ? 1 : 0) + out.household.length;
+    (out.employment ? 1 : 0) + out.household.length + out.keywords.length;
   if (known === 0) out.leftover = text.split(/\s+/).slice(0, 5);
 
   return out;
@@ -150,6 +196,7 @@ export function describe(p: Parsed) {
   if (p.age !== undefined) bits.push(`${p.age}세`);
   if (p.employment) bits.push(p.employment);
   bits.push(...p.household);
+  if (p.keywords.length) bits.push(`‘${p.keywords.join(" ")}’ 포함`);
   return bits;
 }
 
@@ -160,6 +207,7 @@ export function toParams(p: Parsed) {
   if (p.age !== undefined) sp.set("age", String(p.age));
   if (p.employment) sp.set("emp", p.employment);
   p.household.forEach((h) => sp.append("hh", h));
+  if (p.keywords.length) sp.set("q", p.keywords.join(" "));
   sp.set("via", "text");
   return sp;
 }
@@ -172,6 +220,7 @@ export type ParsedBiz = {
   field: string[];
   industry: string[];
   years?: number;
+  keywords: string[];
   leftover: string[];
 };
 
@@ -219,20 +268,27 @@ const BIZ_FIELD_WORDS: [RegExp, string][] = [
 
 export function parseBizQuery(raw: string): ParsedBiz {
   const text = (raw || "").trim();
-  const out: ParsedBiz = { field: [], industry: [], leftover: [] };
+  const out: ParsedBiz = { field: [], industry: [], keywords: [], leftover: [] };
   if (!text) return out;
+  let restAll = text;
+  const eat = (m: RegExpMatchArray | RegExp | null) => {
+    if (!m) return;
+    restAll = restAll.split(/\s+/).filter((t) => !covers(m, t)).join(" ");
+  };
 
   // 업력. "3년" "업력 5년차" "7년 미만" 을 모두 같은 값으로 본다.
   // 연도(2026년)가 잡히지 않도록 두 자리까지만 받는다.
-  const y = text.match(/(?:업력\s*)?(\d{1,2})\s*년/);
+  const y = text.match(/(?:업력\s*)?(\d{1,2})\s*년(?:차)?/);
   if (y) {
     const n = Number(y[1]);
-    if (n >= 0 && n <= 30) out.years = n;
+    if (n >= 0 && n <= 30) { out.years = n; eat(y); }
   }
 
   for (const [re, name] of SIDO_WORDS) {
-    if (re.test(text)) {
+    const mm = text.match(new RegExp(re.source + "(?:특별자치도|특별자치시|광역시|특별시|도|시)?"));
+    if (mm) {
       out.sido = name;
+      eat(mm);
       break;
     }
   }
@@ -245,21 +301,25 @@ export function parseBizQuery(raw: string): ParsedBiz {
     if (m) {
       out.target = v;
       rest = text.replace(m[0], " ");
+      eat(m);
       break;
     }
   }
 
   for (const [re, v] of BIZ_FIELD_WORDS) {
-    if (re.test(rest) && !out.field.includes(v)) out.field.push(v);
+    if (re.test(rest) && !out.field.includes(v)) { out.field.push(v); eat(re); }
   }
 
   for (const [re, v] of INDUSTRY_WORDS) {
-    if (re.test(text) && !out.industry.includes(v)) out.industry.push(v);
+    const mm = text.match(re);
+    if (mm && !out.industry.includes(v)) { out.industry.push(v); eat(mm); }
   }
+
+  out.keywords = tokenize(restAll);
 
   const known =
     (out.sido ? 1 : 0) + (out.target ? 1 : 0) +
-    (out.years !== undefined ? 1 : 0) + out.field.length + out.industry.length;
+    (out.years !== undefined ? 1 : 0) + out.field.length + out.industry.length + out.keywords.length;
   if (known === 0) out.leftover = text.split(/\s+/).slice(0, 5);
 
   return out;
@@ -272,6 +332,7 @@ export function describeBiz(p: ParsedBiz) {
   if (p.years !== undefined) bits.push(`업력 ${p.years}년`);
   bits.push(...p.industry);
   bits.push(...p.field);
+  if (p.keywords.length) bits.push(`‘${p.keywords.join(" ")}’ 포함`);
   return bits;
 }
 
@@ -283,6 +344,7 @@ export function toBizParams(p: ParsedBiz) {
   if (p.years !== undefined) sp.set("years", String(p.years));
   p.field.forEach((f) => sp.append("field", f));
   p.industry.forEach((i) => sp.append("ind", i));
+  if (p.keywords.length) sp.set("q", p.keywords.join(" "));
   sp.set("via", "text");
   return sp;
 }

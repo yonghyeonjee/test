@@ -122,6 +122,22 @@ export default async function Policies() {
         </div>
       </PageBanner>
 
+      <section className="mt-8">
+        <form action="/" method="get" className="flex items-center gap-2 rounded-card border-2 border-line bg-white px-4 py-3 focus-within:border-brand">
+          <input
+            name="q"
+            placeholder="찾는 말로 바로 찾기 — 예) 신혼부부 전세, 학자금, 출산"
+            aria-label="찾는 말"
+            className="w-full min-w-0 bg-transparent text-[15px] outline-none placeholder:text-faint"
+          />
+          <input type="hidden" name="via" value="policies" />
+          <button type="submit" className="btn btn-primary shrink-0 px-4 py-2">찾기</button>
+        </form>
+        <p className="mt-2 text-xs text-muted">
+          공고 본문에서 그 말이 있는 것만 남깁니다. 조회 화면에서 지역·나이를 덧붙일 수 있습니다.
+        </p>
+      </section>
+
       <Block
         title="누가 받는지로 찾기"
         sub="나이·일하는 형태·가구 사정 가운데 해당되는 것을 누르면, 그 조건이 붙은 사업만 모입니다. 두 가지 이상 해당되면 각각 눌러 비교해 보세요."

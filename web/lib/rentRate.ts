@@ -47,6 +47,14 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+// 금리·보증비율이 0 인 주가 있다(취급 안 함을 0 으로 채워 보낸다). 0% 대출은
+// 없으니 값이 없는 것으로 본다. 그대로 두면 "가장 낮은 금리 0.00%" 가 맨 위에
+// 올라온다.
+const rate = (v: unknown): number | null => {
+  const n = num(v);
+  return n === null || n <= 0 ? null : n;
+};
+
 const str = (v: unknown): string | null => {
   const s = v === null || v === undefined ? "" : String(v).trim();
   return s.length ? s : null;
@@ -73,15 +81,14 @@ export async function getRentRates(): Promise<RateBoard> {
     to ??= str(r.bssYmdEnd);
 
     const tier = (i: string): RateTier => ({
-      ratio: num(r[`interest1_${i}`]),
-      base: num(r[`interest2_${i}`]),
+      ratio: rate(r[`interest1_${i}`]),
+      base: rate(r[`interest2_${i}`]),
       extra: num(r[`interest3_${i}`]),
-      rate: num(r[`interest4_${i}`]),
+      rate: rate(r[`interest4_${i}`]),
     });
-    // 값이 하나도 없는 조건은 화면에 줄만 차지한다.
-    const tiers = [tier("1"), tier("2")].filter(
-      (t) => t.rate !== null || t.base !== null || t.extra !== null,
-    );
+    // 적용금리가 없는 조건은 화면에 줄만 차지한다.
+    const tiers = [tier("1"), tier("2")].filter((t) => t.rate !== null);
+    if (!tiers.length) continue;
     const rates = tiers.map((t) => t.rate).filter((n): n is number => n !== null);
     banks.push({
       bank,

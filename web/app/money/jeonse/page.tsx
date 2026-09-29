@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArtJeonse } from "@/components/Art";
 import Faq from "@/components/Faq";
+import FindByCondition from "@/components/FindByCondition";
 import GuideBanner from "@/components/GuideBanner";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
@@ -120,6 +121,14 @@ export default async function Jeonse() {
           </p>
         </div>
       </section>
+
+      <FindByCondition
+        q="전세"
+        via="jeonse"
+        title="전세 보증금·이자 지원 공고 찾기"
+        sub="금리표는 은행 이야기고, 지자체가 보증금이나 이자를 따로 대주는 사업이 있습니다. 시·도를 고르면 접수 중인 것만 나오고, 조회 화면에서 '신혼부부'를 덧붙이면 더 좁혀집니다."
+        sidos={["서울특별시", "경기도", "인천광역시", "부산광역시", "대구광역시", "대전광역시", "전남광주통합특별시", "울산광역시", "세종특별자치시", "강원특별자치도", "충청북도", "충청남도", "전북특별자치도", "경상북도", "경상남도", "제주특별자치도"]}
+      />
 
       <Faq items={JEONSE_FAQ} />
 

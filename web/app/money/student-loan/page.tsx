@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtStudy } from "@/components/Art";
 import Faq from "@/components/Faq";
+import FindByCondition from "@/components/FindByCondition";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -57,6 +58,14 @@ export default function StudentLoan() {
       <p className="mt-3 text-xs text-muted">
         한국장학재단 협약 현황 {ymd(LOAN_BASE)} 기준입니다.
       </p>
+
+      <FindByCondition
+        q="학자금"
+        via="student-loan"
+        title="지금 접수 중인 학자금 지원 공고 찾기"
+        sub="협약 목록은 '있다/없다'만 알려 줍니다. 올해 공고가 실제로 열려 있는지는 조회 화면에서 시·도를 고르면 바로 나옵니다. 나이와 상황도 덧붙일 수 있습니다."
+        sidos={groups.map((g) => g.sido)}
+      />
 
       <section className="mt-10">
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
