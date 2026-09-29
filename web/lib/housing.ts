@@ -197,7 +197,10 @@ export const findPath = (kind: KindKey, who: WhoKey, sido?: string) => {
 /** 제목. 검색어 순서(지역 → 대상 → 종류)를 그대로 따른다. */
 export function housingTitle(kind: KindKey, who: WhoKey, sido: string | undefined, n: number) {
   const head = `${sido ? `${sido} ` : ""}${WHO[who].label} ${KINDS[kind].title}`;
-  const tail = sido ? `시·군 사업 ${n}건` : `정부 대출과 지자체 사업 ${n}건`;
+  // 0건이면 숫자를 적지 않는다. "0건" 이 제목에 박히면 검색 결과에서 눌리지 않는다.
+  const tail = sido
+    ? (n > 0 ? `시·군 사업 ${n}건과 정부 대출` : "정부 대출과 시·군 사업")
+    : (n > 0 ? `정부 대출과 지자체 사업 ${n}건` : "정부 대출과 지자체 사업");
   return `${head} — ${tail}`;
 }
 
