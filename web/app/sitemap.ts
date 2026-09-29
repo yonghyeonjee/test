@@ -4,6 +4,7 @@ import { getJobHires, getJobRegions, getTopJobIds, getTopOrgs } from "@/lib/pubJ
 import { POSTS } from "@/lib/posts";
 import { getLicenses } from "@/lib/qnet";
 import { TOPICS } from "@/lib/topics";
+import { KIND_KEYS, WHO_KEYS, housingCounts, housingPath, sidosFor } from "@/lib/housing";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 
@@ -50,6 +51,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const codes = await licenseCodes();
   // 채용은 공고 수가 수만 건이 될 수 있다. 최근 것 400건과 지역 목차만 올린다.
   // 기관 쪽은 공고 여덟 건 이상인 곳만, 위에서부터 300곳.
+  // 주거 지원: 대상×종류 9쪽은 늘, 시·도 쪽은 사업 3건 이상인 곳만.
+  const hCounts = await housingCounts().catch(() => []);
+  const housing = WHO_KEYS.flatMap((who) =>
+    KIND_KEYS.flatMap((kind) => [
+      { url: `${SITE}${housingPath(kind, who)}`, changeFrequency: "daily" as const, priority: 0.8 },
+      ...sidosFor(hCounts, kind, who, 3).map((s) => ({
+        url: `${SITE}${housingPath(kind, who, s.sido)}`, changeFrequency: "daily" as const, priority: 0.7,
+      })),
+    ]),
+  );
+
   const [jobRegions, jobIds, jobOrgs, jobHires] = await Promise.all([
     getJobRegions(),
     getTopJobIds(400),
@@ -85,6 +97,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/blog/youth-future-savings`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${SITE}/blog/income`, changeFrequency: "monthly" as const, priority: 0.8 },
     { url: `${SITE}/blog/gojobs-guide`, changeFrequency: "monthly" as const, priority: 0.9 },
+    { url: `${SITE}/housing`, changeFrequency: "daily" as const, priority: 0.9 },
+    ...housing,
     { url: `${SITE}/privacy`, changeFrequency: "yearly" as const, priority: 0.2 },
     ...POSTS.map((p) => ({
       url: `${SITE}/blog/${p.slug}`,
