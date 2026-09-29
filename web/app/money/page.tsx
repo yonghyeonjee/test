@@ -27,6 +27,15 @@ const CARDS = [
     tag: "대상·지역별",
   },
   {
+    href: "/money/home-loan",
+    title: "구입자금 대출 금리 (디딤돌·보금자리론)",
+    desc:
+      "집 살 때 쓰는 정책대출의 이번 달 공시 금리를 소득 구간·만기별로 옮겨 두었습니다. " +
+      "신혼·다자녀·청년 우대금리까지 한 표에서 봅니다.",
+    Art: ArtMoney,
+    tag: "매월 갱신",
+  },
+  {
     href: "/money/jeonse",
     title: "전세자금대출 금리 비교",
     desc:

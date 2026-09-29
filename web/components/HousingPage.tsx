@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
+import HomeLoanRates from "@/components/HomeLoanRates";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import ProgramEntry from "@/components/ProgramEntry";
@@ -112,6 +113,13 @@ export default async function HousingPage({ kind, who, sido }: { kind: KindKey; 
           금리와 최대 한도는 정부 대책에 따라 바뀝니다. 위 숫자는 {CHECKED} 기준이고, 신청 전 원문에서 다시 확인하세요.
         </p>
       </section>
+
+      {kind === "buy" && (
+        <section className="mt-10">
+          <h2 className="sec-title text-[1.0625rem] font-extrabold">이번 달 금리</h2>
+          <div className="mt-4"><HomeLoanRates compact /></div>
+        </section>
+      )}
 
       <MidAd name="detail_mid" context="general" seed={`housing-${kind}-${who}`} className="mt-10" />
 
