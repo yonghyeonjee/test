@@ -18,6 +18,15 @@ export const metadata: Metadata = {
 
 const CARDS = [
   {
+    href: "/housing",
+    title: "신혼부부·청년 주거 지원 찾기",
+    desc:
+      "전세·월세·매매로 나눠, 주택도시기금 대출 조건과 지금 접수 중인 시·군 이자지원·월세 사업을 " +
+      "지역별로 봅니다. 대출은 전국 공통, 이자지원은 사는 곳마다 다릅니다.",
+    Art: ArtMoney,
+    tag: "대상·지역별",
+  },
+  {
     href: "/money/jeonse",
     title: "전세자금대출 금리 비교",
     desc:
