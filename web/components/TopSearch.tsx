@@ -63,13 +63,13 @@ export default function TopSearch({ index }: { index: Idx }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onBlur={() => { if (!q) setOpen(false); }}
-          placeholder="지역·나이·상황  예) 수원 28살 미취업"
+          placeholder="예) 수원 28살 미취업, 신혼부부 전세"
           aria-label="조건 검색"
           className="h-9 w-full min-w-0 bg-transparent text-[14px] outline-none placeholder:text-faint"
         />
         {q && (
           <span className="hidden shrink-0 text-[11px] text-muted sm:inline">
-            {bits.length ? bits.slice(0, 2).join(" · ") : "전체에서 찾기"}
+            {bits.length ? bits.slice(0, 2).join(" · ") : "본문에서 찾기"}
           </span>
         )}
         <button type="submit" className="btn btn-primary shrink-0 !rounded-pill !px-3 !py-1.5 !text-[13px]">

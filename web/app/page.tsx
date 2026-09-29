@@ -10,6 +10,7 @@ import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
 import GuideBanner from "@/components/GuideBanner";
+import KeywordBar from "@/components/KeywordBar";
 import QuickMenu from "@/components/QuickMenu";
 import TopicGrid from "@/components/TopicGrid";
 import SectionHead from "@/components/SectionHead";
@@ -28,6 +29,7 @@ import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
 import TrackResults from "@/components/Track";
 import { promoContextFor } from "@/lib/promo";
+import { SUGGEST_BUSINESS, SUGGEST_WELFARE, cleanQuery } from "@/lib/keywords";
 import { blogIndexRelated } from "@/lib/related";
 import { LOAN_ORGS } from "@/lib/studentLoan";
 import { MAJORS } from "@/lib/majors";
@@ -112,8 +114,8 @@ function RowPair({ rows }: {
   );
 }
 
-function Results({ results, label, myAge, terms }: {
-  results: Program[]; label: string; myAge?: number; terms: string[];
+function Results({ results, label, myAge, terms, q }: {
+  results: Program[]; label: string; myAge?: number; terms: string[]; q?: string;
 }) {
   return (
     <section className="mt-8">
@@ -135,7 +137,9 @@ function Results({ results, label, myAge, terms }: {
           <p className="leading-relaxed text-muted">
             입력하신 조건에 걸리는 사업을 찾지 못했습니다.
             <br />
-            지역을 시·도 단위로 넓히거나 선택을 줄여 보세요.
+            {q
+              ? `‘${q}’ 을(를) 다른 말로 바꾸거나 빼고, 지역을 시·도 단위로 넓혀 보세요.`
+              : "지역을 시·도 단위로 넓히거나 선택을 줄여 보세요."}
           </p>
           <Link href="/" className="btn btn-ghost mt-5">처음부터 다시</Link>
         </div>
@@ -159,6 +163,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const bundle = await getHomeBundle();
   const { coverage, settings } = bundle;
   const sido = one(searchParams.sido);
+  const q = cleanQuery(one(searchParams.q));
 
   if (tab === "business") {
     const sidos = await getBusinessRegions();
@@ -168,11 +173,11 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
     const bizYears = yearsRaw ? Number(yearsRaw) : undefined;
     const industry = many(searchParams.ind);
     const asked = Boolean(
-      sido || bizTarget || bizField.length || yearsRaw || industry.length
+      sido || bizTarget || bizField.length || yearsRaw || industry.length || q
     );
 
     const results = asked
-      ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry })
+      ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry, q })
       : [];
     // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
     if (asked && !isBot(headers().get("user-agent")))
@@ -186,7 +191,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         <Tabs active="business" counts={coverage} />
         <Suspense fallback={<div className="h-56" />}>
           <Finder
-            pick={<BusinessSentence sidos={sidos} />}
+            pick={<><BusinessSentence sidos={sidos} /><KeywordBar suggest={SUGGEST_BUSINESS} tab="business" /></>}
             search={<BizSearchBox autoFocus />}
           />
         </Suspense>
@@ -194,7 +199,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           <Results
             results={results}
             label="신청할 수 있는 지원사업"
-            terms={[sido, bizTarget, yearsRaw ? `${yearsRaw}년차` : "", ...bizField]
+            q={q}
+            terms={[sido, bizTarget, yearsRaw ? `${yearsRaw}년차` : "", ...bizField, q && `‘${q}’`]
               .filter(Boolean) as string[]}
           />
         ) : (
@@ -219,11 +225,11 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const age = ageRaw ? Number(ageRaw) : undefined;
   const employment = one(searchParams.emp);
   const household = many(searchParams.hh);
-  const asked = Boolean(sido || age || employment || household.length);
+  const asked = Boolean(sido || age || employment || household.length || q);
   const topicCounts = asked ? {} : await countByTopic().catch(() => ({} as Record<string, number>));
 
   const results = asked
-    ? await matchWelfare({ sido, sigungu, age, employment, household })
+    ? await matchWelfare({ sido, sigungu, age, employment, household, q })
     : [];
   if (asked && !isBot(headers().get("user-agent")))
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
@@ -257,7 +263,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           >
             <Suspense fallback={<div className="h-56" />}>
               <Finder
-                pick={<ConditionSentence regions={regions} />}
+                pick={<><ConditionSentence regions={regions} /><KeywordBar suggest={SUGGEST_WELFARE} tab="welfare" /></>}
                 search={<SearchBox index={sggIndex} autoFocus />}
               />
             </Suspense>
@@ -271,7 +277,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
       ) : (
         <Suspense fallback={<div className="h-56" />}>
           <Finder
-            pick={<ConditionSentence regions={regions} />}
+            pick={<><ConditionSentence regions={regions} /><KeywordBar suggest={SUGGEST_WELFARE} tab="welfare" /></>}
             search={<SearchBox index={sggIndex} autoFocus />}
           />
         </Suspense>
@@ -283,7 +289,8 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
             results={results}
             label="해당될 수 있는 사업"
             myAge={age}
-            terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household]
+            q={q}
+            terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household, q && `‘${q}’`]
               .filter(Boolean) as string[]}
           />
           <AdSlot name="results_bottom" />

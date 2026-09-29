@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { expandQuery } from "./keywords";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -131,6 +132,8 @@ export type WelfareQuery = {
   age?: number;
   employment?: string;
   household?: string[];
+  /** 본문에서 찾을 말. "신혼 전세" */
+  q?: string;
 };
 
 export async function matchWelfare(q: WelfareQuery, limit = 60) {
@@ -141,6 +144,7 @@ export async function matchWelfare(q: WelfareQuery, limit = 60) {
     p_employment: q.employment || null,
     p_household: q.household?.length ? q.household : null,
     p_limit: limit,
+    p_q: expandQuery(q.q),
   });
   if (error) throw error;
   return (data ?? []) as Program[];
@@ -153,6 +157,7 @@ export type BusinessQuery = {
   bizField?: string[];
   bizYears?: number;
   industry?: string[];
+  q?: string;
 };
 
 export async function matchBusiness(q: BusinessQuery, limit = 60) {
@@ -163,6 +168,7 @@ export async function matchBusiness(q: BusinessQuery, limit = 60) {
     p_biz_years: q.bizYears ?? null,
     p_industry: q.industry?.length ? q.industry : null,
     p_limit: limit,
+    p_q: expandQuery(q.q),
   });
   if (error) throw error;
   return (data ?? []) as Program[];

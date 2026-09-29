@@ -9,9 +9,9 @@ type Idx = Record<string, { sido: string; full: string }>;
 
 const SAMPLES = [
   "안산 28살 미취업",
+  "경기 신혼부부 전세",
   "서울 65세 기초수급",
-  "경기도 청년 월세",
-  "부산 한부모 초등학생",
+  "대학생 학자금",
 ];
 
 export default function SearchBox({
@@ -64,7 +64,7 @@ export default function SearchBox({
           autoFocus={autoFocus}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && go()}
-          placeholder="사는 곳, 나이, 상황을 한 줄로 적어보세요"
+          placeholder="사는 곳, 나이, 찾는 것을 한 줄로 (예: 경기 신혼부부 전세)"
           aria-label="조건 검색"
           className="w-full bg-transparent text-[1.0625rem] outline-none
                      placeholder:text-faint"
@@ -93,7 +93,7 @@ export default function SearchBox({
           </>
         ) : q.length > 1 ? (
           <span className="text-xs text-accent">
-            지역·나이·상황 중 하나는 있어야 찾을 수 있습니다
+            한 글자 더 적어 주세요
           </span>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">

@@ -9,6 +9,7 @@ const SAMPLES = [
   "3년차 창업기업 판로",
   "부산 중소기업 수출",
   "예비창업자 기술",
+  "제조업 스마트공장",
 ];
 
 /** 기업 지원사업용 한 줄 입력. 개인 쪽과 달리 시·군·구는 보지 않는다. */
@@ -77,7 +78,7 @@ export default function BizSearchBox({ autoFocus }: { autoFocus?: boolean }) {
           </>
         ) : q.length > 1 ? (
           <span className="text-xs text-accent">
-            지역·사업체 종류·지원분야 중 하나는 있어야 찾을 수 있습니다
+            한 글자 더 적어 주세요
           </span>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
