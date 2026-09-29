@@ -15,6 +15,7 @@ robots.txt 도 막지 않으므로, 한 달에 한 번 바뀌는 표를 하루 �
 지난달 표가 낫다.
 """
 
+import html as htmlmod
 import json
 import os
 import re
@@ -37,7 +38,7 @@ def text(html: str) -> str:
     html = re.sub(r"(?i)</(tr|p|div|li|h\d|table)>", "\n", html)
     html = re.sub(r"(?i)</t[dh]>", " | ", html)
     html = re.sub(r"<[^>]+>", " ", html)
-    html = html.replace("&nbsp;", " ").replace("&middot;", "·").replace("&amp;", "&")
+    html = htmlmod.unescape(html).replace("\xa0", " ")
     html = re.sub(r"[ \t]+", " ", html)
     html = re.sub(r"\n\s*\n+", "\n", html)
     return "\n".join(l.strip() for l in html.split("\n")).strip()
@@ -65,6 +66,7 @@ def notice_date(t: str):
 
 
 def parse_bogeumjari(t: str) -> dict:
+    t = htmlmod.unescape(t)
     m = re.search(r"(\d{4})년\s*(\d{1,2})월\s*\n?\s*u-보금자리론", t)
     month = f"{m.group(1)}-{int(m.group(2)):02d}" if m else None
     toks = tokens(t)
@@ -113,6 +115,7 @@ def parse_bogeumjari(t: str) -> dict:
 
 
 def parse_didimdol(t: str) -> dict:
+    t = htmlmod.unescape(t)
     m = re.search(r"(\d{4})년\s*(\d{2})월\s*내집마련디딤돌", t)
     month = f"{m.group(1)}-{m.group(2)}" if m else None
     toks = tokens(t)
@@ -139,7 +142,12 @@ def parse_didimdol(t: str) -> dict:
             i += 1
     lines = [l.strip() for l in t.split("\n")]
     notes = [l for l in lines if l.startswith("※")][:2]
-    prefs = [l for l in lines if "%p" in l and not l.startswith("※")][:6]
+    # 우대금리 문단은 규정집처럼 길다. 사람이 볼 두 줄만: 가구 유형 우대와 청약저축 우대.
+    prefs = []
+    for key in ("다자녀 가구 0.7%p", "청약(종합)저축 가입중"):
+        l = next((x for x in lines if key in x), None)
+        if l:
+            prefs.append(l[:260])
     floor = next((l for l in lines if "최저금리" in l and "우대금리 적용 상한" in l), None)
     return {"month": month, "notice": notice_date(t), "general": tables[0] if tables else None,
             "first_newlywed": tables[1] if len(tables) > 1 else None,
