@@ -30,7 +30,9 @@ export default function TopSearch({ index }: { index: Idx }) {
     if (!text) { setOpen(true); return; }
     if (bits.length) {
       track("search_submit", { entry: "top", matched: bits.length });
-      router.push(`/?${toParams(parsed)}&via=top`);
+      const sp = toParams(parsed);
+      sp.set("via", "top");
+      router.push(`/?${sp}`);
     } else {
       track("search_submit", { entry: "top", matched: 0 });
       router.push("/policies");
