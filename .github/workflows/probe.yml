@@ -1,0 +1,30 @@
+name: probe
+
+# 공공 API 의 실제 응답 모양을 보는 일회성 탐침. 손으로만 돌린다.
+# 인증키는 스크립트가 가린다(mask).
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: "pipeline/ 아래 스크립트"
+        required: true
+        default: "probe_odcloud.py"
+      arg:
+        description: "스크립트 인자"
+        required: false
+        default: "15090223"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: 탐침
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: python -u pipeline/${{ inputs.script }} ${{ inputs.arg }}
