@@ -45,13 +45,28 @@ def show(url, around=None, n=4000):
         print(f"\n--- {url}\n    실패 {type(e).__name__}: {e}")
 
 
+def rates(url):
+    """금리표가 있는 자리만 찍는다. 본문은 나침 뒤라 '%' 가 처음 나오는 곳부터 본다."""
+    r = S.get(url, timeout=30)
+    html = r.text
+    print(f"\n--- {url}\n    {r.status_code} {len(html)}자  '%' {html.count('%')}개")
+    # 화면이 XHR 로 표를 채우는지: 스크립트 안의 주소
+    urls = sorted(set(re.findall(r"""["']((?:/[A-Za-z0-9_./-]+)\.(?:do|json|jsp)(?:\?[^"']*)?)["']""", html)))
+    print("    스크립트 주소:", [u for u in urls if re.search(r"rate|int|list|ajax|json|금리", u, re.I)][:30])
+    t = text(html)
+    # 본문 시작: 제목 다음의 '금리안내' 이후
+    k = t.find("금리안내", t.find("금리안내") + 1)
+    body = t[k:] if k > 0 else t
+    i = body.find("%")
+    print("    본문 '%' 위치:", i)
+    print("    " + body[max(0, i - 1500): i + 6000].replace("\n", "\n    "))
+
+
 def main():
-    show("https://www.hf.go.kr/robots.txt", n=1500)
-    show("https://www.hf.go.kr/ko/sub01/sub01_01_04.do", around="금리", n=5000)
-    show("https://www.hf.go.kr/ko/sub01/sub01_02_03.do", around="금리", n=5000)
-    show("https://www.data.go.kr/data/15082039/openapi.do", around="보금자리론", n=2500)
-    show("https://hf.go.kr/abc/hf-open-api-webpage/index.html", n=3000)
-    show("https://houstat.hf.go.kr/research/portal/openapi/openApiIntroPage.do", n=3000)
+    show("https://www.hf.go.kr/robots.txt", n=300)
+    rates("https://www.hf.go.kr/ko/sub01/sub01_01_04.do")
+    rates("https://www.hf.go.kr/ko/sub01/sub01_02_03.do")
+    show("https://www.hf.go.kr/ko/sub02/sub02_01_08.do", around="금리", n=3000)
 
 
 if __name__ == "__main__":
