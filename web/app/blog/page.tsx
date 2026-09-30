@@ -40,6 +40,21 @@ export default function BlogIndex() {
         </span>
       </Link>
 
+      <Link href="/blog/jeonse-extension"
+            className="card card-link mt-3 flex items-center gap-4 p-5">
+        <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">
+          전세
+        </span>
+        <span className="min-w-0">
+          <b className="block text-[15.5px] leading-snug">
+            버팀목 전세대출 이사 한 달 연장 — 집주인이 집을 판다고 할 때 세입자가 한 일
+          </b>
+          <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
+            문자 세 통으로 퇴거를 한 달 늦추고, 한시적 연장 계약서와 목적물 변경으로 대출을 새 집에 옮긴 순서와 돈 계산.
+          </span>
+        </span>
+      </Link>
+
       <Link href="/blog/gojobs-guide"
             className="card card-link mt-3 flex items-center gap-4 p-5">
         <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">
