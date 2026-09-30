@@ -177,8 +177,24 @@ export function moneyRelated(): Related[] {
   return keep([POLICIES, HOME, post("how-to-apply"), post("government-subsidy-types")]);
 }
 
+const JEONSE_POST: Related = {
+  href: "/blog/jeonse-extension",
+  title: "버팀목 전세대출, 이사 날짜가 만기와 안 맞을 때",
+  desc: "집주인이 집을 판다고 했을 때 한시적 연장 계약서와 목적물 변경으로 한 달을 번 기록입니다.",
+};
+
+const HOUSING_JEONSE: Related = {
+  href: "/housing/jeonse/youth",
+  title: "청년 전세자금 대출이자 지원",
+  desc: "지자체가 청년 전세대출 이자를 대신 내주는 사업만 골라 지역별로 모았습니다.",
+};
+
 export function jeonseRelated(): Related[] {
-  return keep([STUDY, POLICIES, HOME, post("how-to-apply")]);
+  return keep([JEONSE_POST, STUDY, POLICIES, HOME]);
+}
+
+export function jeonsePostRelated(): Related[] {
+  return keep([JEONSE, HOUSING_JEONSE, post("how-to-apply"), HOME]);
 }
 
 export function studentLoanRelated(): Related[] {

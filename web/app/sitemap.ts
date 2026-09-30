@@ -98,6 +98,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/blog/youth-future-savings`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${SITE}/blog/income`, changeFrequency: "monthly" as const, priority: 0.8 },
     { url: `${SITE}/blog/gojobs-guide`, changeFrequency: "monthly" as const, priority: 0.9 },
+    { url: `${SITE}/blog/jeonse-extension`, changeFrequency: "monthly" as const, priority: 0.9 },
     { url: `${SITE}/housing`, changeFrequency: "daily" as const, priority: 0.9 },
     ...housing,
     { url: `${SITE}/privacy`, changeFrequency: "yearly" as const, priority: 0.2 },
