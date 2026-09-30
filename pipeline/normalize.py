@@ -386,6 +386,14 @@ def main():
         print(f"  저장 {n}/{len(batch)}", flush=True)
     print(f"완료 {n}건, {time.time() - t0:.0f}초")
 
+    # 첫 화면·정책 화면의 건수는 30분마다 갈아 끼우는 통계표에서 읽는다.
+    # 새로 정규화한 것이 바로 보이도록 여기서 한 번 갈아 끼운다.
+    try:
+        sb.rpc("refresh_site_stats").execute()
+        print("통계표 갱신")
+    except Exception as e:  # 실패해도 30분 안에 pg_cron 이 한다
+        print(f"통계표 갱신 실패(무시): {e}")
+
 
 if __name__ == "__main__":
     main()

@@ -332,8 +332,11 @@ export type Bundle = {
  * 서버에서 한 번에 묶어 오면 130ms 안에 끝난다.
  */
 async function loadHomeBundle(): Promise<Bundle> {
-  const { data } = await db.rpc("home_bundle");
-  const b = (data ?? {}) as Record<string, any>;
+  const { data, error } = await db.rpc("home_bundle");
+  // 실패를 조용히 빈 자료로 바꾸면 그 빈 자료가 15분 동안 캐시에 남는다 —
+  // "개인 복지 0건" 첫 화면이 그렇게 나왔다. 여기서는 던지고, 밖에서 받는다.
+  if (error || !data) throw new Error(`home_bundle: ${error?.message ?? "빈 응답"}`);
+  const b = data as Record<string, any>;
 
   const regionRows = (b.regions ?? []) as
     { sido: string | null; sigungu: string | null; n: number }[];
@@ -396,9 +399,35 @@ async function loadHomeBundle(): Promise<Bundle> {
  * 자료 자체는 모두에게 같으니 15분에 한 번만 다녀오면 된다. 화면 그리는
  * 일은 그대로 두고, 자료 가져오는 일만 캐시한다.
  */
-export const getHomeBundle = unstable_cache(loadHomeBundle, ["home-bundle"], {
+const cachedHomeBundle = unstable_cache(loadHomeBundle, ["home-bundle"], {
   revalidate: 900,
 });
+
+const emptyBundle = (): Bundle => ({
+  coverage: { welfare: 0, business: 0 },
+  settings: { closingDays: 14, newDays: 7, notice: "" },
+  areas: [],
+  stats: { age: [], employment: [], household: [] },
+  regions: [],
+  sggIndex: {},
+  closingCount: 0,
+  closing: [],
+  closingFallback: false,
+  fresh: [],
+});
+
+/**
+ * DB 를 못 읽은 요청만 빈 화면을 받고, 캐시에는 남지 않는다. 다음 요청이
+ * 다시 다녀온다.
+ */
+export async function getHomeBundle(): Promise<Bundle> {
+  try {
+    return await cachedHomeBundle();
+  } catch (e) {
+    console.warn("[home] 자료를 읽지 못했다:", e instanceof Error ? e.message : e);
+    return emptyBundle();
+  }
+}
 
 
 export async function feedClosing(kind: string | null = null, limit = 8) {
