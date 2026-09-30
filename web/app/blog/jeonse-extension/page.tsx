@@ -16,25 +16,26 @@ import { SITE_URL } from "@/lib/seo";
 /**
  * 전세 만기에 집주인이 집을 팔겠다고 했을 때, 버팀목 대출 세입자가 실제로
  * 한 일을 정리한 글. 제도 숫자(한도·금리·요건)는 2026년 9월에 확인한 값이고,
- * 사례의 금액은 글쓴이의 경우다. 해마다 바뀌는 숫자는 기준일과 함께 적는다.
+ * 사례의 금액은 한 세입자(A씨)의 경우다. 해마다 바뀌는 숫자는 기준일과 함께 적는다.
  */
 export const revalidate = 86400;
 
 const PATH = "/blog/jeonse-extension";
 const UPDATED = "2026-09-30";
-const TITLE = "버팀목 전세대출 이사 한 달 연장 — 집주인이 집을 판다고 할 때 세입자가 한 일";
+const TITLE = "버팀목 전세대출 1개월 연장, 연장 후 이사까지 — 한시적 연장 계약서·목적물 변경 실제 사례";
 const DESC =
-  "전세 만기 두 달 전 집주인이 집을 팔겠다고 했습니다. 청년버팀목 대출을 쓰는 세입자가 문자 세 통으로 " +
-  "퇴거를 한 달 늦추고, 한시적 연장 계약서와 목적물 변경으로 대출을 새 집에 옮긴 순서와 돈 계산을 " +
-  "그대로 적었습니다.";
+  "버팀목 전세대출을 1개월만 연장하고 이사하려면 한시적 연장 계약서로 기한연장한 뒤 잔금일에 목적물 " +
+  "변경을 합니다. 집주인이 집을 판다고 한 HUG 청년버팀목 세입자의 실제 사례로 순서, 은행 서류, " +
+  "10% 상환 대신 붙는 가산금리, 돈 계산까지 정리했습니다.";
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESC,
   keywords: [
-    "버팀목 전세대출 연장", "버팀목 기한연장", "버팀목 목적물 변경", "청년버팀목 이사",
-    "전세대출 이사 연장", "전세 만기 집주인 매도", "한시적 연장 계약서", "전세 만기 1개월 연장",
-    "전세대출 만기 이사 날짜", "묵시적 갱신 이사", "HUG 전세금안심대출보증 연장", "청년버팀목 조건 2026",
+    "버팀목 전세대출 1개월 연장", "버팀목 연장 후 이사", "버팀목 전세대출 연장", "버팀목 기한연장",
+    "버팀목 목적물 변경", "HUG 청년 버팀목 전세대출 갱신", "주택도시기금 연장", "청년버팀목 이사",
+    "한시적 연장 계약서", "전세 만기 집주인 매도", "전세대출 만기 이사 날짜", "묵시적 갱신 이사",
+    "HUG 전세금안심대출보증 연장", "청년버팀목 조건 2026",
   ],
   alternates: { canonical: PATH },
   openGraph: {
@@ -115,7 +116,7 @@ export default function JeonseExtensionPage() {
     name: TITLE,
     description: DESC,
     dateModified: UPDATED,
-    crumbs: [{ name: "지원금 안내", path: "/blog" }, { name: "버팀목 전세대출 이사 한 달 연장" }],
+    crumbs: [{ name: "지원금 안내", path: "/blog" }, { name: "버팀목 전세대출 1개월 연장" }],
     about: {
       "@type": "BlogPosting",
       "@id": `${SITE_URL}${PATH}#post`,
@@ -138,19 +139,20 @@ export default function JeonseExtensionPage() {
       <nav aria-label="위치" className="text-[13px] text-muted">
         <Link href="/blog" className="hover:text-brand">지원금 안내</Link>
         {" · "}
-        <span className="text-ink2">버팀목 전세대출 이사 한 달 연장</span>
+        <span className="text-ink2">버팀목 전세대출 1개월 연장</span>
       </nav>
 
       <header className="mt-3">
         <h1 className="display text-[1.75rem] leading-tight">
-          집주인이 집을 판다고 할 때, 버팀목 대출 세입자가 이사를 한 달 늦춘 기록
+          버팀목 전세대출 1개월 연장, 그리고 연장 후 이사
         </h1>
-        <p className="num mt-2 text-xs text-faint">{UPDATED} 기준 · 글쓴이의 경험을 정리했습니다</p>
+        <p className="num mt-2 text-xs text-faint">{UPDATED} 기준 · 실제 사례로 정리했습니다</p>
         <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
-          전세 만기 두 달 전, 집주인이 집을 팔겠다고 했습니다. 보증금 대부분이 청년전용 버팀목
-          전세대출이라 만기 일정을 마음대로 조정할 수 없었습니다. 문자 세 통으로 퇴거를 한 달
-          늦추고, 한시적 연장 계약서와 목적물 변경으로 대출을 새 집에 옮기기까지의 순서와
-          돈 계산을 그대로 적습니다. 같은 상황이라면 이 순서대로 하면 됩니다.
+          버팀목 전세대출은 “1개월 연장” 상품이 따로 없습니다. 집주인과 종료일을 새 집 잔금일로
+          적은 한시적 연장 계약서를 쓰고 그날까지 기한연장한 뒤, 잔금일에 목적물 변경으로 대출을
+          새 집에 옮기는 방식입니다. 전세 만기 두 달 전 집주인이 집을 팔겠다고 한 HUG 청년버팀목
+          세입자 A씨의 사례로, 문자 세 통으로 퇴거를 한 달 늦추고 대출을 옮기기까지의 순서와
+          은행 서류, 돈 계산을 정리했습니다.
         </p>
         <div className="mt-5 flex justify-center"><ArtJeonse /></div>
       </header>
@@ -177,9 +179,9 @@ export default function JeonseExtensionPage() {
       <section className="mt-12">
         <h2 className={H2}>상황</h2>
         <p className={P}>
-          수도권 구축 아파트(엘리베이터 없는 6층)에 전세로 살던 30대 직장인입니다. 보증금
-          1억 3,000만 원 중 1억 400만 원이 대출이라, 연장이든 이사든 집주인의 결정이 먼저
-          나와야 은행 절차를 시작할 수 있었습니다. 집주인은 원거리에 살고, 집을 내놓았지만
+          A씨는 수도권 구축 아파트(엘리베이터 없는 6층)에 전세로 살던 30대 직장인입니다.
+          보증금 1억 3,000만 원 중 1억 400만 원이 대출이라, 연장이든 이사든 집주인의 결정이
+          먼저 나와야 은행 절차를 시작할 수 있었습니다. 집주인은 원거리에 살고, 집을 내놓았지만
           사겠다는 사람이 없어 답을 미루는 상태였습니다.
         </p>
         <div className="mt-5 overflow-x-auto">
@@ -225,7 +227,7 @@ export default function JeonseExtensionPage() {
       <MidAd name="detail_mid" context="money" seed="jeonse-extension" className="mt-10" />
 
       <section className="mt-12">
-        <h2 className={H2}>집주인에게 보낸 문자 세 통</h2>
+        <h2 className={H2}>A씨가 집주인에게 보낸 문자 세 통</h2>
         <p className={P}>
           세 통에서 지킨 원칙은 하나였습니다. 재촉이 아니라 사정 설명으로 읽히게 하되, 기한은
           반드시 넣는다.
@@ -330,7 +332,7 @@ export default function JeonseExtensionPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className={H2}>만기를 한 달 늦추는 방법 — 한시적 연장 + 목적물 변경</h2>
+        <h2 className={H2}>버팀목 전세대출 1개월 연장 절차 — 한시적 연장 계약서 + 연장 후 이사(목적물 변경)</h2>
         <p className={P}>
           대출 만기가 11월 18일인데 새 집 잔금이 12월 11일이면, 기존 대출을 12월 11일까지
           연장한 뒤 잔금일에 새 집으로 옮깁니다. 두 단계로 진행됩니다.
@@ -354,7 +356,7 @@ export default function JeonseExtensionPage() {
             "만기 이후 이사라도 기존 대출을 유지하면 신규가 아니라 목적물 변경이며, 대출받은 같은 은행에서만 됩니다. 접수 시기는 은행마다 조금 다르니 기존 계약 만료 한 달 전쯤 먼저 물어봅니다.",
             "새 집 계약서, 계약금 5% 이상 납부 영수증, 확정일자가 있어야 신청할 수 있습니다.",
             "보증금이 커지면 증액도 가능하고, 증액분만 새로 심사합니다.",
-            "은행 안내: 대출 만기가 계약 만기보다 앞서고 새 집 잔금이 그 뒤인 경우, 계약 만기까지 먼저 연장한 뒤 목적물 변경 때 추가 연장이 됩니다. 잔금 직전까지 연장해 두고 잔금 직후 바로 목적물 변경을 신청해 금리 변동을 한 번으로 끝내라는 조언을 들었습니다.",
+            "은행 안내: 대출 만기가 계약 만기보다 앞서고 새 집 잔금이 그 뒤인 경우, 계약 만기까지 먼저 연장한 뒤 목적물 변경 때 추가 연장이 됩니다. 잔금 직전까지 연장해 두고 잔금 직후 바로 목적물 변경을 신청해 금리 변동을 한 번으로 끝내라는 것이 A씨가 은행에서 들은 조언입니다.",
           ].map((t) => <li key={t} className="flex gap-2.5"><span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden /><span>{t}</span></li>)}
         </ul>
 
@@ -475,7 +477,7 @@ export default function JeonseExtensionPage() {
         <div className="mt-6 rounded-card border-l-[3px] border-brand bg-brandSoft/50 px-4 py-3">
           <p className="text-[13.5px] leading-relaxed text-ink2">
             <b>남는 것 vs 이사하는 것.</b> 돈만 보면 남는 쪽이 2년에 500~600만 원 유리했습니다.
-            그래도 이사를 택한 이유는 엘리베이터 없는 6층, 집주인의 실거주 결정, 그리고 청년버팀목
+            그래도 A씨가 이사를 택한 이유는 엘리베이터 없는 6층, 집주인의 실거주 결정, 그리고 청년버팀목
             나이 요건이 곧 끝나서 새 집으로 청년 대출을 받을 수 있는 시기가 사실상 마지막이었기
             때문입니다. 지자체가 따로 얹어 주는 전세 지원은{" "}
             <Link href="/housing/jeonse/youth" className="underline underline-offset-4 hover:text-brand">
@@ -557,7 +559,7 @@ export default function JeonseExtensionPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className={H2}>돌아보며</h2>
+        <h2 className={H2}>이 사례에서 배울 것</h2>
         <ol className="mt-4 space-y-2.5 text-[15px] leading-[1.85] text-ink2">
           {[
             "집주인의 결정을 기다리기만 하면 은행 일정이 먼저 끝납니다. 기한을 정해 묻는 건 무례가 아니라 필요한 일입니다.",
@@ -592,8 +594,8 @@ export default function JeonseExtensionPage() {
           ))}
         </ul>
         <p className="mt-3 text-xs leading-relaxed text-muted">
-          이 글의 법·금융 내용은 글쓴이의 경험과 2026년 9월 30일에 확인한 공개 자료를 정리한
-          것입니다. 사례의 금액과 날짜는 글쓴이의 경우이고, 한도·금리·요건은 해마다 바뀝니다.
+          이 글의 법·금융 내용은 실제 사례와 2026년 9월 30일에 확인한 공개 자료를 정리한
+          것입니다. 사례의 금액과 날짜는 A씨의 경우이고, 한도·금리·요건은 해마다 바뀝니다.
           각자 상황은 대출받은 은행과 법률 상담(대한법률구조공단 132)으로 확인하세요.
         </p>
       </section>
