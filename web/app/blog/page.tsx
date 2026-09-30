@@ -62,7 +62,7 @@ export default function BlogIndex() {
         </span>
         <span className="min-w-0">
           <b className="block text-[15.5px] leading-snug">
-            나라일터 이용법 — 공고 찾기부터 접수까지, 숫자로 본 순서
+            나라일터 채용공고, 절반이 7일 안에 마감됩니다 — 놓치지 않고 찾는 법
           </b>
           <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
             최근 1년 공고 3만 2천 건을 세어 보니 절반이 일주일 안에 마감됩니다. 어떤 자리가 언제 올라오는지.
