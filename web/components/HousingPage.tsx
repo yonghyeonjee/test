@@ -193,7 +193,7 @@ export default async function HousingPage({ kind, who, sido }: { kind: KindKey; 
                 <Link key={`${wk}-${kk}`} href={housingPath(kk, wk, sido)}
                       className="card card-link flex items-center justify-between px-4 py-3 text-[14.5px]">
                   <span><b>{WHO[wk].label}</b> {KINDS[kk].title}</span>
-                  <span className="num text-xs text-muted">{c}</span>
+                  {counts.length > 0 && <span className="num text-xs text-muted">{c}</span>}
                 </Link>
               );
             }),

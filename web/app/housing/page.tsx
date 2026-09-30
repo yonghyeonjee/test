@@ -47,7 +47,7 @@ export default async function HousingHub() {
                     <Link href={housingPath(kind, who)} className="block text-[15px] font-extrabold leading-snug hover:text-brand">
                       {WHO[who].label} {KINDS[kind].title}
                     </Link>
-                    <p className="num mt-1 text-xs text-muted">접수 중 {n}건</p>
+                    {counts.length > 0 && <p className="num mt-1 text-xs text-muted">접수 중 {n}건</p>}
                     {tops.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-1">
                         {tops.map((s) => (
