@@ -26,11 +26,10 @@ import { SITE_URL } from "@/lib/seo";
 
 const PATH = "/blog/gojobs-guide";
 const UPDATED = "2026-09-28";
-const TITLE = "나라일터 이용법 — 공무직·기간제·임기제 공고 찾고 지원하는 순서";
+const TITLE = "나라일터 채용공고, 절반이 7일 안에 마감됩니다 — 놓치지 않고 찾는 법";
 const DESC =
-  "나라일터(gojobs.go.kr)는 인사혁신처가 운영하는 공직 채용 공고 사이트입니다. 어떤 공고가 " +
-  "올라오는지, 접수 기간은 얼마나 되는지(절반이 일주일 안에 마감), 지원은 어디서 하는지를 " +
-  "최근 1년 공고 3만 2천 건을 세어 정리했습니다.";
+  "나라일터 공고 3만 2천 건을 세어 보니 절반이 접수 시작 일주일 안에 마감됐습니다. 공무직·기간제·" +
+  "임기제 공고가 언제 올라오고 어디서 지원하는지, 오늘 접수 중인 공고까지 한 번에 확인하세요.";
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -187,7 +186,7 @@ export default function GojobsGuidePage() {
 
       <header className="mt-3">
         <h1 className="display text-[1.75rem] leading-tight">
-          나라일터 이용법 — 공고 찾기부터 접수까지, 숫자로 본 순서
+          나라일터 채용공고, 절반이 7일 안에 마감됩니다
         </h1>
         <p className="num mt-2 text-xs text-faint">{UPDATED} 기준</p>
         <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
