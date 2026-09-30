@@ -47,10 +47,10 @@ export default function BlogIndex() {
         </span>
         <span className="min-w-0">
           <b className="block text-[15.5px] leading-snug">
-            버팀목 전세대출 이사 한 달 연장 — 집주인이 집을 판다고 할 때 세입자가 한 일
+            버팀목 전세대출 1개월 연장, 연장 후 이사까지 — 실제 사례로 보는 순서
           </b>
           <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
-            문자 세 통으로 퇴거를 한 달 늦추고, 한시적 연장 계약서와 목적물 변경으로 대출을 새 집에 옮긴 순서와 돈 계산.
+            집주인이 집을 판다고 한 HUG 청년버팀목 세입자 사례. 한시적 연장 계약서로 기한연장하고 잔금일에 목적물 변경하는 순서와 돈 계산.
           </span>
         </span>
       </Link>

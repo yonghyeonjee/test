@@ -179,8 +179,8 @@ export function moneyRelated(): Related[] {
 
 const JEONSE_POST: Related = {
   href: "/blog/jeonse-extension",
-  title: "버팀목 전세대출, 이사 날짜가 만기와 안 맞을 때",
-  desc: "집주인이 집을 판다고 했을 때 한시적 연장 계약서와 목적물 변경으로 한 달을 번 기록입니다.",
+  title: "버팀목 전세대출 1개월 연장, 연장 후 이사까지",
+  desc: "한시적 연장 계약서로 기한연장하고 잔금일에 목적물 변경하는 순서를 실제 사례로 정리했습니다.",
 };
 
 const HOUSING_JEONSE: Related = {
