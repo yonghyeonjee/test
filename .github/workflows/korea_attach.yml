@@ -9,6 +9,14 @@ on:
         description: "목록을 몇 쪽 읽나(쪽당 20건)"
         required: false
         default: "25"
+      start:
+        description: "목록 몇 쪽부터(지난 것을 나눠 채울 때)"
+        required: false
+        default: "1"
+      days:
+        description: "우리 공고는 며칠 안 등록된 것만"
+        required: false
+        default: "21"
       ids:
         description: "특정 dataId 만(쉼표). 비우면 목록"
         required: false
@@ -28,7 +36,7 @@ concurrency:
 jobs:
   attach:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -42,5 +50,7 @@ jobs:
         run: |
           python -u pipeline/korea_attach.py \
             --pages "${{ inputs.pages || '25' }}" \
+            --start "${{ inputs.start || '1' }}" \
+            --days "${{ inputs.days || '21' }}" \
             ${{ inputs.ids && format('--ids "{0}"', inputs.ids) || '' }} \
             ${{ inputs.dry && '--dry' || '' }}
