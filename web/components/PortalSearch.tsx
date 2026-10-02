@@ -4,14 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { describe, parseQuery, toParams } from "@/lib/parse";
-import { relatedTerms, suggest } from "@/lib/thesaurus";
+import { HOT_WELFARE, relatedTerms, suggest } from "@/lib/thesaurus";
 import { tokenize } from "@/lib/keywords";
 import { track } from "./Gtm";
 
 type Idx = Record<string, { sido: string; full: string }>;
-
-export const HOT_WELFARE = ["경비", "간호사", "신혼부부 전세", "청년 월세", "기능사", "공무직", "학자금", "소상공인", "출산", "요양보호사"];
-export const HOT_BUSINESS = ["수출", "스마트공장", "인건비", "창업", "소상공인", "특허", "온라인판매", "폐업", "컨설팅", "시제품"];
 
 const clean = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 
@@ -26,13 +23,19 @@ const clean = (s: string) => s.replace(/\s+/g, "").toLowerCase();
  *    첫 화면이 밀려 올라간다.
  */
 export default function PortalSearch({
-  index = {}, initial = "", size = "lg", autoFocus = false, hot = HOT_WELFARE, placeholder,
+  index = {}, initial = "", size = "lg", autoFocus = false, hot = HOT_WELFARE, placeholder, placeholderNarrow,
+  scope = "all",
 }: {
   index?: Idx; initial?: string; size?: "lg" | "md"; autoFocus?: boolean;
   /** 아래에 붙는 "많이 찾는 말". 빈 배열이면 안 그린다. */
   hot?: string[];
   placeholder?: string;
+  /** 휴대폰에서 쓸 짧은 보기글. 없으면 placeholder 를 줄인다. */
+  placeholderNarrow?: string;
+  /** business 면 사업자 검색(/business/search)으로 간다. 기업 첫 화면이 쓴다. */
+  scope?: "all" | "business";
 }) {
+  const base = scope === "business" ? "/business/search" : "/search";
   const router = useRouter();
   const [q, setQ] = useState(initial);
   const [open, setOpen] = useState(false);
@@ -73,9 +76,9 @@ export default function PortalSearch({
   const go = (text: string) => {
     const t = text.trim();
     if (!t) { input.current?.focus(); return; }
-    track("search_submit", { entry: "portal", matched: bits.length });
+    track("search_submit", { entry: "portal", scope, matched: bits.length });
     setOpen(false);
-    router.push(`/search?q=${encodeURIComponent(t)}`);
+    router.push(`${base}?q=${encodeURIComponent(t)}`);
   };
   /** 마지막 낱말을 추천어로 바꾼다. "서울 경비" + 추천 "경비원" → "서울 경비원" */
   const pick = (t: string) => {
@@ -110,7 +113,9 @@ export default function PortalSearch({
           onFocus={() => setOpen(true)}
           onKeyDown={onKey}
           role="combobox" aria-expanded={show} aria-controls="portal-suggest" aria-autocomplete="list"
-          placeholder={narrow ? "경비, 신혼부부 전세, 기능사…" : placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…")}
+          placeholder={narrow
+            ? placeholderNarrow ?? (placeholder ? placeholder.replace(/^.*?[—:]\s*/, "") : "경비, 신혼부부 전세, 기능사…")
+            : placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…")}
           aria-label="통합 검색"
           enterKeyHint="search"
           className={`w-full min-w-0 bg-transparent outline-none placeholder:text-faint ${lg ? "h-14 text-[1.0625rem]" : "h-11 text-[15px]"}`}
@@ -153,7 +158,7 @@ export default function PortalSearch({
           <span className="text-[12px] text-faint">많이 찾는 말</span>
           {/* 휴대폰에서는 여섯 개까지만. 열 개가 네 줄로 늘어서면 조건 고르기가 화면 밖으로 밀린다. */}
           {hot.map((h, i) => (
-            <Link key={h} href={`/search?q=${encodeURIComponent(h)}`}
+            <Link key={h} href={`${base}?q=${encodeURIComponent(h)}`}
                   className={`chip !py-1 !text-[12.5px] ${i >= 6 ? "!hidden sm:!inline-flex" : ""}`}>{h}</Link>
           ))}
         </div>

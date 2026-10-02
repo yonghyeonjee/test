@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { describe, parseQuery } from "@/lib/parse";
 import { suggest } from "@/lib/thesaurus";
@@ -19,6 +19,9 @@ const clean = (s: string) => s.replace(/\s+/g, "").toLowerCase();
  */
 export default function TopSearch({ index }: { index: Idx }) {
   const router = useRouter();
+  const path = usePathname();
+  // 기업 쪽 화면에서 적으면 사업자 검색으로. 거기서도 통합 검색으로 건너갈 수 있다.
+  const base = path?.startsWith("/business") ? "/business/search" : "/search";
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [list, setList] = useState(false);
@@ -41,17 +44,17 @@ export default function TopSearch({ index }: { index: Idx }) {
   const go = (text: string) => {
     const t = text.trim();
     if (!t) { setOpen(true); ref.current?.focus(); return; }
-    track("search_submit", { entry: "top", matched: bits.length });
+    track("search_submit", { entry: "top", scope: base === "/search" ? "all" : "business", matched: bits.length });
     setList(false);
     setOpen(false);
-    router.push(`/search?q=${encodeURIComponent(t)}`);
+    router.push(`${base}?q=${encodeURIComponent(t)}`);
   };
   const pick = (t: string) => {
     const parts = q.trim().split(/\s+/); parts[Math.max(0, parts.length - 1)] = t;
     go(parts.join(" "));
   };
   const rows = [
-    ...(q.trim() ? [{ key: "all", label: `‘${q.trim()}’ 통합 검색`, tag: bits.length ? bits.slice(0, 2).join(" · ") : "전체", act: () => go(q) }] : []),
+    ...(q.trim() ? [{ key: "all", label: `‘${q.trim()}’ ${base === "/search" ? "통합 검색" : "사업자 검색"}`, tag: bits.length ? bits.slice(0, 2).join(" · ") : "전체", act: () => go(q) }] : []),
     ...items.map((v) => ({ key: "v:" + v.t, label: v.t, tag: v.tag, act: () => pick(v.t) })),
   ];
   const show = list && q.trim().length > 0 && rows.length > 0;
