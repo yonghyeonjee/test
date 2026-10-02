@@ -25,12 +25,31 @@ export default function PromoBanner({
 }) {
   const links = promoLinks(context);
   return (
-    <section className="mt-16">
+    <section className="mt-10 sm:mt-16">
       <h2 className="text-[1.0625rem] font-bold">무료로 더 보기</h2>
-      <p className="mb-3 mt-1 text-sm text-muted">
+      <p className="mb-3 mt-1 text-[13px] text-muted sm:text-sm">
         {SITE_NAME}과 같이 운영하는 자료입니다. 모두 무료이고 회원가입이 없습니다.
       </p>
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* 휴대폰: 한 상자 안의 짧은 줄 셋. 큰 카드 셋이 화면 하나 반을 먹었다. */}
+      <ul className="card divide-y divide-line sm:hidden">
+        {links.map((l) => (
+          <li key={l.slug}>
+            <a href={withUtm(l.href, l.slug, placement)} target="_blank" rel="noopener noreferrer"
+               className="flex items-center gap-2.5 px-4 py-3">
+              <span className="badge badge-quiet shrink-0">{l.tag}</span>
+              <span className="min-w-0 flex-1">
+                <b className="block truncate text-[14px]">{l.title}</b>
+                <span className="block truncate text-[12px] text-muted">{l.desc}</span>
+              </span>
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-faint" fill="none" stroke="currentColor"
+                   strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M7 17L17 7M9 7h8v8" />
+              </svg>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden gap-3 sm:grid sm:grid-cols-3">
         {links.map((l) => (
           <a
             key={l.slug}

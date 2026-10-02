@@ -101,15 +101,19 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
 
   const go = useCallback((next: number) => setI(((next % n) + n) % n), [n]);
 
+  // 움직임을 줄이도록 설정한 기기는 미끄러지는 효과만 끈다(넘어가기는 한다).
+  const [still, setStill] = useState(false);
+  useEffect(() => { setStill(!!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches); }, []);
+
+  // 손으로 넘기면 그때부터 다시 6초. i 가 바뀔 때마다 시계를 새로 건다.
   useEffect(() => {
     if (n < 2 || hold) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => {
+    const t = setTimeout(() => {
       // 다른 탭을 보고 있으면 넘기지 않는다. 돌아왔을 때 엉뚱한 장이 떠 있다.
       if (!document.hidden) setI((p) => (p + 1) % n);
     }, EVERY);
-    return () => clearInterval(t);
-  }, [n, hold]);
+    return () => clearTimeout(t);
+  }, [n, hold, i]);
 
   if (!n) return null;
 
@@ -120,7 +124,8 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
       className={`relative ${className}`}
       onMouseEnter={() => setHold(true)}
       onMouseLeave={() => setHold(false)}
-      onFocusCapture={() => setHold(true)}
+      // 자판으로 들어온 초점만 멈춘다. 손가락으로 넘김 단추를 누르면 초점이 남아 영영 멈췄다.
+      onFocusCapture={(e) => { if ((e.target as HTMLElement).matches?.(":focus-visible")) setHold(true); }}
       onBlurCapture={() => setHold(false)}
       onTouchStart={(e) => { touch.current = e.touches[0].clientX; setHold(true); }}
       onTouchEnd={(e) => {
@@ -134,7 +139,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
     >
       <div className="overflow-hidden rounded-card">
         <div
-          className="flex transition-transform duration-500 ease-out"
+          className={`flex ${still ? "" : "transition-transform duration-500 ease-out"}`}
           style={{ transform: `translateX(-${i * 100}%)` }}
         >
           {slides.map((s, idx) => (
@@ -142,7 +147,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
               <Link
                 href={s.href}
                 tabIndex={idx === i ? 0 : -1}
-                className="relative flex h-16 items-center gap-4 overflow-hidden pl-4 pr-14 sm:h-[72px] sm:pl-5 sm:pr-[124px]"
+                className={`relative flex h-14 items-center gap-4 overflow-hidden sm:h-[72px] ${n > 1 ? "pl-12 pr-[92px] sm:pl-14 sm:pr-[104px]" : "px-4 sm:px-5"}`}
               >
                 {PHOTO[s.kind] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -161,7 +166,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
                     </span>
                     {KIND_LABEL[s.kind]}
                   </span>
-                  <b className="mt-0.5 block truncate text-[15px] font-extrabold leading-snug text-white sm:text-[16px]">
+                  <b className="block truncate text-[14.5px] font-extrabold leading-snug text-white sm:mt-0.5 sm:text-[16px]">
                     {s.title}
                   </b>
                 </span>
@@ -173,20 +178,23 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
       </div>
 
       {n > 1 && (
-        <div className="absolute inset-y-0 right-2 flex items-center gap-0.5 text-white sm:right-3">
+        <>
+          {/* 좌우 넘김 단추. 휴대폰에서도 보이게 둥근 단추로. */}
           <button type="button" onClick={() => go(i - 1)} aria-label="이전 안내"
-                  className="hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white/15 sm:flex">
-            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5l-5 5 5 5" /></svg>
+                  className="absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 text-white transition-colors hover:bg-black/40 sm:left-3">
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M12 5l-5 5 5 5" /></svg>
           </button>
-          {/* 저절로 넘어갈 때는 읽어 주지 않는다(6초마다 끼어든다). 손이 머물러 멈췄을 때만. */}
-          <span className="num rounded-pill bg-black/25 px-2 py-0.5 text-[11.5px] font-semibold" aria-live={hold ? "polite" : "off"}>
-            {i + 1}<span className="opacity-70"> / {n}</span>
-          </span>
-          <button type="button" onClick={() => go(i + 1)} aria-label="다음 안내"
-                  className="hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white/15 sm:flex">
-            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M8 5l5 5-5 5" /></svg>
-          </button>
-        </div>
+          <div className="absolute inset-y-0 right-2 flex items-center gap-1.5 text-white sm:right-3">
+            {/* 저절로 넘어갈 때는 읽어 주지 않는다(6초마다 끼어든다). 손이 머물러 멈췄을 때만. */}
+            <span className="num rounded-pill bg-black/25 px-2 py-0.5 text-[11.5px] font-semibold" aria-live={hold ? "polite" : "off"}>
+              {i + 1}<span className="opacity-70"> / {n}</span>
+            </span>
+            <button type="button" onClick={() => go(i + 1)} aria-label="다음 안내"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-black/25 transition-colors hover:bg-black/40">
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden><path d="M8 5l5 5-5 5" /></svg>
+            </button>
+          </div>
+        </>
       )}
     </section>
   );

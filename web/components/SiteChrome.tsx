@@ -50,9 +50,9 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
             </div>
           </div>
 
-          {/* 갈래가 많아 좁은 화면에서는 가로로 밀어서 본다. */}
+          {/* 휴대폰에서는 아래 탭 막대(홈·검색·정책지도·채용·전체)가 같은 일을 해서 위 메뉴 줄을 접는다. */}
           <nav aria-label="주 메뉴"
-               className="menu-band -mx-5 flex overflow-x-auto px-2 text-[15px] [scrollbar-width:none]
+               className="menu-band -mx-5 hidden overflow-x-auto px-2 text-[15px] [scrollbar-width:none] sm:flex
                           sm:mx-0 sm:-ml-3 sm:px-0 [&::-webkit-scrollbar]:hidden">
             {NAV.map((n) => (
               <Link key={n.href} href={n.href}
