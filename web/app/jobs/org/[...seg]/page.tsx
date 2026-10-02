@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtJobs } from "@/components/Art";
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     : "지금까지 올라온 공고";
   const extra = jobRouteLabel(r).filter((v) => v !== org);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
-  return {
+  return withOg({
     title: `${org} 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 지금까지 낸 공고와 접수 기간"}${tail}`,
     description:
       `${org}이(가) 나라일터에 낸 채용 공고를 모았습니다. ${span}을 등록일순으로 보고, ` +
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용", "나라일터"],
     alternates: { canonical: jobCanonical(r) },
     robots: jobRobots(r),
-  };
+  });
 }
 
 /** 열두 달 막대. 값이 아니라 모양을 보여 주는 것이라 눈금은 두지 않는다. */

@@ -12,7 +12,7 @@ export default function Tabs({
     {
       key: "business",
       label: "기업 지원사업",
-      href: "/?tab=business",
+      href: "/business",
       n: counts.business,
     },
   ] as const;

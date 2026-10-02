@@ -17,7 +17,7 @@ const NAV: NavItem[] = [
   { href: "/", label: "지원금 찾기" },
   { href: "/topic", label: "분야별" },
   { href: "/#areas", label: "지역별" },
-  { href: "/?tab=business", label: "기업지원" },
+  { href: "/business", label: "기업지원" },
   { href: "/policies", label: "전체 정책" },
   {
     href: "/money", label: "생활금융",
@@ -146,7 +146,7 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
 export function SiteFooter() {
   if (useIsAdmin()) return null;
   const cols: { h: string; items: [string, string][] }[] = [
-    { h: "찾기", items: [["내 조건으로 찾기", "/"], ["기업 지원사업", "/?tab=business"], ["정책 전체", "/policies"], ["주거 지원", "/housing"], ["지역별", "/#areas"]] },
+    { h: "찾기", items: [["내 조건으로 찾기", "/"], ["기업 지원사업", "/business"], ["정책 전체", "/policies"], ["주거 지원", "/housing"], ["지역별", "/#areas"]] },
     { h: "정보", items: [["채용·취업", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
     { h: "안내", items: [["무료 서비스", "/free"], ["지원금 안내 글", "/blog"], ["블로그", "/story"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];

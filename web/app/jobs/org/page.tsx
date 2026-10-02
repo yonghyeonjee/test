@@ -8,11 +8,11 @@ import PageBanner from "@/components/PageBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { dot, getJobOverview, getTopOrgs } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "기관별 공공기관 채용 이력 — 어디가 얼마나 자주 뽑나",
   description:
     "나라일터에 올라온 공공기관·지자체 채용 공고를 기관별로 모았습니다. 기관마다 지금까지 " +
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "나라일터 기관별",
   ],
   alternates: { canonical: "/jobs/org" },
-};
+});
 
 export default async function JobOrgIndex() {
   const [orgs, overview] = await Promise.all([getTopOrgs(300), getJobOverview()]);

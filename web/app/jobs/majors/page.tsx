@@ -13,9 +13,9 @@ import {
 } from "@/lib/majors";
 import { MAJORS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: `학과별 취업률 ${LATEST} — 전공 고르기 전에 보는 졸업생 통계`,
   description:
     "대학 학과별 취업률을 3년치로 비교합니다. 졸업자 수, 취업률, 프리랜서·창업 비중까지 " +
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   keywords: [
       ...brandKeys("학과별 취업률"),"학과별 취업률", "대학 취업률", "전공별 취업률", "취업 잘 되는 학과", "대학 졸업생 취업 통계"],
   alternates: { canonical: "/jobs/majors" },
-};
+});
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || "";

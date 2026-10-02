@@ -14,7 +14,7 @@ import { getJobOverview, getJobs } from "@/lib/pubJobs";
 import { jobCanonical, jobRobots, jobRouteLabel, readJobRoute, type JobRoute } from "@/lib/jobRoute";
 import { JOBS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 /**
  * 전체 채용 목록. /jobs 와 그 아래 거르기 주소가 모두 이 하나를 쓴다.
@@ -30,7 +30,7 @@ export function jobsIndexMetadata(r: JobRoute): Metadata {
   const title = cond.length
     ? `${cond.join(" · ")} 공공기관 채용 공고${tail}`
     : `공공기관 채용정보·취업지원제도 — 지역별 채용 공고 한눈에${tail}`;
-  return {
+  return withOg({
     title,
     description: cond.length
       ? `${cond.join(" · ")} 조건에 맞는 공공기관·지자체 채용 공고입니다. 접수 중인 것이 앞에 오고 ` +
@@ -45,7 +45,7 @@ export function jobsIndexMetadata(r: JobRoute): Metadata {
     ],
     alternates: { canonical: jobCanonical(r) },
     robots: jobRobots(r),
-  };
+  });
 }
 
 export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?: string[]; seg?: string[] }) {

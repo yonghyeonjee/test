@@ -17,7 +17,7 @@ import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobR
 import { employmentFromTitle, jobLocation } from "@/lib/jobSchema";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, withOg } from "@/lib/seo";
 import { getStory } from "@/lib/stories";
 
 // 공고는 수만 건이라 미리 만들지 않는다. 처음 열릴 때 만들고 하루 동안 쓴다.
@@ -66,11 +66,11 @@ function seoJobTitle(job: Job, role: ReturnType<typeof detectRole>, detail: stri
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
   // 없는 번호. 쪽은 JobGone 이 지금 접수 중인 공고로 채운다.
-  if (!job) return {
+  if (!job) return withOg({
     title: "내려간 채용 공고 — 지금 접수 중인 공공기관 채용",
     description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
     robots: { index: false, follow: true },
-  };
+  });
   // 2008년치까지 받아 오면 공고가 수십만 건이 된다. 오래전에 끝난 공고를
   // 전부 색인에 밀어 넣으면 검색엔진이 사이트 전체를 얕게 본다. 자료로는
   // 남겨 두되(들어오면 보인다), 1년 넘게 지난 것은 색인하지 않는다.
@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const fileNote = attach && attach.files.length
     ? ` 첨부 ${attach.files.length}개: ${attach.files.slice(0, 3).map((f) => f.name).join(", ")}${attach.files.length > 3 ? " 등" : ""}.`
     : "";
-  return {
+  return withOg({
     ...(stale ? { robots: { index: false, follow: true } } : {}),
     title: seoJobTitle(job, role, detail, stage),
     // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
@@ -95,7 +95,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
       "공공기관 채용", "채용 공고", "나라일터",
     ].filter(Boolean) as string[],
     alternates: { canonical: `/jobs/${encodeURIComponent(job.id)}` },
-  };
+  });
 }
 
 const Row = ({ k, v }: { k: string; v: string | null }) =>

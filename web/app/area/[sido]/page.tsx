@@ -18,7 +18,7 @@ import { getArea, getAreas, listByArea } from "@/lib/db";
 export const revalidate = 86400;
 export const dynamicParams = true;
 
-import { brandKeys, HOOK, SITE_URL as SITE, YEAR } from "@/lib/seo";
+import { brandKeys, HOOK, SITE_URL as SITE, YEAR, withOg } from "@/lib/seo";
 
 export async function generateStaticParams() {
   try {
@@ -35,7 +35,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const sido = decodeURIComponent(params.sido);
   const a = await getArea(sido);
-  if (!a) return { title: "찾을 수 없는 지역" };
+  if (!a) return withOg({ title: "찾을 수 없는 지역" });
 
   const title = `${sido} 청년지원금·복지서비스 ${a.n}건 총정리 (${YEAR})`;
   const description =
@@ -43,7 +43,7 @@ export async function generateMetadata({
     `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
     `${HOOK} 신청 방법과 활용 방법까지 정리했습니다.`;
 
-  return {
+  return withOg({
     title,
     description,
     alternates: { canonical: `${SITE}/area/${encodeURIComponent(sido)}` },
@@ -57,7 +57,7 @@ export async function generateMetadata({
       "정부 지원금 신청 방법",
     ],
     openGraph: { title, description, type: "website" },
-  };
+  });
 }
 
 

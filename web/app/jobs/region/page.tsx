@@ -8,11 +8,11 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getJobRegions } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "지역별 공공기관 채용 — 시·도별 채용 공고 모아보기",
   description:
     "서울·경기·부산 등 시·도별로 공공기관과 지자체 채용 공고를 나눠 두었습니다. " +
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   keywords: [
       ...brandKeys("채용", "지역별 채용"),"지역별 채용", "지자체 채용공고", "공공기관 채용 지역", "우리 지역 채용"],
   alternates: { canonical: "/jobs/region" },
-};
+});
 
 export default async function JobRegionIndex() {
   const regions = await getJobRegions();

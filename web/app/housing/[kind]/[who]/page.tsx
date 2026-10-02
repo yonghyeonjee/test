@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import HousingPage from "@/components/HousingPage";
 import {
@@ -14,12 +15,12 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: { kind: string; who: string } }): Promise<Metadata> {
   const { kind, who } = params;
-  if (!isKind(kind) || !isWho(who)) return { title: "찾을 수 없는 쪽" };
+  if (!isKind(kind) || !isWho(who)) return withOg({ title: "찾을 수 없는 쪽" });
   const counts = await housingCounts().catch(() => []);
   const n = countOf(counts, kind, who);
   const k = KINDS[kind], w = WHO[who];
   const title = housingTitle(kind, who, undefined, n);
-  return {
+  return withOg({
     title,
     description: `${w.label}이(가) 받을 수 있는 ${k.noun} 지원 총정리. 주택도시기금 대출 조건과 지금 접수 중인 지자체 사업 ${n}건을 지역별로 봅니다.`,
     keywords: [
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: { params: { kind: string; who
       ...(kind === "wolse" ? [`${w.label} 월세지원`, `${w.label} 주거비 지원`] : []),
     ],
     alternates: { canonical: housingPath(kind, who) },
-  };
+  });
 }
 
 export default function Page({ params }: { params: { kind: string; who: string } }) {

@@ -23,7 +23,7 @@ export default function BizSearchBox({ autoFocus }: { autoFocus?: boolean }) {
 
   const go = () => {
     if (!ready) return;
-    router.push(`/?${toBizParams(parsed)}`);
+    router.push(`/business?${toBizParams(parsed)}`);
   };
 
   return (

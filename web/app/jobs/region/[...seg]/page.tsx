@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtJobs } from "@/components/Art";
@@ -26,7 +27,7 @@ export function generateMetadata({ params }: P): Metadata {
   const sido = r.region!;
   const extra = jobRouteLabel(r).filter((v) => v !== sido);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
-  return {
+  return withOg({
     title: `${sido} 공공기관 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 접수 중인 자리부터"}${tail}`,
     description:
       `${sido}에서 뽑는 공공기관·지자체 채용 공고를 모았습니다. 접수 중인 것이 앞에 오고 ` +
@@ -34,7 +35,7 @@ export function generateMetadata({ params }: P): Metadata {
     keywords: [`${sido} 채용`, `${sido} 공공기관 채용`, `${sido} 공무직`, "지자체 채용공고"],
     alternates: { canonical: jobCanonical(r) },
     robots: jobRobots(r),
-  };
+  });
 }
 
 export default async function JobsByRegion({ params }: P) {

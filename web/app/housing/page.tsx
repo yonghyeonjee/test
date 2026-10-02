@@ -6,11 +6,11 @@ import PromoBanner from "@/components/PromoBanner";
 import {
   KINDS, KIND_KEYS, WHO, WHO_KEYS, countOf, housingCounts, housingPath, shortSido, sidosFor,
 } from "@/lib/housing";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 21600;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "신혼부부·청년 전세·월세·매매 지원 총정리 — 지역별 주거 지원 찾기",
   description:
     "신혼부부, 청년, 무주택 가구가 받을 수 있는 전세자금 대출이자 지원, 월세·주거비 지원, 주택 구입(매매) 대출을 " +
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     "청년 월세 지원", "청년 전세대출", "청년 주거비 지원", "무주택 주택 구입 지원", "경기도 신혼부부 전세자금 대출",
   ],
   alternates: { canonical: "/housing" },
-};
+});
 
 export default async function HousingHub() {
   const counts = await housingCounts().catch(() => []);

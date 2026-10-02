@@ -6,9 +6,9 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { moneyRelated } from "@/lib/related";
 import { LOAN_ORGS } from "@/lib/studentLoan";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "생활금융 정보 — 전세자금대출 금리, 학자금 이자지원",
   description:
     "받는 돈만 지원이 아닙니다. 주택금융공사 보증 전세자금대출의 은행별 금리와, " +
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   keywords: [
       ...brandKeys("생활금융", "대출"),"전세자금대출 금리", "학자금 이자지원", "생활금융", "정부 지원 대출"],
   alternates: { canonical: "/money" },
-};
+});
 
 const CARDS = [
   {

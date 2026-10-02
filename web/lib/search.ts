@@ -198,7 +198,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   const wq = { sido, sigungu, age, employment, household, q: term || undefined };
   const bq = { sido, q: term || undefined };
   const sp = toParams(parsed); sp.set("via", "search");
-  const bsp = new URLSearchParams({ tab: "business", via: "search" });
+  const bsp = new URLSearchParams({ via: "search" });
   if (sido) bsp.set("sido", sido);
   if (term) bsp.set("q", term);
 
@@ -206,7 +206,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   const out: SearchResult = {
     q, parsed, bits, term,
     welfare: empty(`/?${sp}`),
-    business: empty(`/?${bsp}`),
+    business: empty(`/business?${bsp}`),
     jobs: { ...empty<JobHit>(jobPath({ q: term, page: 1 })), openOnly: true, allTotal: null },
     licenses: empty(`/license?q=${encodeURIComponent(term)}`),
     agency: empty(`/agency?q=${encodeURIComponent(term)}`),

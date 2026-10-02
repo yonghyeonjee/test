@@ -15,11 +15,11 @@ import {
   getAreas, getCoverage, getRegions, getStats,
   type Area, type Stat,
 } from "@/lib/db";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "청년정책·정부지원사업 전체 — 청년지원금, 복지서비스, 기업지원 목록",
   description:
     "전국 지자체와 중앙부처의 정부 지원 정책을 대상별·분야별·지역별로 한 화면에 펼쳤습니다. " +
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "정부복지 목록",
   ],
   alternates: { canonical: "/policies" },
-};
+});
 
 type Data = {
   coverage: { welfare: number; business: number };
@@ -177,21 +177,21 @@ export default async function Policies() {
       >
         <Chips
           items={BIZ_TARGET.map((t) => ({
-            href: `/?tab=business&target=${encodeURIComponent(t)}&via=policies`,
+            href: `/business?target=${encodeURIComponent(t)}&via=policies`,
             label: t,
           }))}
         />
         <h3 className="mt-6 text-sm font-bold text-ink2">필요한 분야</h3>
         <Chips
           items={BIZ_FIELD.map((f) => ({
-            href: `/?tab=business&field=${encodeURIComponent(f)}&via=policies`,
+            href: `/business?field=${encodeURIComponent(f)}&via=policies`,
             label: f,
           }))}
         />
         <h3 className="mt-6 text-sm font-bold text-ink2">업종</h3>
         <Chips
           items={INDUSTRY.map((i) => ({
-            href: `/?tab=business&ind=${encodeURIComponent(i)}&via=policies`,
+            href: `/business?ind=${encodeURIComponent(i)}&via=policies`,
             label: i,
           }))}
         />

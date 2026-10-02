@@ -14,7 +14,7 @@ import ShareButton from "@/components/ShareButton";
 import Toc from "@/components/Toc";
 import { getPost, POSTS } from "@/lib/posts";
 import { postRelated } from "@/lib/related";
-import { SITE_URL, t } from "@/lib/seo";
+import { SITE_URL, t, withOg, OG_IMAGE } from "@/lib/seo";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 
 
@@ -39,8 +39,8 @@ export function generateMetadata({
   params: { slug: string };
 }): Metadata {
   const post = getPost(params.slug);
-  if (!post) return {};
-  return {
+  if (!post) return withOg({});
+  return withOg({
     title: post.title,
     description: post.description,
     keywords: post.keywords,
@@ -51,7 +51,7 @@ export function generateMetadata({
       url: `${SITE_URL}/blog/${post.slug}`,
       type: "article",
     },
-  };
+  });
 }
 
 /**
@@ -89,6 +89,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     ],
     about: {
       "@type": "BlogPosting",
+      image: [OG_IMAGE],
       "@id": `${SITE_URL}${path}#post`,
       headline: post.title,
       description: post.description,

@@ -11,7 +11,7 @@ import { getHomeLoanRates, lowestDidimdol, monthLabel } from "@/lib/homeLoanRate
 import { housingPath } from "@/lib/housing";
 import { jeonseRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const m = r ? monthLabel(r.didimdol.month ?? r.bogeumjari.month) : null;
   const low = r ? lowestDidimdol(r) : null;
   const title = `보금자리론·디딤돌대출 금리${m ? ` (${m})` : ""} — 소득·만기별 표와 우대금리`;
-  return {
+  return withOg({
     title,
     description:
       `주택도시기금 디딤돌대출과 주택금융공사 보금자리론의 이번 달 금리를 소득 구간·만기별로 정리했습니다.` +
@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: [
       ...brandKeys("구입자금 금리", "보금자리론", "디딤돌"),"디딤돌대출 금리", "보금자리론 금리", "주택구입자금 대출 금리", "신혼부부 디딤돌 금리", "생애최초 디딤돌 금리", "디딤돌 우대금리", "보금자리론 우대금리"],
     alternates: { canonical: PATH },
-  };
+  });
 }
 
 const FAQ = [

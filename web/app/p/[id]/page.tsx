@@ -39,7 +39,7 @@ export const dynamicParams = true;
 
 import { promoContextForProgram } from "@/lib/promo";
 import { programRelated } from "@/lib/related";
-import { SITE_URL as SITE } from "@/lib/seo";
+import { SITE_URL as SITE, withOg } from "@/lib/seo";
 
 export async function generateStaticParams() {
   // 많이 보는 것만 미리 만든다. 400개를 미리 만들면 배포가 몇 분 길어지고,
@@ -64,7 +64,7 @@ export async function generateMetadata({
   params: { id: string };
 }): Promise<Metadata> {
   const p = await getProgram(decodeURIComponent(params.id));
-  if (!p) return { title: "찾을 수 없는 사업" };
+  if (!p) return withOg({ title: "찾을 수 없는 사업" });
 
   const where = p.sigungu || p.sido || "전국";
   const body = (p.summary || p.target_text || "").replace(/\s+/g, " ").trim();
@@ -73,12 +73,12 @@ export async function generateMetadata({
     body ? `${body.slice(0, 90)}${body.length > 90 ? "…" : ""} ` : ""
   ) + "지원대상·선정기준·신청방법을 한눈에 정리했습니다.";
 
-  return {
+  return withOg({
     title: seoTitle(p),
     description: desc,
     alternates: { canonical: `${SITE}/p/${encodeURIComponent(p.source_id)}` },
     openGraph: { title: seoTitle(p), description: desc, type: "article" },
-  };
+  });
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {

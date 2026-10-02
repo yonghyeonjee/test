@@ -11,7 +11,7 @@ import ShareButton from "@/components/ShareButton";
 import StoryBody from "@/components/StoryBody";
 import { blogIndexRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
 import { getStories, getStory, KIND_LABEL } from "@/lib/stories";
 
 /**
@@ -33,16 +33,16 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const s = await getStory(decodeURIComponent(params.slug));
-  if (!s) return { title: "찾을 수 없는 글" };
+  if (!s) return withOg({ title: "찾을 수 없는 글" });
   const path = `/story/${encodeURIComponent(s.slug)}`;
-  return {
+  return withOg({
     title: s.title,
     description: s.summary,
     keywords: s.keywords,
     alternates: { canonical: path },
     openGraph: { type: "article", url: `${SITE_URL}${path}`, title: s.title, description: s.summary,
                  publishedTime: s.published_at, modifiedTime: s.updated_at },
-  };
+  });
 }
 
 const ART: Record<string, (p: { className?: string }) => JSX.Element> = { org: ArtJobs, role: ArtJobs, region: ArtPolicy, topic: ArtJeonse };
@@ -58,6 +58,7 @@ export default async function StoryPage({ params }: P) {
     crumbs: [{ name: "블로그", path: "/story" }, { name: KIND_LABEL[s.kind] ?? "블로그" }],
     about: {
       "@type": "BlogPosting", "@id": `${SITE_URL}${path}#post`, headline: s.title, description: s.summary,
+      image: [OG_IMAGE],
       datePublished: s.published_at, dateModified: s.updated_at, inLanguage: "ko-KR",
       keywords: s.keywords.join(", "), author: { "@id": ORG_ID }, publisher: { "@id": ORG_ID }, url: `${SITE_URL}${path}`,
     },

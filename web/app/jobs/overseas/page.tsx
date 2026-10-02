@@ -11,7 +11,7 @@ import { dot } from "@/lib/pubJobs";
 import { OVERSEAS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
 import { getOverseasJobs, nationFacet } from "@/lib/worldjob";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -19,7 +19,7 @@ import { brandKeys } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "해외취업 우수일자리 — 국가·직종별 월드잡플러스 공고",
   description:
     "한국산업인력공단이 우수일자리로 고른 해외 채용 공고를 국가와 직종, 경력으로 걸러 봅니다. " +
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   keywords: [
       ...brandKeys("해외취업", "해외 채용"),"해외취업", "해외취업 공고", "월드잡플러스", "일본 취업", "해외 우수일자리"],
   alternates: { canonical: "/jobs/overseas" },
-};
+});
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;

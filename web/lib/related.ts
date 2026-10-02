@@ -80,7 +80,7 @@ export function blogIndexRelated(): Related[] {
       desc: "지역별 페이지에는 그 지역에서 누가 무엇을 찾는지 정리해 두었습니다.",
     },
     {
-      href: "/?tab=business",
+      href: "/business",
       title: "중소기업·소상공인 지원사업 찾기",
       desc: "지역과 업종, 업력으로 좁혀 기업 지원사업만 따로 볼 수 있습니다.",
     },
