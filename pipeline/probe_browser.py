@@ -177,13 +177,33 @@ def check_ref(browser, url: str) -> None:
         scripts: list[str] = []
         page.on("request", lambda q: scripts.append(q.url) if q.resource_type == "script" else None)
         try:
-            r = page.goto(url, wait_until="networkidle", timeout=45000)
+            # 포털은 오래 붙어 있는 요청이 있어 networkidle 을 기다리면 끝나지 않는다.
+            r = page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            try:
+                page.wait_for_load_state("networkidle", timeout=8000)
+            except Exception:  # noqa: BLE001
+                pass
         except Exception as e:  # noqa: BLE001
             print(f"   [{tag}] 못 열었다: {e}")
             ctx.close()
             continue
         page.wait_for_timeout(2500)
         print(f"   [{tag}] status {r.status if r else '-'} title={page.title()!r} 높이={page.evaluate('document.body.scrollHeight')}")
+        # 바탕색·글꼴·검색창(입력칸과 그 테두리 상자)의 크기와 색.
+        look = page.evaluate("""() => {
+          const cs = (e) => getComputedStyle(e);
+          const q = document.querySelector('input[type=search], input[name=query], input#query, input[role=combobox]');
+          let box = q, hops = 0;
+          while (box && hops < 6 && cs(box).borderTopWidth === '0px') { box = box.parentElement; hops++; }
+          const r = (e) => e ? e.getBoundingClientRect() : null;
+          return {
+            body: cs(document.body).backgroundColor, html: cs(document.documentElement).backgroundColor,
+            font: cs(document.body).fontFamily.slice(0, 80), size: cs(document.body).fontSize, color: cs(document.body).color,
+            input: q ? { x: Math.round(r(q).left), y: Math.round(r(q).top + scrollY), w: Math.round(r(q).width), h: Math.round(r(q).height), font: cs(q).fontSize, ph: q.placeholder } : null,
+            box: box ? { x: Math.round(r(box).left), w: Math.round(r(box).width), h: Math.round(r(box).height), border: cs(box).borderTopWidth + ' ' + cs(box).borderTopColor, radius: cs(box).borderRadius, bg: cs(box).backgroundColor } : null,
+          };
+        }""")
+        print(f"   [{tag}] 모양:", json.dumps(look, ensure_ascii=False))
         sdk = sorted({re.sub(r'^https?://([^/?]+).*$', r'\1', s) for s in scripts if re.search(r'map|kakao|naver|google', s, re.I)})
         print(f"   [{tag}] 지도 관련 스크립트 호스트:", sdk)
         # 데스크톱은 첫 화면(위 1,400px) 구조만 짧게 — 기둥 폭·검색창·바로가기·오른쪽 기둥을 본다.
