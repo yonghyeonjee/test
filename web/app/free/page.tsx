@@ -32,7 +32,7 @@ const GLYPH: Record<string, string> = { "심리": "brain", "영어": "book", "�
 export default function FreePage() {
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="pink"
         eyebrow="무료 서비스"
         title="가입도 결제도 없이 쓰는 것들"
         sub="지원금 찾는 김에 같이 보시라고 모아 뒀습니다. 심리 테스트, 영어 문법, 마케팅 용어 — 전부 무료입니다."

@@ -107,7 +107,7 @@ export default async function Policies() {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="green"
         eyebrow="전체 보기"
         title="찾아볼 수 있는 정책을 전부 펼쳐 두었습니다"
         sub="무엇을 검색해야 할지 모르겠다면 여기서 시작하세요. 대상·분야·지역·업종을 누르기만 하면 그 조건에 걸리는 공고만 남습니다."
@@ -115,11 +115,11 @@ export default async function Policies() {
       >
         <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {band.map((b) => (
-            <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
-              <b className="num block text-[1.35rem] font-extrabold text-white">
+            <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+              <b className="num block text-[1.35rem] font-extrabold text-ink">
                 {b.n.toLocaleString()}
               </b>
-              <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
+              <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
             </div>
           ))}
         </div>

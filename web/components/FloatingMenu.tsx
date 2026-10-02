@@ -45,7 +45,8 @@ export default function FloatingMenu() {
     // 차지한다. 배경이 없어도 상자는 상자라, 그 위를 누르면 뒤에 있는 카드가
     // 아니라 이 상자가 받아 버린다 — 오른쪽 아래가 통째로 안 눌렸다.
     // 상자는 누름을 통과시키고, 실제로 누를 것들만 다시 받게 한다.
-    <div className="pointer-events-none fixed bottom-5 right-5 z-40 flex flex-col items-end gap-2">
+    // 휴대폰에서는 아래 탭 막대(BottomBar)가 이 일을 한다. 넓은 화면에서만.
+    <div className="pointer-events-none fixed bottom-5 right-5 z-40 hidden flex-col items-end gap-2 sm:flex">
       {/* 펼쳐진 갈래 */}
       <ul
         className={`flex flex-col items-end gap-1.5 transition-all duration-200 ${
@@ -60,7 +61,7 @@ export default function FloatingMenu() {
                              text-[13.5px] font-semibold shadow-lift backdrop-blur transition-colors ${
                     "hot" in it && it.hot
                       ? "border-brand bg-brand text-white hover:bg-brandDeep"
-                      : "border-line bg-surface/95 text-ink2 hover:border-brand hover:text-brand"}`}>
+                      : "border-line bg-surface/95 text-ink2 hover:border-line2 hover:text-ink"}`}>
               <svg viewBox="0 0 24 24"
                    className={`h-4 w-4 ${"hot" in it && it.hot ? "text-white" : "text-brand"}`}
                    fill="none" stroke="currentColor"
@@ -73,7 +74,7 @@ export default function FloatingMenu() {
           <li>
             <button type="button" onClick={() => { window.scrollTo({ top: 0 }); setOpen(false); }}
                     className="flex items-center gap-2 rounded-pill border border-line bg-surface/95 py-2 pl-3.5 pr-4
-                               text-[13.5px] font-semibold text-ink2 shadow-lift backdrop-blur hover:border-brand hover:text-brand">
+                               text-[13.5px] font-semibold text-ink2 shadow-lift backdrop-blur hover:border-line2 hover:text-ink">
               <svg viewBox="0 0 24 24" className="h-4 w-4 text-brand" fill="none" stroke="currentColor"
                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 19V5M5 12l7-7 7 7" /></svg>
               맨 위로
@@ -87,10 +88,10 @@ export default function FloatingMenu() {
         aria-expanded={open}
         aria-label={open ? "메뉴 닫기" : "바로가기 메뉴"}
         onClick={() => setOpen((o) => !o)}
-        className={`pointer-events-auto flex h-13 w-13 items-center justify-center rounded-pill
-                    text-white shadow-lift transition-all duration-200
-                    ${open ? "rotate-45 bg-deep" : "bg-brand hover:bg-brandDeep"}`}
-        style={{ width: 52, height: 52 }}
+        className={`pointer-events-auto flex items-center justify-center rounded-pill border shadow-lift
+                    transition-all duration-200
+                    ${open ? "rotate-45 border-deep bg-deep text-white" : "border-line bg-white text-brand hover:border-line2"}`}
+        style={{ width: 48, height: 48 }}
       >
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2"
              strokeLinecap="round" aria-hidden><path d="M12 5v14M5 12h14" /></svg>

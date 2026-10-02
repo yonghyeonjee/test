@@ -57,7 +57,7 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="blue"
         eyebrow="채용"
         title="해외취업, 공단이 고른 자리부터"
         sub="한국산업인력공단이 근로조건과 비자를 확인해 우수일자리로 올린 해외 채용 공고입니다. 국가와 직종으로 걸러 보세요."
@@ -70,9 +70,9 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
               { n: all.jobs.length, label: "우수일자리" },
               { n: nations.length, label: "국가" },
             ].map((b) => (
-              <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
-                <b className="num block text-[1.35rem] font-extrabold text-white">{b.n.toLocaleString()}</b>
-                <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
+              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+                <b className="num block text-[1.35rem] font-extrabold text-ink">{b.n.toLocaleString()}</b>
+                <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
               </div>
             ))}
           </div>

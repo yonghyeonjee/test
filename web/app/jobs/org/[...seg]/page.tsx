@@ -69,14 +69,14 @@ export default async function JobsByOrg({ params }: P) {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="blue"
         eyebrow="채용 · 기관별"
         title={org}
         sub={`${org}이(가) 나라일터에 낸 채용 공고입니다. 접수 중인 것이 앞에 오고, 그 뒤로 지난 공고가 등록일순으로 이어집니다.`}
         art={<IllusJobs />}
       >
         {stat && (
-          <p className="num mt-4 text-sm text-white/80">
+          <p className="num mt-4 text-sm text-muted">
             공고 {stat.n.toLocaleString()}건
             {stat.openN > 0 && ` · 접수 중 ${stat.openN}건`}
             {stat.firstReg && stat.lastReg && ` · ${dot(stat.firstReg)}~${dot(stat.lastReg)}`}

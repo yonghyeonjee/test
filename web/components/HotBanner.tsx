@@ -25,11 +25,12 @@ const EVERY = 6000;
  */
 const PHOTO: Partial<Record<HotKind, string>> = {};
 
+// 갈래 색(cat.*)과 같은 계열. 예전의 짙은 남보라·먹초록은 화면을 무겁게 했다.
 const TONE: Record<HotKind, { from: string; to: string; tint: string }> = {
-  pin: { from: "#2A2266", to: "#5A4BE0", tint: "#C4B5FD" },
-  exam: { from: "#0C3B32", to: "#1E7A63", tint: "#9AE6C8" },
-  job: { from: "#17255A", to: "#3E5BB8", tint: "#AFC4FF" },
-  biz: { from: "#4A3410", to: "#9A7526", tint: "#F5D98B" },
+  pin: { from: "#3F33C4", to: "#7B6CF6", tint: "#D0BFFF" },
+  exam: { from: "#0B7A5A", to: "#20B486", tint: "#B2F2D7" },
+  job: { from: "#1864AB", to: "#3B9AE8", tint: "#C5E3FF" },
+  biz: { from: "#A84300", to: "#F08C00", tint: "#FFE3A8" },
 };
 
 /** 갈래마다 다른 무늬. 사진 없이도 화면이 비어 보이지 않게. */
@@ -86,7 +87,7 @@ function Art({ kind }: { kind: HotKind }) {
   );
 }
 
-export default function HotBanner({ slides }: { slides: Slide[] }) {
+export default function HotBanner({ slides, className = "mt-6" }: { slides: Slide[]; className?: string }) {
   const [i, setI] = useState(0);
   const [hold, setHold] = useState(false);
   const n = slides.length;
@@ -110,7 +111,7 @@ export default function HotBanner({ slides }: { slides: Slide[] }) {
     <section
       aria-roledescription="carousel"
       aria-label="마감이 가까운 안내"
-      className="relative mt-6"
+      className={`relative ${className}`}
       onMouseEnter={() => setHold(true)}
       onMouseLeave={() => setHold(false)}
       onFocusCapture={() => setHold(true)}
@@ -135,7 +136,7 @@ export default function HotBanner({ slides }: { slides: Slide[] }) {
               <Link
                 href={s.href}
                 tabIndex={idx === i ? 0 : -1}
-                className="relative block h-[184px] overflow-hidden sm:h-[210px]"
+                className="relative block h-[156px] overflow-hidden sm:h-[176px]"
               >
                 {PHOTO[s.kind] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -145,8 +146,8 @@ export default function HotBanner({ slides }: { slides: Slide[] }) {
                   <Art kind={s.kind} />
                 )}
                 {/* 글씨가 그림에 묻히지 않게 아래를 어둡게 깐다. */}
-                <span className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
-                <span className="absolute inset-x-0 bottom-0 p-5">
+                <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                <span className="absolute inset-x-0 bottom-0 p-4 pb-7 sm:p-5 sm:pb-8">
                   <span className="flex flex-wrap items-center gap-1.5">
                     <span className={`badge ${s.days <= 1 ? "badge-closed bg-white text-alert" : "bg-white/20 text-white"}`}>
                       {dueLabel(s.days)}
@@ -168,7 +169,7 @@ export default function HotBanner({ slides }: { slides: Slide[] }) {
       </div>
 
       {n > 1 && (
-        <div className="mt-3 flex justify-center gap-2">
+        <div className="absolute inset-x-0 bottom-1.5 flex justify-center gap-1.5">
           {slides.map((s, idx) => (
             <button
               key={s.key}
@@ -176,10 +177,10 @@ export default function HotBanner({ slides }: { slides: Slide[] }) {
               onClick={() => go(idx)}
               aria-label={`${idx + 1}번째 안내 보기`}
               aria-current={idx === i}
-              className="flex h-6 items-center px-0.5"
+              className="flex h-6 min-w-[24px] items-center justify-center px-0.5"
             >
-              <span className={`block h-2 rounded-pill transition-all ${
-                idx === i ? "w-6 bg-brand" : "w-2 bg-line2 hover:bg-muted"}`} />
+              <span className={`block h-1.5 rounded-pill transition-all ${
+                idx === i ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"}`} />
             </button>
           ))}
         </div>

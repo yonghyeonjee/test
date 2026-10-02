@@ -34,14 +34,14 @@ export default async function JobOrgIndex() {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="blue"
         eyebrow="채용 · 기관별"
         title="어느 기관이 얼마나 자주 뽑나"
         sub="모아 둔 공고를 기관별로 묶었습니다. 이미 끝난 공고는 지원할 수 없지만, 그 기관이 얼마나 자주 뽑고 접수를 며칠 받는지는 알려 줍니다."
         art={<IllusJobs />}
       >
         {overview && (
-          <p className="num mt-4 text-sm text-white/80">
+          <p className="num mt-4 text-sm text-muted">
             {overview.firstReg?.slice(0, 4)}~{overview.lastReg?.slice(0, 4)}년 공고{" "}
             {overview.total.toLocaleString()}건 · 기관 {overview.orgs.toLocaleString()}곳
           </p>

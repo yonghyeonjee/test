@@ -45,7 +45,7 @@ export default async function AgencyFacilities({ searchParams }: { searchParams:
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="indigo"
         eyebrow="공공기관"
         title="공공기관 시설, 국민도 쓸 수 있습니다"
         sub="체육관, 강당, 회의실, 주차장. 공공기관 시설 상당수가 개방되어 있고 무료거나 매우 쌉니다. 어디가 열려 있는지 지역별로 봅니다."

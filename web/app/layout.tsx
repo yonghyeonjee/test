@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { GtmNoScript, GtmScript, RouteChange } from "@/components/Gtm";
 import SideRailAd from "@/components/SideRailAd";
-import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { BottomBar, SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { WRAP } from "@/lib/nav";
 import VisitTracker from "@/components/VisitTracker";
 import { HotkeyFocus } from "@/components/Motion";
 import FloatingMenu from "@/components/FloatingMenu";
@@ -145,16 +146,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </Suspense>
 
         <a href="#main" className="skip">본문으로 건너뛰기</a>
-        <div className="mx-auto max-w-[54rem] px-5 lg:max-w-[64rem]">
-          <VisitTracker />
-          <SiteHeader index={index} />
-
+        <VisitTracker />
+        {/* 머리말·꼬리말은 화면 폭 전체 띠, 본문만 기둥 폭. */}
+        <SiteHeader index={index} />
+        <div className={WRAP}>
           <main id="main">{children}</main>
-          <FloatingMenu />
-          <HotkeyFocus />
-
-          <SiteFooter />
         </div>
+        <SiteFooter />
+        <FloatingMenu />
+        <BottomBar />
+        <HotkeyFocus />
         <SideRailAd />
       </body>
     </html>

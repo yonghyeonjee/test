@@ -68,7 +68,7 @@ export default async function LicensePage({ params }: { params: { code: string }
         <Link href="/license" className="hover:text-brand">자격증</Link>
         {" / "}<Link href={`/license?series=${encodeURIComponent(l.series)}`} className="hover:text-brand">{l.series}</Link>
       </nav>
-      <PageBanner
+      <PageBanner tone="orange"
         eyebrow={`${l.kind === "T" ? "국가기술자격" : l.kindName || "국가자격"} · ${l.series}`}
         title={`${l.name} 자격증`}
         sub={`${l.field}${l.subField ? ` › ${l.subField}` : ""} 분야. 응시 자격과 준비 방법, 비용을 줄여 주는 제도까지 한 화면에.`}
