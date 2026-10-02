@@ -10,12 +10,14 @@ import type { AdSlotCfg } from "@/lib/settings";
  *
  * tall: 높이를 막지 않는다. 멀티플렉스처럼 카드가 여러 줄로 깔리는
  * 광고는 200px 에 자르면 윗줄만 보이고 잘린다.
+ * strip: 제목 아래 작은 가로 띠. 테두리·여백 없이 높이를 90~100px 로 묶고,
+ * "광고" 표시는 왼쪽 위 귀퉁이에 작게.
  */
-export default function AdBox({ cfg, className = "", tall = false }: {
-  cfg: AdSlotCfg; className?: string; tall?: boolean;
+export default function AdBox({ cfg, className = "", tall = false, strip = false }: {
+  cfg: AdSlotCfg; className?: string; tall?: boolean; strip?: boolean;
 }) {
   return (
-    <aside className={`ad-slot ${tall ? "ad-tall" : ""} ${className}`} aria-label="광고">
+    <aside className={`ad-slot ${tall ? "ad-tall" : ""} ${strip ? "ad-strip" : ""} ${className}`} aria-label="광고">
       <span className="ad-tag" aria-hidden="true">광고</span>
       {cfg.kind === "image" ? (
         <a href={cfg.href || "#"} target="_blank" rel="noopener noreferrer sponsored" className="block">

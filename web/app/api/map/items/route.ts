@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getMapData } from "@/lib/mapData";
+import { getMapData, toItem } from "@/lib/mapData";
 
 /**
  * 정책지도 점 하나의 요약(마감 가까운 몇 건). 점을 누르거나 목록을 펼칠 때 부른다.
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const data = await getMapData().catch(() => null);
   const p = data?.[kind].find((x) => x.key === key);
   return NextResponse.json(
-    { key, kind, items: p?.items ?? [], n: p?.n ?? 0 },
+    { key, kind, items: (p?.items ?? []).slice(0, 6).map(toItem), n: p?.n ?? 0 },
     { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } },
   );
 }

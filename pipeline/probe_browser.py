@@ -79,15 +79,16 @@ def check_map(browser) -> None:
     head = page.locator("h2", has_text="가까운 순").first.inner_text() if page.locator("h2", has_text="가까운 순").count() else "(없음)"
     print("   내 위치 적용:", head, "|", page.locator("h2 + span").first.inner_text() if page.locator("h2 + span").count() else "")
     print("   내 위치 30km:", json.dumps(page.evaluate(OVERLAP_JS), ensure_ascii=False))
-    rows = page.locator("ol > li summary").all_inner_texts()[:5]
-    print("   가까운 곳:", [x.replace("\n", " ") for x in rows])
-    page.locator("ol > li summary").first.click()
-    page.wait_for_timeout(2000)
-    print("   펼친 줄:", page.locator("ol > li").first.inner_text().replace("\n", " | ")[:260])
-    page.locator("ol > li button", has_text="지도에서 보기").first.click()
-    page.wait_for_timeout(2500)
+    head = page.locator('section[aria-label="공고 카드"] h2')
+    print("   카드 목록:", head.first.inner_text() if head.count() else "(없음)")
+    cards = page.locator(".pm-lcard").all_inner_texts()[:3]
+    print("   첫 카드:", [c.replace("\n", " | ")[:140] for c in cards])
+    print("   상태 배지:", sorted(set(page.locator(".pm-st").all_inner_texts()))[:8])
+    if page.locator(".pm-lcard").count() > 1:
+        page.locator(".pm-lcard").nth(1).click(position={"x": 24, "y": 60})
+        page.wait_for_timeout(2500)
     card = page.locator(".pm-card").first.inner_text() if page.locator(".pm-card").count() else "(카드 없음)"
-    print("   카드:", card.replace("\n", " | ")[:320])
+    print("   지도 카드:", card.replace("\n", " | ")[:320])
     print("   오류:", errs[:6] or "없음")
     ctx.close()
 

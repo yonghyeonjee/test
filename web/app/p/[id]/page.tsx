@@ -19,6 +19,7 @@ import RecentTracker from "@/components/RecentTracker";
 import TopicIcon from "@/components/TopicIcon";
 import Glyph, { fileGlyph } from "@/components/Glyph";
 import CalendarAdd from "@/components/CalendarAdd";
+import TopStripAd from "@/components/TopStripAd";
 import MiniMap from "@/components/MiniMap";
 import { programEvents } from "@/lib/calEvents";
 import { locate } from "@/lib/geo";
@@ -209,6 +210,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         <ShareButton title={p.title} text={`${where} · ${p.title}`} />
         <RecentTracker kind="p" id={p.source_id} title={p.title} sub={where} />
       </div>
+
+      <TopStripAd className="mt-5" />
 
       {status === "closed" && (
         <p className="mt-5 inline-block border-l-[3px] border-line2 pl-3 text-sm font-bold text-muted">
