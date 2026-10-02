@@ -30,8 +30,13 @@ def setup() -> None:
     sh([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"])
 
 
+def _err(e) -> str:
+    stack = (getattr(e, "stack", "") or "").replace("\n", " ⏎ ")[:420]
+    return f"pageerror {getattr(e, 'name', '')}: {getattr(e, 'message', e)} @ {stack}"
+
+
 def hook(page, errs: list[str]) -> None:
-    page.on("pageerror", lambda e: errs.append(f"pageerror {e}"))
+    page.on("pageerror", lambda e: errs.append(_err(e)))
     page.on("console", lambda m: errs.append(f"console {m.text[:160]}") if m.type == "error" else None)
 
 
