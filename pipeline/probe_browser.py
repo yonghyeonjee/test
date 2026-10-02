@@ -140,7 +140,7 @@ def check_home(browser, path: str) -> None:
       const r = a.getBoundingClientRect();
       return { x: Math.round(r.left), w: Math.round(r.width),
                boxes: [...a.querySelectorAll('h2')].filter((h) => h.offsetParent).map((h) => h.innerText.trim()),
-               rank: [...a.querySelectorAll('ol li')].map((li) => li.innerText.replace(/\s+/g, ' ').trim()).slice(0, 10) };
+               rank: [...a.querySelectorAll('ol li')].map((li) => li.innerText.replace(/\\s+/g, ' ').trim()).slice(0, 10) };
     }""")
     print("   [데스크톱] 오른쪽 기둥:", json.dumps(aside, ensure_ascii=False))
     print("   [데스크톱] 오류:", derr[:6] or "없음")
