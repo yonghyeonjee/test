@@ -60,7 +60,9 @@
 | 경로 | 하는 일 | 캐시 |
 |---|---|---|
 | `GET /api/map/items?kind&key` | 지도 점 하나의 요약 6건 | s-maxage 3600 |
-| `GET /api/map/list?kind&region&lat&lng&r&status&sort&offset&limit` | 지도 왼쪽 공고 카드 목록 | s-maxage 600 |
+| `GET /api/map/list?kind&region&lat&lng&r&status&sort&offset&limit&home` | 지도 왼쪽 공고 카드 목록 | s-maxage 600 |
+| `GET /api/map/dongs?kind&bbox` · `?sido&sgg` | 지도 동네 단계의 읍·면·동 행정복지센터·청사(정적 자리표 `lib/dongData.ts`) | s-maxage 3600 |
+| `GET /api/map/where?lat&lng` | 가까운 동·행정복지센터(좌표 약 100m 로 줄임, 저장 안 함) | private 600 |
 | `GET /api/cron/jobs[?source=]` | 수집(채용·자격·시험·공공기관·금리). `Authorization: Bearer CRON_SECRET` 또는 관리자 세션 | 없음 |
 | 서버 액션 `app/account/actions.ts` | 계정 만들기·불러오기·연락처 수정(캡차 검사) | — |
 | 서버 액션 `app/admin/actions.ts` | 관리자 설정·수집 실행·글 관리 | — |

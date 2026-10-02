@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
-import { cardHtml, cardLift, pickLabels, pinHtml, tierOfZoom, visiblePins, type Kind, type Pin, type Pos, type Tier, type View } from "./pins";
+import { cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Kind, type Pin, type Pos, type Tier, type View } from "./pins";
 
 type Leaflet = typeof import("leaflet");
 const KOREA: LatLng = [36.2, 127.9];
@@ -120,7 +120,7 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     const size = m.getSize();
     const show = pickLabels(list, (p) => m.latLngToContainerPoint([p.lat, p.lng]), { w: size.x, h: size.y }, tier, selected);
     labeled.current = show;
-    for (const p of list) {
+    for (const p of drawnPins(list, show, selected)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const mk = lf.marker([p.lat, p.lng], {
@@ -141,14 +141,15 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     const lf = L.current, m = map.current, g = meLayer.current;
     if (!lf || !m || !g) return;
     g.clearLayers();
-    if (!me) { if (pins.length !== 1) m.setView(KOREA, 7); return; }
+    if (!me) { if (pins.length !== 1) whenStill(m, () => m.setView(KOREA, 7)); return; }
     lf.circleMarker(me, { radius: 7, color: "#fff", weight: 2, fillColor: "#D97706", fillOpacity: 1 })
       .bindTooltip(meLabel || "내 위치", { direction: "top", offset: [0, -8] }).addTo(g);
     if (radius > 0) {
       const c = lf.circle(me, { radius: radius * 1000, color: "#D97706", weight: 1, fillColor: "#D97706", fillOpacity: 0.06, dashArray: "4 4" }).addTo(g);
-      m.fitBounds(c.getBounds(), { padding: [12, 12] });
+      const b = c.getBounds();
+      whenStill(m, () => m.fitBounds(b, { padding: [12, 12] }));
     } else {
-      m.setView(me, 9);
+      whenStill(m, () => m.setView(me, 9));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me, radius, meLabel, ready]);
@@ -158,7 +159,7 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       const m = map.current;
       const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!m || !p) return;
-      m.setView([p.lat, p.lng], Math.max(m.getZoom(), p.level === "dong" ? 14 : 11));
+      whenStill(m, () => m.setView([p.lat, p.lng], Math.max(m.getZoom(), p.level === "dong" ? 14 : 11)));
       // 확대가 끝나 핀이 새로 그려진 뒤 카드를 연다.
       setTimeout(() => openCard(p), 350);
     },
@@ -166,5 +167,18 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
 
   return <div ref={el} role="application" aria-label="지도" className={className} />;
 });
+
+/**
+ * 확대 움직임이 도는 중에 부른 setView·fitBounds 는 Leaflet 이 그냥 버린다(_tryAnimatedZoom).
+ * 시·도 → 시·군·구 → 읍·면·동을 빨리 연달아 고르면 지도가 앞의 확대에 멈춰 동네 단계로 못 간다.
+ * 움직이는 중이면 끝난 뒤에 한다. 그사이 여러 번 부르면 마지막 것만.
+ */
+const pendingView = new WeakMap<object, () => void>();
+function whenStill(m: { once(ev: string, f: () => void): unknown }, f: () => void) {
+  if (!(m as unknown as { _animatingZoom?: boolean })._animatingZoom) { pendingView.delete(m); f(); return; }
+  const waiting = pendingView.has(m);
+  pendingView.set(m, f);
+  if (!waiting) m.once("zoomend", () => { const g = pendingView.get(m); pendingView.delete(m); g?.(); });
+}
 
 export default LeafletEngine;

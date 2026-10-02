@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SGG_POINT, SIDO_POINT } from "@/lib/geoData";
-import { SIDO_SHORT, fmtKm, haversineKm, mapLinks, type LatLng } from "@/lib/geo";
+import { SIDO_POINT } from "@/lib/geoData";
+import { SIDO_SHORT, fmtKm, haversineKm, locate, mapLinks, sggChoices, type LatLng } from "@/lib/geo";
 import type { ListItem, MapItem } from "@/lib/mapData";
 import { fromRows, moreOf, type MapDataLite } from "@/lib/mapShape";
 import MapCanvas, { type Handle } from "./map/MapCanvas";
@@ -84,6 +84,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   const [pickSidoV, setPickSidoV] = useState("");
   const [pickSggV, setPickSggV] = useState("");
   const [dongOpts, setDongOpts] = useState<DongRow[] | null>(null);
+  const sggOpts = useMemo(() => (pickSidoV ? sggChoices(pickSidoV) : []), [pickSidoV]);
   const canvas = useRef<Handle>(null);
   const mapBox = useRef<HTMLDivElement>(null);
   const listBox = useRef<HTMLOListElement>(null);
@@ -139,7 +140,13 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     return inR.sort((a, b) => (me ? (a.km ?? 0) - (b.km ?? 0) : b.p.n - a.p.n));
   }, [points, me, radius]);
   const kmOf = useMemo(() => new Map(rows.map((x) => [x.p.key, x.km])), [rows]);
-  const pins = useMemo(() => rows.map(({ p, km }) => toPin(p, kind, km)), [rows, kind]);
+  const pins = useMemo(() => {
+    const out = rows.map(({ p, km }) => toPin(p, kind, km));
+    // 반경을 작게(3km) 잡으면 내 시·군·구 핀(구역 가운데)이 반경 밖일 수 있다. 내 시·군·구는 늘 보인다.
+    const hp = home ? points.find((p) => p.key === home) : undefined;
+    if (hp && !out.some((x) => x.key === hp.key)) out.push(toPin(hp, kind, me ? haversineKm(me, [hp.lat, hp.lng]) : null));
+    return out;
+  }, [rows, kind, home, points, me]);
   const byKey = useMemo(() => new Map(points.map((p) => [p.key, p])), [points]);
   /** 동네 단계 핀: 읍·면·동 행정복지센터(없으면 동 가운데)와 시청·구청. */
   const dongPins = useMemo<Pin[]>(() => dongRows.map(([key, sido, sgg, gu, dong, lat, lng, hall, office, n]) => {
@@ -152,6 +159,10 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     };
   }), [dongRows, byKey, kind, me]);
   const dongN = useMemo(() => new Map(dongRows.map((r) => [r[0], r[9]])), [dongRows]);
+  // 받아 둔 범위는 화면보다 조금 넓다. 세는 것은 화면 안의 센터만.
+  const hallsInView = view && view.zoom >= DONG_ZOOM
+    ? dongPins.filter((d) => !d.office && d.lat >= view.s && d.lat <= view.n && d.lng >= view.w && d.lng <= view.e).length
+    : 0;
 
   // 가까이 확대하면(동네 단계) 보이는 범위의 행정복지센터를 받는다. 범위를 0.05도 격자로
   // 넓혀 반올림해, 조금 움직일 때마다 다시 받지 않는다.
@@ -186,7 +197,8 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     const qs = new URLSearchParams({ kind, status, sort: sortEff, offset: String(offset), limit: String(PAGE) });
     if (region) qs.set("region", region);
     else if (me) {
-      qs.set("lat", String(me[0])); qs.set("lng", String(me[1])); qs.set("r", String(radius));
+      // 좌표는 소수 셋째 자리(약 100m)로 줄여 보낸다.
+      qs.set("lat", me[0].toFixed(3)); qs.set("lng", me[1].toFixed(3)); qs.set("r", String(radius));
       if (home) qs.set("home", home);
     }
     try {
@@ -218,7 +230,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   /** 이 자리가 어느 동 근처인지, 가장 가까운 행정복지센터는 어디인지. setHomeToo 면 내 시·군·구도 정한다. */
   async function learnWhere(pt: LatLng, setHomeToo = true) {
     try {
-      const r = await fetch(`/api/map/where?lat=${pt[0]}&lng=${pt[1]}`);
+      const r = await fetch(`/api/map/where?lat=${pt[0].toFixed(3)}&lng=${pt[1].toFixed(3)}`);
       const j = (await r.json()) as Where;
       setWhere(j);
       if (setHomeToo && j.dong) setHome(`${j.dong.sido}|${j.dong.sgg}`);
@@ -230,7 +242,9 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const pt: LatLng = [+pos.coords.latitude.toFixed(4), +pos.coords.longitude.toFixed(4)];
-        setMe(pt); setMeLabel("내 위치"); setBusy(false); setRegion(null); setSort("near"); setRadius(5);
+        // 휴대폰 지도는 좁아 5km 원을 담으면 시·군·구 단계에 머문다. 3km 면 바로 읍·면·동까지 보인다.
+        const r = window.matchMedia("(max-width: 639px)").matches ? 3 : 5;
+        setMe(pt); setMeLabel("내 위치"); setBusy(false); setRegion(null); setSort("near"); setRadius(r);
         setHome(null); remember(pt, "내 위치"); void learnWhere(pt);
         track("map_locate", { ok: true });
       },
@@ -246,7 +260,6 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   const goTo = (pt: LatLng, label: string, r: number, homeKey: string | null, how: string) => {
     setMe(pt); setMeLabel(label); setGeoErr(null); setRegion(null); setSort("near"); setRadius(r);
     setHome(homeKey); setWhere(null); remember(pt, label, homeKey);
-    if (how === "dong") void learnWhere(pt, false);
     track("map_locate", { ok: true, how });
   };
   const pickSido = (s: string) => {
@@ -256,9 +269,9 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   };
   const pickSgg = async (g: string) => {
     setPickSggV(g); setDongOpts(null);
-    const pt = SGG_POINT[pickSidoV]?.[g];
-    if (!pt) return;
-    goTo(pt, `${SIDO_SHORT[pickSidoV]} ${g}`, 10, `${pickSidoV}|${g}`, "sgg");
+    const at = locate(pickSidoV, g);
+    if (!at || at.approx) return;
+    goTo([at.lat, at.lng], `${SIDO_SHORT[pickSidoV]} ${g}`, 10, `${pickSidoV}|${g}`, "sgg");
     try {
       const r = await fetch(`/api/map/dongs?sido=${encodeURIComponent(pickSidoV)}&sgg=${encodeURIComponent(g)}`);
       const j = (await r.json()) as { rows?: DongRow[] };
@@ -318,22 +331,22 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
             {busy ? "위치 읽는 중…" : "내 위치로 보기"}
           </button>
           {/* 지역 고르기: 시·도 → 시·군·구 → 읍·면·동. 고를수록 지도가 가까워진다. */}
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="지역 고르기">
+          <div className="grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center" role="group" aria-label="지역 고르기">
             <select value={pickSidoV} onChange={(e) => e.target.value && pickSido(e.target.value)} aria-label="시·도"
-                    className="h-9 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
-              <option value="">또는 지역 고르기</option>
+                    className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
+              <option value="">지역 고르기</option>
               {Object.keys(SIDO_POINT).map((s) => <option key={s} value={s}>{SIDO_SHORT[s]}</option>)}
             </select>
-            {pickSidoV && SGG_POINT[pickSidoV] && (
+            {pickSidoV && sggOpts.length > 0 && (
               <select value={pickSggV} onChange={(e) => e.target.value && void pickSgg(e.target.value)} aria-label="시·군·구"
-                      className="h-9 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
+                      className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
                 <option value="">시·군·구</option>
-                {Object.keys(SGG_POINT[pickSidoV]).sort((a, b) => a.localeCompare(b, "ko")).map((g) => <option key={g} value={g}>{g}</option>)}
+                {sggOpts.map((g) => <option key={g} value={g}>{g}</option>)}
               </select>
             )}
             {pickSggV && dongOpts && dongOpts.length > 0 && (
               <select value="" onChange={(e) => e.target.value && pickDong(e.target.value)} aria-label="읍·면·동"
-                      className="h-9 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
+                      className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
                 <option value="">읍·면·동</option>
                 {dongOpts.map((d) => <option key={d[0]} value={d[0]}>{d[3] ? `${d[3]} ${d[4]}` : d[4]}</option>)}
               </select>
@@ -343,22 +356,23 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
         {me && (
           <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
             <span className="text-muted"><b className="text-ink2">{meLabel}</b> 기준</span>
-            <div className="flex flex-wrap gap-1" role="group" aria-label="반경">
+            <div className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden" role="group" aria-label="반경">
               {RADII.map((r) => (
                 <button key={r} type="button" onClick={() => { setRadius(r); setRegion(null); }} aria-pressed={radius === r}
-                        className={`chip !py-1 !text-[12.5px] ${radius === r ? "chip-on" : ""}`}>
+                        className={`chip shrink-0 !py-1 !text-[12.5px] ${radius === r ? "chip-on" : ""}`}>
                   {r ? `${r}km` : "전체"}
                 </button>
               ))}
             </div>
-            <span className="num text-muted">{rows.length}곳</span>
+            {rows.length > 0 && <span className="num text-muted">시·군·구 {rows.length}곳</span>}
+            {hallsInView > 0 && <span className="num text-muted">보이는 행정복지센터 {hallsInView}곳</span>}
             <button type="button" onClick={clearMe} className="text-muted underline underline-offset-4 hover:text-brand">위치 지우기</button>
           </div>
         )}
-        {me && where && (where.dong || where.hall) && (
+        {me && where && ((where.dong && meLabel === "내 위치") || (where.hall && where.hall.km >= 0.05)) && (
           <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
             {where.dong && meLabel === "내 위치" && <span><b className="text-ink2">{where.dong.label}</b> 근처</span>}
-            {where.hall && (
+            {where.hall && where.hall.km >= 0.05 && (
               <span>
                 가까운 행정복지센터 <b className="text-ink2">{where.hall.name}</b>{" "}
                 <span className="num text-brand">{fmtKm(where.hall.km)}</span>

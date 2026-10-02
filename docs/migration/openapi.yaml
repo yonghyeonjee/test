@@ -170,6 +170,48 @@ paths:
                 properties:
                   items: { type: array, items: { $ref: "#/components/schemas/ItemRow" } }
                   total: { type: integer }
+  /map/dongs:
+    get:
+      tags: [map]
+      summary: 읍·면·동 행정복지센터·청사 (지금 /api/map/dongs, 자료 © OpenStreetMap 기여자 ODbL)
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [programs, jobs], default: programs } }
+        - { name: bbox, in: query, description: "s,w,n,e (세로 1.5도·가로 2도 이하)", schema: { type: string } }
+        - { name: sido, in: query, schema: { type: string } }
+        - { name: sgg, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: "성공. rows 는 [열쇠, 시·도, 시·군·구, 구, 동, 위도, 경도, 센터 이름, 청사(0|1), 동 이름이 적힌 공고 수] 튜플 배열"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows: { type: array, items: { type: array } }
+        "400": { description: bbox·sido 가 없거나 범위가 너무 넓음 }
+  /map/where:
+    get:
+      tags: [map]
+      summary: 가까운 동과 행정복지센터 (지금 /api/map/where). 좌표는 소수 셋째 자리로 줄여 받고 저장하지 않는다
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number } }
+        - { name: lng, in: query, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: 성공. 15km 안에 없으면 각각 null
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dong:
+                    type: object
+                    nullable: true
+                    properties: { sido: { type: string }, sgg: { type: string }, gu: { type: string }, dong: { type: string }, label: { type: string }, km: { type: number } }
+                  hall:
+                    type: object
+                    nullable: true
+                    properties: { name: { type: string }, sido: { type: string }, sgg: { type: string }, lat: { type: number }, lng: { type: number }, km: { type: number } }
   /me/saved:
     get:
       tags: [me]

@@ -90,15 +90,23 @@ function labelBox(p: Pin, xy: XY, pos: Pos): Box {
  */
 export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { w: number; h: number },
                            tier: Tier, selected: string | null): Map<string, Pos> {
-  const rank = (p: Pin) => (p.level === "dong" ? (p.n > 0 ? 1 : p.office ? 2 : 3) : 0);
+  const at = new Map<string, XY | null>();
+  for (const p of pins) at.set(p.key, project(p));
+  // 동 핀은 화면 가운데(고른 동·내 위치)에 가까운 것부터 — 촘촘한 도시에서도 고른 동 이름이 먼저 선다.
+  const cx = size.w / 2, cy = size.h / 2;
+  const far = (p: Pin) => { const xy = at.get(p.key); return xy ? (xy.x - cx) ** 2 + (xy.y - cy) ** 2 : Infinity; };
+  // 화면 가운데에 선 동(고른 동·내 위치의 동)은 시·군·구 이름표보다도 먼저 — 시·군·구 이름표가 그 자리를 덮었다.
+  let mid: string | null = null, midD = 60 * 60;
+  for (const p of pins) if (p.level === "dong" && far(p) < midD) { mid = p.key; midD = far(p); }
+  const rank = (p: Pin) => (p.key === mid ? -1 : p.level === "dong" ? (p.n > 0 ? 1 : 2) : 0);
   const order = [...pins].sort((a, b) =>
-    a.key === selected ? -1 : b.key === selected ? 1 : rank(a) - rank(b) || b.n - a.n);
+    a.key === selected ? -1 : b.key === selected ? 1 : rank(a) - rank(b) || (rank(a) === 2 ? far(a) - far(b) : b.n - a.n));
   const taken: Box[] = [];
   const out = new Map<string, Pos>();
   const pad = 4;
   const hit = (box: Box) => taken.some((t) => !(box.r + pad < t.l || box.l - pad > t.r || box.b + pad < t.t || box.t - pad > t.b));
   for (const p of order) {
-    const xy = project(p);
+    const xy = at.get(p.key);
     if (!xy) continue;
     if (xy.x < -60 || xy.y < -40 || xy.x > size.w + 60 || xy.y > size.h + 40) continue;
     const tries: Pos[] = tier === "far" || p.level === "sido" ? ["c", "e", "w", "n", "s"] : ["tip"];
@@ -114,6 +122,13 @@ export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { 
   }
   return out;
 }
+
+/**
+ * 실제로 그릴 핀. 동네 단계의 동·센터 핀은 이름표가 선 것(과 동 이름이 적힌 공고가 있는 것, 고른 것)만
+ * 그린다 — 서울처럼 촘촘한 곳에서 이름 없는 점 수백 개가 화면을 덮었다. 확대하면 더 선다.
+ */
+export const drawnPins = (list: Pin[], show: Map<string, Pos>, selected: string | null) =>
+  list.filter((p) => p.level !== "dong" || show.has(p.key) || p.n > 0 || p.key === selected);
 
 export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 export const itemHref = (it: MapItem) => (it.kind === "job" ? `/jobs/${encodeURIComponent(it.id)}` : `/p/${encodeURIComponent(it.id)}`);
@@ -173,7 +188,7 @@ export const cardLift = (p: Pin, tier: Tier, labeled: boolean) =>
 
 /**
  * 동·센터·청사 핀의 카드. 공고 목록이 아니라 "찾아가는 곳" 카드다 — 이름, 어느 동인지,
- * 내 위치에서 거리, 길찾기, 그리고 그 시·군·구 공고로 가는 단추. 동 이름이 분명히 적힌
+ * 기준(내 위치·고른 동)에서 거리, 길찾기, 그리고 그 시·군·구 공고로 가는 단추. 동 이름이 분명히 적힌
  * 공고가 있으면 그것만 위에 보인다.
  */
 function dongCardHtml(p: Pin, items: MapItem[] | null, opts: { close?: boolean }): string {
@@ -191,8 +206,9 @@ function dongCardHtml(p: Pin, items: MapItem[] | null, opts: { close?: boolean }
     ? "시·군·구 사업의 담당 부서가 있는 청사입니다."
     : p.hall
       ? "복지 신청·상담은 주소지 행정복지센터에서 하는 경우가 많습니다."
-      : "행정복지센터 위치를 못 찾아 동 가운데에 놓았습니다.";
-  const dist = p.km !== null ? `<div class="pm-dist">내 위치에서 <b>${fmtKm(p.km)}</b> (직선거리)</div>` : "";
+      : "행정복지센터 위치 자료가 없어 동 경계의 가운데에 놓았습니다. 찾아가기 전에 지도 앱에서 확인하세요.";
+  // 거리는 "기준"(내 위치나 고른 동)에서 잰다. 기준이 바로 그 센터면(고른 동) 적지 않는다.
+  const dist = p.km !== null && p.km >= 0.05 ? `<div class="pm-dist">기준에서 <b>${fmtKm(p.km)}</b> (직선거리)</div>` : "";
   const btn = sgg && p.sggN
     ? `<div class="pm-btns"><a class="pm-btn pm-btn-primary" href="${p.more}">${esc(sgg)} ${p.kind === "jobs" ? "채용" : "공고"} ${fmtN(p.sggN)}건 보기 →</a></div>`
     : "";

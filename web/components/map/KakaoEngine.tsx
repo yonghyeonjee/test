@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { KAKAO_KEY, loadKakao, type KCircle, type KMap, type KOverlay, type KakaoMaps } from "./kakao";
-import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, tierOfLevel, visiblePins, type Kind, type Pin, type Pos, type Tier } from "./pins";
+import { boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfLevel, visiblePins, type Kind, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -90,7 +90,7 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     const w = el.current?.clientWidth ?? 0, h = el.current?.clientHeight ?? 0;
     const show = pickLabels(list, (p) => proj.containerPointFromCoords(new k.LatLng(p.lat, p.lng)), { w, h }, tier, selected);
     labeled.current = show;
-    for (const p of list) {
+    for (const p of drawnPins(list, show, selected)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const box = document.createElement("div");

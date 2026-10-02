@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { NAVER_KEY, loadNaver, type NCircle, type NMap, type NMarker, type NaverMaps } from "./naver";
-import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, tierOfZoom, visiblePins, type Pin, type Pos, type Tier } from "./pins";
+import { boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -95,7 +95,7 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
     };
     const show = pickLabels(list, project, { w: size.width, h: size.height }, tier, selected);
     labeled.current = show;
-    for (const p of list) {
+    for (const p of drawnPins(list, show, selected)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const box = document.createElement("div");

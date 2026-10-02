@@ -54,6 +54,26 @@ const SGG_ALIAS: Record<string, Record<string, string>> = {
   인천광역시: { 미추홀구: "남구" },
 };
 
+/** 없어진 시·군·구 — 옛 공고에만 남은 이름이라 지역 고르기에는 내지 않는다. */
+const SGG_GONE: Record<string, string[]> = {
+  // 2026년 7월 인천 개편: 중구·동구 → 제물포구·영종구, 서구 → 서해구·검단구
+  인천광역시: ["중구", "동구", "서구"],
+};
+
+/** 좌표표의 옛 이름 → 지금 이름(인천 남구 → 미추홀구). 모르는 이름은 그대로. */
+export function sggNow(sido: string, sgg: string): string {
+  for (const [cur, old] of Object.entries(SGG_ALIAS[sido] ?? {})) if (old === sgg) return cur;
+  return sgg;
+}
+
+/** 지역 고르기에 내는 시·군·구 이름(가나다 차례, 지금 이름). */
+export function sggChoices(sido: string): string[] {
+  const table = SGG_POINT[sido];
+  if (!table) return [];
+  const gone = new Set(SGG_GONE[sido] ?? []);
+  return Object.keys(table).filter((g) => !gone.has(g)).map((g) => sggNow(sido, g)).sort((a, b) => a.localeCompare(b, "ko"));
+}
+
 function sggPoint(sido: string, sigungu: string): LatLng | null {
   const table = SGG_POINT[sido];
   if (!table) return null;
