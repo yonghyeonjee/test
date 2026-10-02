@@ -87,6 +87,12 @@ function Art({ kind }: { kind: HotKind }) {
   );
 }
 
+const KIND_LABEL: Record<HotKind, string> = { pin: "정부지원", exam: "자격시험", job: "공공기관 채용", biz: "기업지원" };
+
+/**
+ * 한 줄 높이(휴대폰 64px, 넓은 화면 72px)의 얇은 띠. 예전 156~176px 짜리 큰 그림 띠는 휴대폰 첫
+ * 화면을 반 넘게 덮었다. 남은 날·갈래·제목만 싣고, 넓은 화면은 오른쪽에 기관·마감 한 줄과 넘김 단추.
+ */
 export default function HotBanner({ slides, className = "mt-6" }: { slides: Slide[]; className?: string }) {
   const [i, setI] = useState(0);
   const [hold, setHold] = useState(false);
@@ -136,7 +142,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
               <Link
                 href={s.href}
                 tabIndex={idx === i ? 0 : -1}
-                className="relative block h-[156px] overflow-hidden sm:h-[176px]"
+                className="relative flex h-16 items-center gap-4 overflow-hidden pl-4 pr-14 sm:h-[72px] sm:pl-5 sm:pr-[124px]"
               >
                 {PHOTO[s.kind] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -145,23 +151,21 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
                 ) : (
                   <Art kind={s.kind} />
                 )}
-                {/* 글씨가 그림에 묻히지 않게 아래를 어둡게 깐다. */}
-                <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                <span className="absolute inset-x-0 bottom-0 p-4 pb-7 sm:p-5 sm:pb-8">
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <span className={`badge ${s.days <= 1 ? "badge-closed bg-white text-alert" : "bg-white/20 text-white"}`}>
+                {/* 글씨 쪽(왼쪽)을 살짝 어둡게 — 밝은 색 띠에서도 흰 글씨가 읽힌다. */}
+                <span className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/10 to-transparent" />
+                <span className="relative min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-white/85">
+                    <span className={`num rounded-pill px-1.5 py-px text-[11.5px] font-extrabold ${
+                      s.days <= 1 ? "bg-white text-alert" : "bg-white/20 text-white"}`}>
                       {dueLabel(s.days)}
                     </span>
-                    <span className="badge bg-white/15 text-white/90">
-                      {s.kind === "pin" ? "정부지원" : s.kind === "exam" ? "자격시험"
-                        : s.kind === "job" ? "공공기관 채용" : "기업지원"}
-                    </span>
+                    {KIND_LABEL[s.kind]}
                   </span>
-                  <b className="mt-2 block text-[17px] font-extrabold leading-snug text-white">
+                  <b className="mt-0.5 block truncate text-[15px] font-extrabold leading-snug text-white sm:text-[16px]">
                     {s.title}
                   </b>
-                  <span className="mt-1 block truncate text-[13px] text-white/80">{s.sub}</span>
                 </span>
+                <span className="relative hidden max-w-[38%] truncate text-[12.5px] text-white/85 md:block">{s.sub}</span>
               </Link>
             </div>
           ))}
@@ -169,20 +173,19 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
       </div>
 
       {n > 1 && (
-        <div className="absolute inset-x-0 bottom-1.5 flex justify-center gap-1.5">
-          {slides.map((s, idx) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => go(idx)}
-              aria-label={`${idx + 1}번째 안내 보기`}
-              aria-current={idx === i}
-              className="flex h-6 min-w-[24px] items-center justify-center px-0.5"
-            >
-              <span className={`block h-1.5 rounded-pill transition-all ${
-                idx === i ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"}`} />
-            </button>
-          ))}
+        <div className="absolute inset-y-0 right-2 flex items-center gap-0.5 text-white sm:right-3">
+          <button type="button" onClick={() => go(i - 1)} aria-label="이전 안내"
+                  className="hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white/15 sm:flex">
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M12 5l-5 5 5 5" /></svg>
+          </button>
+          {/* 저절로 넘어갈 때는 읽어 주지 않는다(6초마다 끼어든다). 손이 머물러 멈췄을 때만. */}
+          <span className="num rounded-pill bg-black/25 px-2 py-0.5 text-[11.5px] font-semibold" aria-live={hold ? "polite" : "off"}>
+            {i + 1}<span className="opacity-70"> / {n}</span>
+          </span>
+          <button type="button" onClick={() => go(i + 1)} aria-label="다음 안내"
+                  className="hidden h-8 w-8 items-center justify-center rounded-full hover:bg-white/15 sm:flex">
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M8 5l5 5-5 5" /></svg>
+          </button>
         </div>
       )}
     </section>

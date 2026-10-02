@@ -22,6 +22,7 @@ import TopicGrid from "@/components/TopicGrid";
 import SectionHead from "@/components/SectionHead";
 import AdSlot from "@/components/AdSlot";
 import HotBanner from "@/components/HotBanner";
+import HomeMap from "@/components/HomeMap";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
@@ -300,6 +301,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
   }
 
   const { closing, closingFallback, fresh, closingCount } = bundle;
+  const areaTotal = areas.reduce((a, x) => a + x.n, 0);
   const [topicCounts, hot] = await Promise.all([
     countByTopic().catch(() => ({} as Record<string, number>)),
     // 마감이 걸린 것만 도는 띠. 결과를 보는 중에는 방해가 되어 첫 화면에서만.
@@ -335,8 +337,10 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             <LastConditions />
           </div>
           <RecentStrip />
-          {/* 휴대폰: 마감 돌림 띠. 넓은 화면은 오른쪽 기둥의 마감 모음이 같은 것을 보여 준다. */}
-          <HotBanner slides={hot} className="lg:hidden" />
+          {/* 마감 롤링 띠(얇은 한 줄). 처음 온 사람에게는 조건 카드 바로 아래다. */}
+          <HotBanner slides={hot} className="" />
+          {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
+          <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />
           <FeedTabs tabs={[
             { key: "closing", label: "마감 임박",
               sub: closingFallback ? "마감일이 가까운 순 · 놓치면 내년까지 기다려야 합니다" : `${settings.closingDays}일 이내 마감 · 놓치면 내년까지 기다려야 합니다`,
@@ -397,10 +401,10 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
           <PromoBanner placement="home" />
         </>}
         aside={<>
+          <HomeMap areas={areas} total={areaTotal} className="hidden lg:block" />
           <AlertBox />
           <HotRank terms={hotTerms.welfare} sub={hotSub(hotTerms)} className="hidden lg:block" />
           <DeadlineList slides={hot} className="hidden lg:block" />
-          <MapCard className="hidden lg:flex" />
           <AboutBox total={total} closing={closingCount} className="hidden lg:block" />
         </>}
       />

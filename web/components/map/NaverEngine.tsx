@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { NAVER_KEY, loadNaver, type NCircle, type NMap, type NMarker, type NaverMaps } from "./naver";
-import { boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Pin, type Pos, type Tier } from "./pins";
+import { KOREA_BOX, OV_K, boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -15,7 +15,7 @@ const KOREA: LatLng = [36.2, 127.9];
  * NEXT_PUBLIC_NAVER_MAP_KEY 가 있을 때만 쓰인다(components/map/naver.ts).
  */
 const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView }, ref,
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView, overview }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const N = useRef<NaverMaps | null>(null);
@@ -93,9 +93,9 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
       const o = proj.fromCoordToOffset(new n.LatLng(p.lat, p.lng));
       return { x: o.x - c.x + size.width / 2, y: o.y - c.y + size.height / 2 };
     };
-    const show = pickLabels(list, project, { w: size.width, h: size.height }, tier, selected);
+    const show = pickLabels(list, project, { w: size.width, h: size.height }, tier, selected, overview ? OV_K : 1);
     labeled.current = show;
-    for (const p of drawnPins(list, show, selected)) {
+    for (const p of drawnPins(list, show, selected, overview)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const box = document.createElement("div");
@@ -120,7 +120,11 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
     if (!n || !m) return;
     meObjs.current.dot?.setMap(null); meObjs.current.circle?.setMap(null);
     meObjs.current = { dot: null, circle: null };
-    if (!me) { if (pins.length !== 1) { m.setCenter(new n.LatLng(KOREA[0], KOREA[1])); m.setZoom(7); } return; }
+    if (!me) {
+      if (overview) m.fitBounds(new n.LatLngBounds(new n.LatLng(...KOREA_BOX[0]), new n.LatLng(...KOREA_BOX[1])), { top: 6, right: 6, bottom: 6, left: 6 });
+      else if (pins.length !== 1) { m.setCenter(new n.LatLng(KOREA[0], KOREA[1])); m.setZoom(7); }
+      return;
+    }
     const dot = document.createElement("div");
     dot.className = "pm-me"; dot.title = meLabel || "내 위치";
     meObjs.current.dot = new n.Marker({ position: new n.LatLng(me[0], me[1]), map: m, zIndex: 1500, icon: { content: dot, anchor: new n.Point(0, 0) } });

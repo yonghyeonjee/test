@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { KAKAO_KEY, loadKakao, type KCircle, type KMap, type KOverlay, type KakaoMaps } from "./kakao";
-import { boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfLevel, visiblePins, type Kind, type Pin, type Pos, type Tier } from "./pins";
+import { KOREA_BOX, OV_K, boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfLevel, visiblePins, type Kind, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -15,7 +15,7 @@ const KOREA: LatLng = [36.2, 127.9];
  * NEXT_PUBLIC_KAKAO_MAP_KEY 가 있을 때만 쓰인다(components/map/kakao.ts).
  */
 const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView }, ref,
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView, overview }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const K = useRef<KakaoMaps | null>(null);
@@ -88,9 +88,9 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     const list = visiblePins(pins, extra ?? [], tier);
     const proj = m.getProjection();
     const w = el.current?.clientWidth ?? 0, h = el.current?.clientHeight ?? 0;
-    const show = pickLabels(list, (p) => proj.containerPointFromCoords(new k.LatLng(p.lat, p.lng)), { w, h }, tier, selected);
+    const show = pickLabels(list, (p) => proj.containerPointFromCoords(new k.LatLng(p.lat, p.lng)), { w, h }, tier, selected, overview ? OV_K : 1);
     labeled.current = show;
-    for (const p of drawnPins(list, show, selected)) {
+    for (const p of drawnPins(list, show, selected, overview)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const box = document.createElement("div");
@@ -113,7 +113,11 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     if (!k || !m) return;
     meOverlays.current.dot?.setMap(null); meOverlays.current.circle?.setMap(null);
     meOverlays.current = { dot: null, circle: null };
-    if (!me) { if (pins.length !== 1) { m.setCenter(new k.LatLng(KOREA[0], KOREA[1])); m.setLevel(12); } return; }
+    if (!me) {
+      if (overview) m.setBounds(new k.LatLngBounds(new k.LatLng(...KOREA_BOX[0]), new k.LatLng(...KOREA_BOX[1])));
+      else if (pins.length !== 1) { m.setCenter(new k.LatLng(KOREA[0], KOREA[1])); m.setLevel(12); }
+      return;
+    }
     const dot = document.createElement("div");
     dot.className = "pm-me"; dot.title = meLabel || "내 위치";
     const d = new k.CustomOverlay({ position: new k.LatLng(me[0], me[1]), content: dot, xAnchor: 0, yAnchor: 0, zIndex: 3 });
