@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { dot, type AlioItem } from "@/lib/alioplus";
+import CalendarAdd from "./CalendarAdd";
+import { agencyEvents } from "@/lib/calEvents";
 
 export type Facet = { name: string; label: string; options: { code: string; label: string }[] };
 
@@ -124,6 +126,7 @@ export default function AgencyList({
                     )}
                   </>
                 );
+                const events = agencyEvents(it);
                 return (
                   <li key={it.id}>
                     {it.url ? (
@@ -131,6 +134,12 @@ export default function AgencyList({
                          className="card card-link block p-5">{inner}</a>
                     ) : (
                       <div className="card block p-5">{inner}</div>
+                    )}
+                    {/* 단추는 카드(링크) 밖에 — 링크 안에 단추를 넣으면 눌림이 겹친다. */}
+                    {events.length > 0 && (
+                      <div className="mt-1.5 flex justify-end">
+                        <CalendarAdd size="sm" events={events} file={it.title} />
+                      </div>
                     )}
                   </li>
                 );

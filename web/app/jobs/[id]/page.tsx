@@ -12,6 +12,10 @@ import RelatedLinks from "@/components/RelatedLinks";
 import RecentTracker from "@/components/RecentTracker";
 import OrgMark from "@/components/OrgMark";
 import Glyph, { fileGlyph } from "@/components/Glyph";
+import CalendarAdd from "@/components/CalendarAdd";
+import MiniMap from "@/components/MiniMap";
+import { jobEvents } from "@/lib/calEvents";
+import { locateJob } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/db";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
@@ -227,6 +231,30 @@ export default async function JobDetail({ params }: P) {
         <Row k="접수 기간" v={job.start || job.end ? `${dot(job.start) ?? "—"} ~ ${dot(job.end) ?? "—"}` : null} />
         <Row k="등록일" v={dot(job.reg)} />
       </dl>
+
+      {/* 접수 마감을 캘린더에, 기관 자리는 지도에. 합격자 발표·면접 공고에는 마감이 없다. */}
+      {(() => {
+        const events = stage === "final" || stage === "interview" ? [] : jobEvents(job);
+        const place = locateJob(job);
+        if (!events.length && !place) return null;
+        return (
+          <section className="mt-5 grid gap-3">
+            {events.length > 0 && (
+              <div className="card flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
+                <span className="min-w-0 flex-1 text-[14px] leading-snug">
+                  <b>{job.end ? `접수 마감 ${dot(job.end)}` : `접수 ${dot(job.start)}`}</b>
+                  <span className="text-muted"> — 내 캘린더에 담아 두면 놓치지 않습니다.</span>
+                </span>
+                <CalendarAdd events={events} file={job.title} />
+              </div>
+            )}
+            {place && (
+              <MiniMap lat={place.lat} lng={place.lng} label={place.label} approx={place.approx}
+                       query={job.org ?? job.title} kind="jobs" />
+            )}
+          </section>
+        );
+      })()}
 
       {/* 모집이 아닌 공고(합격자 발표·면접 안내)는 지원할 수 없다. 제일 먼저 말한다. */}
       {stage !== "open" && (

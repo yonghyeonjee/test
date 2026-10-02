@@ -8,6 +8,7 @@ const ITEMS = [
   { href: "/blog/youth-future-savings", label: "HOT 정부지원", hot: true,
     d: "M12 3c1 3.5-1 5-2.5 6.5C8 11 7 12.5 7 14.5a5 5 0 0010 0c0-3-2-5-2.5-7-1.5 1-2 2.5-2.5 3 0-3 1-6 0-7.5z" },
   { href: "/search", label: "통합 검색", d: "M9 3a6 6 0 100 12A6 6 0 009 3zm5 11l5 5" },
+  { href: "/map", label: "정책지도", d: "M12 21s7-6.5 7-11.5a7 7 0 10-14 0C5 14.5 12 21 12 21z M12 7.5a2 2 0 100 4 2 2 0 000-4z" },
   { href: "/", label: "내 조건으로 찾기", d: "M4 6h16M8 12h8M11 18h2" },
   { href: "/policies", label: "전체 정책", d: "M4 5h16v14H4z M8 9h8M8 13h5" },
   { href: "/jobs", label: "채용·취업", d: "M3 8h18v12H3z M8 8V5h8v3" },

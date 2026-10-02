@@ -8,6 +8,8 @@ import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import CalendarAdd from "@/components/CalendarAdd";
+import { roundEvents, upcomingRoundEvents } from "@/lib/calEvents";
 import { getLicenses, type License } from "@/lib/qnet";
 import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, GRADE_SLUG, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
@@ -37,7 +39,7 @@ function RoundTable({
 }: { grade: string; list: ExamRound[]; today: Date }) {
   return (
     <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-[38rem] border-collapse text-[13.5px]">
+      <table className="w-full min-w-[44rem] border-collapse text-[13.5px]">
         <thead>
           <tr className="border-b-2 border-line2 text-left text-[12.5px] text-muted">
             <th className="py-2 pr-3 font-semibold">회차</th>
@@ -46,7 +48,8 @@ function RoundTable({
             <th className="py-2 pr-3 font-semibold">
               {grade === "기술사" ? "면접 접수" : "실기 접수"}
             </th>
-            <th className="py-2 font-semibold">합격 발표</th>
+            <th className="py-2 pr-3 font-semibold">합격 발표</th>
+            <th className="py-2 font-semibold">캘린더</th>
           </tr>
         </thead>
         <tbody>
@@ -62,7 +65,10 @@ function RoundTable({
                 <td className="num py-2.5 pr-3">{dot(r.docRegStart)} ~ {dot(r.docRegEnd)}</td>
                 <td className="num py-2.5 pr-3">{dot(r.docExam)}</td>
                 <td className="num py-2.5 pr-3">{dot(r.pracRegStart)} ~ {dot(r.pracRegEnd)}</td>
-                <td className="num py-2.5">{dot(r.pracPass)}</td>
+                <td className="num py-2.5 pr-3">{dot(r.pracPass)}</td>
+                <td className="py-2">
+                  <CalendarAdd size="sm" label="담기" events={roundEvents(r, grade)} file={`${grade} ${r.round}`} />
+                </td>
               </tr>
             );
           })}
@@ -105,6 +111,16 @@ export default async function ExamSchedule() {
         {" · "}
         <span className="text-ink2">시험 일정</span>
       </nav>
+
+      {rounds.length > 0 && (
+        <div className="card mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
+          <span className="min-w-0 flex-1 text-[14px] leading-snug">
+            <b>앞으로 남은 접수·시험일을 전부 내 캘린더에</b>
+            <span className="text-muted"> — 회차마다 "담기"로 하나씩 넣어도 됩니다.</span>
+          </span>
+          <CalendarAdd bulk label="전부 담기" events={upcomingRoundEvents(rounds)} file="국가기술자격 시험일정" />
+        </div>
+      )}
 
       {rounds.length === 0 ? (
         <div className="card mt-8 p-8 text-center">
