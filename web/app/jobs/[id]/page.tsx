@@ -80,8 +80,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
   const stage = stageOf(job.title);
   const attach = await getJobAttach(job.id);
+  // 설명문은 검색 결과에 160자쯤만 보인다. 파일 이름이 길면 앞의 것만.
+  const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
-    ? ` 첨부 ${attach.files.length}개: ${attach.files.slice(0, 3).map((f) => f.name).join(", ")}${attach.files.length > 3 ? " 등" : ""}.`
+    ? ` 첨부 ${attach.files.length}개: ${names.join(", ").slice(0, 90)}${attach.files.length > 3 || names.join(", ").length > 90 ? " 등" : ""}.`
     : "";
   return withOg({
     ...(stale ? { robots: { index: false, follow: true } } : {}),
@@ -189,11 +191,11 @@ export default async function JobDetail({ params }: P) {
       <RecentTracker kind="job" id={job.id} title={job.title} sub={orgShort(job.org) || job.region || undefined} />
 
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
-        <Link href="/jobs" className="hover:text-brand">채용</Link>
+        <Link href="/jobs" className="inline-block py-1 hover:text-brand">채용</Link>
         {job.region && (
           <>
             {" · "}
-            <Link href={`/jobs/region/${encodeURIComponent(job.region)}`} className="hover:text-brand">
+            <Link href={`/jobs/region/${encodeURIComponent(job.region)}`} className="inline-block py-1 hover:text-brand">
               {job.region}
             </Link>
           </>
@@ -375,7 +377,7 @@ export default async function JobDetail({ params }: P) {
         <section className="mt-14">
           <h2 className="sec-title text-[1.0625rem] font-extrabold">
             {job.org ? (
-              <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="hover:text-brand">
+              <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="inline-block py-1 hover:text-brand">
                 {job.org}의 다른 공고
               </Link>
             ) : (

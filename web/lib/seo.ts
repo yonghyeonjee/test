@@ -52,12 +52,17 @@ export function withOg(m: Metadata): Metadata {
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
       ...(url ? { url } : {}),
+      // app/opengraph-image.tsx 는 첫 화면에만 붙는다(2026-10 확인). 나머지 쪽은
+      // 공유 카드에 그림이 없었다. 쪽이 따로 준 그림이 없으면 사이트 그림을 단다.
+      // 첫 화면은 파일 기반 그림이 이것보다 우선해 그대로 간다.
+      images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
       ...(m.openGraph ?? {}),
     },
     twitter: {
       card: "summary_large_image",
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
+      images: [OG_IMAGE],
       ...(m.twitter ?? {}),
     },
   };

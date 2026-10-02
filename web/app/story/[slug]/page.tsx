@@ -68,7 +68,7 @@ export default async function StoryPage({ params }: P) {
     <article className="py-4">
       <JsonLd data={ld} />
       <nav aria-label="위치" className="text-[13px] text-muted">
-        <Link href="/story" className="hover:text-brand">블로그</Link>{" · "}
+        <Link href="/story" className="inline-block py-1 hover:text-brand">블로그</Link>{" · "}
         <span className="text-ink2">{KIND_LABEL[s.kind] ?? "글"}</span>
       </nav>
       <header className="mt-3">

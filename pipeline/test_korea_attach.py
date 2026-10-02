@@ -49,6 +49,13 @@ ok(k.pick_row(rows, {"org": "고용노동부 구미지청", "reg": "2026-09-29"}
 ok(k.pick_row(rows, {"org": "고용노동부", "reg": "2026-09-30"})["id"] == "gojobs:1", "pick by org+date")
 ok(k.pick_row(rows, {"org": "국방부", "reg": None}) is None, "ambiguous → None")
 ok(k.pick_row(rows[:1], {"org": None, "reg": None})["id"] == "gojobs:1", "single")
+# 하나뿐이어도 기관명이 어긋나면 안 붙인다
+ok(k.pick_row(rows[:1], {"org": "국방부 국군조직 해군 작전사령부", "reg": None}) is None, "single but other org")
+ok(k.pick_row(rows[:1], {"org": "여수지청", "reg": None})["id"] == "gojobs:1", "single, org contained")
+ok(k.org_ok("대법원 수원지방법원 안산지원", "수원지방법원 안산지원"), "org contained")
+ok(k.org_ok("국방부 국군조직 해군 작전사령부 제2함대사령부", "해군 제2함대사령부"), "org token overlap")
+ok(not k.org_ok("국방부 육군 제3군단", "국방부 해군 제2함대사령부"), "generic token only")
+ok(k.org_ok(None, "아무 기관"), "missing org passes")
 
 # 적을 내용: raw 는 덧붙이고 url 은 비어 있을 때만
 p = k.build({"id": "gojobs:1", "url": None, "raw": {"sys": "020", "from": "site"}}, v, "2026-10-02T00:00:00+00:00")

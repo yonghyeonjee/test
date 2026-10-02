@@ -13,7 +13,7 @@ export default function Toc({ items, title = "목차" }: { items: TocItem[]; tit
       <p className="text-[13px] font-bold text-muted">{title}</p>
       <ol className="mt-2 grid gap-x-6 gap-y-1 text-[14px] sm:grid-cols-2">
         {items.map((it, i) => (
-          <li key={it.id} className="flex gap-2 leading-relaxed">
+          <li key={it.id} className="flex gap-2 py-0.5 leading-relaxed">
             <span className="num w-5 shrink-0 text-right text-[12px] text-faint">{i + 1}</span>
             <a href={`#${it.id}`} className="min-w-0 break-keep underline-offset-4 hover:text-brand hover:underline">{it.label}</a>
           </li>

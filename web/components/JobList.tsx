@@ -101,7 +101,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           <MyRegionJobs current={route.region} />
           {regions.slice(0, 20).map((r) => (
             <Link key={r.v} href={jobPathWith(route, { region: r.v })}
-                  className="text-muted transition-colors hover:text-brand">
+                  className="inline-block py-1 text-muted transition-colors hover:text-brand">
               {r.v}<span className="num ml-1 text-[12px] text-faint">{r.n}</span>
             </Link>
           ))}
