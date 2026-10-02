@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { dot, getOpenJobs } from "@/lib/pubJobs";
+import RecentStrip from "./RecentStrip";
 
 /**
  * 없는 공고 번호로 들어왔을 때 상세 쪽이 대신 그리는 내용.
@@ -18,7 +19,7 @@ export default async function JobGone() {
   return (
     <div className="pb-4">
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
-        <Link href="/jobs" className="hover:text-brand">채용</Link>
+        <Link href="/jobs" className="inline-block py-1 hover:text-brand">채용</Link>
       </nav>
       <h1 className="display mt-2 text-[1.5rem] leading-tight">이 채용 공고는 내려갔습니다</h1>
       <p className="mt-3 text-[14.5px] leading-relaxed text-muted">
@@ -44,6 +45,9 @@ export default async function JobGone() {
         <Link href="/jobs/status/open" className="badge badge-quiet hover:text-brand">접수 중만</Link>
         <Link href="/jobs/overseas" className="badge badge-quiet hover:text-brand">해외 채용</Link>
       </div>
+
+      {/* 내려간 공고를 찾아온 사람은 방금 보던 것으로 돌아가고 싶은 경우가 많다. */}
+      <RecentStrip kind="job" className="mt-8" />
 
       {jobs.length > 0 && (
         <section className="mt-10">

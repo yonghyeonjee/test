@@ -155,11 +155,11 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <JsonLd data={jsonLd} />
 
       <nav className="mb-6 text-xs text-muted">
-        <Link href="/" className="hover:text-ink">지원</Link>
+        <Link href="/" className="inline-block py-1 hover:text-ink">지원</Link>
         {p.sido && (
           <>
             {" / "}
-            <Link href={`/area/${encodeURIComponent(p.sido)}`} className="hover:text-ink">
+            <Link href={`/area/${encodeURIComponent(p.sido)}`} className="inline-block py-1 hover:text-ink">
               {p.sido}
             </Link>
           </>

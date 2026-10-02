@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 
 /**
@@ -250,7 +251,7 @@ export function facets(jobs: Job[], f: JobFilter = {}) {
  * 코드로만 주는 게 있어(areacode·type01·type02) 뜻을 아직 모른다.
  * 모르는 코드를 그럴싸한 이름인 척 보여 주지 않는다 — 안 보여 준다.
  */
-export async function getJob(sourceId: string): Promise<Job | null> {
+export const getJob = cache(async (sourceId: string): Promise<Job | null> => {
   if (!dbConfigured) return null;
   try {
     const { data } = await db
@@ -266,7 +267,7 @@ export async function getJob(sourceId: string): Promise<Job | null> {
     // 검색엔진은 그걸 보고 색인에서 지운다. 없는 것과 못 읽은 것은 다르다.
     throw e;
   }
-}
+});
 
 /**
  * 어떤 소스에든 이 번호가 있는지. 상세 쪽이 gojobs 에서 못 찾았을 때
@@ -276,7 +277,7 @@ export async function getJob(sourceId: string): Promise<Job | null> {
 export type JobFile = { name: string; ext: string; dl: string; view: string };
 export type JobAttach = { id: string; url: string; org: string | null; reg: string | null; end: string | null; files: JobFile[] };
 
-export async function getJobAttach(sourceId: string): Promise<JobAttach | null> {
+export const getJobAttach = cache(async (sourceId: string): Promise<JobAttach | null> => {
   if (!dbConfigured) return null;
   try {
     const { data } = await db
@@ -289,7 +290,7 @@ export async function getJobAttach(sourceId: string): Promise<JobAttach | null> 
   } catch {
     return null;
   }
-}
+});
 
 export async function findJobSource(sourceId: string): Promise<string | null> {
   if (!dbConfigured) return null;
@@ -477,7 +478,7 @@ const toOrgStat = (r: Record<string, unknown>): OrgStat => ({
 const ORG_COLS = "org,n,open_n,first_reg,last_reg,avg_days,months";
 
 /** 기관 하나의 채용 이력 요약. */
-export async function getOrgStat(org: string): Promise<OrgStat | null> {
+export const getOrgStat = cache(async (org: string): Promise<OrgStat | null> => {
   if (!dbConfigured) return null;
   try {
     const { data } = await db.from("job_org_stats").select(ORG_COLS).eq("org", org).maybeSingle();
@@ -485,7 +486,7 @@ export async function getOrgStat(org: string): Promise<OrgStat | null> {
   } catch {
     return null;
   }
-}
+});
 
 /**
  * 공고를 많이 낸 기관 순. 기관 목차와 사이트맵이 쓴다.

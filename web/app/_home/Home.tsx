@@ -275,7 +275,9 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
       )}
       {/* 지난번에 넣은 조건. 다시 온 사람은 또 고르지 않아도 된다. */}
       {!asked && <LastConditions />}
-      {asked && (sido || age) && (
+      {/* 사람이 직접 고른 조건만 기억한다. 글이나 정책 전체에서 "서울에서 찾기" 같은
+          링크로 들어온 조건은 그 사람의 것이 아니다. */}
+      {asked && (sido || age) && (via === "form" || via === "last") && (
         <RememberMe sido={sido} sigungu={sigungu} age={age} emp={employment} hh={household} />
       )}
 

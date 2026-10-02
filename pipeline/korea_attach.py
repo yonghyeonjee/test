@@ -121,10 +121,31 @@ def parse_view(h: str, data_id: str) -> dict:
 
 # ── 맞추기 ──────────────────────────────────────────────────
 
+# 기관명에 흔히 붙어 뜻이 없는 말. 이것만 겹치는 것은 같은 기관이 아니다.
+_GENERIC = {"대한민국", "정부", "국방부", "교육청", "교육부", "지방", "사무소", "지원", "센터", "학교", "청", "시", "군", "구", "도"}
+
+
+def org_ok(a: str | None, b: str | None) -> bool:
+    """두 기관명이 같은 곳을 가리키는가. 한쪽이 비면 가릴 수 없으니 통과.
+    "대법원 수원지방법원 안산지원" / "수원지방법원 안산지원" 처럼 포함 관계거나,
+    뜻 있는 낱말 하나라도 겹치면 같은 곳으로 본다."""
+    if not a or not b:
+        return True
+    na, nb = norm(a), norm(b)
+    if na in nb or nb in na:
+        return True
+    ta = {t for t in re.split(r"[\s()·,/]+", a) if len(t) >= 2 and t not in _GENERIC}
+    tb = {t for t in re.split(r"[\s()·,/]+", b) if len(t) >= 2 and t not in _GENERIC}
+    return bool(ta & tb)
+
+
 def pick_row(rows: list[dict], view: dict) -> dict | None:
-    """제목이 같은 우리 공고가 여럿이면 기관명으로 가른다."""
+    """제목이 같은 우리 공고를 고른다. 여럿이면 기관명·등록일로 가른다.
+
+    하나뿐이어도 기관명이 어긋나면 붙이지 않는다 — "기간제근로자 채용 공고"처럼
+    흔한 제목은 다른 기관의 공고가 같은 제목으로 올 수 있다."""
     if len(rows) == 1:
-        return rows[0]
+        return rows[0] if org_ok(rows[0].get("org"), view.get("org")) else None
     vo = norm(view.get("org"))
     if vo:
         hit = [r for r in rows if norm(r.get("org")) and (vo in norm(r["org"]) or norm(r["org"]) in vo)]

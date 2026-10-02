@@ -108,7 +108,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     <article className="py-4">
       <JsonLd data={ld} />
       <nav className="text-xs text-muted">
-        <Link href="/blog" className="hover:text-brand">
+        <Link href="/blog" className="inline-block py-1 hover:text-brand">
           지원금 안내
         </Link>
       </nav>
