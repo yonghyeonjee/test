@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { db, dbConfigured } from "./db";
 import { locate, locateJob, type Place } from "./geo";
+import { keyOf, labelOf, moreOf, toRow, type MapDataLite, type MapPointLite } from "./mapShape";
 
 /**
  * 정책지도에 올릴 점들.
@@ -26,22 +27,8 @@ export type MapItem = {
   kind: "welfare" | "business" | "job";
 };
 
-export type MapPoint = {
-  key: string;
-  sido: string;
-  sigungu: string | null;
-  label: string;
-  lat: number;
-  lng: number;
-  approx: boolean;
-  n: number;
-  /** 복지·기업 건수(지원사업 점에서만). */
-  nW: number;
-  nB: number;
-  items: MapItem[];
-  /** 전부 보는 곳. */
-  more: string;
-};
+/** 핀 하나 + 마감 가까운 요약 몇 건. 쪽에는 요약을 빼고 싣는다. */
+export type MapPoint = MapPointLite & { items: MapItem[] };
 
 export type MapData = {
   programs: MapPoint[];
@@ -52,25 +39,24 @@ export type MapData = {
   at: string;
 };
 
-/** 쪽에 싣는 모양 — 요약(items)을 뺀 점. 요약은 /api/map/items 가 준다. */
-export type MapPointLite = Omit<MapPoint, "items">;
-export type MapDataLite = Omit<MapData, "programs" | "jobs"> & { programs: MapPointLite[]; jobs: MapPointLite[] };
+export type { MapDataLite, MapPointLite };
 
 export const EMPTY_MAP: MapData = { programs: [], jobs: [], nationwide: 0, jobsNoPlace: 0, at: "" };
 
+/** 쪽에 싣는 모양 — 요약(items)을 빼고 짧은 배열로(lib/mapShape). 요약은 /api/map/items 가 준다. */
 export function liteOf(d: MapData): MapDataLite {
-  const strip = (p: MapPoint): MapPointLite => { const { items: _items, ...rest } = p; return rest; };
-  return { ...d, programs: d.programs.map(strip), jobs: d.jobs.map(strip) };
+  return { p: d.programs.map((x) => toRow("programs", x)), j: d.jobs.map((x) => toRow("jobs", x)),
+           nationwide: d.nationwide, jobsNoPlace: d.jobsNoPlace, at: d.at };
 }
 
 const TOP = 6;
 const cut = (s: string, n = 48) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
 
 function add(map: Map<string, MapPoint>, place: Place, item: MapItem, more: string) {
-  const key = `${place.sido}|${place.sigungu ?? ""}`;
+  const key = keyOf(place.sido, place.sigungu);
   let p = map.get(key);
   if (!p) {
-    p = { key, sido: place.sido, sigungu: place.sigungu, label: place.label, lat: place.lat, lng: place.lng,
+    p = { key, sido: place.sido, sigungu: place.sigungu, label: labelOf(place.sido, place.sigungu), lat: place.lat, lng: place.lng,
           approx: place.approx, n: 0, nW: 0, nB: 0, items: [], more };
     map.set(key, p);
   }
@@ -102,9 +88,7 @@ async function loadPrograms() {
       const place = locate(r.sido, r.sigungu);
       if (!place) { nationwide++; continue; }
       const kind = r.kind === "business" ? "business" : "welfare";
-      const more = place.sigungu
-        ? `/?sido=${encodeURIComponent(place.sido)}&sigungu=${encodeURIComponent(place.sigungu)}&via=map`
-        : `/area/${encodeURIComponent(place.sido)}`;
+      const more = moreOf("programs", place.sido, place.sigungu);
       add(points, place, {
         id: r.source_id, t: cut(r.title), org: r.org_name, start: r.apply_start, end: r.apply_end,
         always: Boolean(r.is_always_on), kind,

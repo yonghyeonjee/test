@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { KAKAO_KEY, loadKakao, type KCircle, type KMap, type KOverlay, type KakaoMaps } from "./kakao";
-import { boundsAround, cardHtml, pinHtml, sidoPins, tierOfLevel, type Kind, type Pin, type Tier } from "./pins";
+import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, sidoPins, tierOfLevel, type Kind, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -25,9 +25,11 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
   const card = useRef<KOverlay | null>(null);
   const [ready, setReady] = useState(false);
   const [tier, setTier] = useState<Tier>("far");
+  const [view, setView] = useState(0);
   const [err, setErr] = useState<string | null>(null);
-  const latest = useRef({ pins, kind, loadItems, onSelect });
-  latest.current = { pins, kind, loadItems, onSelect };
+  const labeled = useRef<Map<string, Pos>>(new Map());
+  const latest = useRef({ pins, kind, loadItems, onSelect, tier });
+  latest.current = { pins, kind, loadItems, onSelect, tier };
 
   useEffect(() => {
     let dead = false;
@@ -42,6 +44,8 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
       });
       if (interactive) m.addControl(new k.ZoomControl(), k.ControlPosition.RIGHT);
       k.event.addListener(m, "zoom_changed", () => setTier(tierOfLevel(m.getLevel())));
+      // 움직임이 멎을 때마다 이름표 자리를 다시 고른다.
+      k.event.addListener(m, "idle", () => setView((v) => v + 1));
       setTier(tierOfLevel(m.getLevel()));
       map.current = m;
       setReady(true);
@@ -57,7 +61,8 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     card.current?.setMap(null);
     latest.current.onSelect(p.key);
     const box = document.createElement("div");
-    box.className = `pm-kcard ${tier === "near" ? "pm-kcard-near" : ""}`;
+    box.className = "pm-kcard";
+    box.style.setProperty("--lift", `${cardLift(p, latest.current.tier, labeled.current.has(p.key))}px`);
     const render = (items: MapItem[] | null) => {
       box.innerHTML = cardHtml(p, items, { close: true });
       box.querySelector("[data-close]")?.addEventListener("click", closeCard);
@@ -77,20 +82,26 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     for (const o of overlays.current) o.setMap(null);
     overlays.current = [];
     const list = tier === "far" && pins.length > 1 ? sidoPins(pins) : pins;
+    const proj = m.getProjection();
+    const w = el.current?.clientWidth ?? 0, h = el.current?.clientHeight ?? 0;
+    const show = pickLabels(list, (p) => proj.containerPointFromCoords(new k.LatLng(p.lat, p.lng)), { w, h }, tier, selected);
+    labeled.current = show;
     for (const p of list) {
+      const pos = show.get(p.key);
+      const on = pos !== undefined;
       const box = document.createElement("div");
-      box.innerHTML = pinHtml(p, tier, selected === p.key);
+      box.innerHTML = pinHtml(p, tier, pos, selected === p.key);
       const pin = box.firstElementChild as HTMLElement | null;
       pin?.addEventListener("click", () => {
         if (p.level === "sido") { m.setCenter(new k.LatLng(p.lat, p.lng)); m.setLevel(9); return; }
         openCard(p);
       });
-      const ov = new k.CustomOverlay({ position: new k.LatLng(p.lat, p.lng), content: box, xAnchor: 0, yAnchor: 0, zIndex: selected === p.key ? 5 : 2, clickable: true });
+      const ov = new k.CustomOverlay({ position: new k.LatLng(p.lat, p.lng), content: box, xAnchor: 0, yAnchor: 0, zIndex: selected === p.key ? 6 : on ? 4 : 2, clickable: true });
       ov.setMap(m);
       overlays.current.push(ov);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pins, tier, kind, selected, ready]);
+  }, [pins, tier, kind, selected, ready, view]);
 
   // 내 위치와 반경 원.
   useEffect(() => {
