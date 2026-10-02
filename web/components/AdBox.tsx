@@ -13,20 +13,24 @@ import type { AdSlotCfg } from "@/lib/settings";
  * strip: 제목 아래 작은 가로 띠. 테두리·여백 없이 높이를 90~100px 로 묶고,
  * "광고" 표시는 왼쪽 위 귀퉁이에 작게.
  */
-export default function AdBox({ cfg, className = "", tall = false, strip = false }: {
+export default function AdBox({ cfg, className = "", tall = false, strip = false, band = false, minWidth = 0 }: {
   cfg: AdSlotCfg; className?: string; tall?: boolean; strip?: boolean;
+  /** 홈 맨 위 롤링 띠 옆 72px 띠. */
+  band?: boolean;
+  /** 이 폭보다 좁으면 광고 HTML 을 부르지 않는다. */
+  minWidth?: number;
 }) {
   return (
-    <aside className={`ad-slot ${tall ? "ad-tall" : ""} ${strip ? "ad-strip" : ""} ${className}`} aria-label="광고">
+    <aside className={`ad-slot ${tall ? "ad-tall" : ""} ${strip ? "ad-strip" : ""} ${band ? "ad-band" : ""} ${className}`} aria-label="광고">
       <span className="ad-tag" aria-hidden="true">광고</span>
       {cfg.kind === "image" ? (
-        <a href={cfg.href || "#"} target="_blank" rel="noopener noreferrer sponsored" className="block">
+        <a href={cfg.href || "#"} target="_blank" rel="noopener noreferrer sponsored" className={band ? "block h-full" : "block"}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={cfg.img} alt={cfg.alt || "광고"}
-               className={`mx-auto w-auto max-w-full ${tall ? "" : "max-h-[140px]"}`} loading="lazy" />
+               className={band ? "h-full w-full object-cover" : `mx-auto w-auto max-w-full ${tall ? "" : "max-h-[140px]"}`} loading="lazy" />
         </a>
       ) : (
-        <AdHtml html={cfg.html} />
+        <AdHtml html={cfg.html} minWidth={minWidth} />
       )}
     </aside>
   );

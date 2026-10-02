@@ -174,7 +174,8 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     },
   }));
 
-  return <div ref={el} role="application" aria-label="지도" className={className} />;
+  // isolate: Leaflet 의 층(z-index 400~1000)이 지도 밖으로 새면 화면 아래 탭 막대(z-40)를 덮었다.
+  return <div ref={el} role="application" aria-label="지도" className={`isolate ${className}`} />;
 });
 
 /**

@@ -151,7 +151,7 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
   }));
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative isolate ${className}`}>
       <div ref={el} role="application" aria-label="지도" className="h-full w-full" />
       {err && <p className="absolute inset-x-0 bottom-0 bg-white/90 px-3 py-2 text-[12.5px] text-alert">{err}</p>}
     </div>
