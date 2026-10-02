@@ -15,7 +15,8 @@ import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 
 // /jobs/org/법무부 · /jobs/org/법무부/hire/국가/page/2
-export const dynamic = "force-dynamic";
+// 공고는 하루 한 번 모은다. 요청마다 다시 그릴 일이 없다 — 15분에 한 번이면 넉넉하다.
+export const revalidate = 900;
 
 type P = { params: { seg: string[] } };
 

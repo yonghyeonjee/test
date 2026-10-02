@@ -106,12 +106,14 @@ export default function GovText({ body }: { body: string | null }) {
     else groups.push([b]);
   }
 
-  // 소제목인지 아닌지는 뒤에 무엇이 오느냐로 갈린다.
+  // 소제목인지 아닌지는 뒤에 무엇이 오느냐로 갈린다. 다만 줄이 여럿이면
+  // 제목이 아니라 목록이다 — "(연령기준)…(거주기준)…(수강기준)…" 세 줄 뒤에
+  // 단서(※)가 온다고 세 줄을 모두 굵은 제목으로 세우면 안 된다.
   const leads = new Set(["item", "field", "note"]);
   return (
     <div>
       {groups.map((g, i) => (
-        <Group key={i} blocks={g} asHeading={leads.has(groups[i + 1]?.[0]?.kind ?? "")} />
+        <Group key={i} blocks={g} asHeading={g.length === 1 && leads.has(groups[i + 1]?.[0]?.kind ?? "")} />
       ))}
     </div>
   );

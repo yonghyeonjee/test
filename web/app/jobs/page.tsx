@@ -1,27 +1,14 @@
-import { redirect } from "next/navigation";
 import JobsIndexPage, { jobsIndexMetadata } from "@/components/JobsIndexPage";
-import { jobPath, peekJobRoute } from "@/lib/jobRoute";
+import { peekJobRoute } from "@/lib/jobRoute";
 
-// 거르기 조건을 경로로 받는다. 주소마다 내용이 달라지므로 요청마다 그린다.
-export const dynamic = "force-dynamic";
-
-type SP = { [k: string]: string | string[] | undefined };
-const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v)?.trim() || undefined;
+// 옛 주소(/jobs?region=…&page=2)는 미들웨어가 경로 주소로 308 넘긴다. 여기까지
+// 오는 것은 조건 없는 첫 쪽뿐이라, 요청마다 그릴 이유가 없다. 공고는 하루 한 번
+// 모으니 15분에 한 번이면 넉넉하다. 이 쪽이 방문마다 DB 에서 3,000건을 다시
+// 읽어 전체 조회의 1위였다.
+export const revalidate = 900;
 
 export const generateMetadata = () => jobsIndexMetadata(peekJobRoute([]));
 
-export default function Jobs({ searchParams }: { searchParams: SP }) {
-  // 예전 주소(/jobs?region=서울특별시&page=2)로 들어오면 경로 주소로 넘긴다.
-  // 즐겨찾기나 남의 사이트에 걸린 링크가 죽지 않게.
-  const legacy = {
-    region: one(searchParams.region),
-    hire: one(searchParams.hire),
-    q: one(searchParams.q),
-    open: one(searchParams.open) === "1",
-    page: Math.max(1, Number(one(searchParams.page) ?? 1) || 1),
-  };
-  if (legacy.region || legacy.hire || legacy.q || legacy.open || legacy.page > 1) {
-    redirect(jobPath(legacy));
-  }
+export default function Jobs() {
   return <JobsIndexPage />;
 }

@@ -82,25 +82,42 @@ function splitNumbered(src: string) {
   return out;
 }
 
+/** 각주 별표를 잠시 바꿔 두는 글자. 줄을 다 나눈 뒤 되돌린다. */
+const FOOT = "\uE000";
+
+/** "(연령기준)" "(거주기간)" 처럼 괄호 안에 든 항목 이름. 뒤에 조건이 온다. */
+const PAREN_LABEL = /\([가-힣]{1,5}(?:기준|기간|요건|조건|자격|대상)\)/;
+
 /** 표시 앞에서 줄을 끊는다. 표시는 붙어 오기도 한다 ("…등 불가- 제출서류"). */
 function breakUp(src: string) {
   let s = src.replace(/\s+/g, " ").trim();
 
+  // 각주 별표. "학원* 및 직업능력개발시설**에서 수강한 경우" 의 별표는 낱말에
+  // 붙은 각주 표시지 단서의 시작이 아니다. 여기서 끊으면 "및 직업능력개발시설",
+  // "에서 수강한 경우로 한정" 같은 토막이 생긴다. 낱말 뒤에 붙은 별표는 뒤에
+  // "이름 :" 꼴(각주 풀이)이 올 때만 단서로 보고, 아니면 낱말에 붙여 둔다.
+  s = s.replace(/(?<=\S)(\*{1,2})(?!\s*[^\s:：]{1,12}\s*[:：])/g, (m) => m.replace(/\*/g, FOOT));
+
   s = splitNumbered(s);
   // ①②③ …
   s = s.replace(new RegExp(`\\s*([${CIRCLED}])\\s*`, "g"), "\n$1 ");
-  // - 항목. 뒤에 한글·영문이 와야 한다(날짜 2025-01, 범위 표기와 구분).
-  s = s.replace(/\s*[-−]\s+(?=[가-힣A-Za-z])/g, "\n- ");
+  // - 항목. 뒤에 한글·영문·여는 괄호가 와야 한다(날짜 2025-01, 범위 표기와 구분).
+  // "- (연령기준) 19~39세" 처럼 괄호로 시작하는 항목이 한 문단에 붙어 있었다.
+  s = s.replace(/\s*[-−]\s+(?=[가-힣A-Za-z(（[「【])/g, "\n- ");
   // 머리표. 부처마다 쓰는 글자가 다르다 — 실제로 본 것을 모두 넣는다.
   // "▤ 주택기준 : …" 이 안 잡혀 요약 문단 한가운데 그대로 박혀 있었다.
   // 가운뎃점(·)은 넣지 않는다. "청년·신혼" 처럼 낱말 안에서 쓰인다.
-  s = s.replace(/\s*([*※○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣])\s*(?=\S)/g, "\n$1 ");
+  s = s.replace(/\s*([*※○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣❍❏❑◯])\s*(?=\S)/g, "\n$1 ");
   // ㅇ·ㅁ 은 공문서에서 제일 흔한 머리표인데 빠져 있었다. 실제로
   // "ㅇ보훈예우수당 : 월 12만원ㅇ매월 말 지급" 이 한 줄로 붙어 나왔다.
   // 낱자라 낱말에 섞일 일이 거의 없지만, 뒤에 글자가 바로 붙을 때만 본다.
   s = s.replace(/\s*([ㅇㅁ])\s*(?=[가-힣A-Za-z0-9(「【[])/g, "\n$1 ");
+  // "충족하는 자(연령기준) 19~39세(…)(거주기간) 신청일 기준 …" — 표시 없이
+  // 괄호 이름만으로 항목이 이어지는 원문. 괄호 이름 앞에서 끊는다.
+  s = s.replace(new RegExp(`(?<=\\S)(?=${PAREN_LABEL.source})`, "g"), "\n");
 
-  return s.split("\n").map((l) => l.trim()).filter(Boolean);
+  return s.split("\n").map((l) => l.trim()).filter(Boolean)
+    .map((l) => l.replace(new RegExp(FOOT, "g"), "*"));
 }
 
 /**
@@ -126,12 +143,15 @@ export function parseGovText(src: string | null | undefined): Block[] {
     if (/^[*※]/.test(line))
       return { kind: "note", text: line.replace(/^[*※]\s*/, "") };
 
-    const bullet = line.match(/^[-○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣ㅇㅁ]\s*(.*)$/);
+    const bullet = line.match(/^[-○●□■▢▣▤▥▦▧▨▩◇◆▶▷◈◦▪▫‣❍❏❑◯ㅇㅁ]\s*(.*)$/);
     if (bullet) {
       const rest = bullet[1];
       // "접수처 : 주소지 동 행정복지센터" → 이름과 값으로.
       return asField(rest) ?? { kind: "head", text: rest };
     }
+
+    // "(연령기준) 19~39세" — 괄호 이름으로 시작하는 조건 항목. 목록으로 세운다.
+    if (new RegExp(`^${PAREN_LABEL.source}\\s*\\S`).test(line)) return { kind: "head", text: line };
 
     return asField(line) ?? { kind: "text", text: line };
   });

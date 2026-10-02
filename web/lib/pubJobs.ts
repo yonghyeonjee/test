@@ -131,7 +131,7 @@ async function fromStore(): Promise<JobBoard | null> {
   try {
     const { data, count } = await db
       .from("job_posts")
-      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "exact" })
+      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "estimated" })
       .eq("source", "gojobs")
       .order("reg_date", { ascending: false, nullsFirst: false })
       .order("end_date", { ascending: false, nullsFirst: false })
@@ -341,7 +341,7 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
     const { data, count } = await db
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
-              { count: "exact" })
+              { count: "estimated" })
       .eq("source", "gojobs").eq("region", sido)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
@@ -494,7 +494,7 @@ export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> 
       .from("job_posts")
       .select(
         "source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
-        { count: "exact" },
+        { count: "estimated" },
       )
       .eq("source", "gojobs").eq("org", org)
       .order("reg_date", { ascending: false, nullsFirst: false })

@@ -192,7 +192,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         <Suspense fallback={<div className="h-56" />}>
           <Finder
             pick={<><BusinessSentence sidos={sidos} /><KeywordBar suggest={SUGGEST_BUSINESS} tab="business" /></>}
-            search={<BizSearchBox autoFocus />}
+            search={<BizSearchBox autoFocus={!asked} />}
           />
         </Suspense>
         {asked ? (
@@ -276,9 +276,12 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         </>
       ) : (
         <Suspense fallback={<div className="h-56" />}>
+          {/* 결과 화면에서는 자동 초점을 주지 않는다. 초점이 가면 브라우저가
+              검색칸을 화면에 맞추느라 쪽을 내려 버려, 조건을 고르자마자
+              "해당될 수 있는 사업"부터 보였다. */}
           <Finder
             pick={<><ConditionSentence regions={regions} /><KeywordBar suggest={SUGGEST_WELFARE} tab="welfare" /></>}
-            search={<SearchBox index={sggIndex} autoFocus />}
+            search={<SearchBox index={sggIndex} />}
           />
         </Suspense>
       )}
