@@ -10,13 +10,14 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { STATUS_LABEL } from "@/lib/db";
-import { dot, findJobSource, getJob, getRelatedJobs, type Job } from "@/lib/pubJobs";
+import { dot, findJobSource, getJob, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { employmentFromTitle, jobLocation } from "@/lib/jobSchema";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { SITE_URL } from "@/lib/seo";
+import { getStory } from "@/lib/stories";
 
 // 공고는 수만 건이라 미리 만들지 않는다. 처음 열릴 때 만들고 하루 동안 쓴다.
 export const dynamicParams = true;
@@ -34,6 +35,33 @@ function ymdAgo(days: number) {
   return d.toISOString().slice(0, 10);
 }
 
+/** "대법원 수원지방법원 안산지원" → "수원지방법원 안산지원". 상위 기관은 뺀다. */
+function orgShort(org: string | null) {
+  if (!org) return "";
+  const t = org.trim().split(/\s+/);
+  return t.length >= 3 ? t.slice(-2).join(" ") : org;
+}
+
+/**
+ * 검색 결과 제목. 공고 이름을 그대로 쓰면 korea.kr·나라일터와 글자까지 같은
+ * 제목이 되어 정부 사이트 아래로 밀린다. 사람이 치는 말(기관·직무·단계)로
+ * 다시 짓고, 우리만 가진 것(접수 기간·다음 채용 시기)을 뒤에 붙인다.
+ * 원래 공고 이름은 h1 과 설명문에 그대로 남긴다.
+ */
+function seoJobTitle(job: Job, role: ReturnType<typeof detectRole>, detail: string | null, stage: ReturnType<typeof stageOf>) {
+  const org = orgShort(job.org);
+  const subject = detail ?? role?.name ?? "";
+  const kind = /공무직|무기계약/.test(job.title) ? "공무직" : /기간제/.test(job.title) ? "기간제" : /임기제/.test(job.title) ? "임기제" : /인턴/.test(job.title) ? "인턴" : "";
+  const head = [org, subject, kind].filter(Boolean).join(" ");
+  if (!head) return `${job.title} — 공공기관 채용`;
+  const stageLabel = { final: "최종합격자 발표", interview: "면접·서류합격 안내", plan: "채용 계획", repost: "재공고", open: "채용" }[stage];
+  const hook =
+    stage === "final" || stage === "interview" ? "제출서류와 다음 채용 시기"
+    : job.end ? `${dot(job.end)} 마감, 접수 방법과 자격`
+    : job.region ? `${job.region} 공공기관 채용` : "접수 기간과 자격";
+  return `${head} ${stageLabel} — ${hook}`.replace(/\s+/g, " ").trim();
+}
+
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
   // 없는 번호. 쪽은 JobGone 이 지금 접수 중인 공고로 채운다.
@@ -42,17 +70,19 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
     robots: { index: false, follow: true },
   };
-  const where = [job.region, job.org].filter(Boolean).join(" ");
   // 2008년치까지 받아 오면 공고가 수십만 건이 된다. 오래전에 끝난 공고를
   // 전부 색인에 밀어 넣으면 검색엔진이 사이트 전체를 얕게 본다. 자료로는
   // 남겨 두되(들어오면 보인다), 1년 넘게 지난 것은 색인하지 않는다.
   const stale = Boolean(job.end && job.end < ymdAgo(365));
   const role = detectRole(job.title, job.org);
-  const detail = detailOf(job.title);
+  const rawDetail = detailOf(job.title);
+  const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
+  const stage = stageOf(job.title);
   return {
     ...(stale ? { robots: { index: false, follow: true } } : {}),
-    title: `${job.title}${where ? ` — ${where} 채용` : " — 공공기관 채용"}`,
-    description: role ? `${role.name} 자리입니다. ${jobSummary(job)}` : jobSummary(job),
+    title: seoJobTitle(job, role, detail, stage),
+    // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
+    description: `${job.title}. ${role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}`,
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
@@ -119,7 +149,9 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     return <JobGone />;
   }
-  const related = await getRelatedJobs(job);
+  const [related, stat] = await Promise.all([getRelatedJobs(job), job.org ? getOrgStat(job.org) : Promise.resolve(null)]);
+  const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
+  const peak = stat ? peakMonths(stat.months) : null;
   const role = detectRole(job.title, job.org);
   // "무도실무관 (무도실무관)" 처럼 괄호 안이 직무 이름 그대로면 두 번 적지 않는다.
   const rawDetail = detailOf(job.title);
@@ -244,6 +276,30 @@ export default async function JobDetail({ params }: P) {
           {jobIntro(job).map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
         </div>
       </section>
+
+      {/* 이 기관이 언제·얼마나 뽑는지. 공고 원문을 그대로 실은 사이트에는 없는
+          것이라 이 쪽이 따로 설 자리가 된다. 합격자 발표 쪽에서는 "다음 공고는
+          언제쯤"이 곧 답이다. */}
+      {stat && stat.n >= 5 && (
+        <section className="mt-12">
+          <h2 className="sec-title text-[1.0625rem] font-extrabold">
+            {orgShort(job.org)}{stage === "final" || stage === "interview" ? ", 다음 채용은 언제쯤" : "은 얼마나 자주 뽑나"}
+          </h2>
+          <p className="mt-4 text-[15px] leading-[1.85] text-ink2">
+            <strong>{job.org}</strong>{stat.firstReg ? `은 ${stat.firstReg.slice(0, 4)}년부터 지금까지` : "은"} 나라일터에
+            공고 <strong className="num">{stat.n.toLocaleString("ko-KR")}건</strong>을 올렸습니다.
+            {stat.avgDays !== null && <> 접수 기간은 평균 <strong className="num">{stat.avgDays}일</strong>입니다.</>}
+            {peak ? <> 공고는 <strong>{peak.label}</strong>에 {peak.share}%가 몰립니다.</> : " 특정 달에 몰리지 않고 연중 올라옵니다."}
+            {stat.openN > 0 && <> 지금 접수 중인 공고가 <strong className="num">{stat.openN}건</strong> 있습니다.</>}
+            {stat.lastReg && <> 마지막 공고는 {dot(stat.lastReg)}에 올라왔습니다.</>}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href={`/jobs/org/${encodeURIComponent(job.org!)}`} className="chip">{orgShort(job.org)} 채용 이력 전체</Link>
+            {story && <Link href={`/story/${encodeURIComponent(story.slug)}`} className="chip">{orgShort(job.org)} 채용 시기 분석 글</Link>}
+            {role && <Link href={`/jobs/q/${encodeURIComponent(role.name.split("·")[0])}`} className="chip">다른 기관의 {role.name} 채용</Link>}
+          </div>
+        </section>
+      )}
 
       {/* 바깥으로 나가는 단추는 읽을 것을 다 읽은 뒤에. 위에 두면 읽기 전에 나간다. */}
       <div className="mt-8 flex flex-wrap gap-2">

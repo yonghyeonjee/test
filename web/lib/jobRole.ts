@@ -296,7 +296,8 @@ export type Stage = "open" | "interview" | "final" | "repost" | "plan";
  * 읽어 먼저 말해 준다.
  */
 export function stageOf(title: string): Stage {
-  if (/최종\s*합격|합격자\s*발표|합격자\s*공고|채용\s*후보자/.test(title) && !/서류/.test(title)) return "final";
+  // "제출서류 공고"가 붙은 최종합격 발표가 많다. 서류 합격(1차)만 걸러 낸다.
+  if (/최종\s*합격|합격자\s*발표|합격자\s*공고|채용\s*후보자/.test(title) && !/서류\s*(전형|심사)?\s*(합격|통과)/.test(title)) return "final";
   if (/서류\s*(전형)?\s*합격|면접\s*(시험|전형|심사)?\s*(일정|안내|계획)|면접\s*대상/.test(title)) return "interview";
   if (/재공고|정정\s*공고|변경\s*공고/.test(title)) return "repost";
   if (/시행\s*계획|채용\s*계획|임용\s*(시험\s*)?계획|시험\s*계획/.test(title)) return "plan";
