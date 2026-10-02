@@ -3,6 +3,7 @@ import SearchView from "@/app/_search/SearchView";
 import RelatedLinks from "@/components/RelatedLinks";
 import { dbConfigured, getSigunguIndex } from "@/lib/db";
 import { blogIndexRelated } from "@/lib/related";
+import { getHotTerms } from "@/lib/hotTerms";
 import { unifiedSearch } from "@/lib/search";
 import { brandKeys, withOg } from "@/lib/seo";
 
@@ -44,9 +45,10 @@ export function generateMetadata({ searchParams }: { searchParams: SP }): Metada
 
 export default async function BusinessSearchPage({ searchParams }: { searchParams: SP }) {
   const q = one(searchParams.q);
-  const [r, idx] = await Promise.all([
+  const [r, idx, hot] = await Promise.all([
     unifiedSearch(q),
     dbConfigured ? getSigunguIndex().then((m) => Object.fromEntries(m)).catch(() => ({})) : Promise.resolve({}),
+    getHotTerms(),
   ]);
   return (
     <>
@@ -56,6 +58,7 @@ export default async function BusinessSearchPage({ searchParams }: { searchParam
         sub="기업마당·소상공인24 공고와 공공기관 사업을 한 번에. 수출·인건비·폐업처럼 필요한 지원을 적으면 비슷한 말까지 같이 찾습니다."
         placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업, 특허"
         placeholderNarrow="수출, 스마트공장, 폐업, 특허…"
+        hot={hot.business}
       />
       <RelatedLinks items={blogIndexRelated()} />
     </>

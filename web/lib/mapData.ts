@@ -52,7 +52,16 @@ export type MapData = {
   at: string;
 };
 
+/** 쪽에 싣는 모양 — 요약(items)을 뺀 점. 요약은 /api/map/items 가 준다. */
+export type MapPointLite = Omit<MapPoint, "items">;
+export type MapDataLite = Omit<MapData, "programs" | "jobs"> & { programs: MapPointLite[]; jobs: MapPointLite[] };
+
 export const EMPTY_MAP: MapData = { programs: [], jobs: [], nationwide: 0, jobsNoPlace: 0, at: "" };
+
+export function liteOf(d: MapData): MapDataLite {
+  const strip = (p: MapPoint): MapPointLite => { const { items: _items, ...rest } = p; return rest; };
+  return { ...d, programs: d.programs.map(strip), jobs: d.jobs.map(strip) };
+}
 
 const TOP = 6;
 const cut = (s: string, n = 48) => (s.length > n ? s.slice(0, n - 1) + "…" : s);

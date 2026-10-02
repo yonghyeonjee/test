@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import { IllusMap } from "@/components/Illus";
@@ -8,7 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import PolicyMap from "@/components/PolicyMap";
 import RelatedLinks from "@/components/RelatedLinks";
 import { SIDO_SHORT } from "@/lib/geo";
-import { EMPTY_MAP, getMapData } from "@/lib/mapData";
+import { EMPTY_MAP, getMapData, liteOf } from "@/lib/mapData";
 import { blogIndexRelated } from "@/lib/related";
 import { brandKeys, withOg } from "@/lib/seo";
 
@@ -17,7 +16,8 @@ import { brandKeys, withOg } from "@/lib/seo";
  * 켜면 가까운 순으로 본다. 점을 누르면 요약, 제목을 누르면 상세.
  *
  * 쪽 자체는 한 시간에 한 번 만든다. 주소의 ?kind= ?lat= ?lng= 는 지도 쪽(클라이언트)
- * 에서 읽어, 쪽이 요청마다 그려지지 않게 한다.
+ * 에서 붙은 뒤 읽어, 쪽이 요청마다 그려지지 않게 한다. 쪽에는 점만 싣고 요약은
+ * /api/map/items 에서 받는다.
  */
 export const revalidate = 3600;
 
@@ -58,9 +58,7 @@ export default async function MapPage() {
         art={<IllusMap />}
       />
 
-      <Suspense fallback={<div className="mt-6 h-[62vh] min-h-[380px] rounded-card bg-ground" />}>
-        <PolicyMap data={data} />
-      </Suspense>
+      <PolicyMap data={liteOf(data)} />
 
       <section className="mt-14">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">시·도별로 보기</h2>
