@@ -29,7 +29,8 @@ import { getStory } from "@/lib/stories";
 
 // 공고는 수만 건이라 미리 만들지 않는다. 처음 열릴 때 만들고 하루 동안 쓴다.
 export const dynamicParams = true;
-export const revalidate = 86400;
+// 사흘(예전 하루). 공고 수천 개를 매일 새로 그리면 캐시 저장(ISR Writes)이 무료 한도를 넘었다. 날짜는 절대 날짜로만 적는다.
+export const revalidate = 259200;
 export function generateStaticParams() {
   return [];
 }

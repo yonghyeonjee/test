@@ -8,6 +8,7 @@ import ProgramEntry from "@/components/ProgramEntry";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
+import { StatusBadge, StatusNotice } from "@/components/LiveStatus";
 import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword, programTagline } from "@/lib/faq";
 import { manwon, standardFor, tableYear } from "@/lib/medianIncome";
 import { ORG_ID, pageGraph } from "@/lib/schema";
@@ -26,23 +27,15 @@ import { locate } from "@/lib/geo";
 import { TOPICS } from "@/lib/topics";
 import {
   ageLabel,
-  applyStatus,
-  daysLeft,
-  STATUS_LABEL,
   getProgram,
   getRelated,
   getTopSourceIds,
   type Detail,
 } from "@/lib/db";
 
-const STATUS_BADGE = {
-  closed:   "badge-closed",
-  upcoming: "badge-soon",
-  ongoing:  "badge-open",
-  always:   "badge-open",
-} as const;
-
-export const revalidate = 86400;
+// 사흘. 하루마다 새로 그리면 공고 수천 개 × 매일이라 캐시 저장(ISR Writes)이 무료 한도를 넘었다.
+// 날짜에 따라 바뀌는 접수 상태는 브라우저가 다시 센다(StatusBadge·StatusNotice).
+export const revalidate = 259200;
 export const dynamicParams = true;
 
 import { promoContextForProgram } from "@/lib/promo";
@@ -116,8 +109,6 @@ export default async function ProgramPage({ params }: { params: { id: string } }
   const incomeYear = tableYear();
 
   const related = await getRelated(p);
-  const left = daysLeft(p);
-  const status = applyStatus(p);
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
@@ -204,33 +195,16 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className={`badge ${STATUS_BADGE[status]}`}>
-          {STATUS_LABEL[status]}
-        </span>
+        <StatusBadge apply_start={p.apply_start} apply_end={p.apply_end} is_always_on={p.is_always_on} />
         <ShareButton title={p.title} text={`${where} · ${p.title}`} />
         <RecentTracker kind="p" id={p.source_id} title={p.title} sub={where} />
       </div>
 
       <TopStripAd className="mt-5" />
 
-      {status === "closed" && (
-        <p className="mt-5 inline-block border-l-[3px] border-line2 pl-3 text-sm font-bold text-muted">
-          접수가 끝난 공고입니다. 내년에 다시 열리는 사업일 수 있으니 원문에서
-          확인하세요.
-        </p>
-      )}
-
-      {status === "upcoming" && p.apply_start && (
-        <p className="num mt-5 inline-block border-l-[3px] border-gold pl-3 text-sm font-bold text-gold">
-          {korDate(p.apply_start)} 접수 시작 예정
-        </p>
-      )}
-
-      {status === "ongoing" && left !== null && left >= 0 && left <= 30 && (
-        <p className="num mt-5 inline-block border-l-[3px] border-accent pl-3 text-sm font-bold text-accent">
-          {left === 0 ? "오늘 접수 마감" : `접수 마감까지 ${left}일`}
-        </p>
-      )}
+      {/* 접수 상태는 보는 날 기준으로 다시 센다(components/LiveStatus). 쪽은 사흘에 한 번만 새로 그린다. */}
+      <StatusNotice apply_start={p.apply_start} apply_end={p.apply_end} is_always_on={p.is_always_on}
+                    startLabel={p.apply_start ? korDate(p.apply_start) : ""} />
 
       {programChecks(p).length > 0 && (
         <section className="mt-9 rounded-card border border-line bg-surface2 p-5">

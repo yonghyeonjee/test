@@ -8,7 +8,8 @@ import Home, { businessMetadata, type SP } from "../_home/Home";
  * 구글 SEO 시작 가이드가 말하는 "뜻이 보이는 주소"로 바꾼다. 옛 주소는
  * next.config 가 308 로 넘긴다.
  */
-export const revalidate = 900;
+// 한 시간(예전 15분). 캐시 저장(ISR Writes)을 줄인다.
+export const revalidate = 3600;
 export const generateMetadata = () => businessMetadata();
 export default function BusinessHome({ searchParams }: { searchParams: SP }) {
   return <Home searchParams={searchParams} forceTab="business" />;

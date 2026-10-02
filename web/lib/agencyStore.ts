@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { db, dbConfigured } from "./db";
+import { db, dbLive, dbConfigured } from "./db";
 import type { AlioItem } from "./alioplus";
 
 /**
@@ -19,7 +19,8 @@ async function load(
   kind: AgencyKind, sido?: string, q?: string,
 ): Promise<AlioItem[] | null> {
   if (!dbConfigured) return null;
-  let sel = db.from("agency_items").select("*").eq("kind", kind).limit(300);
+  // 검색어 조회는 캐시에 남기지 않는다(아래 agencyFromStore). 검색 화면은 어차피 요청마다 그린다.
+  let sel = (q?.trim() ? dbLive : db).from("agency_items").select("*").eq("kind", kind).limit(300);
   if (sido) sel = sel.eq("sido", sido);
   if (q) sel = sel.ilike("title", `%${q}%`);
   const { data, error } = await sel;
@@ -49,6 +50,8 @@ export function agencyFromStore(
   { sido, q, byCode }: { sido?: string; q?: string; byCode?: (string | undefined)[] },
 ): Promise<AlioItem[] | null> {
   if (byCode?.some(Boolean)) return Promise.resolve(null);
-  const tag = `${kind}|${sido ?? ""}|${q ?? ""}`;
+  // 검색어가 있으면 캐시에 남기지 않는다. 검색어마다 저장이 하나씩 쌓이고(ISR Writes) 다시 쓰일 일은 드물다.
+  if (q?.trim()) return load(kind, sido, q);
+  const tag = `${kind}|${sido ?? ""}|`;
   return unstable_cache(() => load(kind, sido, q), ["agency", tag], { revalidate: 21600 })();
 }

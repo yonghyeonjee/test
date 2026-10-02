@@ -1,0 +1,135 @@
+name: deploy-aws
+
+# AWS Lightsail(서울) 서버로 배포한다. 빌드는 여기서(서버는 1GB 라 빌드하지 않는다) 하고,
+# .next/standalone 한 벌을 서버의 /srv/jiwon/releases/<커밋> 에 올린 뒤 current 로 잇고 다시 띄운다.
+#
+# 서버 준비는 deploy/lightsail/README.md. LIGHTSAIL_HOST 가 비어 있으면 아무것도 하지 않는다
+# (이전 전에는 Vercel 이 그대로 배포한다).
+#
+# 필요한 secret
+#   서버 접속: LIGHTSAIL_HOST(고정 IP), LIGHTSAIL_SSH_KEY(Lightsail 키 쌍의 개인 키 전체)
+#   빌드에 들어가는 공개값: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_KAKAO_MAP_KEY,
+#     NEXT_PUBLIC_GTM_ID, NEXT_PUBLIC_TURNSTILE_SITE_KEY (없는 것은 비워 둬도 된다)
+#   서버 비밀값: SUPABASE_SERVICE_KEY, ADMIN_USER, ADMIN_PASSWORD, ADMIN_SECRET, CRON_SECRET, GH_DISPATCH_TOKEN,
+#     DATA_GO_KR_KEY, ALIOPLUS_API_KEY, ALIOPLUS_KEY_APBA, ALIOPLUS_KEY_BUSINESS, ALIOPLUS_KEY_EVENT,
+#     ALIOPLUS_KEY_FACILITY, TURNSTILE_SECRET_KEY
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", "deploy/lightsail/**", ".github/workflows/deploy_aws.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-aws
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HOST: ${{ secrets.LIGHTSAIL_HOST }}
+    steps:
+      - name: 서버가 정해졌나
+        id: gate
+        run: |
+          if [ -z "$HOST" ]; then echo "LIGHTSAIL_HOST 가 비어 있어 건너뜁니다(아직 Vercel)."; echo "go=0" >> "$GITHUB_OUTPUT"; else echo "go=1" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v5
+        if: steps.gate.outputs.go == '1'
+
+      - uses: actions/setup-node@v5
+        if: steps.gate.outputs.go == '1'
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 빌드
+        if: steps.gate.outputs.go == '1'
+        working-directory: web
+        env:
+          STANDALONE: "1"
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_KAKAO_MAP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_KEY }}
+          NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://jiwon.knowhow-it.com
+        run: |
+          npm ci
+          npm run build
+          # standalone 에는 정적 파일이 빠져 있다. 같이 묶는다.
+          mkdir -p ../bundle
+          cp -r .next/standalone/. ../bundle/
+          cp -r .next/static ../bundle/.next/static
+          cp -r public ../bundle/public
+          tar -C ../bundle -czf ../bundle.tgz .
+          ls -lh ../bundle.tgz
+
+      - name: 서버 비밀값 파일
+        if: steps.gate.outputs.go == '1'
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_KAKAO_MAP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_KEY }}
+          NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ADMIN_USER: ${{ secrets.ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GH_DISPATCH_TOKEN: ${{ secrets.GH_DISPATCH_TOKEN }}
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          ALIOPLUS_API_KEY: ${{ secrets.ALIOPLUS_API_KEY }}
+          ALIOPLUS_KEY_APBA: ${{ secrets.ALIOPLUS_KEY_APBA }}
+          ALIOPLUS_KEY_BUSINESS: ${{ secrets.ALIOPLUS_KEY_BUSINESS }}
+          ALIOPLUS_KEY_EVENT: ${{ secrets.ALIOPLUS_KEY_EVENT }}
+          ALIOPLUS_KEY_FACILITY: ${{ secrets.ALIOPLUS_KEY_FACILITY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: |
+          umask 077
+          : > env.prod
+          for k in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY NEXT_PUBLIC_KAKAO_MAP_KEY NEXT_PUBLIC_GTM_ID \
+                   NEXT_PUBLIC_TURNSTILE_SITE_KEY SUPABASE_SERVICE_KEY ADMIN_USER ADMIN_PASSWORD ADMIN_SECRET CRON_SECRET \
+                   GH_DISPATCH_TOKEN DATA_GO_KR_KEY ALIOPLUS_API_KEY ALIOPLUS_KEY_APBA ALIOPLUS_KEY_BUSINESS \
+                   ALIOPLUS_KEY_EVENT ALIOPLUS_KEY_FACILITY TURNSTILE_SECRET_KEY; do
+            v="${!k}"
+            [ -n "$v" ] && printf '%s=%s\n' "$k" "$v" >> env.prod
+          done
+          echo "NEXT_PUBLIC_SITE_URL=https://jiwon.knowhow-it.com" >> env.prod
+          echo "값 $(wc -l < env.prod)개"
+
+      - name: 올리기·다시 띄우기
+        if: steps.gate.outputs.go == '1'
+        env:
+          KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          REL: ${{ github.sha }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          S="ssh -i $HOME/.ssh/id ubuntu@$HOST"
+          scp -i ~/.ssh/id bundle.tgz "ubuntu@$HOST:/tmp/bundle-$REL.tgz"
+          $S "cat > /srv/jiwon/shared/.env" < env.prod
+          $S "set -e
+            D=/srv/jiwon/releases/$REL
+            rm -rf \$D && mkdir -p \$D && tar -C \$D -xzf /tmp/bundle-$REL.tgz && rm /tmp/bundle-$REL.tgz
+            mkdir -p \$D/.next/cache && chmod -R g+rwX \$D
+            ln -sfn \$D /srv/jiwon/current
+            sudo /usr/bin/systemctl restart jiwon
+            # 지난 배포는 셋만 남긴다.
+            ls -1dt /srv/jiwon/releases/* | tail -n +4 | xargs -r rm -rf"
+          for i in $(seq 1 30); do
+            code=$($S "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/" || true)
+            echo "확인 $i: $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 2
+          done
+          $S "sudo /usr/bin/journalctl -u jiwon -n 80 --no-pager" || true
+          echo "::error::서버가 200 을 내지 않습니다."
+          exit 1

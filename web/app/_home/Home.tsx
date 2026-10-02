@@ -173,7 +173,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
 
     const bq = { sido, bizTarget, bizField, bizYears, industry, q };
     const [results, count] = asked
-      ? await Promise.all([matchBusiness(bq), countBusiness(bq).catch(() => undefined)])
+      ? await Promise.all([matchBusiness(bq, 60, true), countBusiness(bq, true).catch(() => undefined)])
       : [[], 0];
     // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
     if (asked && !isBot(headers().get("user-agent")))
@@ -256,7 +256,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
 
   const wq = { sido, sigungu, age, employment, household, q };
   const [results, count] = asked
-    ? await Promise.all([matchWelfare(wq), countWelfare(wq).catch(() => undefined)])
+    ? await Promise.all([matchWelfare(wq, 60, true), countWelfare(wq, true).catch(() => undefined)])
     : [[], 0];
   if (asked && !isBot(headers().get("user-agent")))
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
