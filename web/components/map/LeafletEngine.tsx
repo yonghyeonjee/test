@@ -4,13 +4,20 @@ import "leaflet/dist/leaflet.css";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
-import { cardHtml, pinHtml, sidoPins, tierOfZoom, type Kind, type Pin, type Tier } from "./pins";
+import { cardHtml, cardLift, pickLabels, pinHtml, sidoPins, tierOfZoom, type Kind, type Pin, type Pos, type Tier } from "./pins";
 
 type Leaflet = typeof import("leaflet");
 const KOREA: LatLng = [36.2, 127.9];
-// 카카오·네이버 지도처럼 차분한 바탕. 도로가 빨갛게 번지는 기본 OSM 타일보다 글자가 잘 보인다.
-const TILE = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+/**
+ * 바탕 지도. 국토교통부 브이월드 키(NEXT_PUBLIC_VWORLD_KEY)가 있으면 브이월드 기본도,
+ * 없으면 OpenStreetMap. (CARTO 래스터 타일은 2026년 9월부터 키 없이 부르면
+ * "API KEY REQUIRED" 워터마크가 찍혀 쓰지 않는다.)
+ */
+const VWORLD_KEY = process.env.NEXT_PUBLIC_VWORLD_KEY ?? "";
+const TILE = VWORLD_KEY
+  ? { url: `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`, attr: '&copy; <a href="https://www.vworld.kr">국토교통부 브이월드</a>', min: 6, max: 19 }
+  : { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', min: 0, max: 18 };
 
 export type Handle = { focus(key: string): void };
 export type EngineProps = {
@@ -23,7 +30,7 @@ export type EngineProps = {
   selected: string | null;
   onSelect: (key: string | null) => void;
   loadItems: (kind: Kind, key: string) => Promise<MapItem[]>;
-  /** false 면 끌기·확대·말풍선 없이 보기만(상세 쪽 작은 지도). */
+  /** false 면 끌기·확대·카드 없이 보기만(상세 쪽 작은 지도). */
   interactive?: boolean;
   className?: string;
 };
@@ -34,8 +41,8 @@ const loadLeaflet = async (): Promise<Leaflet> => {
 };
 
 /**
- * Leaflet 로 그리는 지도. 핀은 HTML(divIcon)이라 카카오맵 쪽과 같은 모양이다.
- * 멀리서는 시·도 묶음 핀, 중간은 건수 동그라미, 가까이서는 이름 달린 핀.
+ * Leaflet 로 그리는 지도. 핀은 HTML(divIcon)이라 카카오·네이버 쪽과 같은 모양이다.
+ * 지도를 움직이거나 확대할 때마다 이름표 자리를 다시 고른다(pickLabels).
  */
 const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
   { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "" }, ref,
@@ -45,12 +52,13 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
   const map = useRef<import("leaflet").Map | null>(null);
   const layer = useRef<import("leaflet").LayerGroup | null>(null);
   const meLayer = useRef<import("leaflet").LayerGroup | null>(null);
-  const markers = useRef(new Map<string, import("leaflet").Marker>());
   const popup = useRef<import("leaflet").Popup | null>(null);
+  const labeled = useRef<Map<string, Pos>>(new Map());
   const [ready, setReady] = useState(false);
   const [tier, setTier] = useState<Tier>("far");
-  const latest = useRef({ pins, kind, loadItems, onSelect });
-  latest.current = { pins, kind, loadItems, onSelect };
+  const [view, setView] = useState(0);
+  const latest = useRef({ pins, kind, loadItems, onSelect, tier });
+  latest.current = { pins, kind, loadItems, onSelect, tier };
 
   useEffect(() => {
     let dead = false;
@@ -62,13 +70,17 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       const m = lf.map(el.current, {
         center: single ? [single.lat, single.lng] : KOREA,
         zoom: single ? (single.approx ? 8 : 11) : 7,
-        zoomControl: interactive, scrollWheelZoom: interactive, dragging: interactive, touchZoom: interactive,
+        minZoom: Math.max(TILE.min, 6),
+        zoomControl: false, scrollWheelZoom: interactive, dragging: interactive, touchZoom: interactive,
         doubleClickZoom: interactive, boxZoom: interactive, keyboard: interactive,
       });
-      lf.tileLayer(TILE, { maxZoom: 18, subdomains: "abcd", attribution: ATTR }).addTo(m);
+      lf.tileLayer(TILE.url, { maxZoom: TILE.max, attribution: TILE.attr }).addTo(m);
+      // 확대 단추는 왼쪽 아래. 왼쪽 위에 두면 카드 제목을 가리고, 오른쪽 아래는 떠 있는 메뉴 자리다.
+      if (interactive) lf.control.zoom({ position: "bottomleft" }).addTo(m);
       layer.current = lf.layerGroup().addTo(m);
       meLayer.current = lf.layerGroup().addTo(m);
       m.on("zoomend", () => setTier(tierOfZoom(m.getZoom())));
+      m.on("moveend", () => setView((v) => v + 1));
       m.on("popupclose", () => latest.current.onSelect(null));
       setTier(tierOfZoom(m.getZoom()));
       map.current = m;
@@ -81,7 +93,8 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     const lf = L.current, m = map.current;
     if (!lf || !m || !interactive) return;
     latest.current.onSelect(p.key);
-    const pop = lf.popup({ className: "pm-pop-wrap", maxWidth: 320, minWidth: 240, offset: [0, tier === "near" ? -38 : -14], autoPanPadding: [16, 16] })
+    const lift = cardLift(p, latest.current.tier, labeled.current.has(p.key));
+    const pop = lf.popup({ className: "pm-pop-wrap", maxWidth: 320, minWidth: 240, offset: [0, -lift], autoPanPadding: [16, 16] })
       .setLatLng([p.lat, p.lng]).setContent(cardHtml(p, null)).openOn(m);
     popup.current = pop;
     void latest.current.loadItems(p.kind, p.key).then((items) => {
@@ -89,26 +102,30 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     });
   };
 
-  // 핀 그리기. 단계·갈래·선택이 바뀌면 다시.
+  // 핀 그리기. 단계·갈래·선택·화면이 바뀌면 다시.
   useEffect(() => {
     const lf = L.current, m = map.current, g = layer.current;
     if (!lf || !m || !g) return;
-    g.clearLayers(); markers.current.clear();
+    g.clearLayers();
     const list = tier === "far" && pins.length > 1 ? sidoPins(pins) : pins;
+    const size = m.getSize();
+    const show = pickLabels(list, (p) => m.latLngToContainerPoint([p.lat, p.lng]), { w: size.x, h: size.y }, tier, selected);
+    labeled.current = show;
     for (const p of list) {
+      const pos = show.get(p.key);
+      const on = pos !== undefined;
       const mk = lf.marker([p.lat, p.lng], {
-        icon: lf.divIcon({ html: pinHtml(p, tier, selected === p.key), className: "pm-wrap", iconSize: [0, 0], iconAnchor: [0, 0] }),
-        keyboard: false, riseOnHover: true, zIndexOffset: selected === p.key ? 1000 : 0,
+        icon: lf.divIcon({ html: pinHtml(p, tier, pos, selected === p.key), className: "pm-wrap", iconSize: [0, 0], iconAnchor: [0, 0] }),
+        keyboard: false, riseOnHover: true, zIndexOffset: selected === p.key ? 2000 : on ? 1000 + Math.min(p.n, 999) : Math.min(p.n, 999),
       });
       mk.on("click", () => {
         if (p.level === "sido") { m.setView([p.lat, p.lng], 10); return; }
         openCard(p);
       });
       mk.addTo(g);
-      markers.current.set(p.key, mk);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pins, tier, kind, selected, ready]);
+  }, [pins, tier, kind, selected, ready, view]);
 
   // 내 위치와 반경 원.
   useEffect(() => {

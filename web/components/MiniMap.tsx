@@ -26,7 +26,7 @@ export default function MiniMap({
   const [km, setKm] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const pins = useMemo<Pin[]>(() => [{
-    key: "here", lat, lng, label, n: 0, nW: 0, nB: 0, approx, kind, level: "sgg", sido: "", sigungu: null, more: "", km: null,
+    key: "here", lat, lng, label, short: label, n: 0, nW: 0, nB: 0, approx, kind, level: "sgg", sido: "", sigungu: null, more: "", km: null,
   }], [lat, lng, label, approx, kind]);
 
   // 정책지도에서 켜 둔 내 위치가 있으면 바로 거리를 적는다.

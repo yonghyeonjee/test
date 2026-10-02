@@ -9,7 +9,9 @@
  */
 export type KLatLng = { getLat(): number; getLng(): number };
 export type KBounds = { extend(p: KLatLng): void };
+export type KPoint = { x: number; y: number };
 export type KMap = {
+  getProjection(): { containerPointFromCoords(p: KLatLng): KPoint };
   setCenter(p: KLatLng): void;
   getCenter(): KLatLng;
   setLevel(level: number, opts?: { animate?: boolean; anchor?: KLatLng }): void;

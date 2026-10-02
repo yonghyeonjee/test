@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SIDO_POINT } from "@/lib/geoData";
 import { SIDO_SHORT, fmtKm, haversineKm, mapLinks, type LatLng } from "@/lib/geo";
-import type { MapDataLite, MapItem } from "@/lib/mapData";
+import type { MapItem } from "@/lib/mapData";
+import { fromRows, type MapDataLite } from "@/lib/mapShape";
 import MapCanvas, { type Handle } from "./map/MapCanvas";
 import { itemHref, itemWhen, toPin, type Kind } from "./map/pins";
 import { track } from "./Gtm";
@@ -71,7 +72,9 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
     } catch { /* 저장소가 막힌 브라우저 */ }
   }, []);
 
-  const points = data[kind];
+  const programs = useMemo(() => fromRows("programs", data.p), [data.p]);
+  const jobs = useMemo(() => fromRows("jobs", data.j), [data.j]);
+  const points = kind === "jobs" ? jobs : programs;
   const rows = useMemo(() => {
     const withD = points.map((p) => ({ p, km: me ? haversineKm(me, [p.lat, p.lng]) : null }));
     const inR = me && radius > 0 ? withD.filter((x) => (x.km ?? 0) <= radius) : withD;
@@ -79,7 +82,7 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
   }, [points, me, radius]);
   const pins = useMemo(() => rows.map(({ p, km }) => toPin(p, kind, km)), [rows, kind]);
   const totalN = useMemo(() => rows.reduce((a, x) => a + x.p.n, 0), [rows]);
-  const allN = (k: Kind) => data[k].reduce((a, p) => a + p.n, 0);
+  const allN = (k: Kind) => (k === "jobs" ? data.j : data.p).reduce((a, r) => a + r[4], 0);
 
   const remember = (pt: LatLng, label: string) => {
     try { localStorage.setItem(GEO_KEY, JSON.stringify({ pt, label, at: Date.now() })); } catch { /* 저장 못 해도 화면은 된다 */ }

@@ -311,25 +311,33 @@
 .pm-pin:hover, .pm-pin.pm-sel { background: #ECEAFF; }
 .pm-pin.pm-jobs { border-color: #0F766E; } .pm-pin.pm-jobs::after { border-color: #0F766E; } .pm-pin.pm-jobs i { background: #0F766E; }
 .pm-pin.pm-approx { border-style: dashed; opacity: .9; }
-.pm-pin.pm-mid { padding: 0; width: 32px; height: 32px; justify-content: center; border-radius: 50%; transform: translate(-50%, -50%); }
-.pm-pin.pm-mid::after { display: none; }
-.pm-pin.pm-mid i { background: transparent; color: #5A4BE0; font-size: 12px; padding: 0; }
-.pm-pin.pm-mid.pm-jobs i { color: #0F766E; }
+/* 이름표 자리가 없는 핀: 건수만 적은 작은 동그라미(가운데가 좌표) */
+.pm-pin.pm-dot { padding: 0; min-width: 26px; height: 26px; justify-content: center; border-radius: 999px; transform: translate(-50%, -50%); padding: 0 5px; }
+.pm-pin.pm-dot::after { display: none; }
+.pm-pin.pm-dot i { background: transparent; color: #5A4BE0; font-size: 11.5px; padding: 0; }
+.pm-pin.pm-dot.pm-jobs i { color: #0F766E; }
+/* 시·도 핀(멀리서): 꽉 찬 알약, 가운데가 좌표 */
 .pm-pin.pm-far { background: #5A4BE0; color: #fff; border-color: #fff; transform: translate(-50%, -50%); font-size: 13px; padding: 5px 11px; }
 .pm-pin.pm-far::after { display: none; }
 .pm-pin.pm-far i { background: rgba(255,255,255,.22); }
 .pm-pin.pm-far.pm-jobs { background: #0F766E; }
+.pm-pin.pm-far.pm-at-n { transform: translate(-50%, calc(-100% - 6px)); }
+.pm-pin.pm-far.pm-at-s { transform: translate(-50%, 6px); }
+.pm-pin.pm-far.pm-at-e { transform: translate(6px, -50%); }
+.pm-pin.pm-far.pm-at-w { transform: translate(calc(-100% - 6px), -50%); }
+.pm-pin.pm-far.pm-dot { background: #5A4BE0; }
+.pm-pin.pm-far.pm-dot i { color: #fff; }
+.pm-pin.pm-far.pm-dot.pm-jobs { background: #0F766E; }
 .pm-me { width: 16px; height: 16px; border-radius: 50%; background: #D97706; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(217,119,6,.25); transform: translate(-50%, -50%); }
 .pm-legend { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; }
 .pm-legend-p { background: #5A4BE0; } .pm-legend-j { background: #0F766E; } .pm-legend-a { border: 2px dashed #5A4BE0; }
 
 /* 핀을 누르면 뜨는 카드 */
 .pm-pop-wrap .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; box-shadow: 0 16px 40px -16px rgba(23,21,50,.45); }
-.pm-pop-wrap .leaflet-popup-content { margin: 0; line-height: 1.45; width: auto !important; }
+.pm-pop-wrap .leaflet-popup-content { margin: 0; line-height: 1.45; width: min(292px, calc(100vw - 56px)) !important; }
 .pm-pop-wrap .leaflet-popup-tip { box-shadow: none; }
 .pm-pop-wrap .pm-close { display: none; }
-.pm-kcard { position: relative; transform: translate(-50%, calc(-100% - 24px)); width: 300px; max-width: calc(100vw - 40px); }
-.pm-kcard-near { transform: translate(-50%, calc(-100% - 52px)); }
+.pm-kcard { --lift: 24px; position: relative; transform: translate(-50%, calc(-100% - var(--lift) - 8px)); width: 300px; max-width: calc(100vw - 40px); }
 .pm-kcard::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; background: #fff; transform: translateX(-50%) rotate(45deg); box-shadow: 4px 4px 8px -4px rgba(23,21,50,.25); }
 .pm-card { position: relative; padding: 14px 16px 14px; background: #fff; border-radius: 16px; min-width: 240px; font-size: 13px; color: #1E1B4B; }
 .pm-card .pm-close { position: absolute; top: 8px; right: 10px; width: 28px; height: 28px; border: 0; background: transparent; color: #8B87A8; font-size: 20px; line-height: 1; cursor: pointer; }
@@ -348,6 +356,6 @@
 .pm-card .pm-nav a { color: #5A4BE0; font-weight: 700; text-decoration: none; }
 .pm-card .pm-nav a::before { content: "➜ "; color: #C4B5FD; }
 .pm-card .pm-btns { display: flex; gap: 6px; margin-top: 10px; }
-.pm-card .pm-btn { flex: 1; text-align: center; padding: 7px 8px; border-radius: 999px; border: 1.5px solid #CFCBE6; color: #1E1B4B; font-weight: 700; font-size: 12.5px; text-decoration: none; }
+.pm-card .pm-btn { flex: 1; white-space: nowrap; text-align: center; padding: 7px 8px; border-radius: 999px; border: 1.5px solid #CFCBE6; color: #1E1B4B; font-weight: 700; font-size: 12.5px; text-decoration: none; }
 .pm-card .pm-btn-primary { background: #5A4BE0; border-color: #5A4BE0; color: #fff; }
 .leaflet-container .pm-card a { color: inherit; }

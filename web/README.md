@@ -21,11 +21,16 @@ npm run dev
 2. **Root Directory 를 `web` 으로 지정** (저장소 루트에는 파이썬 파이프라인이 있다)
 3. 환경변수 3개 등록: `NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
-   - 선택: `NEXT_PUBLIC_KAKAO_MAP_KEY` — 정책지도를 카카오맵으로 그린다.
-     [카카오 디벨로퍼스](https://developers.kakao.com) 에서 앱을 만들고 플랫폼 > Web 에
-     `https://jiwon.knowhow-it.com` 을 등록한 뒤 그 앱의 **JavaScript 키**를 넣는다
-     (개인 계정·무료, 등록한 도메인에서만 먹는 키라 브라우저에 보여도 된다). 없으면
-     Leaflet + OpenStreetMap 으로 그린다.
+   - 선택(정책지도 바탕 지도). 넣은 키에 따라 자동으로 고른다 — 카카오 → 네이버 → (없으면) Leaflet.
+     모두 등록한 사이트 주소에서만 먹는 브라우저용 키라 공개돼도 된다. 넣은 뒤 다시 배포해야 한다.
+     - `NEXT_PUBLIC_KAKAO_MAP_KEY` — [카카오 디벨로퍼스](https://developers.kakao.com) 앱 > 플랫폼 > Web 에
+       `https://jiwon.knowhow-it.com` 등록 → 앱 키의 **JavaScript 키**. 2026-07-21 부터 무료 쿼터는 개발자 계정의
+       첫 번째 카카오맵 앱에만 주고, 넘으면 비즈월렛 연결 뒤 건당 과금.
+     - `NEXT_PUBLIC_NAVER_MAP_KEY` — [네이버 클라우드 플랫폼](https://console.ncloud.com) > Maps > Application 등록,
+       Web Dynamic Map 선택, Web 서비스 URL 에 사이트 주소 → **Client ID(키 ID)**. 대표 계정은 Web Dynamic Map
+       월 1,000만 건 무료(지도를 처음 띄울 때만 1건), 넘으면 건당 0.1원.
+     - `NEXT_PUBLIC_VWORLD_KEY` — [브이월드(국토교통부)](https://www.vworld.kr) 오픈 API 인증키(무료). 카카오·네이버
+       키가 없을 때 Leaflet 의 바탕을 OpenStreetMap 대신 브이월드 기본도로 바꾼다.
 4. Settings > Domains 에 `jiwon.knowhow-it.com` 추가 → 안내되는 CNAME 을 DNS 에 등록
 
 ## 관리자 (/admin)
