@@ -53,6 +53,10 @@ const JOB_GROUPS: string[][] = [
 
 export const GROUPS: string[][] = [...JOB_GROUPS, ...SYNONYMS];
 
+/** 검색창 아래 "많이 찾는 말". 서버(결과 화면)와 클라이언트(검색창)가 같이 쓴다. */
+export const HOT_WELFARE = ["경비", "간호사", "신혼부부 전세", "청년 월세", "기능사", "공무직", "학자금", "소상공인", "출산", "요양보호사"];
+export const HOT_BUSINESS = ["수출", "스마트공장", "인건비", "창업", "소상공인", "특허", "온라인판매", "폐업", "컨설팅", "시제품"];
+
 const clean = (w: string) => w.replace(/\s+/g, "").toLowerCase();
 
 /** 낱말이 든 묶음들. "경비원" 은 경비 묶음에, "기간제교사" 는 교사·공무직 묶음에. */

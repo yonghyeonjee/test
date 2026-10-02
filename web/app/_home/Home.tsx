@@ -9,7 +9,8 @@ import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
-import PortalSearch, { HOT_BUSINESS } from "@/components/PortalSearch";
+import PortalSearch from "@/components/PortalSearch";
+import { HOT_BUSINESS } from "@/lib/thesaurus";
 import { IllusEmpty } from "@/components/Illus";
 import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
@@ -231,8 +232,9 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
           ) : (
             <div className="card border-t-[3px] border-t-brand p-4 shadow-card sm:p-5">
               {/* 포털 검색창이 먼저. 조건 고르기는 그 아래. */}
-              <PortalSearch index={bundle.sggIndex} hot={HOT_BUSINESS}
-                            placeholder="무엇이든 찾아보세요 — 수출 바우처, 스마트공장, 소상공인 폐업" />
+              <PortalSearch index={bundle.sggIndex} hot={HOT_BUSINESS} scope="business"
+                            placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
+                            placeholderNarrow="수출, 스마트공장, 폐업, 특허…" />
               <Or />
               {/* 낱말 칸(KeywordBar)은 여기 두지 않는다 — 바로 위 검색창과 겹친다.
                   조건을 고른 결과 화면에서는 조건과 함께 거는 칸으로 다시 나온다. */}
