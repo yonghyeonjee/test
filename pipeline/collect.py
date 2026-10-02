@@ -148,6 +148,20 @@ def xml_detail(root):
     return rec
 
 
+def xml_lists(root):
+    """상세 응답의 목록 태그(basfrmList 등)를 태그 이름별 dict 목록으로.
+    xml_detail 은 반복 태그를 첫 값만 남기므로 서식·누리집 목록은 여기서 본다."""
+    out = {}
+    for el in root.iter():
+        kids = list(el)
+        if not kids or el is root:
+            continue
+        rec = {c.tag: (c.text or "").strip() for c in kids if not list(c)}
+        if rec:
+            out.setdefault(el.tag, []).append(rec)
+    return out
+
+
 def json_items(obj):
     try:
         items = obj["response"]["body"]["items"]["item"]
@@ -166,10 +180,11 @@ def fill(raw, page=1, rows=PAGE_ROWS):
 
 
 def upsert(table, rows, conflict):
-    """500건씩 나눠서 upsert"""
+    """100건씩 나눠서 upsert. 500건이면 search_text 의 trgm 색인을 다시
+    쓰는 데 걸려 statement timeout(8초)에 걸린다 — 2026-10-01 실제로 그랬다."""
     n = 0
-    for i in range(0, len(rows), 500):
-        chunk = rows[i:i + 500]
+    for i in range(0, len(rows), 100):
+        chunk = rows[i:i + 100]
         SB.table(table).upsert(chunk, on_conflict=conflict).execute()
         n += len(chunk)
     return n
@@ -349,12 +364,25 @@ def run(name, conf, detail_only=False):
         # ── 2) 상세조회 보충 ──
         durl = conf.get("detail_url")
         if durl:
+            # 상세가 없는 것부터. 그다음 첨부를 아직 안 본 살아 있는 공고.
             todo = SB.table("programs") \
                 .select("source_id,kind,title") \
                 .eq("source", name) \
                 .is_("raw_target", "null") \
                 .limit(q.limit - q.used) \
                 .execute().data
+            left = q.limit - q.used - len(todo)
+            if left > 0:
+                today = time.strftime("%Y-%m-%d")
+                more = SB.table("programs") \
+                    .select("source_id,kind,title") \
+                    .eq("source", name) \
+                    .not_.is_("raw_target", "null") \
+                    .is_("attach", "null") \
+                    .or_(f"is_always_on.eq.true,apply_end.gte.{today}") \
+                    .limit(left) \
+                    .execute().data
+                todo += more
 
             print(f"  상세조회 대상 {len(todo)}건 (남은 쿼터 {q.limit - q.used})")
 
@@ -378,12 +406,13 @@ def run(name, conf, detail_only=False):
                     d = xml_detail(droot)
                     if d.get("resultCode") not in (None, "0"):
                         continue
+                    d["_lists"] = xml_lists(droot)
                     merged = adapt({"servId": row["source_id"]}, d)
                     upd = {k: v for k, v in merged.items()
                            if v is not None and k in (
                                "raw_target", "raw_criteria", "raw_benefit",
                                "apply_start", "apply_end", "is_always_on",
-                               "apply_method", "contact")}
+                               "apply_method", "contact", "attach")}
                     if upd:
                         # NOT NULL 컬럼(kind, title)을 함께 보내야 upsert 가 통과한다.
                         # Postgres 는 ON CONFLICT 판정 전에 NOT NULL 을 먼저 검사한다.

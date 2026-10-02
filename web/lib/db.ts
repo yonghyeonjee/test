@@ -215,7 +215,11 @@ export async function getBusinessRegions() {
 
 // ── 상세 / 지역 페이지 ────────────────────────────────────
 
+/** 공고에 딸린 서식·공고문(file)과 접수·안내 누리집(site). pipeline/sources.py 가 채운다. */
+export type Attach = { name: string; url: string; kind: "file" | "site"; ext?: string };
+
 export type Detail = Program & {
+  attach: Attach[] | null;
   target_text: string | null;
   criteria_text: string | null;
   benefit_text: string | null;
