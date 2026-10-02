@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { STATUS_LABEL } from "@/lib/consts";
 import { dot, facets, filterJobs, type JobBoard } from "@/lib/pubJobs";
+import MyRegionJobs from "./MyRegionJobs";
+import RecentStrip from "./RecentStrip";
 import { jobPath, jobPathPage, jobPathWith, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
 
 const BADGE: Record<string, string> = {
@@ -65,6 +67,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
 
   return (
     <div id="list" className="mt-6 scroll-mt-24">
+      <RecentStrip kind="job" className="mb-6" />
       {/* 찾기를 누르면 쪽이 새로 그려진다. 머리 띠를 지나 목록으로 돌아오게 #list. */}
       <form action="/jobs/search#list" method="get" className="flex gap-2">
         {route.region && <input type="hidden" name="region" value={route.region} />}
@@ -94,7 +97,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         ))}
       </div>
       {showRegions && (
-        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1.5 text-[13px]">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
+          <MyRegionJobs current={route.region} />
           {regions.slice(0, 20).map((r) => (
             <Link key={r.v} href={jobPathWith(route, { region: r.v })}
                   className="text-muted transition-colors hover:text-brand">

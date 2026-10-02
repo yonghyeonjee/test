@@ -14,6 +14,8 @@ import { ORG_ID, pageGraph } from "@/lib/schema";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import MyFit from "@/components/MyFit";
+import RecentTracker from "@/components/RecentTracker";
 import {
   ageLabel,
   applyStatus,
@@ -184,6 +186,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
           {STATUS_LABEL[status]}
         </span>
         <ShareButton title={p.title} text={`${where} · ${p.title}`} />
+        <RecentTracker kind="p" id={p.source_id} title={p.title} sub={where} />
       </div>
 
       {status === "closed" && (
@@ -218,6 +221,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
             ))}
           </ul>
           <p className="mt-3 text-xs text-muted">전부 해당되면 신청 자격이 있을 가능성이 높습니다. 최종 판단은 원문 기준입니다.</p>
+          {/* 지난번에 넣은 내 조건으로 바로 대본다. 조건을 넣은 적이 없으면 안 보인다. */}
+          <MyFit sido={p.sido} sigungu={p.sigungu} ageMin={p.age_min} ageMax={p.age_max} household={p.household} />
         </section>
       )}
 
