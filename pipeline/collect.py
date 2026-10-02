@@ -20,6 +20,7 @@ import time
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+import random
 import re
 from urllib.parse import quote
 
@@ -384,6 +385,11 @@ def run(name, conf, detail_only=False):
                     .execute().data
                 todo += more
 
+            # 순서를 섞는다. 중앙부처 WLF00001062~1071 처럼 연달아 실패하는 번호
+            # 묶음이 있는데, 늘 같은 순서로 돌면 거기서 열 번 실패하고 멈춰
+            # 그 뒤는 영영 못 본다(2026-10-02 실제). 섞으면 다음 실행이 다른
+            # 자리부터 보고, 실패 묶음은 조금씩 건너뛴다.
+            random.shuffle(todo)
             print(f"  상세조회 대상 {len(todo)}건 (남은 쿼터 {q.limit - q.used})")
 
             batch, dkey, dfails = [], conf.get("detail_key", "servId"), 0
@@ -427,8 +433,8 @@ def run(name, conf, detail_only=False):
                 except Exception as e:
                     dfails += 1
                     print(f"    skip {row['source_id']}: {type(e).__name__}")
-                    if dfails >= 10:
-                        print("    연속 10회 실패 — 중단하고 저장합니다")
+                    if dfails >= 30:
+                        print("    연속 30회 실패 — 중단하고 저장합니다")
                         break
                     time.sleep(5)
 
