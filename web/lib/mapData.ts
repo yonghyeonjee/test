@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { db, dbConfigured } from "./db";
-import { haversineKm, locate, locateJob, type Place } from "./geo";
+import { haversineKm, locate, locateJob, sggFromDept, type Place } from "./geo";
+import { dongInText } from "./dong";
 import { keyOf, labelOf, moreOf, toRow, type MapDataLite, type MapKind, type MapPointLite } from "./mapShape";
 
 /**
@@ -13,6 +14,13 @@ import { keyOf, labelOf, moreOf, toRow, type MapDataLite, type MapKind, type Map
  * 채용은 지역이 시·도까지만 있고 그마저 빈 것이 많아, 기관명·제목에서 시·군·구를
  * 읽는다(lib/geo.ts locateJob). 못 읽으면 시·도 가운데(approx), 그것도 없으면
  * 지도에 못 올리고 건수만 적는다.
+ *
+ * 시·군·구가 비어 시·도 전역으로 잡히던 공고는 담당 부서 이름("전북특별자치도 군산시
+ * 복지환경국…")에서 시·군·구를 보충한다(lib/geo.ts sggFromDept).
+ *
+ * 동네 단계(읍·면·동)에는 공고를 꽂지 않는다 — 주소가 없다. 제목·부서·기관 이름에 그
+ * 시·군·구의 동 이름이 분명히 적힌 공고만 따로 모아(dongs) 동 핀의 건수로 보인다.
+ * 그런 공고도 시·군·구 핀에는 그대로 들어 있다.
  *
  * 한 시간마다 다시 센다. 공고는 하루 단위로 바뀐다.
  */
@@ -44,6 +52,8 @@ export type MapPoint = MapPointLite & { items: ItemRow[] };
 export type MapData = {
   programs: MapPoint[];
   jobs: MapPoint[];
+  /** 동 이름이 분명히 적힌 공고. 열쇠는 lib/dong.ts dongKey. */
+  dongs: { programs: Record<string, ItemRow[]>; jobs: Record<string, ItemRow[]> };
   /** 지도에 못 올린 것: 전국 공통 사업, 지역을 모르는 채용. */
   nationwide: number;
   jobsNoPlace: number;
@@ -52,7 +62,7 @@ export type MapData = {
 
 export type { MapDataLite, MapPointLite };
 
-export const EMPTY_MAP: MapData = { programs: [], jobs: [], nationwide: 0, jobsNoPlace: 0, at: "" };
+export const EMPTY_MAP: MapData = { programs: [], jobs: [], dongs: { programs: {}, jobs: {} }, nationwide: 0, jobsNoPlace: 0, at: "" };
 
 /** 쪽에 싣는 모양 — 요약(items)을 빼고 짧은 배열로(lib/mapShape). 요약은 /api/map/items 가 준다. */
 export function liteOf(d: MapData): MapDataLite {
@@ -82,14 +92,21 @@ function add(map: Map<string, MapPoint>, place: Place, item: ItemRow, more: stri
   p.items.push(item);
 }
 
+function addDong(index: Record<string, ItemRow[]>, place: Place, item: ItemRow, ...texts: (string | null)[]) {
+  if (!place.sigungu) return;
+  const d = dongInText(place.sido, place.sigungu, ...texts);
+  if (d) (index[d.key] ??= []).push(item);
+}
+
 async function loadPrograms() {
   const points = new Map<string, MapPoint>();
+  const dongs: Record<string, ItemRow[]> = {};
   let nationwide = 0;
   const PAGE = 1000;
   for (let from = 0; from < 20000; from += PAGE) {
     const { data, error } = await db
       .from("programs_public")
-      .select("source_id,title,kind,org_name,sido,sigungu,apply_start,apply_end,is_always_on")
+      .select("source_id,title,kind,org_name,dept_name,sido,sigungu,apply_start,apply_end,is_always_on")
       .neq("status", "closed")
       // 마감이 가까운 것부터 — 점마다 앞 몇 건만 담으므로 차례가 곧 요약의 질이다.
       .order("apply_end", { ascending: true, nullsFirst: false })
@@ -97,23 +114,28 @@ async function loadPrograms() {
       .range(from, from + PAGE - 1);
     if (error) throw error;
     const rows = (data ?? []) as {
-      source_id: string; title: string; kind: string; org_name: string | null; sido: string | null;
+      source_id: string; title: string; kind: string; org_name: string | null; dept_name: string | null; sido: string | null;
       sigungu: string | null; apply_start: string | null; apply_end: string | null; is_always_on: boolean | null;
     }[];
     for (const r of rows) {
-      const place = locate(r.sido, r.sigungu);
+      // 시·군·구가 비었으면 담당 부서·기관 이름에서 보충한다.
+      const sgg = r.sigungu || sggFromDept(r.sido, r.dept_name, r.org_name);
+      const place = locate(r.sido, sgg);
       if (!place) { nationwide++; continue; }
       const more = moreOf("programs", place.sido, place.sigungu);
-      add(points, place, [r.source_id, cut(r.title), orgShort(r.org_name), r.apply_start, r.apply_end,
-                          r.is_always_on ? 1 : 0, r.kind === "business" ? "b" : "w"], more);
+      const item: ItemRow = [r.source_id, cut(r.title), orgShort(r.org_name), r.apply_start, r.apply_end,
+                             r.is_always_on ? 1 : 0, r.kind === "business" ? "b" : "w"];
+      add(points, place, item, more);
+      addDong(dongs, place, item, r.title, r.dept_name);
     }
     if (rows.length < PAGE) break;
   }
-  return { points: [...points.values()], nationwide };
+  return { points: [...points.values()], nationwide, dongs };
 }
 
 async function loadJobs() {
   const points = new Map<string, MapPoint>();
+  const dongs: Record<string, ItemRow[]> = {};
   const today = new Date().toISOString().slice(0, 10);
   const { data, error } = await db
     .from("job_posts")
@@ -130,9 +152,11 @@ async function loadJobs() {
     const more = place.sigungu
       ? `/jobs/q/${encodeURIComponent(place.sigungu)}`
       : r.region ? `/jobs/region/${encodeURIComponent(r.region)}` : "/jobs";
-    add(points, place, [r.source_id, cut(r.title, 52), orgShort(r.org), r.start_date, r.end_date, 0, "j"], more);
+    const item: ItemRow = [r.source_id, cut(r.title, 52), orgShort(r.org), r.start_date, r.end_date, 0, "j"];
+    add(points, place, item, more);
+    addDong(dongs, place, item, r.org, r.title);
   }
-  return { points: [...points.values()], noPlace };
+  return { points: [...points.values()], noPlace, dongs };
 }
 
 async function load(): Promise<MapData> {
@@ -142,13 +166,14 @@ async function load(): Promise<MapData> {
   return {
     programs: p.points.sort(byN),
     jobs: j.points.sort(byN),
+    dongs: { programs: p.dongs, jobs: j.dongs },
     nationwide: p.nationwide,
     jobsNoPlace: j.noPlace,
     at: new Date().toISOString(),
   };
 }
 
-export const getMapData = unstable_cache(load, ["map-data-v2"], { revalidate: 3600 });
+export const getMapData = unstable_cache(load, ["map-data-v3"], { revalidate: 3600 });
 
 // ── 왼쪽 카드 목록 ─────────────────────────────────────────
 
@@ -158,6 +183,11 @@ export type ListQuery = {
   region?: string;
   /** 이 점에서 r km 안(r=0 이면 전국)을 가까운 순으로. 자리 이름을 주소에 늘어놓으면 주소가 16KB 를 넘었다. */
   near?: { lat: number; lng: number; r: number };
+  /**
+   * 내가 있는 시·군·구 열쇠("경기도|시흥시"). 시·군·구 핀은 구역 가운데라 반경을 작게(3km)
+   * 잡으면 내 시·군·구가 빠질 수 있다. 내 시·군·구와 그 시·도 전역 공고는 늘 넣고 맨 앞에 둔다.
+   */
+  home?: string;
   /** soon: 7일 안 마감, always: 상시 */
   status?: "all" | "soon" | "always";
   /** near: 가까운 자리부터(자리 안에서는 마감 가까운 순), end: 마감 가까운 순 */
@@ -180,8 +210,12 @@ export function listItems(d: MapData, kind: MapKind, q: ListQuery = {}): { total
   if (q.region) chosen = pts.filter((p) => p.key === q.region);
   else if (q.near) {
     const { lat, lng, r } = q.near;
+    const homeSido = q.home ? `${q.home.split("|")[0]}|` : null;
+    const mine = (key: string) => key === q.home || key === homeSido;
     chosen = pts.map((p) => ({ p, km: haversineKm([lat, lng], [p.lat, p.lng]) }))
-      .filter((x) => !r || x.km <= r).sort((a, b) => a.km - b.km).map((x) => x.p);
+      .filter((x) => !r || x.km <= r || mine(x.p.key))
+      .sort((a, b) => (mine(b.p.key) ? 1 : 0) - (mine(a.p.key) ? 1 : 0) || (a.p.key === q.home ? -1 : b.p.key === q.home ? 1 : 0) || a.km - b.km)
+      .map((x) => x.p);
   }
   let out: ListItem[] = [];
   for (const p of chosen) for (const r of p.items) out.push({ ...toItem(r), key: p.key, label: p.label });

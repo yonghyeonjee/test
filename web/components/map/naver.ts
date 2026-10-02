@@ -18,6 +18,7 @@ export type NMap = {
   panTo(c: NLatLng): void;
   fitBounds(b: unknown, margin?: { top?: number; right?: number; bottom?: number; left?: number }): void;
   getSize(): { width: number; height: number };
+  getBounds(): { getSW(): NLatLng; getNE(): NLatLng };
 };
 export type NMarker = { setMap(m: NMap | null): void };
 export type NCircle = { setMap(m: NMap | null): void };

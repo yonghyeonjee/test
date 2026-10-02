@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
-import { cardHtml, cardLift, pickLabels, pinHtml, sidoPins, tierOfZoom, type Kind, type Pin, type Pos, type Tier } from "./pins";
+import { cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Kind, type Pin, type Pos, type Tier, type View } from "./pins";
 
 type Leaflet = typeof import("leaflet");
 const KOREA: LatLng = [36.2, 127.9];
@@ -33,6 +33,10 @@ export type EngineProps = {
   /** false 면 끌기·확대·카드 없이 보기만(상세 쪽 작은 지도). */
   interactive?: boolean;
   className?: string;
+  /** 동네 단계(가까이 확대)에서 더 그릴 핀 — 읍·면·동 행정복지센터와 시청·구청. */
+  extra?: Pin[];
+  /** 움직임이 멎을 때 보이는 범위와 확대 정도(zoom, 카카오는 19 − level 로 맞춘다). */
+  onView?: (v: View) => void;
 };
 
 const loadLeaflet = async (): Promise<Leaflet> => {
@@ -45,7 +49,7 @@ const loadLeaflet = async (): Promise<Leaflet> => {
  * 지도를 움직이거나 확대할 때마다 이름표 자리를 다시 고른다(pickLabels).
  */
 const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "" }, ref,
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const L = useRef<Leaflet | null>(null);
@@ -57,8 +61,8 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
   const [ready, setReady] = useState(false);
   const [tier, setTier] = useState<Tier>("far");
   const [view, setView] = useState(0);
-  const latest = useRef({ pins, kind, loadItems, onSelect, tier });
-  latest.current = { pins, kind, loadItems, onSelect, tier };
+  const latest = useRef({ pins, kind, loadItems, onSelect, tier, extra, onView });
+  latest.current = { pins, kind, loadItems, onSelect, tier, extra, onView };
 
   useEffect(() => {
     let dead = false;
@@ -79,12 +83,17 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       if (interactive) lf.control.zoom({ position: "bottomleft" }).addTo(m);
       layer.current = lf.layerGroup().addTo(m);
       meLayer.current = lf.layerGroup().addTo(m);
+      const tell = () => {
+        const b = m.getBounds();
+        latest.current.onView?.({ s: b.getSouth(), w: b.getWest(), n: b.getNorth(), e: b.getEast(), zoom: m.getZoom() });
+      };
       m.on("zoomend", () => setTier(tierOfZoom(m.getZoom())));
-      m.on("moveend", () => setView((v) => v + 1));
+      m.on("moveend", () => { setView((v) => v + 1); tell(); });
       m.on("popupclose", () => latest.current.onSelect(null));
       setTier(tierOfZoom(m.getZoom()));
       map.current = m;
       setReady(true);
+      tell();
     })();
     return () => { dead = true; map.current?.remove(); map.current = null; };
   }, [interactive]);
@@ -107,11 +116,11 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     const lf = L.current, m = map.current, g = layer.current;
     if (!lf || !m || !g) return;
     g.clearLayers();
-    const list = tier === "far" && pins.length > 1 ? sidoPins(pins) : pins;
+    const list = visiblePins(pins, extra ?? [], tier);
     const size = m.getSize();
     const show = pickLabels(list, (p) => m.latLngToContainerPoint([p.lat, p.lng]), { w: size.x, h: size.y }, tier, selected);
     labeled.current = show;
-    for (const p of list) {
+    for (const p of drawnPins(list, show, selected)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const mk = lf.marker([p.lat, p.lng], {
@@ -125,21 +134,22 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       mk.addTo(g);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pins, tier, kind, selected, ready, view]);
+  }, [pins, extra, tier, kind, selected, ready, view]);
 
   // 내 위치와 반경 원.
   useEffect(() => {
     const lf = L.current, m = map.current, g = meLayer.current;
     if (!lf || !m || !g) return;
     g.clearLayers();
-    if (!me) { if (pins.length !== 1) m.setView(KOREA, 7); return; }
+    if (!me) { if (pins.length !== 1) whenStill(m, () => m.setView(KOREA, 7)); return; }
     lf.circleMarker(me, { radius: 7, color: "#fff", weight: 2, fillColor: "#D97706", fillOpacity: 1 })
       .bindTooltip(meLabel || "내 위치", { direction: "top", offset: [0, -8] }).addTo(g);
     if (radius > 0) {
       const c = lf.circle(me, { radius: radius * 1000, color: "#D97706", weight: 1, fillColor: "#D97706", fillOpacity: 0.06, dashArray: "4 4" }).addTo(g);
-      m.fitBounds(c.getBounds(), { padding: [12, 12] });
+      const b = c.getBounds();
+      whenStill(m, () => m.fitBounds(b, { padding: [12, 12] }));
     } else {
-      m.setView(me, 9);
+      whenStill(m, () => m.setView(me, 9));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me, radius, meLabel, ready]);
@@ -147,9 +157,9 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
   useImperativeHandle(ref, () => ({
     focus(key: string) {
       const m = map.current;
-      const p = latest.current.pins.find((x) => x.key === key);
+      const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!m || !p) return;
-      m.setView([p.lat, p.lng], Math.max(m.getZoom(), 11));
+      whenStill(m, () => m.setView([p.lat, p.lng], Math.max(m.getZoom(), p.level === "dong" ? 14 : 11)));
       // 확대가 끝나 핀이 새로 그려진 뒤 카드를 연다.
       setTimeout(() => openCard(p), 350);
     },
@@ -157,5 +167,18 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
 
   return <div ref={el} role="application" aria-label="지도" className={className} />;
 });
+
+/**
+ * 확대 움직임이 도는 중에 부른 setView·fitBounds 는 Leaflet 이 그냥 버린다(_tryAnimatedZoom).
+ * 시·도 → 시·군·구 → 읍·면·동을 빨리 연달아 고르면 지도가 앞의 확대에 멈춰 동네 단계로 못 간다.
+ * 움직이는 중이면 끝난 뒤에 한다. 그사이 여러 번 부르면 마지막 것만.
+ */
+const pendingView = new WeakMap<object, () => void>();
+function whenStill(m: { once(ev: string, f: () => void): unknown }, f: () => void) {
+  if (!(m as unknown as { _animatingZoom?: boolean })._animatingZoom) { pendingView.delete(m); f(); return; }
+  const waiting = pendingView.has(m);
+  pendingView.set(m, f);
+  if (!waiting) m.once("zoomend", () => { const g = pendingView.get(m); pendingView.delete(m); g?.(); });
+}
 
 export default LeafletEngine;

@@ -1,6 +1,6 @@
 """화면을 실제 브라우저(Chromium)로 열어 본다. GitHub Actions 러너에서 돈다.
 
-    python -u pipeline/probe_browser.py map,home,business,detail
+    python -u pipeline/probe_browser.py map,dong,home,business,detail
     python -u pipeline/probe_browser.py "ref:https://example.com/page"
 
 샌드박스에서는 운영 사이트와 지도 타일에 닿지 않아 이 탐침으로 본다. 사진 대신
@@ -101,6 +101,71 @@ def check_map(browser) -> None:
     print("   지도 카드:", card.replace("\n", " | ")[:320])
     print("   오류:", errs[:6] or "없음")
     ctx.close()
+
+
+DONG_JS = """() => {
+  const c = document.querySelector('[role="application"]');
+  const box = c ? c.getBoundingClientRect() : { left: 0, top: 0, width: 0, height: 0 };
+  const lab = [...document.querySelectorAll('.pm-pin.pm-dong.pm-at-tip')];
+  const r = [...document.querySelectorAll('.pm-pin:not(.pm-dot):not(.pm-dongdot)')].map(e => e.getBoundingClientRect());
+  let n = 0;
+  for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) {
+    const a = r[i], b = r[j];
+    if (a.left < b.right - 2 && b.left < a.right - 2 && a.top < b.bottom - 2 && b.top < a.bottom - 2) n++;
+  }
+  // 가운데에 가장 가까운 동 이름표(고른 동이 서야 한다)
+  const cx = box.left + box.width / 2, cy = box.top + box.height / 2;
+  let mid = null, md = 1e9;
+  for (const e of lab) { const q = e.getBoundingClientRect(); const d = Math.hypot(q.left + q.width / 2 - cx, q.bottom - cy); if (d < md) { md = d; mid = e.textContent; } }
+  const engine = document.querySelector('.leaflet-container') ? 'leaflet' : (window.kakao && window.kakao.maps) ? 'kakao' : (window.naver && window.naver.maps) ? 'naver' : '?';
+  return { engine, dongPins: document.querySelectorAll('.pm-pin.pm-dong').length, labeled: lab.length,
+           offices: document.querySelectorAll('.pm-pin.pm-office').length, overlaps: n, mid, midPx: Math.round(md),
+           labels: lab.map(e => e.textContent).slice(0, 12) };
+}"""
+
+
+def check_dong(browser) -> None:
+    """동네 단계: 지역 고르기 셋째 칸(읍·면·동) → 동 핀·이름표·카드, 내 위치 → 근처 동·가까운 센터."""
+    for name, vp in (("휴대폰", MOBILE), ("PC", {"width": 1366, "height": 900})):
+        print(f"\n== /map 동네 단계 ({name})")
+        ctx = browser.new_context(viewport=vp, geolocation=GEO, permissions=["geolocation"], locale="ko-KR")
+        page = ctx.new_page()
+        errs: list[str] = []
+        hook(page, errs)
+        apis: list[str] = []
+        page.on("response", lambda r: apis.append(f"{r.status} {r.url.split('/api/map/')[1][:60]}") if "/api/map/" in r.url else None)
+        page.goto(BASE + "/map", wait_until="domcontentloaded")
+        page.wait_for_selector(".pm-pin", timeout=20000)
+        page.select_option('select[aria-label="시·도"]', "경기도")
+        page.select_option('select[aria-label="시·군·구"]', "시흥시")
+        page.wait_for_selector('select[aria-label="읍·면·동"]', timeout=15000)
+        opts = page.locator('select[aria-label="읍·면·동"] option').all_inner_texts()
+        print("   시흥시 읍·면·동:", len(opts) - 1, "곳 —", ", ".join(opts[1:8]), "…")
+        val = page.locator('select[aria-label="읍·면·동"] option', has_text="정왕1동").first.get_attribute("value")
+        page.select_option('select[aria-label="읍·면·동"]', val)
+        page.wait_for_timeout(4000)
+        d = page.evaluate(DONG_JS)
+        print("   동 핀:", json.dumps(d, ensure_ascii=False))
+        bar = page.locator(".card.mt-6").first.inner_text().replace("\n", " ")
+        print("   도구줄 끝:", bar[-90:])
+        pin = page.locator(".pm-pin.pm-dong.pm-at-tip", has_text="정왕1동").first
+        if pin.count():
+            pin.click(force=True)
+            page.wait_for_timeout(2000)
+            card = page.locator(".pm-dcard").first.inner_text() if page.locator(".pm-dcard").count() else "(카드 없음)"
+            print("   동 카드:", card.replace("\n", " | ")[:260])
+            chip = page.locator(".pm-filter-region").first.inner_text() if page.locator(".pm-filter-region").count() else "(없음)"
+            print("   목록 거르기:", chip.replace("\n", " "))
+        else:
+            print("   정왕1동 이름표가 안 보임")
+        page.get_by_role("button", name=re.compile("내 위치로 보기")).click()
+        page.wait_for_timeout(4000)
+        near = page.locator("p", has_text="가까운 행정복지센터")
+        print("   내 위치(시흥시청):", near.first.inner_text().replace("\n", " ")[:120] if near.count() else "(근처 줄 없음)")
+        print("   내 위치 동 핀:", json.dumps(page.evaluate(DONG_JS), ensure_ascii=False))
+        print("   지도 API:", apis[:8])
+        print("   오류:", errs[:6] or "없음")
+        ctx.close()
 
 
 def check_home(browser, path: str) -> None:
@@ -272,6 +337,8 @@ def main() -> None:
             try:
                 if a == "map":
                     check_map(browser)
+                elif a == "dong":
+                    check_dong(browser)
                 elif a == "home":
                     check_home(browser, "/")
                 elif a == "business":

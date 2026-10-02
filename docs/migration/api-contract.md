@@ -73,9 +73,15 @@
 |---|---|---|
 | `GET /map?kind` | `getMapData` → `liteOf` | 점 목록(`PinRow` 튜플) |
 | `GET /map/items?kind&key` | `/api/map/items` | 점 하나의 요약 6건 |
-| `GET /map/list?kind&region&lat&lng&r&status&sort&offset&limit` | `/api/map/list` | 왼쪽 카드 목록(`ItemRow` 튜플) |
+| `GET /map/list?kind&region&lat&lng&r&status&sort&offset&limit&home` | `/api/map/list` | 왼쪽 카드 목록(`ItemRow` 튜플). `home`(시·도\|시·군·구)은 반경과 상관없이 맨 앞 |
+| `GET /map/dongs?kind&bbox=s,w,n,e` 또는 `?sido&sgg` | `/api/map/dongs` | 읍·면·동 행정복지센터·청사(`DongRow` 튜플: 열쇠·시·도·시·군·구·구·동·위도·경도·센터 이름·청사 여부·동 이름이 적힌 공고 수) |
+| `GET /map/where?lat&lng` | `/api/map/where` | 가까운 동과 행정복지센터. 좌표는 소수 셋째 자리로 줄여 받고 저장하지 않는다 |
 
 튜플(배열) 모양은 HTML 무게 때문에 고른 것이다(쪽 HTML 467KB → 178KB). 그대로 둔다.
+
+읍·면·동 자리표(`web/lib/dongData.ts`, 약 300KB)는 DB 가 아니라 코드에 든 정적 자료다
+(OpenStreetMap, ODbL — 출처 표기를 지켜야 한다). 자바로 옮길 때는 같은 파일을 JSON 으로 내보내 서버
+메모리에 올리거나 표 하나(`dong_place`)로 넣는다. 만드는 법은 `pipeline/osm_dong.py` → `pipeline/build_dong_data.py`.
 
 ### 저장 조건·계정 (쓰기)
 

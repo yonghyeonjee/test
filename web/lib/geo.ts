@@ -54,6 +54,26 @@ const SGG_ALIAS: Record<string, Record<string, string>> = {
   인천광역시: { 미추홀구: "남구" },
 };
 
+/** 없어진 시·군·구 — 옛 공고에만 남은 이름이라 지역 고르기에는 내지 않는다. */
+const SGG_GONE: Record<string, string[]> = {
+  // 2026년 7월 인천 개편: 중구·동구 → 제물포구·영종구, 서구 → 서해구·검단구
+  인천광역시: ["중구", "동구", "서구"],
+};
+
+/** 좌표표의 옛 이름 → 지금 이름(인천 남구 → 미추홀구). 모르는 이름은 그대로. */
+export function sggNow(sido: string, sgg: string): string {
+  for (const [cur, old] of Object.entries(SGG_ALIAS[sido] ?? {})) if (old === sgg) return cur;
+  return sgg;
+}
+
+/** 지역 고르기에 내는 시·군·구 이름(가나다 차례, 지금 이름). */
+export function sggChoices(sido: string): string[] {
+  const table = SGG_POINT[sido];
+  if (!table) return [];
+  const gone = new Set(SGG_GONE[sido] ?? []);
+  return Object.keys(table).filter((g) => !gone.has(g)).map((g) => sggNow(sido, g)).sort((a, b) => a.localeCompare(b, "ko"));
+}
+
 function sggPoint(sido: string, sigungu: string): LatLng | null {
   const table = SGG_POINT[sido];
   if (!table) return null;
@@ -164,6 +184,28 @@ export function findSgg(text: string | null | undefined, hint: string | null): H
     // 잡힌 것이 없을 때만 다음 토큰. 잡혔으면 위에서 돌려줬다.
   }
   return null;
+}
+
+/**
+ * 시·군·구가 비어 있는 공고의 담당 부서·기관 이름에서 시·군·구를 찾는다.
+ *
+ * "전북특별자치도 군산시 복지환경국 아동정책과" 처럼 부서 이름은 띄어쓰기로 갈린 말
+ * 마디라, 마디 하나가 그 시·도의 시·군·구 이름(또는 "군산시청")과 똑같을 때만 쓴다.
+ * 둘 이상 걸리면(드물다) 고르지 않는다 — 틀린 동네에 꽂느니 시·도 전역이 낫다.
+ */
+export function sggFromDept(sido: string | null, ...texts: (string | null | undefined)[]): string | null {
+  const s = normSido(sido);
+  const table = s ? SGG_POINT[s] : null;
+  if (!s || !table) return null;
+  const found = new Set<string>();
+  for (const t of texts) {
+    if (!t) continue;
+    for (const raw of t.split(/[\s,()\[\]/·]+/)) {
+      const tok = raw.replace(/청$/, "");
+      if (tok.length >= 2 && table[tok]) found.add(tok);
+    }
+  }
+  return found.size === 1 ? [...found][0] : null;
 }
 
 /** 채용 공고의 자리. 기관명 → 제목 순으로 시·군·구를 찾고, 없으면 시·도 가운데. */
