@@ -33,6 +33,8 @@ check("기업: 복지 말은 안 섞임", !r.business.includes("저소득"));
 const agg = rankHot({ visits: [{ term: "한국농어촌공사 채용", landing: null, n: 5 }, { term: null, landing: "/license", n: 5 }],
   searches: [{ kind: "welfare", household: ["저소득"], biz_field: null, biz_target: null, n: 18 }] });
 check("묶인 줄(n)도 센다", agg.welfare[0] === "저소득" && agg.welfare[1] === "한국농어촌공사" && agg.welfare.includes("자격증"), agg.welfare.join(","));
+const dup = rankHot({ visits: [{ term: "한국농어촌공사 채용", landing: null, n: 7 }, { term: "농어촌공사 채용", landing: null, n: 4 }], searches: [] });
+check("품는 말은 하나만", dup.welfare.includes("한국농어촌공사") && !dup.welfare.includes("농어촌공사"), dup.welfare.join(","));
 check("기록이 비면 기본 목록", rankHot({ visits: [], searches: [] }).fromLog === false && rankHot({ visits: [], searches: [] }).welfare.length === 10);
 
 console.log(bad ? `${bad} failed` : "all passed");

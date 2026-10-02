@@ -76,8 +76,8 @@ def check_map(browser) -> None:
     print("   불러온 타일 img:", page.locator("img.leaflet-tile-loaded").count())
     page.get_by_role("button", name=re.compile("내 위치로 보기")).click()
     page.wait_for_timeout(3000)
-    head = page.locator("h2", has_text="가까운 순").first.inner_text() if page.locator("h2", has_text="가까운 순").count() else "(없음)"
-    print("   내 위치 적용:", head, "|", page.locator("h2 + span").first.inner_text() if page.locator("h2 + span").count() else "")
+    meline = page.locator("text=기준").first.inner_text() if page.locator("text=기준").count() else "(없음)"
+    print("   내 위치 적용:", meline[:60])
     print("   내 위치 30km:", json.dumps(page.evaluate(OVERLAP_JS), ensure_ascii=False))
     head = page.locator('section[aria-label="공고 카드"] h2')
     print("   카드 목록:", head.first.inner_text() if head.count() else "(없음)")

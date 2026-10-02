@@ -192,10 +192,13 @@ export function listItems(d: MapData, kind: MapKind, q: ListQuery = {}): { total
   } else if (q.status === "always") {
     out = out.filter((x) => x.always || !x.end);
   }
-  // 가까운 순은 자리 차례(이미 거리순) 안에서 마감 가까운 순(자리마다 이미 그렇게 담겨 있다).
+  // 마감 있는 것을 가까운 마감부터, 상시는 뒤로. 가까운 순은 자리 차례(이미 거리순)를 먼저 지킨다.
+  const endKey = (x: ListItem) => (x.always || !x.end ? "9999" : x.end);
   if (q.sort !== "near" || (!q.near && !q.region)) {
-    const endKey = (x: ListItem) => (x.always || !x.end ? "9999" : x.end);
     out.sort((a, b) => endKey(a).localeCompare(endKey(b)));
+  } else {
+    const order = new Map(chosen.map((p, i) => [p.key, i]));
+    out.sort((a, b) => (order.get(a.key)! - order.get(b.key)!) || endKey(a).localeCompare(endKey(b)));
   }
   const offset = Math.max(0, q.offset ?? 0);
   const limit = Math.min(60, Math.max(1, q.limit ?? 30));

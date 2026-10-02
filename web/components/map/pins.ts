@@ -45,7 +45,7 @@ type Box = { l: number; r: number; t: number; b: number };
 
 /** 이름표 상자(px). 글꼴 12.5px 기준 한글 한 자 ≈ 12.5px. */
 function labelBox(p: Pin, xy: XY, pos: Pos): Box {
-  const w = 22 + p.short.length * 12.5 + (p.n > 0 ? 10 + String(p.n).length * 7.5 : 0);
+  const w = 24 + p.short.length * 13.4 + (p.n > 0 ? 12 + String(p.n).length * 7.8 : 0);
   const h = 26, g = 6;
   switch (pos) {
     case "tip": return { l: xy.x - w / 2, r: xy.x + w / 2, t: xy.y - h - 9, b: xy.y };
@@ -68,7 +68,7 @@ export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { 
   const order = [...pins].sort((a, b) => (a.key === selected ? -1 : b.key === selected ? 1 : b.n - a.n));
   const taken: Box[] = [];
   const out = new Map<string, Pos>();
-  const pad = 3;
+  const pad = 4;
   const hit = (box: Box) => taken.some((t) => !(box.r + pad < t.l || box.l - pad > t.r || box.b + pad < t.t || box.t - pad > t.b));
   for (const p of order) {
     const xy = project(p);
