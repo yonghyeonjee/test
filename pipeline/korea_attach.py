@@ -17,6 +17,7 @@ korea.kr(정책브리핑) 채용정보에서 첨부파일 링크를 받아 job_p
 
   python pipeline/korea_attach.py            # 목록 25쪽
   python pipeline/korea_attach.py --pages 60 # 더 깊이
+  python pipeline/korea_attach.py --start 41 --pages 120 --days 40   # 지난 한 달 채우기
   python pipeline/korea_attach.py --ids 393231,393000   # 특정 dataId 만
   python pipeline/korea_attach.py --dry      # 적지 않고 보기만
 """
@@ -166,6 +167,7 @@ def load_rows(sb, days: int) -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--pages", type=int, default=25, help="목록을 몇 쪽 읽나(쪽당 20건)")
+    ap.add_argument("--start", type=int, default=1, help="목록 몇 쪽부터. 지난 것을 나눠 채울 때")
     ap.add_argument("--days", type=int, default=21, help="우리 공고는 며칠 안 등록된 것만 맞춘다")
     ap.add_argument("--ids", default="", help="특정 dataId 만(쉼표). 목록은 안 읽는다")
     ap.add_argument("--dry", action="store_true")
@@ -173,18 +175,19 @@ def main() -> int:
 
     from supabase import create_client
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
-    rows = load_rows(sb, a.days if not a.ids else 400)
+    days = a.days if not a.ids else 400
+    rows = load_rows(sb, days)
     by_title: dict[str, list[dict]] = {}
     for r in rows:
         by_title.setdefault(norm(r["title"]), []).append(r)
-    log(f"우리 공고(첨부 없음, 최근 {a.days}일): {len(rows)}건")
+    log(f"우리 공고(첨부 없음, 최근 {days}일): {len(rows)}건")
 
     # 1. 정책브리핑 쪽 후보
     cands: list[tuple[str, str | None]] = []
     if a.ids:
         cands = [(x.strip(), None) for x in a.ids.split(",") if x.strip()]
     else:
-        for p in range(1, a.pages + 1):
+        for p in range(a.start, a.start + a.pages):
             h = get(LIST_URL + (f"?pageIndex={p}" if p > 1 else ""))
             if not h:
                 break
@@ -195,9 +198,6 @@ def main() -> int:
             hit = [(d, t) for d, t in items if norm(t) in by_title]
             cands.extend(hit)
             log(f"  {p}쪽: {len(items)}건 가운데 제목 맞음 {len(hit)}")
-            if p >= 3 and not hit and all(norm(t) not in by_title for _, t in items):
-                # 깊은 쪽까지 하나도 안 맞으면 우리 창(days)보다 오래된 것이다.
-                pass
 
     now = dt.datetime.now(dt.timezone.utc).isoformat()
     stats = {"seen": len(cands), "matched": 0, "files": 0, "nofile": 0, "ambiguous": 0, "miss": 0}
