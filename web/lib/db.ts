@@ -287,20 +287,30 @@ export async function listByTopic(topic: string, limit = 60) {
 }
 
 /** 분야별 건수. 홈 격자에 쓴다. 분야 수만큼 HEAD 요청을 보낸다. */
-export async function countByTopic(): Promise<Record<string, number>> {
+async function loadTopicCounts(): Promise<Record<string, number>> {
   const { TOPICS } = await import("./topics");
   const rows = await Promise.all(
     TOPICS.map(async (t) => {
-      const { count } = await db
+      const { count, error } = await db
         .from("programs_public")
         .select("id", { count: "exact", head: true })
         .eq("kind", "welfare")
         .contains("topics", [t.key]);
+      // 실패를 0으로 바꾸면 그 0이 캐시에 남는다. 던져서 캐시에 안 남긴다.
+      if (error) throw new Error(`분야 건수: ${error.message}`);
       return [t.key, count ?? 0] as const;
     }),
   );
   return Object.fromEntries(rows);
 }
+
+/**
+ * 홈이 열릴 때마다 분야 15개에 HEAD 요청을 하나씩 보내고 있었다 — 하루
+ * 1,700번, DB 호출 수 1위. 자료는 모두에게 같으니 15분에 한 번이면 된다.
+ */
+export const countByTopic = unstable_cache(loadTopicCounts, ["topic-counts"], {
+  revalidate: 900,
+});
 
 export function ageLabel(p: Pick<Program, "age_min" | "age_max">) {
   if (p.age_min !== null && p.age_max !== null) return `만 ${p.age_min}~${p.age_max}세`;
