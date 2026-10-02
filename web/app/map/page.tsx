@@ -58,7 +58,7 @@ export default async function MapPage() {
         art={<IllusMap />}
       />
 
-      <PolicyMap data={liteOf(data)} initial={listItems(data, "programs", { sort: "end", limit: 30 })} />
+      <PolicyMap data={liteOf(data)} initial={listItems(data, "programs", { sort: "end", limit: 20 })} />
 
       <section className="mt-14">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">시·도별로 보기</h2>

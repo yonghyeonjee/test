@@ -107,8 +107,16 @@ export function rankHot(rows: LogRows, fallback = { welfare: HOT_WELFARE, busine
   }
   // 한 사람이 한 번 친 말은 올리지 않는다 — 둘 이상이 찾은 말만.
   const sorted = [...score.values()].filter((x) => x.c >= 2).sort((a, b) => b.s - a.s || a.label.localeCompare(b.label, "ko"));
+  const squash = (s: string) => s.replace(/\s+/g, "");
   const pick = (biz: boolean) => {
-    const out = sorted.filter((x) => x.biz === biz).map((x) => x.label);
+    const out: string[] = [];
+    for (const x of sorted) {
+      if (x.biz !== biz) continue;
+      const k = squash(x.label);
+      // 한쪽이 다른 쪽을 품으면 점수 높은 하나만 — "한국농어촌공사"와 "농어촌공사".
+      if (out.some((o) => squash(o).includes(k) || k.includes(squash(o)))) continue;
+      out.push(x.label);
+    }
     const base = biz ? fallback.business : fallback.welfare;
     for (const b of base) if (out.length < n && !out.some((o) => o.replace(/\s+/g, "") === b.replace(/\s+/g, ""))) out.push(b);
     return out.slice(0, n);

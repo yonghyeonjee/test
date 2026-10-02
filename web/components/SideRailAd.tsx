@@ -1,4 +1,5 @@
 import AdBox, { adReady } from "./AdBox";
+import WideOnly from "./WideOnly";
 import { getSiteConfig } from "@/lib/settings";
 
 /**
@@ -17,9 +18,12 @@ export default async function SideRailAd() {
   const { ads, adsOn } = await getSiteConfig();
   const s = ads.side_rail;
   if (!adsOn || !adReady(s)) return null;
+  // css 와 같은 조건일 때만 붙인다 — 감춘 자리에 광고를 부르면 애드센스가 TagError 를 던진다.
   return (
-    <div className="side-rail">
-      <AdBox cfg={s} tall />
-    </div>
+    <WideOnly query="(min-width: 1536px) and (min-height: 880px)">
+      <div className="side-rail">
+        <AdBox cfg={s} tall />
+      </div>
+    </WideOnly>
   );
 }
