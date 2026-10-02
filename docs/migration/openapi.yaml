@@ -1,0 +1,431 @@
+openapi: 3.1.0
+info:
+  title: 나라지원 API (초안)
+  version: 0.1.0-draft
+  description: |
+    Java(Spring Boot) 백엔드가 내줄 REST 계약 초안. 모양은 지금 웹의 TypeScript 타입을 따른다.
+    설명은 api-contract.md, 알림·동의는 notifications.md.
+servers:
+  - url: https://api.jiwon.knowhow-it.com/v1
+tags:
+  - name: home
+  - name: programs
+  - name: search
+  - name: jobs
+  - name: map
+  - name: me
+  - name: alerts
+paths:
+  /home:
+    get:
+      tags: [home]
+      summary: 첫 화면 묶음 (지금 home_bundle())
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HomeBundle" }
+  /hot-terms:
+    get:
+      tags: [home]
+      summary: 많이 찾는 말 (하루 한 번 집계)
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HotTerms" }
+  /feeds/{feed}:
+    get:
+      tags: [home]
+      summary: 마감 임박·새 공고
+      parameters:
+        - { name: feed, in: path, required: true, schema: { type: string, enum: [closing, new] } }
+        - { name: kind, in: query, schema: { type: string, enum: [welfare, business] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 60, default: 8 } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/Program" } }
+  /programs/welfare:
+    get:
+      tags: [programs]
+      summary: 복지 조건 검색 (지금 match_welfare + count_welfare)
+      parameters:
+        - { name: sido, in: query, schema: { type: string } }
+        - { name: sigungu, in: query, schema: { type: string } }
+        - { name: age, in: query, schema: { type: integer, minimum: 0, maximum: 120 } }
+        - { name: emp, in: query, schema: { type: string } }
+        - { name: hh, in: query, schema: { type: array, items: { type: string } }, style: form, explode: true }
+        - { name: q, in: query, schema: { type: string, maxLength: 60 } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 60, default: 60 } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProgramPage" }
+  /programs/business:
+    get:
+      tags: [programs]
+      summary: 기업 조건 검색 (지금 match_business + count_business)
+      parameters:
+        - { name: sido, in: query, schema: { type: string } }
+        - { name: target, in: query, schema: { type: string } }
+        - { name: field, in: query, schema: { type: array, items: { type: string } }, style: form, explode: true }
+        - { name: years, in: query, schema: { type: integer, minimum: 0 } }
+        - { name: ind, in: query, schema: { type: array, items: { type: string } }, style: form, explode: true }
+        - { name: q, in: query, schema: { type: string, maxLength: 60 } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 60, default: 60 } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProgramPage" }
+  /programs/{sourceId}:
+    get:
+      tags: [programs]
+      summary: 지원사업 상세 (지금 program_detail)
+      parameters:
+        - { name: sourceId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProgramDetail" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /search:
+    get:
+      tags: [search]
+      summary: 통합 검색 (지금 lib/search.ts unifiedSearch)
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string, maxLength: 60 } }
+        - { name: scope, in: query, schema: { type: string, enum: [all, business], default: all } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchResult" }
+  /jobs:
+    get:
+      tags: [jobs]
+      summary: 공공기관 채용 목록
+      parameters:
+        - { name: region, in: query, schema: { type: string } }
+        - { name: hire, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string, enum: [open, all] } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [jobs, total]
+                properties:
+                  jobs: { type: array, items: { $ref: "#/components/schemas/Job" } }
+                  total: { type: integer }
+  /jobs/{id}:
+    get:
+      tags: [jobs]
+      summary: 채용 공고 상세
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Job" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /map/list:
+    get:
+      tags: [map]
+      summary: 정책지도 왼쪽 카드 목록 (지금 /api/map/list)
+      parameters:
+        - { name: kind, in: query, schema: { type: string, enum: [programs, jobs], default: programs } }
+        - { name: region, in: query, schema: { type: string } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+        - { name: r, in: query, description: 반경(km), schema: { type: number } }
+        - { name: status, in: query, schema: { type: string, enum: [all, soon, always], default: all } }
+        - { name: sort, in: query, schema: { type: string, enum: [near, end], default: end } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 60, default: 20 } }
+      responses:
+        "200":
+          description: 성공. items 는 ItemRow 튜플 배열이다(쪽 무게 때문).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { $ref: "#/components/schemas/ItemRow" } }
+                  total: { type: integer }
+  /me/saved:
+    get:
+      tags: [me]
+      summary: 저장한 조건 (지금 saved_list)
+      parameters: [ { $ref: "#/components/parameters/DeviceKey" } ]
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/SavedCondition" } }
+  /me/saved/{condKey}:
+    put:
+      tags: [me]
+      summary: 조건 저장 (지금 saved_add)
+      parameters:
+        - { $ref: "#/components/parameters/DeviceKey" }
+        - { name: condKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, query, label]
+              properties:
+                kind: { type: string, enum: [welfare, business] }
+                query: { type: string }
+                label: { type: array, items: { type: string } }
+      responses:
+        "204": { description: 저장됨 }
+    delete:
+      tags: [me]
+      summary: 저장 해제 (지금 saved_remove)
+      parameters:
+        - { $ref: "#/components/parameters/DeviceKey" }
+        - { name: condKey, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: 지움 }
+  /me/alerts/{condKey}:
+    put:
+      tags: [alerts]
+      summary: 저장 조건에 알림 걸기 (새 기능)
+      parameters:
+        - { $ref: "#/components/parameters/DeviceKey" }
+        - { name: condKey, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlertSubscription" }
+      responses:
+        "204": { description: 걸었음 }
+        "409": { description: 해당 채널 수신 동의가 없다 }
+  /me/consents:
+    post:
+      tags: [alerts]
+      summary: 채널별 수신 동의·철회 기록 (새 기능)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConsentChange" }
+      responses:
+        "200":
+          description: 처리 결과. 화면과 메일/문자로 결과를 알린다(14일 안).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ConsentState" }
+  /unsubscribe/{token}:
+    post:
+      tags: [alerts]
+      summary: 로그인 없이 한 번에 수신 거부 (메일·문자 안의 링크)
+      parameters:
+        - { name: token, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: 거부 처리됨 }
+components:
+  parameters:
+    DeviceKey:
+      name: X-Device-Key
+      in: header
+      required: true
+      description: 이 브라우저의 익명 기기 열쇠(UUID). 주소나 본문에 넣지 않는다.
+      schema: { type: string, format: uuid }
+  responses:
+    NotFound:
+      description: 없음
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, examples: [BAD_REQUEST, NOT_FOUND, RATE_LIMITED] }
+            message: { type: string }
+    Program:
+      description: 지금의 programs_public 행 (web/lib/db.ts Program)
+      type: object
+      required: [id, kind, source, source_id, title, is_always_on]
+      properties:
+        id: { type: integer }
+        kind: { type: string, enum: [welfare, business, event] }
+        source: { type: string }
+        source_id: { type: string }
+        title: { type: string }
+        summary: { type: [string, "null"] }
+        detail_url: { type: [string, "null"] }
+        org_name: { type: [string, "null"] }
+        dept_name: { type: [string, "null"] }
+        sido: { type: [string, "null"] }
+        sigungu: { type: [string, "null"] }
+        age_min: { type: [integer, "null"] }
+        age_max: { type: [integer, "null"] }
+        income_pct: { type: [integer, "null"] }
+        employment: { type: [array, "null"], items: { type: string } }
+        household: { type: [array, "null"], items: { type: string } }
+        topics: { type: [array, "null"], items: { type: string } }
+        biz_target: { type: [array, "null"], items: { type: string } }
+        biz_field: { type: [array, "null"], items: { type: string } }
+        biz_years_min: { type: [integer, "null"] }
+        biz_years_max: { type: [integer, "null"] }
+        industry: { type: [array, "null"], items: { type: string } }
+        apply_start: { type: [string, "null"], format: date }
+        apply_end: { type: [string, "null"], format: date }
+        is_always_on: { type: boolean }
+        support_type: { type: [string, "null"] }
+        contact: { type: [string, "null"] }
+        norm_confidence: { type: [number, "null"] }
+        status: { type: string, enum: [open, closing, closed, always], description: "program_status(): 상시·마감·14일 안 마감·접수 중" }
+        days_left: { type: [integer, "null"] }
+    ProgramDetail:
+      allOf:
+        - { $ref: "#/components/schemas/Program" }
+        - type: object
+          properties:
+            target_text: { type: [string, "null"] }
+            criteria_text: { type: [string, "null"] }
+            benefit_text: { type: [string, "null"] }
+            apply_method: { type: [string, "null"] }
+            online_apply: { type: [boolean, "null"] }
+            first_seen_at: { type: [string, "null"], format: date }
+            updated_at: { type: [string, "null"], format: date }
+    ProgramPage:
+      type: object
+      required: [items]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Program" } }
+        total: { type: [integer, "null"] }
+    Job:
+      description: web/lib/pubJobs.ts Job
+      type: object
+      required: [id, title, status]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        org: { type: [string, "null"] }
+        region: { type: [string, "null"] }
+        hire: { type: [string, "null"] }
+        recruit: { type: [string, "null"] }
+        sectors: { type: [string, "null"] }
+        headcount: { type: [string, "null"] }
+        start: { type: [string, "null"], format: date }
+        end: { type: [string, "null"], format: date }
+        reg: { type: [string, "null"], format: date }
+        url: { type: [string, "null"] }
+        status: { type: string, enum: [closed, upcoming, ongoing, always] }
+    HotTerms:
+      type: object
+      required: [welfare, business, days, from]
+      properties:
+        welfare: { type: array, items: { type: string }, maxItems: 10 }
+        business: { type: array, items: { type: string }, maxItems: 10 }
+        days: { type: integer, description: 집계 기간(7 또는 30). 기본 목록이면 0 }
+        from: { type: string, enum: [log, default] }
+    HomeBundle:
+      type: object
+      properties:
+        coverage:
+          type: object
+          properties: { welfare: { type: integer }, business: { type: integer } }
+        settings:
+          type: object
+          properties: { closingDays: { type: integer }, newDays: { type: integer }, notice: { type: string } }
+        areas: { type: array, items: { type: object, properties: { sido: { type: string }, n: { type: integer } } } }
+        closingCount: { type: integer }
+        closing: { type: array, items: { $ref: "#/components/schemas/Program" } }
+        fresh: { type: array, items: { $ref: "#/components/schemas/Program" } }
+    SearchResult:
+      description: web/lib/search.ts SearchResult (갈래별 Section 은 {items, total, href})
+      type: object
+      required: [q, bits, term, failed, related, expanded]
+      properties:
+        q: { type: string }
+        bits: { type: array, items: { type: string } }
+        term: { type: string }
+        welfare: { $ref: "#/components/schemas/Section" }
+        business: { $ref: "#/components/schemas/Section" }
+        jobs: { $ref: "#/components/schemas/Section" }
+        licenses: { $ref: "#/components/schemas/Section" }
+        agency: { $ref: "#/components/schemas/Section" }
+        guides: { type: array, items: { type: object, properties: { href: { type: string }, tag: { type: string }, title: { type: string }, desc: { type: string } } } }
+        failed: { type: array, items: { type: string } }
+        related: { type: array, items: { type: string } }
+        expanded: { type: array, items: { type: object, properties: { word: { type: string }, also: { type: array, items: { type: string } } } } }
+    Section:
+      type: object
+      properties:
+        items: { type: array, items: {} }
+        total: { type: integer }
+        href: { type: string }
+    ItemRow:
+      description: "[id, title(≤44), orgShort, start, end, always(0|1), kind('w'|'b'|'j')]"
+      type: array
+      prefixItems:
+        - { type: string }
+        - { type: string }
+        - { type: string }
+        - { type: [string, "null"] }
+        - { type: [string, "null"] }
+        - { type: integer }
+        - { type: string, enum: [w, b, j] }
+    SavedCondition:
+      type: object
+      required: [cond_key, query, label, created_at]
+      properties:
+        cond_key: { type: string }
+        query: { type: string }
+        label: { type: array, items: { type: string } }
+        created_at: { type: string, format: date-time }
+    AlertSubscription:
+      type: object
+      required: [channels, cadence]
+      properties:
+        channels: { type: array, items: { type: string, enum: [email, sms, kakao] }, minItems: 1 }
+        cadence: { type: string, enum: [daily, weekly], default: daily }
+        quietHours: { type: boolean, default: true, description: "true 면 21:00~08:00 에는 보내지 않는다" }
+    ConsentChange:
+      type: object
+      required: [channel, purpose, granted, textVersion]
+      properties:
+        channel: { type: string, enum: [email, sms, kakao] }
+        purpose: { type: string, enum: [alert, marketing, night] }
+        granted: { type: boolean }
+        textVersion: { type: string, description: "동의 화면 문구의 판(예: consent-2026-10-a)" }
+    ConsentState:
+      type: object
+      properties:
+        channel: { type: string }
+        purpose: { type: string }
+        granted: { type: boolean }
+        at: { type: string, format: date-time }
+        reconfirmBy: { type: [string, "null"], format: date, description: 광고성 수신 동의는 2년마다 다시 확인 }

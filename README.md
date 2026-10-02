@@ -3,6 +3,11 @@
 조건(지역·나이·취업상태·가구상황)을 넣으면 해당될 수 있는
 복지서비스를 찾아주는 화면.
 
+## AWS · Java 이전 대비
+
+나중에 AWS 와 Java(Spring Boot) 백엔드로 옮길 때를 위한 문서가 [`docs/migration/`](docs/migration/README.md) 에 있다.
+지금 의존성 목록, DB 스키마 스냅샷, REST 계약 초안(OpenAPI), 메일·문자 알림과 수신 동의 규칙을 담았다.
+
 ## 로컬 실행
 
 ```bash
