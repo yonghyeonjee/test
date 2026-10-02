@@ -22,7 +22,7 @@ export type Parsed = {
   leftover: string[]; // 못 알아들은 낱말
 };
 
-const SIDO_WORDS: [RegExp, string][] = [
+export const SIDO_WORDS: [RegExp, string][] = [
   [/서울/, "서울특별시"],
   [/부산/, "부산광역시"],
   [/대구/, "대구광역시"],

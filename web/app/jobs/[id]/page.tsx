@@ -13,6 +13,7 @@ import { STATUS_LABEL } from "@/lib/db";
 import { dot, findJobSource, getJob, getRelatedJobs, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
+import { employmentFromTitle, jobLocation } from "@/lib/jobSchema";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { SITE_URL } from "@/lib/seo";
@@ -85,24 +86,19 @@ function jobNode(job: Job) {
   // 합격자 발표·면접 안내는 채용 공고가 아니다. 구글에 구인으로 내보내지 않는다.
   if (stageOf(job.title) === "final" || stageOf(job.title) === "interview") return null;
   const role = detectRole(job.title, job.org);
+  const employment = role?.employment ?? employmentFromTitle(job.title);
   return {
     "@type": "JobPosting",
     "@id": `${SITE_URL}/jobs/${encodeURIComponent(job.id)}#posting`,
     title: job.title,
     description: role ? `${role.name} 자리입니다. ${role.does} ${jobSummary(job)}` : jobSummary(job),
     ...(role ? { occupationalCategory: role.name } : {}),
-    ...(role?.employment ? { employmentType: role.employment } : {}),
+    ...(employment ? { employmentType: employment } : {}),
     datePosted: job.reg,
     ...(job.end ? { validThrough: job.end } : {}),
     hiringOrganization: { "@type": "Organization", name: job.org },
-    ...(job.region
-      ? {
-          jobLocation: {
-            "@type": "Place",
-            address: { "@type": "PostalAddress", addressRegion: job.region, addressCountry: "KR" },
-          },
-        }
-      : {}),
+    // 지역이 비어도 근무지를 뺄 수 없다 — 구글이 공고 자체를 무효로 친다.
+    jobLocation: jobLocation(job),
     url: `${SITE_URL}/jobs/${encodeURIComponent(job.id)}`,
     identifier: { "@type": "PropertyValue", name: "나라일터", value: job.id },
     ...(job.headcount && /^\d+$/.test(job.headcount)
