@@ -13,3 +13,10 @@ export const YEAR = new Date().getFullYear();
  * 이 문장은 설명·본문 곳곳에서 반복해서 쓴다.
  */
 export const HOOK = "회원가입도 주민등록번호도 없이";
+
+/**
+ * 사이트 이름과 갈래 이름을 조합한 검색어. "나라지원 채용", "나라지원 전세대출".
+ * 이름을 아는 사람이 갈래 이름을 붙여 찾을 때 그 쪽이 걸리게 한다.
+ */
+export const brandKeys = (...words: string[]) =>
+  [SITE_NAME, ...words.map((w) => `${SITE_NAME} ${w}`)];

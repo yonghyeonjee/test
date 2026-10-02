@@ -13,6 +13,7 @@ import { hasNote } from "@/lib/areaNotes";
 import {
   LOAN_BASE, LOAN_ORGS, loanGrouped, productLabel,
 } from "@/lib/studentLoan";
+import { brandKeys } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "학자금 대출 이자지원 지자체 — 어디가 대신 내주나",
@@ -20,6 +21,7 @@ export const metadata: Metadata = {
     "한국장학재단과 협약해 학자금 대출 이자를 대신 내주는 지자체를 지역별로 정리했습니다. " +
     "사는 곳이 목록에 있으면 이자를 한 푼도 안 낼 수 있습니다.",
   keywords: [
+      ...brandKeys("학자금", "학자금 이자지원"),
     "학자금 대출 이자지원",
     "지자체 학자금 이자지원",
     "학자금 이자 면제",

@@ -11,6 +11,7 @@ import { getHomeLoanRates, lowestDidimdol, monthLabel } from "@/lib/homeLoanRate
 import { housingPath } from "@/lib/housing";
 import { jeonseRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
+import { brandKeys } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -27,7 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
       `주택도시기금 디딤돌대출과 주택금융공사 보금자리론의 이번 달 금리를 소득 구간·만기별로 정리했습니다.` +
       (low ? ` 디딤돌 최저 연 ${low.toFixed(2)}%(생애최초 신혼).` : "") +
       ` 신혼·다자녀·청년 우대금리와 지방 주택 차감까지 한 표로 봅니다.`,
-    keywords: ["디딤돌대출 금리", "보금자리론 금리", "주택구입자금 대출 금리", "신혼부부 디딤돌 금리", "생애최초 디딤돌 금리", "디딤돌 우대금리", "보금자리론 우대금리"],
+    keywords: [
+      ...brandKeys("구입자금 금리", "보금자리론", "디딤돌"),"디딤돌대출 금리", "보금자리론 금리", "주택구입자금 대출 금리", "신혼부부 디딤돌 금리", "생애최초 디딤돌 금리", "디딤돌 우대금리", "보금자리론 우대금리"],
     alternates: { canonical: PATH },
   };
 }

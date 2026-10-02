@@ -6,6 +6,7 @@ import PromoBanner from "@/components/PromoBanner";
 import {
   KINDS, KIND_KEYS, WHO, WHO_KEYS, countOf, housingCounts, housingPath, shortSido, sidosFor,
 } from "@/lib/housing";
+import { brandKeys } from "@/lib/seo";
 
 export const revalidate = 21600;
 
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
     "신혼부부, 청년, 무주택 가구가 받을 수 있는 전세자금 대출이자 지원, 월세·주거비 지원, 주택 구입(매매) 대출을 " +
     "대상과 지역별로 나눠 두었습니다. 주택도시기금 조건과 지금 접수 중인 시·군 사업을 한 번에 봅니다.",
   keywords: [
+      ...brandKeys("주거 지원", "신혼부부", "청년 주거"),
     "신혼부부 전세자금 대출이자 지원", "신혼부부 월세 지원", "신혼부부 매매 대출", "신혼부부 주택구입자금대출",
     "청년 월세 지원", "청년 전세대출", "청년 주거비 지원", "무주택 주택 구입 지원", "경기도 신혼부부 전세자금 대출",
   ],

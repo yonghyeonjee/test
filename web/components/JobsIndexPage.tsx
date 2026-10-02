@@ -14,6 +14,7 @@ import { getJobOverview, getJobs } from "@/lib/pubJobs";
 import { jobCanonical, jobRobots, jobRouteLabel, readJobRoute, type JobRoute } from "@/lib/jobRoute";
 import { JOBS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 /**
  * 전체 채용 목록. /jobs 와 그 아래 거르기 주소가 모두 이 하나를 쓴다.
@@ -37,6 +38,7 @@ export function jobsIndexMetadata(r: JobRoute): Metadata {
       : "인사혁신처 나라일터에 올라온 공공기관·지자체 채용 공고를 지역과 기관 구분, 기관명으로 " +
         "걸러 봅니다. 접수 중인 공고를 마감 임박순으로 보여 드립니다.",
     keywords: [
+      ...brandKeys("채용", "공공기관 채용", "채용정보"),
       "취업지원제도", "구직", "공공기관 채용", "공공기관 채용정보",
       "나라일터 채용", "공무직 채용", "지자체 채용공고",
       ...cond.map((c) => `${c} 채용`),

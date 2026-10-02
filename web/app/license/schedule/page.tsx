@@ -10,6 +10,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { getLicenses, type License } from "@/lib/qnet";
 import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, GRADE_SLUG, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -18,7 +19,8 @@ export const metadata: Metadata = {
   description:
     "기술사·기능장·기사·산업기사·기능사 시험의 원서접수 기간과 시험일, 합격자 발표일을 " +
     "마감이 가까운 순으로 정리했습니다. 접수는 정해진 기간에만 열립니다.",
-  keywords: ["국가기술자격 시험일정", "기사 원서접수", "기능사 시험일정", "큐넷 접수기간", "자격증 시험일"],
+  keywords: [
+      ...brandKeys("시험 일정", "자격증 일정"),"국가기술자격 시험일정", "기사 원서접수", "기능사 시험일정", "큐넷 접수기간", "자격증 시험일"],
   alternates: { canonical: "/license/schedule" },
 };
 

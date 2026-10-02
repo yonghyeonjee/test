@@ -13,6 +13,7 @@ import { getLicenses, proBoard, techBoard } from "@/lib/qnet";
 import { getExamRounds, upcoming } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { LICENSE_FAQ } from "@/lib/pageFaq";
+import { brandKeys } from "@/lib/seo";
 
 /** 종목 목록은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 충분하다. */
 
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     "한국산업인력공단이 시행하는 국가기술자격 600여 종목을 이름으로 찾고, 응시 자격과 다가오는 " +
     "원서접수 일정을 확인하세요. 자격증 응시료·학원비를 지원하는 정부 제도도 함께 안내합니다.",
   keywords: [
+      ...brandKeys("자격증", "국가자격"),
     "국가자격증 종류",
     "사회복지사 자격증",
     "보육교사 자격증",

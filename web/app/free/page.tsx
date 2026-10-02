@@ -7,6 +7,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { ArtStudy } from "@/components/Art";
 import { FREE_GROUPS, withUtm } from "@/lib/freeServices";
 import { moneyRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 export const revalidate = 86400;
 
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
     "회원가입도 결제도 없이 쓰는 무료 서비스를 모았습니다. 공개 척도를 쓴 심리 자가진단과 " +
     "성향 테스트, 순서대로 보는 영어 문법 커리큘럼, 데이터·마케팅 용어 사전입니다.",
   keywords: [
+      ...brandKeys("무료 서비스", "무료"),
     "무료 심리테스트", "성격유형 테스트", "번아웃 자가진단",
     "무료 영어 공부", "영어 문법 커리큘럼", "마케팅 용어",
   ],
