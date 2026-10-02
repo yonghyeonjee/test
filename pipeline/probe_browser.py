@@ -118,7 +118,32 @@ def check_home(browser, path: str) -> None:
         print(f"   검색창 위치 y={int(bb['y'])} (화면 높이 {MOBILE['height']}) 보기글={box.first.get_attribute('placeholder')!r}")
     chips = page.locator('div:has(> span:text("많이 찾는 말")) > a').all_inner_texts()
     print("   많이 찾는 말:", chips)
+    # 포털형 첫 화면: 휴대폰 첫 화면 안에 검색창·바로가기·조건 카드가 드는가, 아래 탭 막대.
+    spots = page.evaluate("""() => {
+      const at = (sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom)]; };
+      return { shortcuts: at('nav[aria-label="바로가기"]'), find: at('#find'), bottomBar: at('nav[aria-label="빠른 이동"]'),
+               shortcutN: document.querySelectorAll('nav[aria-label="바로가기"] a').length,
+               headerSearch: !!document.querySelector('[data-site-header] input[data-search]') };
+    }""")
+    print("   [휴대폰] 자리:", json.dumps(spots, ensure_ascii=False))
     print("   오류:", errs[:6] or "없음")
+    ctx.close()
+    # 넓은 화면: 오른쪽 기둥 상자들
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="ko-KR")
+    page = ctx.new_page()
+    derr: list[str] = []
+    hook(page, derr)
+    page.goto(BASE + path, wait_until="networkidle")
+    aside = page.evaluate("""() => {
+      const a = document.querySelector('aside[aria-label="한눈에 보기"]');
+      if (!a) return null;
+      const r = a.getBoundingClientRect();
+      return { x: Math.round(r.left), w: Math.round(r.width),
+               boxes: [...a.querySelectorAll('h2')].filter((h) => h.offsetParent).map((h) => h.innerText.trim()),
+               rank: [...a.querySelectorAll('ol li')].map((li) => li.innerText.replace(/\s+/g, ' ').trim()).slice(0, 10) };
+    }""")
+    print("   [데스크톱] 오른쪽 기둥:", json.dumps(aside, ensure_ascii=False))
+    print("   [데스크톱] 오류:", derr[:6] or "없음")
     ctx.close()
 
 
@@ -255,6 +280,8 @@ def main() -> None:
                     check_detail(browser, "/p/WLF00001769")
                 elif a.startswith("ref:"):
                     check_ref(browser, a[4:])
+                elif a.startswith("/search") or a.startswith("/business/search"):
+                    check_home(browser, a)
                 elif a.startswith("/"):
                     check_detail(browser, a)
             except Exception as e:  # noqa: BLE001 — 하나가 실패해도 나머지는 본다
