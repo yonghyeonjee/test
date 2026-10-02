@@ -227,6 +227,10 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   const remember = (pt: LatLng, label: string, homeKey: string | null = null) => {
     try { localStorage.setItem(GEO_KEY, JSON.stringify({ pt, label, home: homeKey ?? undefined, at: Date.now() })); } catch { /* 저장 못 해도 화면은 된다 */ }
   };
+  /** 좁은 화면에서는 지도가 도구줄 아래로 반쯤 가려져 있다. 고르기가 끝나면 지도를 화면 가운데로. */
+  const showMap = () => {
+    if (window.matchMedia("(max-width: 1023px)").matches) mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
   /** 이 자리가 어느 동 근처인지, 가장 가까운 행정복지센터는 어디인지. setHomeToo 면 내 시·군·구도 정한다. */
   async function learnWhere(pt: LatLng, setHomeToo = true) {
     try {
@@ -246,6 +250,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
         const r = window.matchMedia("(max-width: 639px)").matches ? 3 : 5;
         setMe(pt); setMeLabel("내 위치"); setBusy(false); setRegion(null); setSort("near"); setRadius(r);
         setHome(null); remember(pt, "내 위치"); void learnWhere(pt);
+        showMap();
         track("map_locate", { ok: true });
       },
       (err) => {
@@ -283,6 +288,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     if (!d) return;
     const [, sido, sgg, gu, dong, lat, lng] = d;
     goTo([lat, lng], `${sgg}${gu ? " " + gu : ""} ${dong}`, 3, `${sido}|${sgg}`, "dong");
+    showMap();
   };
   const clearMe = () => {
     setMe(null); setMeLabel(""); setRegion(null); setWhere(null); setHome(null);
@@ -295,7 +301,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     setSel(key);
     fromCardAt.current = Date.now();
     canvas.current?.focus(key);
-    if (window.matchMedia("(max-width: 1023px)").matches) mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    showMap();
     track("map_point", { kind, from: "card" });
   };
   /** 지도의 핀 → 그 자리 카드만. */
