@@ -8,6 +8,7 @@ import PageBanner from "@/components/PageBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { dot, getJobOverview, getTopOrgs } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
     "나라일터에 올라온 공공기관·지자체 채용 공고를 기관별로 모았습니다. 기관마다 지금까지 " +
     "낸 공고 수, 마지막으로 뽑은 날짜, 접수 기간이 며칠이었는지를 함께 봅니다.",
   keywords: [
+      ...brandKeys("채용", "기관별 채용"),
     "공공기관 채용 이력",
     "기관별 채용공고",
     "공공기관 채용 주기",

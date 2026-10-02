@@ -11,6 +11,7 @@ import { dot } from "@/lib/pubJobs";
 import { OVERSEAS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
 import { getOverseasJobs, nationFacet } from "@/lib/worldjob";
+import { brandKeys } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -23,7 +24,8 @@ export const metadata: Metadata = {
   description:
     "한국산업인력공단이 우수일자리로 고른 해외 채용 공고를 국가와 직종, 경력으로 걸러 봅니다. " +
     "필수 언어와 비자 종류를 함께 표시합니다.",
-  keywords: ["해외취업", "해외취업 공고", "월드잡플러스", "일본 취업", "해외 우수일자리"],
+  keywords: [
+      ...brandKeys("해외취업", "해외 채용"),"해외취업", "해외취업 공고", "월드잡플러스", "일본 취업", "해외 우수일자리"],
   alternates: { canonical: "/jobs/overseas" },
 };
 

@@ -18,7 +18,7 @@ import { getArea, getAreas, listByArea } from "@/lib/db";
 export const revalidate = 86400;
 export const dynamicParams = true;
 
-import { HOOK, SITE_URL as SITE, YEAR } from "@/lib/seo";
+import { brandKeys, HOOK, SITE_URL as SITE, YEAR } from "@/lib/seo";
 
 export async function generateStaticParams() {
   try {
@@ -48,6 +48,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: `${SITE}/area/${encodeURIComponent(sido)}` },
     keywords: [
+      ...brandKeys(sido, `${sido} 지원금`),
       `${sido} 청년지원금`,
       `${sido} 복지서비스`,
       `${sido} 정부 복지`,

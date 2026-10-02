@@ -11,7 +11,7 @@ import TopicIcon from "@/components/TopicIcon";
 import { listByTopic } from "@/lib/db";
 import type { PromoContext } from "@/lib/promo";
 import { policiesRelated } from "@/lib/related";
-import { SITE_URL, YEAR } from "@/lib/seo";
+import { SITE_URL, YEAR, brandKeys } from "@/lib/seo";
 import { TOPICS, topicBySlug } from "@/lib/topics";
 
 export const revalidate = 3600;
@@ -25,7 +25,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   return {
     title: `${t.long} 정부지원 총정리 (${YEAR}) — 신청 조건과 방법`,
     description: `${t.name} 분야 정부·지자체 지원사업을 모았습니다. ${t.intro[0].slice(0, 70)}… 접수 중인 사업부터 보여 드립니다.`,
-    keywords: t.keywords,
+    keywords: [...brandKeys(t.name, `${t.name} 지원금`), ...t.keywords],
     alternates: { canonical: `${SITE_URL}/topic/${t.slug}` },
   };
 }

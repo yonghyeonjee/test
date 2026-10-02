@@ -13,13 +13,15 @@ import {
 } from "@/lib/majors";
 import { MAJORS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: `학과별 취업률 ${LATEST} — 전공 고르기 전에 보는 졸업생 통계`,
   description:
     "대학 학과별 취업률을 3년치로 비교합니다. 졸업자 수, 취업률, 프리랜서·창업 비중까지 " +
     "교육부 취업통계 그대로 보여 드립니다. 전공을 고르거나 진로를 바꾸기 전에 한 번 보세요.",
-  keywords: ["학과별 취업률", "대학 취업률", "전공별 취업률", "취업 잘 되는 학과", "대학 졸업생 취업 통계"],
+  keywords: [
+      ...brandKeys("학과별 취업률"),"학과별 취업률", "대학 취업률", "전공별 취업률", "취업 잘 되는 학과", "대학 졸업생 취업 통계"],
   alternates: { canonical: "/jobs/majors" },
 };
 

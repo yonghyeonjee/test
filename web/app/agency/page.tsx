@@ -12,6 +12,7 @@ import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness } from "@/lib/alio
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
 import { AGENCY_FAQ } from "@/lib/pageFaq";
+import { brandKeys } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -24,7 +25,8 @@ export const metadata: Metadata = {
   description:
     "전국 공공기관이 국민에게 제공하는 사업을 생애주기(청년·중장년·어르신)와 분야(사회복지·취업·교육·건강)로 " +
     "걸러 봅니다. 기획재정부 알리오 플러스 공개 자료입니다.",
-  keywords: ["공공기관 지원사업", "공공기관 서비스", "알리오플러스", "청년 공공기관 사업", "어르신 지원사업"],
+  keywords: [
+      ...brandKeys("공공기관", "공공기관 사업"),"공공기관 지원사업", "공공기관 서비스", "알리오플러스", "청년 공공기관 사업", "어르신 지원사업"],
   alternates: { canonical: "/agency" },
 };
 

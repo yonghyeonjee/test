@@ -15,6 +15,7 @@ import {
   getAreas, getCoverage, getRegions, getStats,
   type Area, type Stat,
 } from "@/lib/db";
+import { brandKeys } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
     "전국 지자체와 중앙부처의 정부 지원 정책을 대상별·분야별·지역별로 한 화면에 펼쳤습니다. " +
     "조건을 누르면 해당되는 공고만 바로 모아 보실 수 있습니다.",
   keywords: [
+      ...brandKeys("정책", "전체 정책", "정부 정책"),
     "청년정책",
     "청년지원사업",
     "정부 정책 모음",

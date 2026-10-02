@@ -12,6 +12,7 @@ import ProLicenseList from "@/components/ProLicenseList";
 import { getLicenses, proBoard } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
 import { PRO_LICENSE_FAQ } from "@/lib/pageFaq";
+import { brandKeys } from "@/lib/seo";
 
 /** 종목 명단은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 넉넉하다. */
 export const revalidate = 86400;
@@ -22,6 +23,7 @@ export const metadata: Metadata = {
     "등급 없이 자격마다 따로 시행하는 국가전문자격을 한자리에 모았습니다. " +
     "공인중개사·감정평가사·행정사·청소년상담사 등 종목과 응시 안내, 취득을 돕는 정부 지원 제도를 함께 보실 수 있습니다.",
   keywords: [
+      ...brandKeys("전문자격", "자격증"),
     "국가전문자격",
     "공인중개사 자격증",
     "감정평가사",

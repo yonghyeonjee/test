@@ -10,6 +10,7 @@ import { EVT_CATE, SIDO_SHORT, callAlio, toEvent } from "@/lib/alioplus";
 import { EVENTS_INTRO, EVENTS_FAQ } from "@/lib/pageFaq";
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -22,7 +23,8 @@ export const metadata: Metadata = {
   description:
     "전국 공공기관이 여는 교육·강연, 체험, 문화행사, 공모전을 지역과 유형으로 걸러 봅니다. " +
     "신청 가능 여부와 유무료를 함께 표시합니다.",
-  keywords: ["공공기관 행사", "무료 교육 강좌", "공공기관 체험", "공모전", "지역 행사"],
+  keywords: [
+      ...brandKeys("행사", "공공기관 행사"),"공공기관 행사", "무료 교육 강좌", "공공기관 체험", "공모전", "지역 행사"],
   alternates: { canonical: "/agency/events" },
 };
 

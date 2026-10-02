@@ -10,6 +10,7 @@ import { FCLT_CATE, SIDO_SHORT, callAlio, toFacility } from "@/lib/alioplus";
 import { FACILITIES_INTRO, FACILITIES_FAQ } from "@/lib/pageFaq";
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
+import { brandKeys } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -22,7 +23,8 @@ export const metadata: Metadata = {
   description:
     "공공기관이 개방하는 체육시설, 문화시설, 회의실, 강당을 지역과 종류로 걸러 봅니다. " +
     "예약 가능 여부와 유무료를 함께 표시합니다.",
-  keywords: ["공공기관 시설 대관", "공공 체육시설", "회의실 대여 무료", "강당 대관", "공공시설 예약"],
+  keywords: [
+      ...brandKeys("시설", "공공기관 시설"),"공공기관 시설 대관", "공공 체육시설", "회의실 대여 무료", "강당 대관", "공공시설 예약"],
   alternates: { canonical: "/agency/facilities" },
 };
 
