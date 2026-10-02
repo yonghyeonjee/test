@@ -1,0 +1,11 @@
+-- 2026-10-02 적용됨 (Supabase 마이그레이션 blog_posts_and_stats).
+-- 매일 한 편씩 자료에서 만드는 블로그 글(blog_posts)과, 그 숫자를 세는 함수들.
+-- 함수 본문은 Supabase 에 적용된 정의가 원본이다. 서명:
+--   blog_posts(slug pk, kind, subject, title, summary, keywords text[], body jsonb, stats jsonb, published_at, created_at, updated_at)
+--   view blog_public (published_at <= today) — anon select
+--   blog_org_stats(p_org text) returns jsonb        — 기관: 3년 공고 수, 달별, 연도별, 접수 기간 분위수, 접수 중 목록
+--   blog_role_stats(p_pattern text) returns jsonb   — 직무(제목 정규식): 기관·지역·달별, 접수 기간
+--   blog_topic_stats(p_q text[], p_who text) returns jsonb — 주제(낱말): 열린 사업 수, 시·도별, 가구, 지원 방식, 마감 순 목록
+--   blog_region_stats(p_sido text) returns jsonb    — 시·도: 분야·시군구·가구, 채용 기관·접수 중
+--   blog_org_candidates(p_min int, p_limit int)      — 공고 많은 기관 목록 (글감 고르기)
+-- 모두 security definer, service_role 만 실행. 파이프라인 pipeline/blog_daily.py 가 쓴다.

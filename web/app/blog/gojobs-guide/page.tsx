@@ -191,11 +191,15 @@ export default function GojobsGuidePage() {
         </h1>
         <p className="num mt-2 text-xs text-faint">{UPDATED} 기준</p>
         <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
-          나라일터(gojobs.go.kr)는 인사혁신처가 운영하는 공직 채용 공고 사이트입니다. 중앙부처와
-          지자체, 교육청과 학교, 공공기관이 뽑는 공무직·기간제·임기제 자리가 여기 올라옵니다.
-          나라지원은 이 공고를 매일 새로 받아 지역·기관·직무로 묶어 보여 주는데, 그렇게 쌓인
-          최근 1년치 <b className="font-bold">{YEAR_TOTAL.toLocaleString("ko-KR")}건</b>을 세어
-          보니 처음 쓰는 사람이 알아 두면 좋은 것이 몇 가지 보였습니다.
+          <a href="https://www.gojobs.go.kr" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-brand/40 hover:text-brand"><strong>나라일터</strong>(gojobs.go.kr)</a>는
+          인사혁신처가 운영하는 공직 채용 공고 사이트입니다. 중앙부처와 지자체, 교육청과 학교,
+          공공기관이 뽑는 <strong>공무직·기간제·임기제</strong> 자리가 여기 올라옵니다. 나라지원은 이 공고를
+          매일 새로 받아{" "}
+          <Link href="/jobs/region" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">지역</Link>·
+          <Link href="/jobs/org" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">기관</Link>·직무로
+          묶어 보여 주는데, 그렇게 쌓인 최근 1년치 <strong>{YEAR_TOTAL.toLocaleString("ko-KR")}건</strong>을 세어
+          보니 처음 쓰는 사람이 알아 두면 좋은 것이 몇 가지 보였습니다. <strong>절반이 일주일 안에 마감</strong>된다는
+          것이 그 첫째입니다(<a href="#deadline" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">접수 기간</a>).
         </p>
         <div className="mt-5"><GojobsHero /></div>
       </header>
