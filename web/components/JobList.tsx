@@ -64,8 +64,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   const showRegions = !route.region && !route.org && (regions.length > 0 || noRegionN > 0);
 
   return (
-    <div className="mt-6">
-      <form action="/jobs/search" method="get" className="flex gap-2">
+    <div id="list" className="mt-6 scroll-mt-24">
+      {/* 찾기를 누르면 쪽이 새로 그려진다. 머리 띠를 지나 목록으로 돌아오게 #list. */}
+      <form action="/jobs/search#list" method="get" className="flex gap-2">
         {route.region && <input type="hidden" name="region" value={route.region} />}
         {route.org && <input type="hidden" name="org" value={route.org} />}
         {route.hire && <input type="hidden" name="hire" value={route.hire} />}
