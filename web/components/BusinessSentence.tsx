@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BIZ_FIELD, BIZ_TARGET, INDUSTRY } from "@/lib/db";
+import { BIZ_FIELD, BIZ_TARGET, INDUSTRY } from "@/lib/consts";
 
 function Blank({
   value,

@@ -290,7 +290,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
                 <ol className="mt-3 divide-y divide-line">
                   {files.map((f, i) => (
                     <li key={f.url} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                      <span className={`inline-flex h-5 min-w-[2.6rem] items-center justify-center rounded px-1 text-[10.5px] font-bold uppercase ${
+                      <span className={`inline-flex h-5 min-w-[2.6rem] items-center justify-center rounded px-1 text-[12px] font-bold uppercase ${
                         f.ext === "pdf" ? "bg-alertSoft text-alert" : f.ext === "hwp" || f.ext === "hwpx" ? "bg-brandSoft text-brand" : "bg-surface2 text-muted"}`}>
                         {f.ext || "파일"}
                       </span>

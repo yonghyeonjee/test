@@ -34,14 +34,14 @@ export default function BigText() {
       onClick={toggle}
       aria-pressed={on}
       title={on ? "글자 크기를 원래대로" : "글자를 크게 봅니다"}
-      className={`inline-flex shrink-0 items-center gap-1 rounded-pill border-[1.5px]
+      className={`inline-flex min-h-[34px] shrink-0 items-center gap-1 rounded-pill border-[1.5px]
                   px-2.5 py-1 font-bold transition-colors ${
                     on
                       ? "border-brand bg-brand text-white"
                       : "border-line2 bg-surface text-ink2 hover:border-brand hover:text-brand"
                   }`}
     >
-      <span aria-hidden className="text-[11px] leading-none">가</span>
+      <span aria-hidden className="text-[12px] leading-none">가</span>
       <span aria-hidden className="text-[15px] leading-none">가</span>
       <span className="ml-0.5 text-xs">{on ? "작게" : "크게"}</span>
     </button>

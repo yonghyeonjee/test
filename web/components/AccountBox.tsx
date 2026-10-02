@@ -187,7 +187,7 @@ export default function AccountBox({ onDone }: { onDone?: () => void }) {
 
       {msg && <p className="mt-2.5 text-xs text-brand">{msg}</p>}
 
-      <p className="mt-3 text-[11px] leading-relaxed text-faint">
+      <p className="mt-3 text-[12px] leading-relaxed text-faint">
         비밀번호는 되돌릴 수 없는 형태로만 보관합니다. 잊으면 복구 코드로
         되찾아야 하니, 코드도 함께 적어두세요.
       </p>

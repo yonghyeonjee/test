@@ -58,7 +58,7 @@ export default function Finder({
             >
               {m.label}
               <small
-                className={`mt-0.5 block whitespace-nowrap text-[11px] font-normal ${
+                className={`mt-0.5 block whitespace-nowrap text-[12px] font-normal ${
                   on ? "text-[#C7C3EA]" : "text-faint"
                 }`}
               >

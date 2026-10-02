@@ -66,7 +66,7 @@ export default function TopSearch({ index }: { index: Idx }) {
           className="h-9 w-full min-w-0 bg-transparent text-[14px] outline-none placeholder:text-faint"
         />
         {q && (
-          <span className="hidden shrink-0 text-[11px] text-muted sm:inline">
+          <span className="hidden shrink-0 text-[12px] text-muted sm:inline">
             {bits.length ? bits.slice(0, 2).join(" · ") : "본문에서 찾기"}
           </span>
         )}

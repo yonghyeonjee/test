@@ -174,7 +174,7 @@ export default async function HousingPage({ kind, who, sido }: { kind: KindKey; 
           <div className="mt-3 flex flex-wrap gap-1.5">
             {sidos.map((s) => (
               <Link key={s.sido} href={housingPath(kind, who, s.sido)} className="chip">
-                {shortSido(s.sido)} <span className="num text-[11.5px] font-bold text-faint">{s.n}</span>
+                {shortSido(s.sido)} <span className="num text-[12px] font-bold text-faint">{s.n}</span>
               </Link>
             ))}
           </div>

@@ -8,7 +8,7 @@
  * 같은 문장이 매번 다르게 해석되면 신뢰가 무너진다.
  */
 
-import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY } from "./db";
+import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY } from "./consts";
 import { tokenize } from "./keywords";
 
 export type Parsed = {

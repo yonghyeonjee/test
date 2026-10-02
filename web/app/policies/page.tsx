@@ -72,7 +72,7 @@ function Chips({ items }: { items: { href: string; label: string; n?: number }[]
         <Link key={it.href + it.label} href={it.href} className="chip">
           {it.label}
           {it.n !== undefined && (
-            <span className="num text-[11.5px] font-bold text-faint">{it.n}</span>
+            <span className="num text-[12px] font-bold text-faint">{it.n}</span>
           )}
         </Link>
       ))}
@@ -118,7 +118,7 @@ export default async function Policies() {
               <b className="num block text-[1.35rem] font-extrabold text-white">
                 {b.n.toLocaleString()}
               </b>
-              <span className="mt-0.5 block text-[11.5px] text-white/70">{b.label}</span>
+              <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
             </div>
           ))}
         </div>
@@ -230,7 +230,7 @@ export default async function Policies() {
                       className="text-muted transition-colors hover:text-brand"
                     >
                       {s.name}
-                      <span className="num ml-1 text-[11px] text-faint">{s.n}</span>
+                      <span className="num ml-1 text-[12px] text-faint">{s.n}</span>
                     </Link>
                   ))}
                 </div>

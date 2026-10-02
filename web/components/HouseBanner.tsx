@@ -87,7 +87,7 @@ export default function HouseBanner({
     >
       <div className="h-16 w-20 shrink-0 sm:h-20 sm:w-24">{look.art}</div>
       <div className="min-w-0 flex-1">
-        <span className="text-[10.5px] font-bold uppercase tracking-[.22em]" style={{ color: look.soft }}>
+        <span className="text-[12px] font-bold uppercase tracking-[.22em]" style={{ color: look.soft }}>
           무료 · {l.tag}
         </span>
         <b className="display mt-0.5 block text-[1.05rem] leading-tight sm:text-[1.2rem]">{l.title}</b>

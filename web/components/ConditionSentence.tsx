@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { EMPLOYMENT, HOUSEHOLD } from "@/lib/db";
+import { EMPLOYMENT, HOUSEHOLD } from "@/lib/consts";
 
 type Region = { sido: string; sigungu: { name: string; n: number }[] };
 

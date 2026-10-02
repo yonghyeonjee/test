@@ -31,7 +31,7 @@ export default function StatsBand({ welfare, business, items }: {
               <b className="num display block text-[1.6rem] font-black">
                 {typeof it.n === "number" ? <CountUp value={it.n} /> : it.n}
               </b>
-              <span className="mt-0.5 block text-[11.5px] text-white/70">{it.label}</span>
+              <span className="mt-0.5 block text-[12px] text-white/70">{it.label}</span>
             </div>
           ))}
         </div>

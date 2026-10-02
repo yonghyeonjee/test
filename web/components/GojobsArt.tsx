@@ -29,7 +29,7 @@ export function GojobsHero({ className = "" }: { className?: string }) {
         {orgs.map((o, i) => (
           <g key={o} transform={`translate(0 ${i * 31})`}>
             <rect width="88" height="24" rx="6" fill="rgba(255,255,255,.12)" stroke={dim} />
-            <text x="10" y="16" fontSize="10.5" fill={ink} fontWeight="700">{o}</text>
+            <text x="10" y="16" fontSize="11.5" fill={ink} fontWeight="700">{o}</text>
             <path d={`M92 12 h22`} stroke={dim} strokeWidth="1.5" />
           </g>
         ))}
@@ -38,21 +38,21 @@ export function GojobsHero({ className = "" }: { className?: string }) {
       <path d="M132 77 h18" stroke={dim} strokeWidth="1.5" />
       <path d="M146 72 l6 5 -6 5" fill="none" stroke={dim} strokeWidth="1.5" />
       <g transform="translate(156 48)">
-        <rect width="78" height="58" rx="10" fill={hi} />
+        <rect width="80" height="58" rx="10" fill={hi} />
         <text x="12" y="24" fontSize="12" fill={INK} fontWeight="800">나라일터</text>
-        <text x="12" y="41" fontSize="9" fill={INK}>공직 채용 공고</text>
-        <text x="12" y="52" fontSize="9" fill={INK}>한 곳에 모임</text>
+        <text x="12" y="41" fontSize="10" fill={INK}>공직 채용 공고</text>
+        <text x="12" y="53" fontSize="10" fill={INK}>한 곳에 모임</text>
       </g>
       <path d="M238 77 h18" stroke={dim} strokeWidth="1.5" />
       <path d="M252 72 l6 5 -6 5" fill="none" stroke={dim} strokeWidth="1.5" />
-      <g transform="translate(262 40)">
-        <rect width="66" height="74" rx="10" fill="rgba(255,255,255,.1)" stroke={hi} />
-        <text x="10" y="22" fontSize="11.5" fill={ink} fontWeight="800">나라지원</text>
-        <text x="10" y="38" fontSize="8.5" fill={dim}>매일 새로 받아</text>
-        <text x="10" y="50" fontSize="8.5" fill={dim}>지역·기관·</text>
-        <text x="10" y="62" fontSize="8.5" fill={dim}>직무로 골라 보기</text>
+      <g transform="translate(256 40)">
+        <rect width="78" height="74" rx="10" fill="rgba(255,255,255,.1)" stroke={hi} />
+        <text x="7" y="22" fontSize="12" fill={ink} fontWeight="800">나라지원</text>
+        <text x="7" y="38" fontSize="9.5" fill={dim}>매일 새로 받아</text>
+        <text x="7" y="50" fontSize="9.5" fill={dim}>지역·기관·</text>
+        <text x="7" y="62" fontSize="9.5" fill={dim}>직무로 골라 보기</text>
       </g>
-      <text x="18" y="150" fontSize="8.5" fill={dim}>접수는 공고마다 다릅니다 — 원문에서 확인</text>
+      <text x="18" y="151" fontSize="10.5" fill={dim}>접수는 공고마다 다릅니다 — 원문에서 확인</text>
     </svg>
   );
 }
@@ -77,7 +77,7 @@ export function HBars({ bars, unit = "건", pct = false, ariaLabel, className = 
         const label = pct ? `${Math.round((b.n / total) * 100)}%` : `${b.n.toLocaleString("ko-KR")}${unit}`;
         return (
           <g key={b.label} transform={`translate(0 ${y})`}>
-            <text x={left - 8} y="14" fontSize="10.5" fill={INK} textAnchor="end" fontWeight="600">{b.label}</text>
+            <text x={left - 8} y="14" fontSize="12" fill={INK} textAnchor="end" fontWeight="600">{b.label}</text>
             <rect x={left} y="3" width={barW} height="16" rx="4" fill={SOFT} />
             <rect x={left} y="3" width={bw} height="16" rx="4" fill={BRAND} />
             <text x={left + bw + 6} y="15" fontSize="10.5" fill={INK} fontWeight="700">{label}</text>

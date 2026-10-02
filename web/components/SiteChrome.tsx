@@ -170,22 +170,22 @@ export function SiteFooter() {
         {cols.map((c) => (
           <div key={c.h}>
             <p className="eyebrow !text-[#C4B5FD]">{c.h}</p>
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-2 space-y-0.5">
               {c.items.map(([label, href]) => (
-                <li key={href}><Link href={href} className="hover:text-white">{label}</Link></li>
+                <li key={href}><Link href={href} className="inline-block py-1.5 hover:text-white">{label}</Link></li>
               ))}
             </ul>
           </div>
         ))}
       </div>
-      <p className="mt-10 border-t border-white/10 pt-5 text-[11.5px] leading-relaxed text-white/50">
+      <p className="mt-10 border-t border-white/10 pt-5 text-[12px] leading-relaxed text-white/50">
         화면의 조건은 공고 원문에서 자동으로 추려낸 것이라 실제와 다를 수 있습니다. 신청 자격의 최종
         확인과 접수는 원문 또는 관할 주민센터를 통해 하시기 바랍니다. 정부 공식 서비스가 아닙니다.
       </p>
-      <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-white/45">
+      <p className="mt-3 flex flex-wrap items-center gap-x-3 text-[12px] text-white/45">
         <span className="font-bold text-white/60">자료 출처</span>
         {sources.map(([name, href]) => (
-          <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="hover:text-white">{name}</a>
+          <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1.5 hover:text-white">{name}</a>
         ))}
       </p>
     </footer>

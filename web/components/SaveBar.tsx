@@ -135,7 +135,7 @@ export default function SaveBar({
 
       <p className="mt-2 min-h-[1rem] text-xs text-brand">{msg}</p>
 
-      <p className="mt-1 text-[11px] leading-relaxed text-faint">
+      <p className="mt-1 text-[12px] leading-relaxed text-faint">
         저장에는 이름이나 연락처가 필요 없습니다. 이 브라우저가 만든 무작위
         번호로만 구분하며, 그 번호로는 누구인지 알 수 없습니다.
       </p>

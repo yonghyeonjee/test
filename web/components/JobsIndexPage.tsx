@@ -75,7 +75,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
                 <b className="num block text-[1.35rem] font-extrabold text-white">
                   {b.n.toLocaleString()}
                 </b>
-                <span className="mt-0.5 block text-[11.5px] text-white/70">{b.label}</span>
+                <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
               </div>
             ))}
           </div>

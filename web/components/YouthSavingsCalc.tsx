@@ -44,7 +44,7 @@ export default function YouthSavingsCalc() {
         onChange={(e) => setMonthly(Number(e.target.value))}
         className="mt-2 w-full accent-brand"
       />
-      <div className="num flex justify-between text-[11px] text-faint">
+      <div className="num flex justify-between text-[12px] text-faint">
         <span>1만원</span><span>50만원</span>
       </div>
 
@@ -59,7 +59,7 @@ export default function YouthSavingsCalc() {
             className={`chip ${k.key === kind.key ? "chip-on" : ""}`}
           >
             {k.label}
-            {k.pct > 0 && <span className="num text-[11.5px] font-bold opacity-70">{k.pct}%</span>}
+            {k.pct > 0 && <span className="num text-[12px] font-bold opacity-70">{k.pct}%</span>}
           </button>
         ))}
       </div>

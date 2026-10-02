@@ -49,7 +49,7 @@ function MonthBars({ months }: { months: number[] }) {
         <div key={i} className="flex flex-1 flex-col items-center gap-1">
           <div className="w-full rounded-t bg-brand/70"
                style={{ height: `${Math.max(2, Math.round((n / max) * 44))}px` }} />
-          <span className="text-[10px] text-faint">{i + 1}</span>
+          <span className="text-[12px] text-faint">{i + 1}</span>
         </div>
       ))}
     </div>

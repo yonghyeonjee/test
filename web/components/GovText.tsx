@@ -41,7 +41,7 @@ function Group({ blocks, asHeading }: { blocks: Block[]; asHeading: boolean }) {
           b.kind === "item" ? (
             <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed">
               <span className="num mt-[3px] w-6 shrink-0 rounded-[6px] bg-brandSoft px-1 py-0.5
-                               text-center text-[11px] font-bold text-brand">
+                               text-center text-[12px] font-bold text-brand">
                 {b.n.replace(/[).]$/, "")}
               </span>
               <span className="min-w-0 flex-1 break-keep">{b.text}</span>

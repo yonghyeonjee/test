@@ -95,7 +95,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
           <nav aria-label="갈래" className="mt-4 flex flex-wrap gap-1.5">
             {counts.map(([label, n, id]) => (
               <a key={id} href={`#${id}`} className={`chip ${n > 0 ? "" : "opacity-50"}`}>
-                {label} <span className="num ml-1 text-[11.5px] opacity-70">{n.toLocaleString("ko-KR")}</span>
+                {label} <span className="num ml-1 text-[12px] opacity-70">{n.toLocaleString("ko-KR")}</span>
               </a>
             ))}
           </nav>

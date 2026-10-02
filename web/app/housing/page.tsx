@@ -54,7 +54,7 @@ export default async function HousingHub() {
                       <div className="mt-3 flex flex-wrap gap-1">
                         {tops.map((s) => (
                           <Link key={s.sido} href={housingPath(kind, who, s.sido)} className="chip !py-0.5 !text-[12.5px]">
-                            {shortSido(s.sido)} <span className="num text-[11px] text-faint">{s.n}</span>
+                            {shortSido(s.sido)} <span className="num text-[12px] text-faint">{s.n}</span>
                           </Link>
                         ))}
                       </div>

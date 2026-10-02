@@ -47,7 +47,7 @@
   /* 인쇄물의 큰 번호. */
   .numeral { @apply font-sans text-[2.4rem] font-black leading-none tracking-[-.04em] text-brand; }
   /* 짧은 위첨자 제목 — 작게, 자간 넓게 */
-  .eyebrow { @apply text-[11px] font-bold uppercase tracking-[.28em] text-brand; }
+  .eyebrow { @apply text-[12px] font-bold uppercase tracking-[.24em] text-brand; }
 
   .tile {
     @apply flex flex-col gap-2.5 rounded-card border border-line
@@ -68,7 +68,7 @@
 
   .badge {
     @apply inline-flex items-center rounded-pill px-2 py-0.5
-           text-[11px] font-bold leading-tight;
+           text-[12px] font-bold leading-tight;
   }
   .badge-due   { @apply bg-accentSoft text-accent; }
   /* 접수 상태 */
@@ -99,7 +99,7 @@
   }
 
   .blank {
-    @apply relative inline-flex items-baseline rounded-[8px] px-2 pb-0.5
+    @apply relative inline-flex items-baseline rounded-[8px] px-2 py-1
            font-extrabold cursor-pointer transition-colors
            bg-brandSoft text-brand hover:bg-brand hover:text-white;
   }
@@ -198,6 +198,9 @@
 
 /* 머리말: 스크롤하면 유리처럼 떠서 따라온다 */
 [data-site-header] { position: sticky; top: 0; z-index: 30; transition: box-shadow .2s, background-color .2s; }
+/* 좁은 화면에서는 머리말이 세 줄(로고·메뉴 띠·갈래 줄)로 164px 가 된다. 812px
+   화면의 20% 를 늘 가리고 있어서 붙박이를 푼다. 메뉴는 오른쪽 아래 + 단추가 받는다. */
+@media (max-width: 639px) { [data-site-header] { position: static; } }
 [data-site-header]::before {
   content: ""; position: absolute; inset: 0 -20px; z-index: -1;
   background: rgba(247,247,251,.72); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
@@ -222,7 +225,7 @@
 /* 광고 지면: 본문과 헷갈리지 않게 표시하고, 높이를 제한해 화면을 밀어내지 않는다 */
 /* 광고 상자. 본문 카드(.card)와 같은 옷을 입혀 흐름에 섞는다. 점선·회색 띠 없음. */
 .ad-slot { border: 1px solid rgba(230,228,242,.7); border-radius: 14px; background: #fff; padding: 12px 16px 14px; max-height: 220px; overflow: hidden; contain: content; }
-.ad-tag { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: .12em; color: #9C99B4; }
+.ad-tag { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: .12em; color: #9C99B4; }
 .ad-html { display: block; text-align: center; }
 .ad-html ins, .ad-html iframe { max-width: 100%; }
 /* 멀티플렉스처럼 세로로 긴 광고. 자르지 않는다. */

@@ -144,7 +144,7 @@ export default async function LicensePage({ params }: { params: { code: string }
           <div className="mt-4 flex flex-wrap gap-2">
             {same.map((x) => (
               <Link key={x.code} href={`/license/${encodeURIComponent(x.code)}`} className="chip">
-                {x.name}<span className="text-[11px] text-faint">{x.series}</span>
+                {x.name}<span className="text-[12px] text-faint">{x.series}</span>
               </Link>
             ))}
           </div>

@@ -1,11 +1,6 @@
 import Link from "next/link";
-import {
-  ageLabel,
-  applyStatus,
-  daysLeft,
-  STATUS_LABEL,
-  type Program,
-} from "@/lib/db";
+import { ageLabel, applyStatus, daysLeft, STATUS_LABEL } from "@/lib/consts";
+import type { Program } from "@/lib/db";
 
 /** 나이 조건을 5~95 축 위의 막대로. 내 나이 위치에 표식. */
 function AgeBar({ min, max, me }: { min: number | null; max: number | null; me?: number }) {
@@ -74,7 +69,7 @@ function DueBar({ p }: { p: Program }) {
   return (
     <div className="mt-3 flex items-center gap-2" title="접수 기간 진행">
       <div className="due flex-1"><i style={{ width: `${Math.round(k * 100)}%` }} /></div>
-      <span className="num text-[11px] text-muted">~{p.apply_end.slice(5).replace("-", ".")}</span>
+      <span className="num text-[12px] text-muted">~{p.apply_end.slice(5).replace("-", ".")}</span>
     </div>
   );
 }

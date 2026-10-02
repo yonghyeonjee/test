@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { dueLabel, type HotKind, type Slide } from "@/lib/hotBanner";
+import { dueLabel, type HotKind, type Slide } from "@/lib/hotShared";
 
 /**
  * 첫 화면 롤링 띠.
@@ -176,9 +176,11 @@ export default function HotBanner({ slides }: { slides: Slide[] }) {
               onClick={() => go(idx)}
               aria-label={`${idx + 1}번째 안내 보기`}
               aria-current={idx === i}
-              className={`h-2 rounded-pill transition-all ${
-                idx === i ? "w-6 bg-brand" : "w-2 bg-line2 hover:bg-muted"}`}
-            />
+              className="flex h-6 items-center px-0.5"
+            >
+              <span className={`block h-2 rounded-pill transition-all ${
+                idx === i ? "w-6 bg-brand" : "w-2 bg-line2 hover:bg-muted"}`} />
+            </button>
           ))}
         </div>
       )}
