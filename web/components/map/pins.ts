@@ -46,6 +46,9 @@ export type Pin = {
   sggN?: number;
 };
 
+/** 전국(제주 포함, 울릉도 빼고) 범위: [남서, 북동]. 첫 화면의 작은 지도가 이만큼을 담는다. */
+export const KOREA_BOX: [[number, number], [number, number]] = [[33.15, 125.1], [38.6, 129.6]];
+
 /** Leaflet·네이버 zoom → 단계. 8 이하는 시·도 묶음, 12 이상은 동네(읍·면·동). */
 export const DONG_ZOOM = 12;
 export const tierOfZoom = (z: number): Tier => (z <= 8 ? "far" : z < DONG_ZOOM ? "near" : "dong");
@@ -67,11 +70,11 @@ export type XY = { x: number; y: number };
 export type Pos = "tip" | "c" | "n" | "s" | "e" | "w";
 type Box = { l: number; r: number; t: number; b: number };
 
-/** 이름표 상자(px). 글꼴 12.5px 기준 한글 한 자 ≈ 12.5px. */
-function labelBox(p: Pin, xy: XY, pos: Pos): Box {
-  const w = 24 + p.short.length * (p.level === "dong" ? 12.4 : 13.4) + (p.level === "dong" ? 14 : 0)
-    + (p.n > 0 ? 12 + String(p.n).length * 7.8 : 0);
-  const h = 26, g = 6;
+/** 이름표 상자(px). 글꼴 12.5px 기준 한글 한 자 ≈ 12.5px. k 는 작은 이름표(첫 화면 지도) 배율. */
+function labelBox(p: Pin, xy: XY, pos: Pos, k = 1): Box {
+  const w = (24 + p.short.length * (p.level === "dong" ? 12.4 : 13.4) + (p.level === "dong" ? 14 : 0)
+    + (p.n > 0 ? 12 + String(p.n).length * 7.8 : 0)) * k;
+  const h = 26 * k, g = 6;
   switch (pos) {
     case "tip": return { l: xy.x - w / 2, r: xy.x + w / 2, t: xy.y - h - 9, b: xy.y };
     case "n": return { l: xy.x - w / 2, r: xy.x + w / 2, t: xy.y - h - g, b: xy.y - g };
@@ -89,7 +92,7 @@ function labelBox(p: Pin, xy: XY, pos: Pos): Box {
  * 않고, 자리가 없으면 동그라미가 된다. 화면 밖 핀은 건너뛴다 — 지도를 움직이면 다시 고른다.
  */
 export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { w: number; h: number },
-                           tier: Tier, selected: string | null): Map<string, Pos> {
+                           tier: Tier, selected: string | null, k = 1): Map<string, Pos> {
   const at = new Map<string, XY | null>();
   for (const p of pins) at.set(p.key, project(p));
   // 동 핀은 화면 가운데(고른 동·내 위치)에 가까운 것부터 — 촘촘한 도시에서도 고른 동 이름이 먼저 선다.
@@ -111,7 +114,7 @@ export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { 
     if (xy.x < -60 || xy.y < -40 || xy.x > size.w + 60 || xy.y > size.h + 40) continue;
     const tries: Pos[] = tier === "far" || p.level === "sido" ? ["c", "e", "w", "n", "s"] : ["tip"];
     for (const pos of tries) {
-      const box = labelBox(p, xy, pos);
+      const box = labelBox(p, xy, pos, k);
       // 비켜 놓은 이름표가 화면 밖으로 나가면 안 된다(부산이 오른쪽 끝에서 잘렸다).
       if (pos !== "c" && pos !== "tip" && (box.l < 2 || box.t < 2 || box.r > size.w - 2 || box.b > size.h - 2)) continue;
       if (hit(box)) continue;
@@ -127,8 +130,11 @@ export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { 
  * 실제로 그릴 핀. 동네 단계의 동·센터 핀은 이름표가 선 것(과 동 이름이 적힌 공고가 있는 것, 고른 것)만
  * 그린다 — 서울처럼 촘촘한 곳에서 이름 없는 점 수백 개가 화면을 덮었다. 확대하면 더 선다.
  */
-export const drawnPins = (list: Pin[], show: Map<string, Pos>, selected: string | null) =>
-  list.filter((p) => p.level !== "dong" || show.has(p.key) || p.n > 0 || p.key === selected);
+export const drawnPins = (list: Pin[], show: Map<string, Pos>, selected: string | null, onlyLabeled = false) =>
+  list.filter((p) => (onlyLabeled ? show.has(p.key) : p.level !== "dong" || show.has(p.key) || p.n > 0) || p.key === selected);
+
+/** 첫 화면의 작은 전국 지도(overview): 이름표를 줄여(OV_K) 더 많이 세우고, 이름표 못 단 핀은 그리지 않는다. */
+export const OV_K = 0.84;
 
 export const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 export const itemHref = (it: MapItem) => (it.kind === "job" ? `/jobs/${encodeURIComponent(it.id)}` : `/p/${encodeURIComponent(it.id)}`);

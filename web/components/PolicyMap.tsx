@@ -337,7 +337,9 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
             {busy ? "위치 읽는 중…" : "내 위치로 보기"}
           </button>
           {/* 지역 고르기: 시·도 → 시·군·구 → 읍·면·동. 고를수록 지도가 가까워진다. */}
-          <div className="grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center" role="group" aria-label="지역 고르기">
+          {/* 휴대폰은 세 칸 한 줄. 아직 시·도를 안 골랐으면 한 칸뿐이라 넓게 — 좁으면 "지역 고르기"가 잘렸다. */}
+          <div className={`grid w-full gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center ${pickSidoV ? "grid-cols-3" : "grid-cols-1"}`}
+               role="group" aria-label="지역 고르기">
             <select value={pickSidoV} onChange={(e) => e.target.value && pickSido(e.target.value)} aria-label="시·도"
                     className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
               <option value="">지역 고르기</option>

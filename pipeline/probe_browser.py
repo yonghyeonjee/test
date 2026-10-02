@@ -168,6 +168,25 @@ def check_dong(browser) -> None:
         ctx.close()
 
 
+def home_map(page) -> dict | None:
+    """첫 화면 정책지도 미리보기: 보이는 것으로 내려가 지도가 뜨기를 기다린 뒤 핀 이름표·타일 수."""
+    sec = page.locator('section[aria-label="정책지도 미리보기"]')
+    target = None
+    for i in range(sec.count()):
+        if sec.nth(i).is_visible():
+            target = sec.nth(i)
+            break
+    if target is None:
+        return None
+    target.scroll_into_view_if_needed()
+    page.wait_for_timeout(3000)
+    return target.evaluate("""(s) => ({
+      labels: [...s.querySelectorAll('.pm-pin b')].map((b) => b.textContent),
+      tiles: s.querySelectorAll('img.leaflet-tile-loaded').length,
+      engine: s.querySelector('.leaflet-container') ? 'leaflet' : (window.kakao && window.kakao.maps) ? 'kakao' : (window.naver && window.naver.maps) ? 'naver' : '?',
+      button: (s.querySelector('a.btn') || {}).innerText || null })""")
+
+
 def check_home(browser, path: str) -> None:
     print(f"\n== {path}")
     ctx = browser.new_context(viewport=MOBILE, locale="ko-KR")
@@ -186,11 +205,15 @@ def check_home(browser, path: str) -> None:
     # 포털형 첫 화면: 휴대폰 첫 화면 안에 검색창·바로가기·조건 카드가 드는가, 아래 탭 막대.
     spots = page.evaluate("""() => {
       const at = (sel) => { const e = document.querySelector(sel); if (!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom)]; };
+      const vis = (sel) => [...document.querySelectorAll(sel)].find((e) => e.offsetParent !== null);
+      const atv = (sel) => { const e = vis(sel); if (!e) return null; const r = e.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom)]; };
       return { shortcuts: at('nav[aria-label="바로가기"]'), find: at('#find'), bottomBar: at('nav[aria-label="빠른 이동"]'),
+               banner: atv('section[aria-roledescription="carousel"]'), homeMap: atv('section[aria-label="정책지도 미리보기"]'),
                shortcutN: document.querySelectorAll('nav[aria-label="바로가기"] a').length,
                headerSearch: !!document.querySelector('[data-site-header] input[data-search]') };
     }""")
     print("   [휴대폰] 자리:", json.dumps(spots, ensure_ascii=False))
+    print("   [휴대폰] 지도 미리보기:", json.dumps(home_map(page), ensure_ascii=False))
     print("   오류:", errs[:6] or "없음")
     ctx.close()
     # 넓은 화면: 오른쪽 기둥 상자들
@@ -208,6 +231,10 @@ def check_home(browser, path: str) -> None:
                rank: [...a.querySelectorAll('ol li')].map((li) => li.innerText.replace(/\\s+/g, ' ').trim()).slice(0, 10) };
     }""")
     print("   [데스크톱] 오른쪽 기둥:", json.dumps(aside, ensure_ascii=False))
+    print("   [데스크톱] 지도 미리보기:", json.dumps(home_map(page), ensure_ascii=False))
+    band = page.evaluate("""() => { const e = document.querySelector('section[aria-roledescription="carousel"]'); if (!e) return null;
+      const r = e.getBoundingClientRect(); return { y: Math.round(r.top), h: Math.round(r.height), text: (e.querySelector('a[tabindex="0"]') || e).innerText.replace(/\\s+/g, ' ').slice(0, 60) }; }""")
+    print("   [데스크톱] 롤링 띠:", json.dumps(band, ensure_ascii=False))
     print("   [데스크톱] 오류:", derr[:6] or "없음")
     ctx.close()
 

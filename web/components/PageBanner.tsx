@@ -36,20 +36,21 @@ export default function PageBanner({
   const [c, soft] = TONES[tone];
   return (
     <>
-    <section className="banner-soft -mx-5 mt-4 px-6 py-7 sm:mx-0 sm:rounded-card sm:px-9 sm:py-8"
+    {/* 얇게: 휴대폰에서 머리 띠가 첫 화면의 3분의 1을 먹어 본문(지도·목록)이 밀렸다. */}
+    <section className="banner-soft -mx-5 mt-3 px-5 py-5 sm:mx-0 sm:rounded-card sm:px-8 sm:py-6"
              style={{ ["--tone" as string]: c, ["--tone-soft" as string]: soft }}>
       <div className="flex items-center gap-6">
         <div className="min-w-0 flex-1">
           <p className="eyebrow">{eyebrow}</p>
-          <h1 className="display mt-2 text-[1.6rem] leading-tight text-ink sm:text-[1.9rem]">
+          <h1 className="display mt-1.5 text-[1.32rem] leading-tight text-ink sm:text-[1.7rem]">
             {title}
           </h1>
-          <p className="mt-2.5 max-w-[34rem] text-[14.5px] leading-[1.75] text-muted">
+          <p className="mt-2 max-w-[36rem] text-[13.5px] leading-[1.7] text-muted sm:text-[14.5px]">
             {sub}
           </p>
         </div>
         {/* 좁은 화면에서는 그림을 접는다. 글이 먼저다. */}
-        <div className="relative hidden h-28 w-44 shrink-0 sm:block md:h-32 md:w-52">
+        <div className="relative hidden h-24 w-36 shrink-0 sm:block md:h-28 md:w-44">
           <span className="banner-art relative block h-full w-full">{art}</span>
         </div>
       </div>

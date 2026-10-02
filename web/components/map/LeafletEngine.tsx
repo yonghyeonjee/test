@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
-import { cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Kind, type Pin, type Pos, type Tier, type View } from "./pins";
+import { KOREA_BOX, OV_K, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Kind, type Pin, type Pos, type Tier, type View } from "./pins";
 
 type Leaflet = typeof import("leaflet");
 const KOREA: LatLng = [36.2, 127.9];
@@ -37,7 +37,10 @@ export type EngineProps = {
   extra?: Pin[];
   /** 움직임이 멎을 때 보이는 범위와 확대 정도(zoom, 카카오는 19 − level 로 맞춘다). */
   onView?: (v: View) => void;
+  /** 전국이 한눈에 들어오게 맞춘다(첫 화면의 작은 지도). 내 위치가 없을 때만. */
+  overview?: boolean;
 };
+
 
 const loadLeaflet = async (): Promise<Leaflet> => {
   const mod = await import("leaflet");
@@ -49,7 +52,7 @@ const loadLeaflet = async (): Promise<Leaflet> => {
  * 지도를 움직이거나 확대할 때마다 이름표 자리를 다시 고른다(pickLabels).
  */
 const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView }, ref,
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView, overview }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const L = useRef<Leaflet | null>(null);
@@ -74,7 +77,9 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       const m = lf.map(el.current, {
         center: single ? [single.lat, single.lng] : KOREA,
         zoom: single ? (single.approx ? 8 : 11) : 7,
-        minZoom: Math.max(TILE.min, 6),
+        // 첫 화면의 작은 지도는 높이가 260px 남짓이라 6 단계로는 전국이 안 들어간다. 반 단계씩 더 물러난다.
+        minZoom: Math.max(TILE.min, overview ? 5 : 6),
+        zoomSnap: overview ? 0.25 : 1,
         zoomControl: false, scrollWheelZoom: interactive, dragging: interactive, touchZoom: interactive,
         doubleClickZoom: interactive, boxZoom: interactive, keyboard: interactive,
       });
@@ -118,9 +123,9 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     g.clearLayers();
     const list = visiblePins(pins, extra ?? [], tier);
     const size = m.getSize();
-    const show = pickLabels(list, (p) => m.latLngToContainerPoint([p.lat, p.lng]), { w: size.x, h: size.y }, tier, selected);
+    const show = pickLabels(list, (p) => m.latLngToContainerPoint([p.lat, p.lng]), { w: size.x, h: size.y }, tier, selected, overview ? OV_K : 1);
     labeled.current = show;
-    for (const p of drawnPins(list, show, selected)) {
+    for (const p of drawnPins(list, show, selected, overview)) {
       const pos = show.get(p.key);
       const on = pos !== undefined;
       const mk = lf.marker([p.lat, p.lng], {
@@ -141,7 +146,11 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
     const lf = L.current, m = map.current, g = meLayer.current;
     if (!lf || !m || !g) return;
     g.clearLayers();
-    if (!me) { if (pins.length !== 1) whenStill(m, () => m.setView(KOREA, 7)); return; }
+    if (!me) {
+      if (overview) whenStill(m, () => m.fitBounds(KOREA_BOX, { padding: [6, 6] }));
+      else if (pins.length !== 1) whenStill(m, () => m.setView(KOREA, 7));
+      return;
+    }
     lf.circleMarker(me, { radius: 7, color: "#fff", weight: 2, fillColor: "#D97706", fillOpacity: 1 })
       .bindTooltip(meLabel || "내 위치", { direction: "top", offset: [0, -8] }).addTo(g);
     if (radius > 0) {

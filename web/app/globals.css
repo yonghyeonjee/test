@@ -341,6 +341,9 @@
 .pm-pin.pm-far.pm-at-s { transform: translate(-50%, 6px); }
 .pm-pin.pm-far.pm-at-e { transform: translate(6px, -50%); }
 .pm-pin.pm-far.pm-at-w { transform: translate(calc(-100% - 6px), -50%); }
+/* 첫 화면의 작은 전국 지도: 이름표를 줄인다(pins.ts OV_K 와 맞춘다). */
+.pm-ov .pm-pin.pm-far { font-size: 11px; padding: 3px 8px; gap: 4px; border-width: 1.5px; }
+.pm-ov .pm-pin.pm-far i { font-size: 9.5px; padding: 0 5px; }
 .pm-me { width: 16px; height: 16px; border-radius: 50%; background: #D97706; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(217,119,6,.25); transform: translate(-50%, -50%); }
 .pm-legend { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; }
 .pm-legend-p { background: #E0242B; } .pm-legend-j { background: #0F766E; } .pm-legend-a { border: 2px dashed #5A4BE0; }
