@@ -42,6 +42,44 @@ export function topicKeyword(p: Detail) {
   return "복지서비스";
 }
 
+/** "대구광역시" → "대구". 제목·부제에서 시·도는 짧게 부른다. */
+const shortSido = (s: string | null | undefined) =>
+  (s ?? "").replace(/(특별자치도|특별자치시|광역시|특별시|통합특별시)$/, "");
+
+/** 지원 방식을 한 낱말로. "현금지급, 기타" 처럼 여럿이면 앞엣것. */
+function supportNoun(p: Detail) {
+  if (p.kind === "business" || p.kind === "event") return "기업 지원사업";
+  const t = (p.support_type ?? "").split(",")[0].trim();
+  if (/현금지급/.test(t)) return "현금 지원 사업";
+  if (/현물/.test(t)) return "현물 지원 사업";
+  if (/서비스|프로그램/.test(t)) return "서비스 사업";
+  if (/바우처/.test(t)) return "바우처 지원 사업";
+  if (/지역화폐/.test(t)) return "지역화폐 지원 사업";
+  if (/감면/.test(t)) return "감면 사업";
+  if (/융자|대여/.test(t)) return "융자·대여 사업";
+  return `${topicKeyword(p)} 사업`;
+}
+
+/**
+ * 제목 아래 부제. "대구 서구에서 지원하는 저소득·장애인 서비스 사업".
+ *
+ * 공고 이름만 덜렁 두면 검색엔진도 사람도 무슨 사업인지 모른다. 어디서,
+ * 누구에게, 어떤 방식으로 주는지를 한 줄로 붙인다. 제목(title)과 h1 에
+ * 같이 쓴다.
+ */
+export function programTagline(p: Detail) {
+  const sido = shortSido(p.sido);
+  const place = p.sigungu ? `${sido} ${p.sigungu}`.trim() : sido || "전국";
+  const w: string[] = [];
+  if (p.household?.length) w.push(p.household.slice(0, 2).join("·"));
+  else if (p.employment?.length) w.push(p.employment.slice(0, 2).join("·"));
+  else if (p.biz_target?.length) w.push(p.biz_target.slice(0, 2).join("·"));
+  const age = ageLabel(p);
+  if (age) w.push(age.replace("만 ", ""));
+  const who = w.length ? `${w.join(", ")} ` : "";
+  return `${place}에서 지원하는 ${who}${supportNoun(p)}`.replace(/\s+/g, " ").trim();
+}
+
 const clip = (s: string | null | undefined, n: number) => {
   const t = (s ?? "").replace(/\s+/g, " ").trim();
   if (!t) return "";

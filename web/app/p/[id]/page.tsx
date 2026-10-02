@@ -8,7 +8,7 @@ import ProgramEntry from "@/components/ProgramEntry";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
-import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword } from "@/lib/faq";
+import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword, programTagline } from "@/lib/faq";
 import { manwon, standardFor, tableYear } from "@/lib/medianIncome";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import PromoBanner from "@/components/PromoBanner";
@@ -51,14 +51,9 @@ export async function generateStaticParams() {
 }
 
 /** 검색 결과에 그대로 노출되는 문장. 지역·대상을 앞쪽에 둔다. */
+/** "대구 서구 통합돌봄 사업 — 대구 서구에서 지원하는 저소득·장애인 서비스 사업" */
 function seoTitle(p: Detail) {
-  const where = p.sigungu || p.sido || "";
-  const who: string[] = [];
-  const age = ageLabel(p);
-  if (age) who.push(age.replace("만 ", ""));
-  if (p.household?.length) who.push(p.household[0]);
-  // 검색에서 많이 치는 말(청년지원금·복지서비스 등)을 제목에 넣는다.
-  return `${p.title} — ${where} ${who.join(" ")} ${topicKeyword(p)} 신청 조건·기간`.replace(/\s+/g, " ").trim();
+  return `${p.title} — ${programTagline(p)}`;
 }
 
 export async function generateMetadata({
@@ -71,10 +66,9 @@ export async function generateMetadata({
 
   const where = p.sigungu || p.sido || "전국";
   const body = (p.summary || p.target_text || "").replace(/\s+/g, " ").trim();
-  const desc = (
-    body
-      ? `${body.slice(0, 110)}${body.length > 110 ? "…" : ""} `
-      : `${where} ${p.title}의 `
+  // 설명문에도 사업 이름이 들어가야 한다. 요약문은 대개 이름 없이 시작한다.
+  const desc = `${p.title}. ${programTagline(p)}. ` + (
+    body ? `${body.slice(0, 90)}${body.length > 90 ? "…" : ""} ` : ""
   ) + "지원대상·선정기준·신청방법을 한눈에 정리했습니다.";
 
   return {
@@ -171,7 +165,10 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       </nav>
 
       <p className="text-sm font-bold">{where}</p>
-      <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-tight">{p.title}</h1>
+      <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-tight">
+        {p.title}
+        <span className="mt-1.5 block text-[1.05rem] font-semibold leading-snug text-ink2">{programTagline(p)}</span>
+      </h1>
 
       {/* 필드로 만든 요약. 표보다 먼저 "나한테 해당되나, 언제까지"를 말한다.
           한 덩어리로 이어 붙이면 열 줄짜리 벽이 되어 아무도 안 읽는다.
@@ -210,7 +207,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
       {programChecks(p).length > 0 && (
         <section className="mt-9 rounded-card border border-line bg-surface2 p-5">
-          <h2 className="text-sm font-bold">이런 분이 해당됩니다</h2>
+          <h2 className="text-sm font-bold">{p.title}, 이런 분이 해당됩니다</h2>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {programChecks(p).map((c) => (
               <li key={c} className="flex items-start gap-2 text-[14.5px] leading-snug">
@@ -225,7 +222,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       )}
 
       <h2 className="mt-11 border-b-2 border-line2 pb-2 text-sm font-bold">
-        한눈에 보는 신청 조건
+        {p.title} 신청 조건 한눈에
       </h2>
       <dl className="mt-1">
         <Row label="지역">{where}</Row>
@@ -279,7 +276,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <Section title="지원내용" body={p.benefit_text} />
       <Section title="신청방법" body={p.apply_method} />
 
-      <h2 className="mt-9 border-b-2 border-line2 pb-2 text-sm font-bold">신청 전에 확인할 것</h2>
+      <h2 className="mt-9 border-b-2 border-line2 pb-2 text-sm font-bold">{p.title} 신청 전에 확인할 것</h2>
       <ol className="mt-4 grid gap-2.5">
         {programBeforeApply(p).map((t, i) => (
           <li key={t} className="flex gap-3 text-sm leading-relaxed text-ink2">
