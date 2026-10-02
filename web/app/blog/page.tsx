@@ -42,21 +42,6 @@ export default function BlogIndex() {
         </span>
       </Link>
 
-      <Link href="/blog/jeonse-extension"
-            className="card card-link mt-3 flex items-center gap-4 p-5">
-        <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">
-          전세
-        </span>
-        <span className="min-w-0">
-          <b className="block text-[15.5px] leading-snug">
-            버팀목 전세대출 1개월 연장, 연장 후 이사까지 — 실제 사례로 보는 순서
-          </b>
-          <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
-            집주인이 집을 판다고 한 HUG 청년버팀목 세입자 사례. 한시적 연장 계약서로 기한연장하고 잔금일에 목적물 변경하는 순서와 돈 계산.
-          </span>
-        </span>
-      </Link>
-
       <Link href="/blog/gojobs-guide"
             className="card card-link mt-3 flex items-center gap-4 p-5">
         <span className="shrink-0 rounded-card bg-brandSoft px-3 py-2 text-[13px] font-bold text-brand">

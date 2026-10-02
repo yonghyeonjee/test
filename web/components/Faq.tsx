@@ -16,7 +16,7 @@ export default function Faq({ items, title = "자주 묻는 질문" }: { items: 
     })),
   };
   return (
-    <section className="mt-14">
+    <section id="faq" className="mt-14 scroll-mt-24">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
       <h2 className="sec-title text-[1.0625rem] font-extrabold">{title}</h2>
       <div className="rows mt-4 rounded-card border border-line bg-surface px-5">

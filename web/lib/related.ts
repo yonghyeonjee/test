@@ -178,7 +178,7 @@ export function moneyRelated(): Related[] {
 }
 
 const JEONSE_POST: Related = {
-  href: "/blog/jeonse-extension",
+  href: "/story/jeonse-extension",
   title: "버팀목 전세대출 1개월 연장, 연장 후 이사까지",
   desc: "한시적 연장 계약서로 기한연장하고 잔금일에 목적물 변경하는 순서를 실제 사례로 정리했습니다.",
 };
