@@ -63,7 +63,7 @@ export default function HomeMap({ areas, total, className = "" }: {
         <span className="num min-w-0 flex-1 truncate text-[12px] text-faint">시·도별 복지 지원 {total.toLocaleString("ko-KR")}건</span>
         <Link href="/map" className="-my-1.5 shrink-0 py-1.5 text-[12.5px] font-semibold text-muted hover:text-ink">전체 지도</Link>
       </div>
-      <div ref={box} className="relative h-[260px] bg-[#E9EEF2] lg:h-[280px]">
+      <div ref={box} className="relative h-[210px] bg-[#E9EEF2] lg:h-[280px]">
         {show && (
           <MapCanvas pins={pins} kind="programs" me={null} meLabel="" radius={0} selected={null}
                      onSelect={noop} loadItems={none} interactive={false} overview className="pm-ov h-full w-full" />
@@ -75,7 +75,7 @@ export default function HomeMap({ areas, total, className = "" }: {
         <Link href="/map" className="btn btn-primary w-full !py-2.5 text-[14px]">
           {mine ? `${mine} 주변 보기` : "내 주변 지원금 지도로 보기"}
         </Link>
-        <p className="mt-2 text-center text-[12px] text-faint">가까이 확대하면 읍·면·동 행정복지센터까지 보입니다</p>
+        <p className="mt-2 hidden text-center text-[12px] text-faint lg:block">가까이 확대하면 읍·면·동 행정복지센터까지 보입니다</p>
       </div>
     </section>
   );
