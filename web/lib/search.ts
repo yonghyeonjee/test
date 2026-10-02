@@ -10,6 +10,7 @@ import { tokenize } from "./keywords";
 import { describe, parseQuery, toParams, type Parsed } from "./parse";
 import { POSTS } from "./posts";
 import { getLicenses, type License } from "./qnet";
+import { searchStories } from "./stories";
 import { TOPICS } from "./topics";
 
 /**
@@ -214,7 +215,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   };
   if (!q || !dbConfigured) return out;
 
-  const [w, wn, b, bn, j, l, a] = await Promise.allSettled([
+  const [w, wn, b, bn, j, l, a, st] = await Promise.allSettled([
     term || hasCond ? matchWelfare(wq, PER) : Promise.resolve([] as Program[]),
     term || hasCond ? countWelfare(wq) : Promise.resolve(0),
     term || sido ? matchBusiness(bq, PER) : Promise.resolve([] as Program[]),
@@ -222,6 +223,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
     searchJobs(words, sido),
     searchLicenses(words),
     searchAgency(words),
+    searchStories(words),
   ]);
 
   const take = <T,>(r: PromiseSettledResult<T>, name: string, d: T): T => {
@@ -237,6 +239,11 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   const jobs = take(j, "채용", { items: [], total: 0, openOnly: true, allTotal: null });
   out.jobs = { ...out.jobs, ...jobs };
   out.licenses = take(l, "자격증", out.licenses);
+  const stories = take(st, "블로그", []);
+  out.guides = [
+    ...stories.map((x) => ({ href: `/story/${encodeURIComponent(x.slug)}`, title: x.title, desc: x.summary, tag: "블로그" })),
+    ...out.guides,
+  ].slice(0, PER);
   out.agency = take(a, "공공기관", out.agency);
   // 같은 이름이 두 번 들어갈 수 있다(목록·건수). 하나로.
   out.failed = Array.from(new Set(out.failed));

@@ -104,16 +104,20 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
   };
 
   const yearOpts = [
-    { label: "예비창업", value: "0" },
+    { label: "창업 준비 중인", value: "0" },
     ...Array.from({ length: 20 }, (_, i) => ({
       label: `${i + 1}년차`,
       value: String(i + 1),
     })),
-    { label: "21년 이상", value: "25" },
+    { label: "21년 넘은", value: "25" },
   ];
 
   return (
     <section>
+      {/* "경기도에서 3년차 소상공인입니다" 로 읽히게. 예전에는 업력과 대상을
+          나란히 두고 "를 하고 있습니다" 를 붙여 "예비창업 예비창업자를 하고
+          있습니다" 가 나왔다. */}
+      <p className="mb-2 text-sm font-bold text-brand">어디서 어떤 사업을 하시나요?</p>
       <p className="text-display font-extrabold leading-snug">
         <span className="whitespace-nowrap">
           <Blank
@@ -128,7 +132,7 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
         <span className="whitespace-nowrap">
           <Blank
             value={years ? yearOpts.find((y) => y.value === years)?.label ?? null : null}
-            placeholder="몇 년째"
+            placeholder="몇 년차"
             options={yearOpts}
             onPick={(v) => set({ years: v })}
           />
@@ -136,14 +140,15 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
         <span className="whitespace-nowrap">
           <Blank
             value={target}
-            placeholder="어떤 사업체"
+            placeholder="어떤 사업자"
             wide
             options={BIZ_TARGET.map((t) => ({ label: t, value: t }))}
             onPick={(v) => set({ target: v })}
           />
-          를 하고 있습니다.
+          입니다.
         </span>
       </p>
+      <p className="mt-2 text-sm text-muted">빈칸을 눌러 고르세요. 지역만 골라도 결과가 나옵니다.</p>
 
       <div className="mt-7">
         <p className="mb-2 text-sm text-muted">

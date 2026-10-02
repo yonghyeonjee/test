@@ -147,9 +147,12 @@ export default function YouthFutureSavingsPage() {
         </h1>
         <p className="num mt-2 text-xs text-faint">{UPDATED} 기준</p>
         <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
-          매달 최대 50만원을 3년 동안 넣으면 정부가 낸 돈의 6%나 12%를 얹어 주고, 이자에는
-          세금을 떼지 않는 적금입니다. 1차 때 234만명이 몰렸던 그 상품의 두 번째 모집입니다.
-          신청 기간이 열흘뿐이라 날짜부터 적어 두시는 편이 좋습니다.
+          매달 최대 50만원을 3년 동안 넣으면 정부가 낸 돈의 <strong>6%나 12%</strong>를 얹어 주고(<a href="#types" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">일반형과 우대형</a>),
+          이자에는 <strong>세금을 떼지 않는</strong> 적금입니다. 1차 때 234만명이 몰렸던 그 상품의 두 번째 모집입니다.
+          <strong>신청 기간이 열흘뿐</strong>이라 <a href="#schedule" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">날짜</a>부터 적어 두시는 편이 좋습니다.
+          가구소득 조건은{" "}
+          <Link href="/blog/income" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">기준 중위소득 계산기</Link>로
+          먼저 확인할 수 있습니다.
         </p>
         <div className="mt-5"><SavingsHero /></div>
       </header>

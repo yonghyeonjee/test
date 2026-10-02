@@ -5,6 +5,7 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { blogIndexRelated } from "@/lib/related";
 import { brandKeys } from "@/lib/seo";
+import { getStories, KIND_LABEL } from "@/lib/stories";
 
 /**
  * 블로그. 제도 설명(지원금 안내)과 달리, 한 사람이 실제로 겪을 법한 상황을
@@ -29,16 +30,28 @@ const STORIES = [
   },
 ];
 
-export default function StoryIndex() {
+export const revalidate = 3600;
+
+export default async function StoryIndex() {
+  const posts = await getStories(60);
   return (
     <div className="py-4">
       <h1 className="text-[1.75rem] font-extrabold leading-tight">블로그</h1>
       <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
-        제도 설명은 지원금 안내에 있습니다. 여기서는 실제로 겪을 법한 상황 하나를 따라가며
-        무엇을 어떤 순서로 하면 되는지 적습니다. 사례는 여러 경우를 섞어 각색합니다.
+        제도 설명은 지원금 안내에 있습니다. 여기서는 모아 둔 자료를 세어 나온 것을 매일 한 편씩
+        적습니다 — 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지. 사례 글은
+        여러 경우를 섞어 각색합니다.
       </p>
 
       <div className="mt-8 grid gap-3">
+        {posts.map((s) => (
+          <Link key={s.slug} href={`/story/${encodeURIComponent(s.slug)}`} className="card card-link block p-5">
+            <span className="text-[12px] font-semibold text-brand">{KIND_LABEL[s.kind] ?? "글"}</span>
+            <b className="mt-0.5 block text-[15.5px] leading-snug">{s.title}</b>
+            <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">{s.summary}</span>
+            <span className="num mt-2 block text-xs text-faint">{s.published_at}</span>
+          </Link>
+        ))}
         {STORIES.map((s) => (
           <Link key={s.href} href={s.href} className="card card-link flex gap-5 p-5">
             <span className="hidden shrink-0 sm:block"><s.Art /></span>

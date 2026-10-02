@@ -9,7 +9,9 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import type { PromoContext } from "@/lib/promo";
 import RelatedLinks from "@/components/RelatedLinks";
+import Inline from "@/components/Inline";
 import ShareButton from "@/components/ShareButton";
+import Toc from "@/components/Toc";
 import { getPost, POSTS } from "@/lib/posts";
 import { postRelated } from "@/lib/related";
 import { SITE_URL, t } from "@/lib/seo";
@@ -50,6 +52,25 @@ export function generateMetadata({
       type: "article",
     },
   };
+}
+
+/**
+ * 글의 핵심 낱말(keywords)이 본문에 처음 나오는 자리를 굵게 한다.
+ * 글마다 손으로 표시하지 않아도 검색엔진과 사람이 핵심을 바로 본다.
+ * 이미 굵게 표시된 곳이나 링크 안은 건드리지 않는다.
+ */
+function emph(text: string, keys: string[]): string {
+  if (/\*\*|\]\(/.test(text)) return text;
+  // 긴 낱말부터, 없으면 낱말을 쪼개서("정부 지원금 종류" → "지원금") 찾는다.
+  const cands = [
+    ...keys.filter((x) => x.length >= 2),
+    ...keys.flatMap((x) => x.split(/\s+/)).filter((x) => x.length >= 3),
+  ];
+  for (const k of cands) {
+    const i = text.indexOf(k);
+    if (i >= 0) return `${text.slice(0, i)}**${k}**${text.slice(i + k.length)}`;
+  }
+  return text;
 }
 
 export default function PostPage({ params }: { params: { slug: string } }) {
@@ -104,20 +125,22 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       </div>
 
       <p className="mt-6 border-l-[3px] border-brand pl-4 leading-relaxed text-ink2">
-        {post.lead}
+        <Inline text={emph(post.lead, post.keywords)} />
       </p>
 
+      <Toc items={post.sections.map((s, i) => ({ id: `s${i + 1}`, label: s.h }))} />
+
       {post.sections.map((s, i) => (
-        <section key={s.h} className="mt-10">
+        <section key={s.h} id={`s${i + 1}`} className="mt-10 scroll-mt-24">
           {i === 2 && (
             <MidAd name="post_mid" context={POST_CONTEXT[post.slug] ?? "general"} seed={post.slug} className="mb-10" />
           )}
           <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
             {s.h}
           </h2>
-          {s.p.map((para) => (
+          {s.p.map((para, j) => (
             <p key={para} className="mt-4 leading-relaxed text-ink2">
-              {para}
+              <Inline text={j === 0 ? emph(para, post.keywords) : para} />
             </p>
           ))}
           {s.list && (
@@ -128,7 +151,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
                     aria-hidden
                     className="mt-2 h-1.5 w-1.5 shrink-0 rounded-pill bg-brand"
                   />
-                  <span>{item}</span>
+                  <span><Inline text={item} /></span>
                 </li>
               ))}
             </ul>

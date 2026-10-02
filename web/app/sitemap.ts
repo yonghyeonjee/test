@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAreas, getTopSourceIds } from "@/lib/db";
 import { getJobHires, getJobRegions, getTopJobIds, getTopOrgs } from "@/lib/pubJobs";
+import { getStories } from "@/lib/stories";
 import { POSTS } from "@/lib/posts";
 import { getLicenses } from "@/lib/qnet";
 import { TOPICS } from "@/lib/topics";
@@ -62,11 +63,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ]),
   );
 
-  const [jobRegions, jobIds, jobOrgs, jobHires] = await Promise.all([
+  const [jobRegions, jobIds, jobOrgs, jobHires, stories] = await Promise.all([
     getJobRegions(),
     getTopJobIds(400),
     getTopOrgs(300),
     getJobHires(),
+    getStories(200).catch(() => []),
   ]);
 
   // 자동 생성 페이지를 한 번에 수천 개 올리면 품질 평가에서 통째로 걸릴 수 있다.
@@ -100,6 +102,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE}/blog/gojobs-guide`, changeFrequency: "monthly" as const, priority: 0.9 },
     { url: `${SITE}/story`, changeFrequency: "weekly" as const, priority: 0.7 },
     { url: `${SITE}/story/jeonse-extension`, changeFrequency: "monthly" as const, priority: 0.9 },
+    ...stories.map((s) => ({ url: `${SITE}/story/${encodeURIComponent(s.slug)}`, lastModified: s.updated_at, changeFrequency: "weekly" as const, priority: 0.8 })),
     { url: `${SITE}/housing`, changeFrequency: "daily" as const, priority: 0.9 },
     ...housing,
     { url: `${SITE}/privacy`, changeFrequency: "yearly" as const, priority: 0.2 },
