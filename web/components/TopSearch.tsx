@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { describe, parseQuery, toParams } from "@/lib/parse";
+import { describe, parseQuery } from "@/lib/parse";
 import { track } from "./Gtm";
 
 type Idx = Record<string, { sido: string; full: string }>;
@@ -25,18 +25,14 @@ export default function TopSearch({ index }: { index: Idx }) {
 
   useEffect(() => { if (open) ref.current?.focus(); }, [open]);
 
+  // 머리말 검색은 통합 검색으로 간다. 복지·기업·채용·자격증·공공기관·안내
+  // 글을 한 화면에서 보여 주고, 각 갈래의 상세 검색으로 이어 준다. 조건
+  // (지역·나이)은 거기서 다시 알아듣는다.
   const go = () => {
     const text = q.trim();
     if (!text) { setOpen(true); return; }
-    if (bits.length) {
-      track("search_submit", { entry: "top", matched: bits.length });
-      const sp = toParams(parsed);
-      sp.set("via", "top");
-      router.push(`/?${sp}`);
-    } else {
-      track("search_submit", { entry: "top", matched: 0 });
-      router.push("/policies");
-    }
+    track("search_submit", { entry: "top", matched: bits.length });
+    router.push(`/search?q=${encodeURIComponent(text)}`);
     setOpen(false);
   };
 

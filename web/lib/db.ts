@@ -150,6 +150,20 @@ export async function matchWelfare(q: WelfareQuery, limit = 60) {
   return (data ?? []) as Program[];
 }
 
+/** 조건에 걸리는 복지 사업의 전체 건수. 목록은 60건까지만 받으므로 따로 센다. */
+export async function countWelfare(q: WelfareQuery): Promise<number> {
+  const { data, error } = await db.rpc("count_welfare", {
+    p_sido: q.sido || null,
+    p_sigungu: q.sigungu || null,
+    p_age: q.age ?? null,
+    p_employment: q.employment || null,
+    p_household: q.household?.length ? q.household : null,
+    p_q: expandQuery(q.q),
+  });
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
 /** 마감까지 남은 일수. 상시는 null */
 export type BusinessQuery = {
   sido?: string;
@@ -172,6 +186,19 @@ export async function matchBusiness(q: BusinessQuery, limit = 60) {
   });
   if (error) throw error;
   return (data ?? []) as Program[];
+}
+
+export async function countBusiness(q: BusinessQuery): Promise<number> {
+  const { data, error } = await db.rpc("count_business", {
+    p_sido: q.sido || null,
+    p_biz_target: q.bizTarget || null,
+    p_biz_field: q.bizField?.length ? q.bizField : null,
+    p_biz_years: q.bizYears ?? null,
+    p_industry: q.industry?.length ? q.industry : null,
+    p_q: expandQuery(q.q),
+  });
+  if (error) throw error;
+  return Number(data ?? 0);
 }
 
 /** 기업 지원사업이 있는 시도 (해당 없음 = 전국) */

@@ -55,7 +55,7 @@ const SITE_JSONLD = {
       publisher: { "@id": `${SITE_URL}/#org` },
       potentialAction: {
         "@type": "SearchAction",
-        target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/policies?q={search_term_string}` },
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
         "query-input": "required name=search_term_string",
       },
     },
