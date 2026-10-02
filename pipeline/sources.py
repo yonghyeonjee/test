@@ -143,6 +143,58 @@ def norm_sido(s):
 
 # ── 어댑터 ───────────────────────────────────────────────────
 
+
+# ── 첨부파일·관련 사이트 ─────────────────────────────────────
+#
+# programs.attach 에 [{"name","url","kind"}] 로 적는다. kind 는 file(서식·공고문)
+# 또는 site(접수·안내 누리집). 화면이 공고 아래에 그대로 보여 준다.
+
+def _attach_row(name, url, kind):
+    url = (url or "").strip()
+    name = clean(name) or url
+    if not url.startswith("http"):
+        return None
+    ext = name.rsplit(".", 1)[1].lower() if "." in name else ""
+    row = {"name": name[:200], "url": url[:500], "kind": kind}
+    if kind == "file" and ext and len(ext) <= 5:
+        row["ext"] = ext
+    return row
+
+
+def _dedup_attach(rows):
+    out, seen = [], set()
+    for r in rows:
+        if r and r["url"] not in seen:
+            seen.add(r["url"]); out.append(r)
+    return out
+
+
+def bokjiro_attach(lists: dict | None):
+    """복지로 상세의 목록 태그에서. basfrmList(040 서식·자료) → file,
+    inqplHmpgReldList(020 관련 누리집) → site. 중앙(servSe*)과 지자체(wlfareInfo*)는
+    태그 이름이 다르다(2026-10 탐침)."""
+    if lists is None:
+        return None          # 상세를 못 본 것. 다음에 다시 본다.
+    rows = []
+    for key, kind in (("basfrmList", "file"), ("inqplHmpgReldList", "site")):
+        for it in lists.get(key) or []:
+            url = it.get("wlfareInfoReldCn") or it.get("servSeDetailLink")
+            name = it.get("wlfareInfoReldNm") or it.get("servSeDetailNm")
+            rows.append(_attach_row(name, url, kind))
+    return _dedup_attach(rows)
+
+
+def bizinfo_attach(item: dict):
+    """기업마당 목록 항목의 공고문 파일(printFlpthNm/printFileNm, flpthNm/fileNm)과
+    접수 누리집(rceptEngnHmpgUrl)."""
+    rows = [
+        _attach_row(item.get("printFileNm") or "공고문", item.get("printFlpthNm"), "file"),
+        _attach_row(item.get("fileNm") or "첨부파일", item.get("flpthNm"), "file"),
+        _attach_row("접수 누리집", item.get("rceptEngnHmpgUrl"), "site"),
+    ]
+    return _dedup_attach(rows)
+
+
 def from_bokjiro_local(item: dict, detail: dict | None) -> dict:
     d = detail or {}
     end_raw = d.get("enfcEndYmd")
@@ -177,6 +229,7 @@ def from_bokjiro_local(item: dict, detail: dict | None) -> dict:
                          if clean(d.get("slctCritCn")) == clean(d.get("sprtTrgtCn"))
                          else clean(d.get("slctCritCn"))),
         "raw_benefit": clean(d.get("alwServCn")),
+        "attach": bokjiro_attach(d.get("_lists")),
     }
 
 
@@ -211,6 +264,7 @@ def from_bokjiro_central(item: dict, detail: dict | None) -> dict:
         "raw_target": clean(d.get("tgtrDtlCn")),
         "raw_criteria": clean(d.get("slctCritCn")),
         "raw_benefit": clean(d.get("alwServCn")),
+        "attach": bokjiro_attach(d.get("_lists")),
     }
 
 
@@ -241,6 +295,7 @@ def from_bizinfo_support(item: dict, detail=None) -> dict:
         "raw_target": clean(item.get("trgetNm")),
         "raw_criteria": clean(item.get("hashtags")),
         "raw_benefit": clean(item.get("bsnsSumryCn")),
+        "attach": bizinfo_attach(item),
 
         # 신청 자격의 매출 상한. 못 뽑으면 None 이고, 그 공고는 매출로 거르지 않는다.
         "revenue_max": parse_revenue_cap(

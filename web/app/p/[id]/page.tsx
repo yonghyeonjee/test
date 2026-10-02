@@ -276,6 +276,51 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <Section title="지원내용" body={p.benefit_text} />
       <Section title="신청방법" body={p.apply_method} />
 
+      {(() => {
+        const files = (p.attach ?? []).filter((a) => a.kind === "file");
+        const sites = (p.attach ?? []).filter((a) => a.kind === "site");
+        if (!files.length && !sites.length) return null;
+        return (
+          <section className="card mt-8 p-5" id="files">
+            {files.length > 0 && (
+              <>
+                <h2 className="text-[15px] font-extrabold">
+                  첨부파일·서식 <span className="num ml-1 text-[13px] font-semibold text-muted">{files.length}개</span>
+                </h2>
+                <ol className="mt-3 divide-y divide-line">
+                  {files.map((f, i) => (
+                    <li key={f.url} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
+                      <span className={`inline-flex h-5 min-w-[2.6rem] items-center justify-center rounded px-1 text-[10.5px] font-bold uppercase ${
+                        f.ext === "pdf" ? "bg-alertSoft text-alert" : f.ext === "hwp" || f.ext === "hwpx" ? "bg-brandSoft text-brand" : "bg-surface2 text-muted"}`}>
+                        {f.ext || "파일"}
+                      </span>
+                      <span className="min-w-0 flex-1 break-all text-[14px] leading-snug text-ink">
+                        <span className="num mr-1 text-muted">{i + 1}.</span>{f.name}
+                      </span>
+                      <a href={f.url} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-primary shrink-0 px-3 py-1.5 text-[13px]">내려받기</a>
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+            {sites.length > 0 && (
+              <p className={`text-[13.5px] leading-relaxed text-ink2 ${files.length ? "mt-3" : ""}`}>
+                <b className="font-bold">관련 누리집.</b>{" "}
+                {sites.map((a, i) => (
+                  <span key={a.url}>
+                    {i > 0 && " · "}
+                    <a href={a.url} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-4 hover:text-brand">{a.name}</a>
+                  </span>
+                ))}
+              </p>
+            )}
+            <p className="mt-3 text-xs leading-relaxed text-faint">
+              파일은 {p.source.startsWith("bokjiro") ? "복지로" : "기업마당"}에 기관이 올린 원본으로 바로 이어집니다. HWP 는 한글 또는 한컴 뷰어로 엽니다.
+            </p>
+          </section>
+        );
+      })()}
+
       <h2 className="mt-9 border-b-2 border-line2 pb-2 text-sm font-bold">{p.title} 신청 전에 확인할 것</h2>
       <ol className="mt-4 grid gap-2.5">
         {programBeforeApply(p).map((t, i) => (
