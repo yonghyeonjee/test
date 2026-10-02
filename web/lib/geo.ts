@@ -166,6 +166,28 @@ export function findSgg(text: string | null | undefined, hint: string | null): H
   return null;
 }
 
+/**
+ * 시·군·구가 비어 있는 공고의 담당 부서·기관 이름에서 시·군·구를 찾는다.
+ *
+ * "전북특별자치도 군산시 복지환경국 아동정책과" 처럼 부서 이름은 띄어쓰기로 갈린 말
+ * 마디라, 마디 하나가 그 시·도의 시·군·구 이름(또는 "군산시청")과 똑같을 때만 쓴다.
+ * 둘 이상 걸리면(드물다) 고르지 않는다 — 틀린 동네에 꽂느니 시·도 전역이 낫다.
+ */
+export function sggFromDept(sido: string | null, ...texts: (string | null | undefined)[]): string | null {
+  const s = normSido(sido);
+  const table = s ? SGG_POINT[s] : null;
+  if (!s || !table) return null;
+  const found = new Set<string>();
+  for (const t of texts) {
+    if (!t) continue;
+    for (const raw of t.split(/[\s,()\[\]/·]+/)) {
+      const tok = raw.replace(/청$/, "");
+      if (tok.length >= 2 && table[tok]) found.add(tok);
+    }
+  }
+  return found.size === 1 ? [...found][0] : null;
+}
+
 /** 채용 공고의 자리. 기관명 → 제목 순으로 시·군·구를 찾고, 없으면 시·도 가운데. */
 export function locateJob(job: { org: string | null; title: string; region?: string | null }): Place | null {
   const hint = normSido(job.region) ?? sidoInText(job.org) ?? sidoInText(job.title);

@@ -1,5 +1,5 @@
 // 자리 찾기. 시·군·구 이름 → 좌표, 채용 공고 기관명 → 시·군·구.
-import { findSgg, haversineKm, locate, locateJob, normSido } from "../lib/geo.ts";
+import { findSgg, haversineKm, locate, locateJob, normSido, sggFromDept } from "../lib/geo.ts";
 
 let bad = 0;
 const check = (name, ok, extra = "") => { if (!ok) { bad++; console.log("FAIL", name, extra); } else console.log("ok  ", name); };
@@ -17,6 +17,15 @@ check("시·도도 모르면 null(전국)", locate(null, null) === null && locat
 check("옛 시·도 이름", normSido("전라남도") === "전남광주통합특별시" && normSido("광주광역시") === "전남광주통합특별시" && normSido("강원도") === "강원특별자치도" && normSido("전라북도") === "전북특별자치도");
 const km = haversineKm([37.5665, 126.978], [35.1796, 129.0756]);
 check("서울→부산 직선거리 약 325km", km > 310 && km < 340, String(km));
+
+// 담당 부서로 시·군·구 보충(시·군·구가 빈 공고)
+check("부서 이름의 시: 전북 군산시", sggFromDept("전북특별자치도", "전북특별자치도 군산시 복지환경국 아동정책과") === "군산시");
+check("부서 이름의 군: 경북 울진군 보건소", sggFromDept("경상북도", "경상북도 울진군 보건소") === "울진군");
+check("○○시청 마디도", sggFromDept("경기도", null, "시흥시청") === "시흥시");
+check("시·도 부서는 null", sggFromDept("전북특별자치도", "전북특별자치도 복지여성보건국 노인복지과") === null);
+check("다른 시·도의 이름은 안 본다", sggFromDept("경기도", "충청북도 청주시 복지국") === null);
+check("두 곳이 걸리면 고르지 않는다", sggFromDept("경기도", "경기도 수원시 화성시 공동") === null);
+check("붙은 글자 속 이름은 안 본다(아동구 X)", sggFromDept("부산광역시", "부산광역시 복지국 아동구조팀") === null);
 
 const j = (org, title = "채용 공고", region = null) => locateJob({ org, title, region });
 check("기관명의 시군구: 인천광역시 연수구", j("인천광역시 연수구", "채용", "인천광역시")?.sigungu === "연수구");

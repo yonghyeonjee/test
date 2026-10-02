@@ -60,16 +60,23 @@ def name_of(tags: dict) -> str:
 
 
 def main() -> None:
+    # 인자: "all" 이면 전부. "only:부산,대구" 면 이름에 그 말이 든 시·도만. "light" 가 붙으면 동 경계(무거운
+    # 관계 가운데 계산)는 빼고 관공서만 — OSM 동 경계는 빠진 곳이 많고 행정복지센터는 거의 다 있다.
+    arg = sys.argv[1] if len(sys.argv) > 1 else "all"
+    only = [x for x in arg.split(":", 1)[1].split(",") if x] if arg.startswith("only:") or ":" in arg else []
+    light = "light" in arg
     sidos = overpass("""
 [out:json][timeout:300];
 area["ISO3166-1"="KR"][admin_level=2]->.kr;
 rel(area.kr)["boundary"="administrative"]["admin_level"="4"];
 out tags;
 """)["elements"]
-    print(f"# 시·도 {len(sidos)}곳", file=sys.stderr, flush=True)
+    print(f"# 시·도 {len(sidos)}곳: {', '.join(name_of(x['tags']) for x in sidos)}", file=sys.stderr, flush=True)
     total_d = total_h = 0
     for s in sidos:
         sname = name_of(s["tags"])
+        if only and not any(o in sname for o in only):
+            continue
         # 시·도 하나: 그 안의 시·군·구(6·7)마다 동(8)과 관공서를 묻는다. 세종처럼 시·군·구가 없는
         # 곳을 위해 시·도 바로 아래 동도 함께 받는다(겹치는 것은 아래에서 가장 깊은 쪽으로 정리).
         q = f"""
@@ -83,8 +90,7 @@ map_to_area->.sa;
 foreach.sggs->.g(
   .g out tags;
   .g map_to_area->.ga;
-  rel(area.ga)["boundary"="administrative"]["admin_level"~"^(8|9)$"];
-  out center tags;
+  {"" if light else 'rel(area.ga)["boundary"="administrative"]["admin_level"~"^(8|9)$"]; out center tags;'}
   nwr(area.ga)["amenity"="townhall"];
   out center tags;
 );

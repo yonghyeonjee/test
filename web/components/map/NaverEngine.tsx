@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { NAVER_KEY, loadNaver, type NCircle, type NMap, type NMarker, type NaverMaps } from "./naver";
-import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, sidoPins, tierOfZoom, type Pin, type Pos, type Tier } from "./pins";
+import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, tierOfZoom, visiblePins, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -15,7 +15,7 @@ const KOREA: LatLng = [36.2, 127.9];
  * NEXT_PUBLIC_NAVER_MAP_KEY 가 있을 때만 쓰인다(components/map/naver.ts).
  */
 const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "" }, ref,
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const N = useRef<NaverMaps | null>(null);
@@ -28,8 +28,8 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
   const [tier, setTier] = useState<Tier>("far");
   const [view, setView] = useState(0);
   const [err, setErr] = useState<string | null>(null);
-  const latest = useRef({ pins, kind, loadItems, onSelect, tier });
-  latest.current = { pins, kind, loadItems, onSelect, tier };
+  const latest = useRef({ pins, kind, loadItems, onSelect, tier, extra, onView });
+  latest.current = { pins, kind, loadItems, onSelect, tier, extra, onView };
 
   useEffect(() => {
     let dead = false;
@@ -45,7 +45,11 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
         keyboardShortcuts: interactive, mapDataControl: false, scaleControl: false,
       });
       n.Event.addListener(m, "zoom_changed", () => setTier(tierOfZoom(m.getZoom())));
-      n.Event.addListener(m, "idle", () => setView((v) => v + 1));
+      const tell = () => {
+        const b = m.getBounds(), sw = b.getSW(), ne = b.getNE();
+        latest.current.onView?.({ s: sw.lat(), w: sw.lng(), n: ne.lat(), e: ne.lng(), zoom: m.getZoom() });
+      };
+      n.Event.addListener(m, "idle", () => { setView((v) => v + 1); tell(); });
       setTier(tierOfZoom(m.getZoom()));
       map.current = m;
       setReady(true);
@@ -80,7 +84,7 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
     if (!n || !m) return;
     for (const mk of markers.current) mk.setMap(null);
     markers.current = [];
-    const list = tier === "far" && pins.length > 1 ? sidoPins(pins) : pins;
+    const list = visiblePins(pins, extra ?? [], tier);
     const proj = m.getProjection();
     const size = m.getSize();
     // fromCoordToOffset 이 컨테이너 기준이든 세계 픽셀이든, 지도 가운데를 빼서 화면 좌표로 맞춘다.
@@ -108,7 +112,7 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
       markers.current.push(mk);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pins, tier, kind, selected, ready, view]);
+  }, [pins, extra, tier, kind, selected, ready, view]);
 
   // 내 위치와 반경 원.
   useEffect(() => {
@@ -133,10 +137,11 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
   useImperativeHandle(ref, () => ({
     focus(key: string) {
       const n = N.current, m = map.current;
-      const p = latest.current.pins.find((x) => x.key === key);
+      const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!n || !m || !p) return;
       m.setCenter(new n.LatLng(p.lat, p.lng));
-      if (m.getZoom() < 11) m.setZoom(11);
+      const want = p.level === "dong" ? 14 : 11;
+      if (m.getZoom() < want) m.setZoom(want);
       setTimeout(() => openCard(p), 350);
     },
   }));

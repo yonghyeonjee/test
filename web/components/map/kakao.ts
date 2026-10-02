@@ -16,6 +16,7 @@ export type KMap = {
   getCenter(): KLatLng;
   setLevel(level: number, opts?: { animate?: boolean; anchor?: KLatLng }): void;
   getLevel(): number;
+  getBounds(): { getSouthWest(): KLatLng; getNorthEast(): KLatLng };
   setBounds(b: KBounds): void;
   panTo(p: KLatLng): void;
   relayout(): void;

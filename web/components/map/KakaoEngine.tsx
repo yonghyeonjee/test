@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { KAKAO_KEY, loadKakao, type KCircle, type KMap, type KOverlay, type KakaoMaps } from "./kakao";
-import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, sidoPins, tierOfLevel, type Kind, type Pin, type Pos, type Tier } from "./pins";
+import { boundsAround, cardHtml, cardLift, pickLabels, pinHtml, tierOfLevel, visiblePins, type Kind, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
 const KOREA: LatLng = [36.2, 127.9];
@@ -15,7 +15,7 @@ const KOREA: LatLng = [36.2, 127.9];
  * NEXT_PUBLIC_KAKAO_MAP_KEY 가 있을 때만 쓰인다(components/map/kakao.ts).
  */
 const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "" }, ref,
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const K = useRef<KakaoMaps | null>(null);
@@ -28,8 +28,8 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
   const [view, setView] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const labeled = useRef<Map<string, Pos>>(new Map());
-  const latest = useRef({ pins, kind, loadItems, onSelect, tier });
-  latest.current = { pins, kind, loadItems, onSelect, tier };
+  const latest = useRef({ pins, kind, loadItems, onSelect, tier, extra, onView });
+  latest.current = { pins, kind, loadItems, onSelect, tier, extra, onView };
 
   useEffect(() => {
     let dead = false;
@@ -44,8 +44,12 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
       });
       if (interactive) m.addControl(new k.ZoomControl(), k.ControlPosition.RIGHT);
       k.event.addListener(m, "zoom_changed", () => setTier(tierOfLevel(m.getLevel())));
-      // 움직임이 멎을 때마다 이름표 자리를 다시 고른다.
-      k.event.addListener(m, "idle", () => setView((v) => v + 1));
+      // 움직임이 멎을 때마다 이름표 자리를 다시 고르고, 보이는 범위를 알린다(zoom ≈ 19 − level).
+      const tell = () => {
+        const b = m.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
+        latest.current.onView?.({ s: sw.getLat(), w: sw.getLng(), n: ne.getLat(), e: ne.getLng(), zoom: 19 - m.getLevel() });
+      };
+      k.event.addListener(m, "idle", () => { setView((v) => v + 1); tell(); });
       setTier(tierOfLevel(m.getLevel()));
       map.current = m;
       setReady(true);
@@ -81,7 +85,7 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     if (!k || !m) return;
     for (const o of overlays.current) o.setMap(null);
     overlays.current = [];
-    const list = tier === "far" && pins.length > 1 ? sidoPins(pins) : pins;
+    const list = visiblePins(pins, extra ?? [], tier);
     const proj = m.getProjection();
     const w = el.current?.clientWidth ?? 0, h = el.current?.clientHeight ?? 0;
     const show = pickLabels(list, (p) => proj.containerPointFromCoords(new k.LatLng(p.lat, p.lng)), { w, h }, tier, selected);
@@ -101,7 +105,7 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
       overlays.current.push(ov);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pins, tier, kind, selected, ready, view]);
+  }, [pins, extra, tier, kind, selected, ready, view]);
 
   // 내 위치와 반경 원.
   useEffect(() => {
@@ -130,10 +134,11 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
   useImperativeHandle(ref, () => ({
     focus(key: string) {
       const k = K.current, m = map.current;
-      const p = latest.current.pins.find((x) => x.key === key);
+      const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!k || !m || !p) return;
       m.setCenter(new k.LatLng(p.lat, p.lng));
-      if (m.getLevel() > 7) m.setLevel(7);
+      const want = p.level === "dong" ? 5 : 7;
+      if (m.getLevel() > want) m.setLevel(want);
       setTimeout(() => openCard(p), 350);
     },
   }));

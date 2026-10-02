@@ -14,6 +14,12 @@ export async function GET(req: Request) {
   const kind = u.searchParams.get("kind") === "jobs" ? "jobs" : "programs";
   const key = u.searchParams.get("key") ?? "";
   const data = await getMapData().catch(() => null);
+  // 동 핀: 동 이름이 분명히 적힌 공고만(lib/mapData dongs).
+  if (key.startsWith("dong|") || key.startsWith("office|")) {
+    const rows = data?.dongs?.[kind]?.[key] ?? [];
+    return NextResponse.json({ key, kind, items: rows.slice(0, 6).map(toItem), n: rows.length },
+      { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } });
+  }
   const p = data?.[kind].find((x) => x.key === key);
   return NextResponse.json(
     { key, kind, items: (p?.items ?? []).slice(0, 6).map(toItem), n: p?.n ?? 0 },
