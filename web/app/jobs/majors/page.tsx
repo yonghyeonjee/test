@@ -96,9 +96,11 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
 
       <MidAd name="detail_mid" context="student" seed="majors" className="mt-12" />
 
-      <section className="mt-12">
+      {/* 찾기를 누르면 쪽이 새로 그려진다. 맨 위(취업 통계)로 올라가지 않고
+          여기로 돌아오게 주소에 #find 를 붙인다. */}
+      <section id="find" className="mt-12 scroll-mt-24">
         <h2 className="text-[1.0625rem] font-bold">학과 이름으로 찾기</h2>
-        <form action="/jobs/majors" method="get" className="mt-3 flex gap-2">
+        <form action="/jobs/majors#find" method="get" className="mt-3 flex gap-2">
           <input name="q" defaultValue={q} placeholder="예: 경영, 간호, 컴퓨터"
                  className="field min-w-0 flex-1" aria-label="학과 이름" />
           <button type="submit" className="btn btn-primary shrink-0 px-5 py-2.5">찾기</button>
