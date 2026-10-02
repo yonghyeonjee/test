@@ -12,6 +12,7 @@ probe.yml 이 requests 만 깔아 주므로 Playwright 는 여기서 깐다.
 import json
 import re
 import subprocess
+import os
 import sys
 import time
 
@@ -25,9 +26,18 @@ def sh(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True)
 
 
+# 러너 이미지에 깔려 있는 크롬. 있으면 그것을 쓴다 — playwright install --with-deps 는
+# apt 로 글꼴을 받는데, 미러가 느린 날은 그것만으로 10분 제한을 넘겼다.
+CHROME = next((c for c in ("/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium")
+               if os.path.exists(c)), None)
+
+
 def setup() -> None:
     sh([sys.executable, "-m", "pip", "install", "-q", "playwright"])
-    sh([sys.executable, "-m", "playwright", "install", "--with-deps", "chromium"])
+    if CHROME:
+        print("러너의 브라우저를 쓴다:", CHROME, flush=True)
+        return
+    sh([sys.executable, "-m", "playwright", "install", "chromium"])
 
 
 def _err(e) -> str:
@@ -212,7 +222,7 @@ def main() -> None:
     from playwright.sync_api import sync_playwright  # noqa: PLC0415 — 위에서 깐 뒤에 부른다
 
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(executable_path=CHROME) if CHROME else p.chromium.launch()
         for a in args:
             try:
                 if a == "map":
