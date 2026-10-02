@@ -9,6 +9,9 @@ import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
+import LastConditions from "@/components/LastConditions";
+import RecentStrip from "@/components/RecentStrip";
+import RememberMe from "@/components/RememberMe";
 import GuideBanner from "@/components/GuideBanner";
 import KeywordBar from "@/components/KeywordBar";
 import QuickMenu from "@/components/QuickMenu";
@@ -260,6 +263,11 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           <SavedList />
         </Suspense>
       )}
+      {/* 지난번에 넣은 조건. 다시 온 사람은 또 고르지 않아도 된다. */}
+      {!asked && <LastConditions />}
+      {asked && (sido || age) && (
+        <RememberMe sido={sido} sigungu={sigungu} age={age} emp={employment} hh={household} />
+      )}
 
       {settings.notice && (
         <p className="mb-6 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">
@@ -283,6 +291,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
           {/* 마감이 걸린 것부터. 무엇이 있는지 모르고 들어온 사람에게는
               이 띠가 곧 안내다. */}
           <HotBanner slides={hot} />
+          <RecentStrip className="mt-10" />
           <TopicGrid counts={topicCounts} />
           <QuickMenu />
         </>

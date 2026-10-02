@@ -9,6 +9,7 @@ import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import RecentTracker from "@/components/RecentTracker";
 import { STATUS_LABEL } from "@/lib/db";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
@@ -185,6 +186,7 @@ export default async function JobDetail({ params }: P) {
   return (
     <article className="pb-4">
       <JsonLd data={ld} />
+      <RecentTracker kind="job" id={job.id} title={job.title} sub={orgShort(job.org) || job.region || undefined} />
 
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/jobs" className="hover:text-brand">채용</Link>
