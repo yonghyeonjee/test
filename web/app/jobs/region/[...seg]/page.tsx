@@ -48,14 +48,14 @@ export default async function JobsByRegion({ params }: P) {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="blue"
         eyebrow={`채용 · ${sido}`}
         title={`${sido}에서 뽑는 자리`}
         sub={`${sido}에 있는 공공기관과 지자체가 낸 채용 공고입니다. 접수 중인 것이 앞에 옵니다.`}
         art={<IllusJobs />}
       >
         {board.ok && (
-          <p className="num mt-4 text-sm text-white/80">
+          <p className="num mt-4 text-sm text-muted">
             {board.total.toLocaleString()}건 · 접수 중 {openN.toLocaleString()}건
           </p>
         )}

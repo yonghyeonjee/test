@@ -4,45 +4,43 @@ import { headers } from "next/headers";
 import { isBot } from "@/lib/bot";
 import { getHotSlides } from "@/lib/hotBanner";
 import { Suspense } from "react";
+import AlertBox from "@/components/AlertBox";
 import BizSearchBox from "@/components/BizSearchBox";
 import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
+import FeedTabs from "@/components/FeedTabs";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
-import PortalSearch from "@/components/PortalSearch";
-import { getHotTerms } from "@/lib/hotTerms";
+import { getHotTerms, type HotTerms } from "@/lib/hotTerms";
 import { IllusEmpty } from "@/components/Illus";
 import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
 import RememberMe from "@/components/RememberMe";
 import GuideBanner from "@/components/GuideBanner";
 import KeywordBar from "@/components/KeywordBar";
-import QuickMenu from "@/components/QuickMenu";
 import TopicGrid from "@/components/TopicGrid";
 import SectionHead from "@/components/SectionHead";
-import StatsBand from "@/components/StatsBand";
-import { Reveal } from "@/components/Motion";
 import AdSlot from "@/components/AdSlot";
 import HotBanner from "@/components/HotBanner";
-import { TrustIcon } from "@/components/Infographic";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
 import SavedList from "@/components/SavedList";
-import Hero from "@/components/Hero";
+import {
+  AboutBox, DeadlineList, HotRank, MapCard, PortalColumns, PortalTop, ProgramLine,
+} from "@/components/PortalHome";
+import PortalIcon from "@/components/PortalIcon";
 import SearchBox from "@/components/SearchBox";
 import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
-import TrackResults from "@/components/Track";
 import { promoContextFor } from "@/lib/promo";
 import { SUGGEST_BUSINESS, SUGGEST_WELFARE, cleanQuery } from "@/lib/keywords";
 import { blogIndexRelated } from "@/lib/related";
-import { LOAN_ORGS } from "@/lib/studentLoan";
-import { MAJORS } from "@/lib/majors";
 import { SITE_URL, withOg } from "@/lib/seo";
+import { SIDO_SHORT } from "@/lib/geo";
 import {
   countByTopic,
-  countBusiness, countWelfare, feedClosing, getBusinessRegions, getHomeBundle,
+  countBusiness, countWelfare, feedClosing, feedNew, getBusinessRegions, getHomeBundle,
   logSearch, matchBusiness, matchWelfare, type Program,
 } from "@/lib/db";
 
@@ -92,42 +90,14 @@ export type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 
-function Row({ title, sub, items, more, wide }: {
-  title: string; sub?: string; items: Program[]; more?: string; wide?: boolean;
-}) {
+/** 촘촘한 공고 목록(제목·기관·남은 날). 탭 카드 안에 들어간다. */
+function Lines({ items, fresh = false }: { items: Program[]; fresh?: boolean }) {
   if (!items.length) return null;
-  return (
-    <section className="mt-10 min-w-0">
-      <SectionHead title={title} sub={sub} more={more} />
-      <div className={`grid gap-3 ${wide ? "sm:grid-cols-2" : ""}`}>
-        {items.map((p) => <ProgramEntry key={p.id} p={p} compact />)}
-      </div>
-    </section>
-  );
+  return <ul className="divide-y divide-line">{items.map((p) => <ProgramLine key={p.id} p={p} fresh={fresh} />)}</ul>;
 }
 
-/**
- * 마감 임박과 새 공고를 나란히 놓는 자리.
- *
- * 마감 임박이 0건인 날이 있다(마감일이 적힌 공고가 그 기간에 없을 때).
- * 그럴 때 2열을 그대로 두면 한 칸이 통째로 비어 화면 절반이 허옇게 남는다.
- * 남은 한 줄만 있으면 폭을 다 쓰고, 대신 카드를 2열로 깔아 더 보여 준다.
- */
-function RowPair({ rows }: {
-  rows: { title: string; sub: string; items: Program[] }[];
-}) {
-  const shown = rows.filter((r) => r.items.length);
-  if (!shown.length) return null;
-  const solo = shown.length === 1;
-  return (
-    <div className={`grid gap-x-6 ${solo ? "" : "md:grid-cols-2"}`}>
-      {shown.map((r) => (
-        <Row key={r.title} title={r.title} sub={r.sub} more="/policies"
-             items={r.items.slice(0, solo ? 8 : 5)} wide={solo} />
-      ))}
-    </div>
-  );
-}
+/** 많이 찾는 말 상자의 기준 문구. */
+const hotSub = (h: HotTerms) => (h.from === "log" ? `지난 ${h.days}일` : "자주 찾는 말");
 
 function Results({ results, total, label, myAge, terms, q }: {
   results: Program[]; total?: number; label: string; myAge?: number; terms: string[]; q?: string;
@@ -186,6 +156,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
   const { coverage, settings } = bundle;
   const sido = one(searchParams.sido);
   const q = cleanQuery(one(searchParams.q));
+  const total = coverage.welfare + coverage.business;
 
   if (tab === "business") {
     const sidos = await getBusinessRegions();
@@ -199,7 +170,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
     );
 
     const bq = { sido, bizTarget, bizField, bizYears, industry, q };
-    const [results, total] = asked
+    const [results, count] = asked
       ? await Promise.all([matchBusiness(bq), countBusiness(bq).catch(() => undefined)])
       : [[], 0];
     // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
@@ -207,57 +178,67 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
       logSearch({ kind: "business", sido, bizTarget, bizField,
                   n: results.length, entry: via });
 
-    const closing = asked ? [] : await feedClosing("business", 6);
-
-    return (
-      <>
-        {/* 검색창이 맨 위. 메뉴 띠를 지나자마자 보이게. */}
-        {!asked && (
-          <div className="mt-4">
-            <PortalSearch index={bundle.sggIndex} hot={hotTerms.business} scope="business"
-                          placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
-                          placeholderNarrow="수출, 스마트공장, 폐업, 특허…" />
-          </div>
-        )}
-        <Tabs active="business" counts={coverage} />
-        <Suspense fallback={<div className="h-56" />}>
-          {asked ? (
+    if (asked) {
+      return (
+        <>
+          <Tabs active="business" counts={coverage} />
+          <Suspense fallback={<div className="h-56" />}>
             <Finder
               pick={<><BusinessSentence sidos={sidos} /><KeywordBar suggest={SUGGEST_BUSINESS} tab="business" /></>}
               search={<BizSearchBox />}
             />
-          ) : (
-            <div className="card border-t-[3px] border-t-brand p-4 shadow-card sm:p-5">
-              {/* 낱말 칸(KeywordBar)은 여기 두지 않는다 — 위 검색창과 겹친다.
-                  조건을 고른 결과 화면에서는 조건과 함께 거는 칸으로 다시 나온다. */}
-              <BusinessSentence sidos={sidos} />
-            </div>
-          )}
-        </Suspense>
-        {asked ? (
+          </Suspense>
           <Results
             results={results}
-            total={total}
+            total={count}
             label="신청할 수 있는 지원사업"
             q={q}
             terms={[sido, bizTarget, yearsRaw ? `${yearsRaw}년차` : "", ...bizField, q && `‘${q}’`]
               .filter(Boolean) as string[]}
           />
-        ) : (
-          <>
-            {/* 검색엔진은 쪽마다 제목(h1) 하나를 기대한다. 기업 쪽 첫 화면에는 없었다. */}
-            <h1 className="display mt-8 text-[1.5rem] leading-tight">
-              기업·소상공인 지원사업, 내 사업에 맞는 것만
-            </h1>
-            <p className="num mt-2 text-sm text-muted">
-              현재 {coverage.business.toLocaleString()}건의 지원사업을 지역·대상·업종·연차로
-              골라 볼 수 있습니다.
-            </p>
-            <Row title="놓치면 내년까지 기다려야 합니다"
-                 sub={`${settings.closingDays}일 이내`} items={closing} />
-          </>
-        )}
-        <PromoBanner placement={asked ? "business-results" : "business"} context="business" />
+          <PromoBanner placement="business-results" context="business" />
+        </>
+      );
+    }
+
+    const [closing, fresh] = await Promise.all([
+      feedClosing("business", 6).catch(() => [] as Program[]),
+      feedNew("business", 6).catch(() => [] as Program[]),
+    ]);
+
+    return (
+      <>
+        <PortalTop
+          index={bundle.sggIndex} hot={hotTerms.business} scope="business" findHref="/business#find"
+          h1="기업·소상공인 지원사업, 내 사업에 맞는 것만 — 나라지원 사업자 검색"
+          tagline={<>중소기업·소상공인 지원사업 <b className="num text-ink">{coverage.business.toLocaleString("ko-KR")}</b>건을 지역·업종·업력으로</>}
+          placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
+          placeholderNarrow="수출, 스마트공장, 폐업, 특허…"
+        />
+        <PortalColumns
+          main={<>
+            <section id="find" className="card scroll-mt-28 p-4 sm:p-5">
+              <Tabs active="business" counts={coverage} compact />
+              <Suspense fallback={<div className="h-40" />}>
+                {/* 낱말 칸(KeywordBar)은 두지 않는다 — 위 검색창과 겹친다. */}
+                <BusinessSentence sidos={sidos} />
+              </Suspense>
+            </section>
+            <FeedTabs tabs={[
+              { key: "closing", label: "마감 임박", sub: `${settings.closingDays}일 이내 마감 · 놓치면 내년까지 기다려야 합니다`, more: "/policies",
+                content: closing.length ? <Lines items={closing} /> : null },
+              { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
+                content: fresh.length ? <Lines items={fresh} fresh /> : null },
+            ]} />
+            <PromoBanner placement="business" context="business" />
+          </>}
+          aside={<>
+            <AlertBox findHref="/business#find" />
+            <HotRank terms={hotTerms.business} base="/business/search" sub={hotSub(hotTerms)} className="hidden lg:block" />
+            <MapCard className="hidden lg:flex" />
+            <AboutBox total={total} closing={bundle.closingCount} className="hidden lg:block" />
+          </>}
+        />
       </>
     );
   }
@@ -270,65 +251,27 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
   const employment = one(searchParams.emp);
   const household = many(searchParams.hh);
   const asked = Boolean(sido || age || employment || household.length || q);
-  const topicCounts = asked ? {} : await countByTopic().catch(() => ({} as Record<string, number>));
 
   const wq = { sido, sigungu, age, employment, household, q };
-  const [results, total] = asked
+  const [results, count] = asked
     ? await Promise.all([matchWelfare(wq), countWelfare(wq).catch(() => undefined)])
     : [[], 0];
   if (asked && !isBot(headers().get("user-agent")))
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
                 household, n: results.length, entry: via });
 
-  const { closing, closingFallback, fresh, closingCount } = bundle;
-  // 조건을 넣기 전 첫 화면에서만. 결과를 보는 중에 띠가 돌면 방해가 된다.
-  const hot = asked ? [] : await getHotSlides().catch(() => []);
-
-  return (
-    <>
-      {/* 결과 화면에서는 갈래 탭이 맨 위. 첫 화면에서는 검색창이 먼저고 탭은 조건 카드 안에. */}
-      {asked && <Tabs active="welfare" counts={coverage} />}
-      {/* 사람이 직접 고른 조건만 기억한다. 글이나 정책 전체에서 "서울에서 찾기" 같은
-          링크로 들어온 조건은 그 사람의 것이 아니다. */}
-      {asked && (sido || age) && (via === "form" || via === "last") && (
-        <RememberMe sido={sido} sigungu={sigungu} age={age} emp={employment} hh={household} />
-      )}
-
-      {settings.notice && (
-        <p className="mb-6 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">
-          {settings.notice}
-        </p>
-      )}
-
-      {!asked ? (
-        <>
-          <Hero
-            count={coverage.welfare + coverage.business}
-            closing={closingCount}
-            // 검색 포털의 얼굴. 메뉴 띠 바로 아래 — 휴대폰에서도 첫 화면 안에 있어야 한다.
-            // 한 줄 적으면 복지·기업·채용·자격증·공공기관을 한 번에 찾고 연관어까지 같이 본다.
-            top={<PortalSearch index={sggIndex} hot={hotTerms.welfare} autoFocus />}
-          >
-            <Tabs active="welfare" counts={coverage} compact />
-            <Suspense fallback={<div className="h-40" />}>
-              <ConditionSentence regions={regions} />
-            </Suspense>
-          </Hero>
-          {/* 저장해 둔 조건과 지난번 조건. 조건 카드 바로 아래가 제자리다. */}
-          <div className="mt-5">
-            <Suspense fallback={null}>
-              <SavedList />
-            </Suspense>
-            <LastConditions />
-          </div>
-          {/* 마감이 걸린 것부터. 무엇이 있는지 모르고 들어온 사람에게는
-              이 띠가 곧 안내다. */}
-          <HotBanner slides={hot} />
-          <RecentStrip className="mt-10" />
-          <TopicGrid counts={topicCounts} />
-          <QuickMenu />
-        </>
-      ) : (
+  if (asked) {
+    return (
+      <>
+        <Tabs active="welfare" counts={coverage} />
+        {/* 사람이 직접 고른 조건만 기억한다. 글이나 정책 전체에서 "서울에서 찾기" 같은
+            링크로 들어온 조건은 그 사람의 것이 아니다. */}
+        {(sido || age) && (via === "form" || via === "last") && (
+          <RememberMe sido={sido} sigungu={sigungu} age={age} emp={employment} hh={household} />
+        )}
+        {settings.notice && (
+          <p className="mb-6 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">{settings.notice}</p>
+        )}
         <Suspense fallback={<div className="h-56" />}>
           {/* 결과 화면에서는 자동 초점을 주지 않는다. 초점이 가면 브라우저가
               검색칸을 화면에 맞추느라 쪽을 내려 버려, 조건을 고르자마자
@@ -338,146 +281,129 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             search={<SearchBox index={sggIndex} />}
           />
         </Suspense>
+        <Results
+          results={results}
+          total={count}
+          label="해당될 수 있는 사업"
+          myAge={age}
+          q={q}
+          terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household, q && `‘${q}’`]
+            .filter(Boolean) as string[]}
+        />
+        <AdSlot name="results_bottom" />
+        <PromoBanner
+          placement="results"
+          context={promoContextFor({ employment, household, age })}
+        />
+      </>
+    );
+  }
+
+  const { closing, closingFallback, fresh, closingCount } = bundle;
+  const [topicCounts, hot] = await Promise.all([
+    countByTopic().catch(() => ({} as Record<string, number>)),
+    // 마감이 걸린 것만 도는 띠. 결과를 보는 중에는 방해가 되어 첫 화면에서만.
+    getHotSlides().catch(() => []),
+  ]);
+
+  return (
+    <>
+      {settings.notice && (
+        <p className="mt-4 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">{settings.notice}</p>
       )}
-
-      {asked ? (
-        <>
-          <Results
-            results={results}
-            total={total}
-            label="해당될 수 있는 사업"
-            myAge={age}
-            q={q}
-            terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household, q && `‘${q}’`]
-              .filter(Boolean) as string[]}
-          />
-          <AdSlot name="results_bottom" />
-          <PromoBanner
-            placement="results"
-            context={promoContextFor({ employment, household, age })}
-          />
-        </>
-      ) : (
-        <>
-          <Reveal as="section" className="mt-14">
-            <p className="eyebrow">이렇게 찾습니다</p>
-            <h2 className="display mt-2 text-[1.5rem] leading-tight">
-              검색어를 몰라도 됩니다. 조건만 고르세요.
-            </h2>
-            <ol className="mt-6 grid gap-6 sm:grid-cols-3">
-              {[
-                ["01", "사는 곳과 나이를 넣습니다", "시·군·구까지 넣으면 우리 동네 사업이 같이 나옵니다. 가구 사정과 취업 상태는 골라도, 안 골라도 됩니다."],
-                ["02", "해당되는 공고만 남습니다", "공고 원문에서 추려낸 나이·거주·가구 조건으로 거릅니다. 마감된 것은 표시되고, 마감 임박은 앞에 옵니다."],
-                ["03", "원문에서 신청합니다", "화면에 담기지 않은 소득·재산 기준이 남아 있을 수 있어, 원문 링크로 넘어가 최종 확인 뒤 신청합니다."],
-              ].map(([n, h, b]) => (
-                <li key={n} className="border-t-2 border-ink pt-4">
-                  <span className="numeral">{n}</span>
-                  <b className="mt-2 block text-[15.5px] font-bold">{h}</b>
-                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
-                </li>
-              ))}
-            </ol>
-          </Reveal>
-
-          <AdSlot name="home_mid" />
-
-          <RowPair rows={[
-            { title: "놓치면 내년까지 기다려야 합니다",
-              sub: closingFallback
-                ? "마감일이 가까운 순"
-                : `${settings.closingDays}일 이내 마감`,
-              items: closing },
-            { title: "이번 주에 새로 올라왔어요",
-              sub: `최근 ${settings.newDays}일`, items: fresh },
-          ]} />
-
-          <section className="mt-14">
-            <SectionHead title="어디에 해당되시나요"
-                         sub="눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다." more="/policies" />
-            <StatTables areas={areas} age={stats.age}
-                        employment={stats.employment} household={stats.household} />
+      {/* 검색 포털의 얼굴: 가운데 큰 검색창 → 많이 찾는 말 → 색 아이콘 바로가기.
+          휴대폰에서는 이것만으로 첫 화면이 찬다. 긴 소개·통계 띠는 넓은 화면의
+          오른쪽 기둥으로 줄여 옮겼다. */}
+      <PortalTop
+        index={sggIndex} hot={hotTerms.welfare}
+        h1="나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
+        tagline={<>정부지원금 · 채용 · 자격증 · 공공기관 사업을 <b className="text-ink">검색 한 번</b>으로</>}
+      />
+      <PortalColumns
+        main={<>
+          <section id="find" className="card scroll-mt-28 p-4 sm:p-5">
+            <Tabs active="welfare" counts={coverage} compact />
+            <Suspense fallback={<div className="h-40" />}>
+              <ConditionSentence regions={regions} />
+            </Suspense>
           </section>
-
-          <section id="areas" className="mt-12">
+          {/* 저장해 둔 조건과 지난번 조건. 조건 카드 바로 아래가 제자리다. */}
+          <div className="-mb-5 empty:hidden">
+            <Suspense fallback={null}>
+              <SavedList />
+            </Suspense>
+            <LastConditions />
+          </div>
+          <RecentStrip />
+          {/* 휴대폰: 마감 돌림 띠. 넓은 화면은 오른쪽 기둥의 마감 모음이 같은 것을 보여 준다. */}
+          <HotBanner slides={hot} className="lg:hidden" />
+          <FeedTabs tabs={[
+            { key: "closing", label: "마감 임박",
+              sub: closingFallback ? "마감일이 가까운 순 · 놓치면 내년까지 기다려야 합니다" : `${settings.closingDays}일 이내 마감 · 놓치면 내년까지 기다려야 합니다`,
+              more: "/policies", content: closing.length ? <Lines items={closing.slice(0, 6)} /> : null },
+            { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
+              content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
+          ]} />
+          <AdSlot name="home_mid" />
+          <TopicGrid counts={topicCounts} className="card p-4 sm:p-5" />
+          <section id="areas" className="card scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"
                          sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />
-            <div className="card grid grid-cols-2 gap-x-6 gap-y-1 p-5 sm:grid-cols-3">
+            {/* 휴대폰은 짧은 이름(서울·경기…)으로 네 칸. 긴 이름이 세 줄로 꺾였다. */}
+            <div className="grid grid-cols-4 gap-x-1 gap-y-0.5 sm:gap-x-3">
               {areas.map((a) => (
-                <Link key={a.sido} href={`/area/${encodeURIComponent(a.sido)}`}
-                      className="flex items-baseline justify-between rounded-[8px]
-                                 px-2 py-2 text-sm transition-colors hover:bg-ground
-                                 hover:text-brand">
-                  <span>{a.sido}</span>
-                  <span className="num text-xs text-muted">{a.n}</span>
+                <Link key={a.sido} href={`/area/${encodeURIComponent(a.sido)}`} title={a.sido}
+                      className="flex items-baseline justify-between gap-1 rounded-[8px] px-2 py-2 text-[14px]
+                                 transition-colors hover:bg-ground">
+                  <span className="truncate font-medium text-ink2">
+                    <span className="sm:hidden">{SIDO_SHORT[a.sido] ?? a.sido}</span>
+                    <span className="hidden sm:inline">{a.sido}</span>
+                  </span>
+                  <span className="num text-[12px] text-faint">{a.n}</span>
                 </Link>
               ))}
             </div>
-            <Link href="/map" className="btn btn-ghost mt-3">
-              <svg viewBox="0 0 24 24" className="mr-1.5 h-4 w-4 text-brand" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 21s7-6.5 7-11.5a7 7 0 10-14 0C5 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2" />
-              </svg>
+            <Link href="/map" className="mt-3 flex items-center justify-center gap-1.5 rounded-btn bg-cat-redSoft px-4 py-3
+                                         text-[14px] font-bold text-cat-red transition-colors hover:bg-[#FFE3E3]">
+              <PortalIcon name="map" className="h-[18px] w-[18px]" strokeWidth={2.1} />
               정책지도에서 내 주변 보기
             </Link>
           </section>
 
-          <section className="mt-12">
-            <Link href="/policies" className="card card-link block border-l-4 border-l-brand p-6 sm:flex
-                                              sm:items-center sm:justify-between sm:gap-6">
+          {/* 넓은 화면에서만: 조건별 통계표·정책 전체 입구·안내 글. 휴대폰에서는 검색과
+              바로가기로 충분하고, 긴 덩어리가 아래 탭 막대까지 몇 화면을 밀어냈다. */}
+          <div className="hidden space-y-6 lg:block">
+            <section className="card p-5">
+              <SectionHead title="어디에 해당되시나요"
+                           sub="눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다." more="/policies" />
+              <StatTables areas={areas} age={stats.age}
+                          employment={stats.employment} household={stats.household} />
+            </section>
+            <Link href="/policies" className="card card-link flex items-center justify-between gap-6 p-5">
               <span className="block">
-                <b className="block text-[1.0625rem] font-bold">
-                  무엇을 찾아야 할지 모르겠다면
-                </b>
-                <span className="mt-1.5 block text-sm leading-relaxed text-muted">
-                  대상·분야·지역·업종을 전부 펼쳐 두었습니다. 누르기만 하면 그 조건에
-                  걸리는 공고만 남습니다.
+                <b className="block text-[16px] font-extrabold">무엇을 찾아야 할지 모르겠다면</b>
+                <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
+                  대상·분야·지역·업종을 전부 펼쳐 두었습니다. 누르기만 하면 그 조건에 걸리는 공고만 남습니다.
                 </span>
               </span>
-              <span className="btn btn-primary mt-4 shrink-0 sm:mt-0">
-                정책 전체 보기
-              </span>
+              <span className="btn btn-primary shrink-0 !py-2.5">정책 전체 보기</span>
             </Link>
-          </section>
-
-          <GuideBanner />
-
-          <RelatedLinks
-            title="처음이시라면 이것부터"
-            items={blogIndexRelated().filter((r) => r.href !== "/")}
-          />
-
-          <Reveal as="section" className="mt-16 border-y border-line py-10">
-            <p className="eyebrow">믿을 수 있는 이유</p>
-            <h2 className="display mt-2 text-[1.5rem] leading-tight">숫자 하나까지 출처가 있습니다</h2>
-            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {([
-                ["source", "정부 공개 자료만 씁니다", "복지로·기업마당·소상공인24 등 10곳의 공공데이터를 그대로 색인합니다. 저희가 지어낸 사업은 없습니다."],
-                ["link", "모든 공고에 원문 링크", "요약만 보고 판단하지 않도록, 한 건마다 발행 기관의 원문으로 이어집니다."],
-                ["lock", "개인정보를 저장하지 않습니다", "나이와 지역은 화면에서만 쓰고, 검색 기록에 IP·이름·원문 입력을 남기지 않습니다."],
-                ["clock", "매일 새벽 갱신", "새 공고와 마감을 매일 새벽 반영합니다. 마지막 수집 시각은 관리자 화면에서 확인합니다."],
-              ] as const).map(([ic, h, b]) => (
-                <div key={ic}>
-                  <TrustIcon name={ic} />
-                  <b className="mt-3 block text-[15px] font-bold">{h}</b>
-                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-
-          <StatsBand
-            welfare={coverage.welfare}
-            business={coverage.business}
-            items={[
-              { n: areas.length, label: "시·도" },
-              { n: 9, label: "자료 출처 기관" },
-              { n: LOAN_ORGS.length, label: "학자금 이자지원 기관" },
-              { n: MAJORS.length, label: "학과별 취업 통계" },
-            ]}
-          />
-
+            <GuideBanner />
+            <RelatedLinks
+              title="처음이시라면 이것부터"
+              items={blogIndexRelated().filter((r) => r.href !== "/")}
+            />
+          </div>
           <PromoBanner placement="home" />
-        </>
-      )}
+        </>}
+        aside={<>
+          <AlertBox />
+          <HotRank terms={hotTerms.welfare} sub={hotSub(hotTerms)} className="hidden lg:block" />
+          <DeadlineList slides={hot} className="hidden lg:block" />
+          <MapCard className="hidden lg:flex" />
+          <AboutBox total={total} closing={closingCount} className="hidden lg:block" />
+        </>}
+      />
     </>
   );
 }

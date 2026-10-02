@@ -1,48 +1,63 @@
 import type { Config } from "tailwindcss";
 
 /**
- * 지원찾기 고유 팔레트.
+ * 나라지원 팔레트.
  *
- * Datacenter(삼성앤텍 운영 도구)는 차가운 회색 + 남색 #1428A0 을 쓴다.
- * 이쪽은 무관한 공공 안내 서비스이므로 계열로 오인되면 안 된다.
- * 토큰 '체계'만 같이 가져가고 색은 전부 다르게 잡는다.
+ * 바탕·글자·선은 색기 없는 중립 회색이다. 예전에는 회색까지 보라를 머금어 화면 전체가
+ * 한 가지 색으로 보였고, 짙은 보라 띠(메뉴·히어로·꼬리말)가 무거웠다.
  *
- * 초록: 한국어 맥락에서 승인·수령의 색. "받을 수 있다"는 메시지와 맞다.
+ *  - 브랜드 보라(brand)는 주 동작(검색·찾기 단추, 고른 것, 초점)에만 쓴다.
+ *  - 갈래마다 제 색(cat.*)이 있다. 바로가기 아이콘·분야·배지가 이 색을 입어 화면이
+ *    다채로워지되, 채도는 Open Color 6~8 단계로 묶어 들뜨지 않게 한다.
+ *  - 회색 단계는 국내 서비스들이 쓰는 값에 맞췄다(본문 #191F28, 보조 #5B6573).
+ *    보조 글자는 바탕(#F5F6F8) 위에서도 명도 대비 4.5:1 을 넘는다.
  */
 export default {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  // lib/ 도 읽는다 — 갈래 색·기둥 폭 같은 클래스 묶음이 lib/nav.ts 에 있다.
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // 따뜻한 종이색은 정부지원 조회 화면에 얹으니 촌스러웠다.
-        // 중립에 가까운 서늘한 회색으로 낮추고, 색은 초록 하나만 남긴다.
-        // 종이에 가까운 따뜻한 바탕. 차가운 회색은 관리 도구처럼 보였다.
-        ground:   "#F7F7FB",
+        ground:   "#F5F6F8",
         surface:  "#FFFFFF",
-        surface2: "#F9F8FF",
-        line:     "#E6E4F2",
-        line2:    "#CFCBE6",
-        ink:      "#171532",
-        ink2:     "#2E2B4F",
-        muted:    "#6B6885",
-        faint:    "#9C99B4",
-        /** 짙은 띠(히어로·통계·꼬리말) 바탕 */
-        deep:     "#1E1B4B",
-        deep2:    "#2A2777",
-        clay:     "#D9691F",
-        claySoft: "#FCEBDD",
+        surface2: "#F9FAFB",
+        line:     "#E5E8EC",
+        line2:    "#D1D6DC",
+        ink:      "#191F28",
+        ink2:     "#333D4B",
+        muted:    "#5B6573",
+        faint:    "#7A8494",
+        /** 짙은 바탕이 꼭 필요할 때(관리자 로그인 등). 남색에 가까운 먹색. */
+        deep:     "#1B2033",
+        deep2:    "#2A3150",
+        clay:     "#C4410C",
+        claySoft: "#FFF1E8",
 
-        brand:     "#5A4BE0",  // 진초록
+        brand:     "#5A4BE0",
         brand2:    "#7B6CF6",
-        brandDeep: "#3B2FB5",
-        brandSoft: "#ECEAFF",
+        brandDeep: "#4436C7",
+        brandSoft: "#EEEBFF",
 
-        accent:     "#D9691F",  // 마감
-        accentSoft: "#FCEBDD",
-        alert:      "#A32B22",
-        alertSoft:  "#FAE9E6",
+        accent:     "#C4410C",  // 마감
+        accentSoft: "#FFF1E8",
+        alert:      "#C92A2A",
+        alertSoft:  "#FFF0F0",
         gold:       "#8A6A12",
-        goldSoft:   "#FAF2DC",
+        goldSoft:   "#FBF3DC",
+
+        /** 갈래 색. 글자로 쓸 때는 진한 쪽(DEFAULT), 바탕은 soft. */
+        cat: {
+          green: "#0C9F6E",  greenSoft: "#E6FCF5",
+          red: "#E03131",    redSoft: "#FFF0F0",
+          violet: "#7048E8", violetSoft: "#F3F0FF",
+          blue: "#1C7ED6",   blueSoft: "#E7F5FF",
+          orange: "#E8590C", orangeSoft: "#FFF4E6",
+          amber: "#E67700",  amberSoft: "#FFF9DB",
+          lime: "#5C940D",   limeSoft: "#F4FCE3",
+          cyan: "#0C8599",   cyanSoft: "#E3FAFC",
+          indigo: "#3B5BDB", indigoSoft: "#EDF2FF",
+          pink: "#C2255C",   pinkSoft: "#FFF0F6",
+        },
       },
       fontFamily: {
         sans: ['"Pretendard Variable"', "Pretendard", "-apple-system",
@@ -51,11 +66,11 @@ export default {
         serif: ['"Pretendard Variable"', "Pretendard", "-apple-system",
                 "system-ui", '"Malgun Gothic"', "sans-serif"],
       },
-      // 모서리를 조금 죽이고 그림자를 걷어낸다. 둥둥 떠 있는 카드가 템플릿처럼 보였다.
-      borderRadius: { card: "18px", btn: "12px", ctl: "10px", pill: "999px" },
+      // 포털 카드의 모서리(16px). 검색창은 알약 모양.
+      borderRadius: { card: "16px", btn: "12px", ctl: "10px", pill: "999px" },
       boxShadow: {
-        card: "0 2px 12px rgba(23,21,50,.05)",
-        lift: "0 8px 24px rgba(23,21,50,.10)",
+        card: "0 1px 2px rgba(17,24,39,.04)",
+        lift: "0 10px 30px -12px rgba(17,24,39,.18)",
       },
     },
   },

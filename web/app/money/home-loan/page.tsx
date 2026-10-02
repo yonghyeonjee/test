@@ -52,7 +52,7 @@ export default async function HomeLoanPage() {
   return (
     <div className="pb-4">
       <JsonLd data={ld} />
-      <PageBanner
+      <PageBanner tone="cyan"
         eyebrow="생활금융"
         title="집 살 때 정책대출 금리, 이번 달 표"
         sub="주택도시기금 디딤돌대출과 주택금융공사 보금자리론의 공시 금리를 소득 구간·만기별로 옮겨 두었습니다. 우대금리를 빼면 얼마가 되는지도 같이 봅니다."

@@ -2,6 +2,7 @@ import Link from "next/link";
 import PortalSearch from "@/components/PortalSearch";
 import ProgramEntry from "@/components/ProgramEntry";
 import TopStripAd from "@/components/TopStripAd";
+import { Box, HotRank } from "@/components/PortalHome";
 import { SEARCH_SUGGEST, type JobHit, type SearchResult } from "@/lib/search";
 
 /**
@@ -174,14 +175,20 @@ export default function SearchView({
     </section>
   );
 
+  // 상세 검색: 지금 적은 말을 들고 조건을 더 거는 화면으로.
+  const detail: [string, string][] = biz
+    ? [["기업 — 지역·업종·업력·분야", r.business.href], ["공공기관 — 생애주기·분야", r.agency.href], ["통합 검색에서 전부 보기", `/search?q=${encodeURIComponent(q)}`]]
+    : [["복지 — 지역·나이·고용·가구", r.welfare.href], ["기업 — 업종·업력·분야", r.business.href], ["채용 — 지역·고용형태·접수 중", r.jobs.href],
+       ["자격증 — 계열·분야", r.licenses.href], ["공공기관 — 생애주기·분야", r.agency.href]];
+
   return (
-    <div className="py-4">
-      {/* 검색창이 주인공. 띠 위에 올려 첫 화면과 같은 얼굴로. */}
-      <section className="hub-stage -mx-5 px-5 pb-7 pt-6 sm:mx-0 sm:rounded-card sm:px-8">
+    <div className="pb-4">
+      {/* 검색창이 주인공. 머리말 검색창은 이 화면에서 숨긴다(두 개가 겹쳐 보였다). */}
+      <section className="pt-5 sm:pt-8">
         <p className="eyebrow">{eyebrow}</p>
-        <h1 className="display mt-1.5 text-[1.5rem] leading-tight sm:text-[1.75rem]">{title}</h1>
+        <h1 className="display mt-1.5 text-[1.45rem] leading-tight sm:text-[1.7rem]">{title}</h1>
         <p className="mt-1.5 text-[13.5px] text-muted">{sub}</p>
-        <div className="mt-4">
+        <div className="mt-4 max-w-[46rem]">
           <PortalSearch index={idx} initial={q} scope={scope} hot={q ? [] : hot}
                         placeholder={placeholder} placeholderNarrow={placeholderNarrow} />
         </div>
@@ -191,96 +198,122 @@ export default function SearchView({
 
       {q ? (
         <>
-          <p className="mt-5 text-[13.5px] text-muted">
-            {conds.length > 0 && <>조건으로 알아들은 것: <b className="text-ink2">{conds.join(" · ")}</b>{r.term && " · "}</>}
-            {r.term && <>낱말: <b className="text-ink2">‘{r.term}’</b></>}
-            {" · "}모두 <b className="num text-ink2">{grand.toLocaleString("ko-KR")}건</b>
-          </p>
-          {r.expanded.length > 0 && (
-            <p className="mt-1 text-[13px] text-muted">
-              {r.expanded.map((e) => (
-                <span key={e.word} className="mr-3 inline-block">
-                  ‘{e.word}’의 연관어 <b className="text-ink2">{e.also.slice(0, 5).join("·")}</b>도 함께 찾았습니다.
-                </span>
-              ))}
-            </p>
-          )}
-
-          <nav aria-label="갈래" className="mt-4 flex flex-wrap gap-1.5">
+          {/* 갈래 탭(네이버 결과 쪽의 통합·이미지·뉴스 줄 자리). 누르면 그 갈래로 내려간다. */}
+          <nav aria-label="갈래" className="-mx-5 mt-5 flex overflow-x-auto border-b border-line px-5 text-[14.5px]
+                                          [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
+            <span aria-current="page" className="relative shrink-0 px-3 py-2.5 font-extrabold text-ink
+                                                 after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t after:bg-brand">
+              통합 <span className="num ml-0.5 text-[12.5px] font-bold text-brand">{grand.toLocaleString("ko-KR")}</span>
+            </span>
             {counts.map(([label, n, id]) => (
-              <a key={id} href={`#${id}`} className={`chip ${n > 0 ? "" : "opacity-50"}`}>
-                {label} <span className="num ml-1 text-[12px] opacity-70">{n.toLocaleString("ko-KR")}</span>
+              <a key={id} href={`#${id}`}
+                 className={`shrink-0 px-3 py-2.5 font-semibold transition-colors ${n > 0 ? "text-ink2 hover:text-ink" : "pointer-events-none text-faint/70"}`}>
+                {label} <span className="num ml-0.5 text-[12.5px] font-medium text-faint">{n.toLocaleString("ko-KR")}</span>
               </a>
             ))}
             {biz && elsewhere > 0 && (
-              <Link href={`/search?q=${encodeURIComponent(q)}`} className="chip">
-                개인 복지·채용·자격증 <span className="num ml-1 text-[12px] opacity-70">{elsewhere.toLocaleString("ko-KR")}</span>
+              <Link href={`/search?q=${encodeURIComponent(q)}`} className="shrink-0 px-3 py-2.5 font-semibold text-ink2 hover:text-ink">
+                개인 복지·채용·자격증 <span className="num ml-0.5 text-[12.5px] font-medium text-faint">{elsewhere.toLocaleString("ko-KR")}</span>
               </Link>
             )}
           </nav>
 
-          {r.related.length > 0 && (
-            <div className="mt-4 rounded-card border border-line bg-surface2 px-4 py-3">
-              <Related terms={r.related} base={base} />
-            </div>
-          )}
-
-          {r.failed.length > 0 && (
-            <p className="mt-4 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">
-              {r.failed.join("·")} 쪽은 지금 읽지 못했습니다. 잠시 뒤 다시 찾아 주세요.
-            </p>
-          )}
-
-          {grand === 0 && r.failed.length === 0 && (
-            <div className="card mt-6 p-8 text-center">
-              <p className="leading-relaxed text-muted">
-                ‘{q}’ 에 걸리는 것이 없습니다. 다른 말로 바꾸거나 더 짧게 적어 보세요.
+          <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+            <div className="min-w-0">
+              <p className="text-[13.5px] text-muted">
+                {conds.length > 0 && <>조건으로 알아들은 것: <b className="text-ink2">{conds.join(" · ")}</b>{r.term && " · "}</>}
+                {r.term && <>낱말: <b className="text-ink2">‘{r.term}’</b></>}
+                {" · "}모두 <b className="num text-ink2">{grand.toLocaleString("ko-KR")}건</b>
               </p>
-              {r.related.length > 0 && (
-                <p className="mt-2 text-[13.5px] text-muted">
-                  비슷한 말로 다시 찾아보세요 — {r.related.slice(0, 4).map((t, i) => (
-                    <span key={t}>{i > 0 && ", "}<Link href={`${base}?q=${encodeURIComponent(t)}`} className="font-semibold text-brand underline underline-offset-4">{t}</Link></span>
+              {r.expanded.length > 0 && (
+                <p className="mt-1 text-[13px] text-muted">
+                  {r.expanded.map((e) => (
+                    <span key={e.word} className="mr-3 inline-block">
+                      ‘{e.word}’의 연관어 <b className="text-ink2">{e.also.slice(0, 5).join("·")}</b>도 함께 찾았습니다.
+                    </span>
                   ))}
                 </p>
               )}
-              {biz && elsewhere > 0 && (
-                <p className="mt-2 text-[13.5px] text-muted">
-                  개인 복지·채용·자격증에는 <Link href={`/search?q=${encodeURIComponent(q)}`} className="font-semibold text-brand underline underline-offset-4">{elsewhere.toLocaleString("ko-KR")}건</Link>이 있습니다.
+
+              {/* 휴대폰: 연관 검색어를 결과 위에 한 줄로. 넓은 화면은 오른쪽 기둥에. */}
+              {r.related.length > 0 && (
+                <div className="mt-4 rounded-card border border-line bg-white px-4 py-3 lg:hidden">
+                  <Related terms={r.related} base={base} />
+                </div>
+              )}
+
+              {r.failed.length > 0 && (
+                <p className="mt-4 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">
+                  {r.failed.join("·")} 쪽은 지금 읽지 못했습니다. 잠시 뒤 다시 찾아 주세요.
                 </p>
               )}
-              <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                {(biz ? hot : SEARCH_SUGGEST).map((s) => (
-                  <Link key={s} href={`${base}?q=${encodeURIComponent(s)}`} className="chip">{s}</Link>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {biz ? (<>{business}{agency}{guides}</>) : (<>{welfare}{business}{jobs}{guides}{licenses}{agency}</>)}
-
-          <section className="mt-12 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-5">
-            <h2 className={H2}>상세 검색</h2>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-ink2">
-              갈래마다 조건이 다릅니다. 지금 적은 말을 그대로 들고 조건을 더 거는 화면으로 갑니다.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {biz ? (
-                <>
-                  <Link href={r.business.href} className="chip">기업 — 지역·업종·업력·분야</Link>
-                  <Link href={r.agency.href} className="chip">공공기관 — 생애주기·분야</Link>
-                  <Link href={`/search?q=${encodeURIComponent(q)}`} className="chip">통합 검색에서 전부 보기</Link>
-                </>
-              ) : (
-                <>
-                  <Link href={r.welfare.href} className="chip">복지 — 지역·나이·고용·가구</Link>
-                  <Link href={r.business.href} className="chip">기업 — 업종·업력·분야</Link>
-                  <Link href={r.jobs.href} className="chip">채용 — 지역·고용형태·접수 중</Link>
-                  <Link href={r.licenses.href} className="chip">자격증 — 계열·분야</Link>
-                  <Link href={r.agency.href} className="chip">공공기관 — 생애주기·분야</Link>
-                </>
+              {grand === 0 && r.failed.length === 0 && (
+                <div className="card mt-6 p-8 text-center">
+                  <p className="leading-relaxed text-muted">
+                    ‘{q}’ 에 걸리는 것이 없습니다. 다른 말로 바꾸거나 더 짧게 적어 보세요.
+                  </p>
+                  {r.related.length > 0 && (
+                    <p className="mt-2 text-[13.5px] text-muted">
+                      비슷한 말로 다시 찾아보세요 — {r.related.slice(0, 4).map((t, i) => (
+                        <span key={t}>{i > 0 && ", "}<Link href={`${base}?q=${encodeURIComponent(t)}`} className="font-semibold text-brand underline underline-offset-4">{t}</Link></span>
+                      ))}
+                    </p>
+                  )}
+                  {biz && elsewhere > 0 && (
+                    <p className="mt-2 text-[13.5px] text-muted">
+                      개인 복지·채용·자격증에는 <Link href={`/search?q=${encodeURIComponent(q)}`} className="font-semibold text-brand underline underline-offset-4">{elsewhere.toLocaleString("ko-KR")}건</Link>이 있습니다.
+                    </p>
+                  )}
+                  <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+                    {(biz ? hot : SEARCH_SUGGEST).map((s) => (
+                      <Link key={s} href={`${base}?q=${encodeURIComponent(s)}`} className="chip">{s}</Link>
+                    ))}
+                  </div>
+                </div>
               )}
+
+              {biz ? (<>{business}{agency}{guides}</>) : (<>{welfare}{business}{jobs}{guides}{licenses}{agency}</>)}
+
+              {/* 휴대폰: 상세 검색을 맨 아래에. 넓은 화면은 오른쪽 기둥. */}
+              <section className="card mt-10 p-4 lg:hidden">
+                <h2 className={H2}>상세 검색</h2>
+                <p className="mt-1 text-[13.5px] leading-relaxed text-muted">
+                  갈래마다 조건이 다릅니다. 지금 적은 말을 그대로 들고 조건을 더 거는 화면으로 갑니다.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {detail.map(([label, href]) => <Link key={label} href={href} className="chip">{label}</Link>)}
+                </div>
+              </section>
             </div>
-          </section>
+
+            <aside aria-label="검색 도움" className="hidden min-w-0 space-y-4 lg:block">
+              {r.related.length > 0 && (
+                <Box title="연관 검색어">
+                  <div className="flex flex-wrap gap-1.5">
+                    {r.related.map((t) => (
+                      <Link key={t} href={`${base}?q=${encodeURIComponent(t)}`}
+                            className="rounded-pill bg-surface2 px-3 py-1.5 text-[13px] font-semibold text-ink2 ring-1 ring-inset ring-line hover:text-brand">
+                        {t}
+                      </Link>
+                    ))}
+                  </div>
+                </Box>
+              )}
+              <Box title="상세 검색" sub="지금 적은 말 그대로">
+                <ul className="divide-y divide-line">
+                  {detail.map(([label, href]) => (
+                    <li key={label}>
+                      <Link href={href} className="flex items-center justify-between gap-2 py-2 text-[13.5px] text-ink2 hover:text-brand">
+                        {label}<span aria-hidden className="text-faint">›</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+              <HotRank terms={hot} base={base} sub="자주 찾는 말" />
+            </aside>
+          </div>
         </>
       ) : (
         <section className="mt-8 grid gap-4 sm:grid-cols-3">

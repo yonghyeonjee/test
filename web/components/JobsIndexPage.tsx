@@ -59,7 +59,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="blue"
         eyebrow="채용"
         title="공공기관 채용, 어디서 뽑는지 한 번에"
         sub="인사혁신처 나라일터에 올라오는 중앙부처·지자체·공공기관 채용 공고입니다. 지역과 기관 구분으로 걸러 접수 중인 것부터 봅니다."
@@ -72,11 +72,11 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
               { n: overview?.total ?? board.jobs.length, label: "모아 둔 공고" },
               { n: orgs, label: "채용 기관" },
             ].map((b) => (
-              <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
-                <b className="num block text-[1.35rem] font-extrabold text-white">
+              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+                <b className="num block text-[1.35rem] font-extrabold text-ink">
                   {b.n.toLocaleString()}
                 </b>
-                <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
+                <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
               </div>
             ))}
           </div>

@@ -62,7 +62,7 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="orange"
         eyebrow="자격증"
         title="국가자격증 찾기"
         sub="자격증 이름을 넣으면 응시 자격과 다가오는 시험 일정, 학원비·응시료를 지원하는 제도까지 한 번에 나옵니다. 아래 목록은 등급이 있는 국가기술자격이고, 국가전문자격은 따로 모아 두었습니다."
@@ -75,11 +75,11 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
               { n: pro.all.length, label: "국가전문자격" },
               { n: fields, label: "직무 분야" },
             ].map((b) => (
-              <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
-                <b className="num block text-[1.35rem] font-extrabold text-white">
+              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+                <b className="num block text-[1.35rem] font-extrabold text-ink">
                   {b.n.toLocaleString()}
                 </b>
-                <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
+                <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
               </div>
             ))}
           </div>

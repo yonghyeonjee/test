@@ -5,10 +5,10 @@
 export function SkeletonPage({ rows = 6 }: { rows?: number }) {
   return (
     <div className="pb-4" aria-busy="true" aria-live="polite">
-      <div className="hero -mx-5 mt-2 px-6 py-9 sm:mx-0 sm:rounded-card sm:px-10">
-        <div className="sk h-3 w-16 bg-white/20" />
-        <div className="sk mt-4 h-8 w-2/3 bg-white/25" />
-        <div className="sk mt-3 h-4 w-1/2 bg-white/15" />
+      <div className="banner-soft -mx-5 mt-4 px-6 py-8 sm:mx-0 sm:rounded-card sm:px-9">
+        <div className="sk h-3 w-16" />
+        <div className="sk mt-4 h-8 w-2/3" />
+        <div className="sk mt-3 h-4 w-1/2" />
       </div>
       <div className="mt-6 flex gap-2">
         <div className="sk h-11 flex-1" />

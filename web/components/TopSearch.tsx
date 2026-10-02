@@ -71,8 +71,8 @@ export default function TopSearch({ index }: { index: Idx }) {
         type="button"
         aria-label="검색 열기"
         onClick={() => setOpen((o) => !o)}
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-pill border
-                    border-line bg-surface text-ink2 transition-colors hover:border-brand hover:text-brand
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-pill
+                    text-ink2 transition-colors hover:bg-ground hover:text-ink
                     sm:hidden ${open ? "hidden" : ""}`}
       >
         <SearchIcon />
@@ -80,11 +80,10 @@ export default function TopSearch({ index }: { index: Idx }) {
       <form
         role="search"
         onSubmit={(e) => { e.preventDefault(); go(q); }}
-        className={`items-center gap-2 rounded-pill border bg-surface pl-3 pr-1.5
-                    transition-colors focus-within:border-brand ${show ? "border-brand" : "border-line"}
-                    ${open ? "flex w-full" : "hidden sm:flex sm:w-[20rem] lg:w-[27rem]"}`}
+        className={`items-center gap-1 rounded-pill border-2 bg-surface pl-4 pr-1
+                    transition-colors ${show ? "border-brand" : "border-brand/70 focus-within:border-brand"}
+                    ${open ? "flex w-full" : "hidden sm:flex sm:w-[21rem] lg:w-[29rem]"}`}
       >
-        <span className="text-brand"><SearchIcon /></span>
         <input
           ref={ref}
           data-search
@@ -97,10 +96,11 @@ export default function TopSearch({ index }: { index: Idx }) {
           placeholder="통합 검색 — 경비 채용, 신혼부부 전세, 기능사"
           aria-label="통합 검색"
           enterKeyHint="search"
-          className="h-9 w-full min-w-0 bg-transparent text-[14px] outline-none placeholder:text-faint"
+          className="h-9 w-full min-w-0 bg-transparent text-[14.5px] outline-none placeholder:text-faint"
         />
-        <button type="submit" className="btn btn-primary shrink-0 !rounded-pill !px-3 !py-1.5 !text-[13px]">
-          찾기
+        <button type="submit" aria-label="검색"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-white transition-colors hover:bg-brandDeep">
+          <SearchIcon />
         </button>
       </form>
 
@@ -110,7 +110,7 @@ export default function TopSearch({ index }: { index: Idx }) {
           {rows.map((r, i) => (
             <button key={r.key} type="button" role="option" aria-selected={i === cur}
                     onMouseEnter={() => setCur(i)} onMouseDown={(e) => e.preventDefault()} onClick={r.act}
-                    className={`flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-[14px] ${i === cur ? "bg-brandSoft text-brand" : "hover:bg-ground"}`}>
+                    className={`flex w-full items-center justify-between gap-3 px-3.5 py-2 text-left text-[14px] ${i === cur ? "bg-ground text-ink" : "hover:bg-ground"}`}>
               <span className="min-w-0 truncate">{r.label}</span>
               <span className="shrink-0 text-[11.5px] text-faint">{r.tag}</span>
             </button>
@@ -123,7 +123,7 @@ export default function TopSearch({ index }: { index: Idx }) {
 
 function SearchIcon() {
   return (
-    <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+    <svg viewBox="0 0 20 20" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
       <circle cx="9" cy="9" r="6" />
       <path d="M14 14l4 4" strokeLinecap="round" />
     </svg>

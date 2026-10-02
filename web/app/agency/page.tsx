@@ -51,7 +51,7 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="indigo"
         eyebrow="공공기관"
         title="공공기관이 국민에게 하는 사업, 한자리에"
         sub="장학금·직업훈련·의료지원처럼 공공기관이 직접 운영하는 사업입니다. 지자체 공고와 다른 곳에서 나와 따로 찾아야 했던 것들입니다."

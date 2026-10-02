@@ -24,9 +24,13 @@ const clean = (s: string) => s.replace(/\s+/g, "").toLowerCase();
  */
 export default function PortalSearch({
   index = {}, initial = "", size = "lg", autoFocus = false, hot = HOT_WELFARE, placeholder, placeholderNarrow,
-  scope = "all",
+  scope = "all", center = false,
 }: {
-  index?: Idx; initial?: string; size?: "lg" | "md"; autoFocus?: boolean;
+  index?: Idx; initial?: string;
+  /** xl: 첫 화면 한가운데(네이버 첫 화면 검색창 크기). lg: 검색 화면. md: 작은 자리. */
+  size?: "xl" | "lg" | "md"; autoFocus?: boolean;
+  /** 많이 찾는 말을 가운데로(첫 화면). */
+  center?: boolean;
   /** 아래에 붙는 "많이 찾는 말". 빈 배열이면 안 그린다. */
   hot?: string[];
   placeholder?: string;
@@ -95,19 +99,20 @@ export default function PortalSearch({
     else if (e.key === "Enter") { e.preventDefault(); if (cur >= 0 && rows[cur]) rows[cur].act(); else go(q); }
     else if (e.key === "Escape") setOpen(false);
   };
-  const lg = size === "lg";
+  const lg = size !== "md";
+  const xl = size === "xl";
   const show = open && q.trim().length > 0 && (rows.length > 0 || bits.length > 0 || related.length > 0);
 
   return (
     <div ref={box} className="relative">
+      {/* 알약 모양 검색창. 테두리는 브랜드 색 두 줄 — 화면에서 가장 먼저 눈에 들어와야 한다. */}
       <form role="search" onSubmit={(e) => { e.preventDefault(); go(q); }}
-            className={`flex items-center gap-2 rounded-[16px] border-2 bg-white pr-2 shadow-card transition-colors
-                        ${show ? "border-brand shadow-lift" : "border-line hover:border-line2 focus-within:border-brand"} ${lg ? "pl-4" : "pl-3.5"}`}>
-        <svg viewBox="0 0 20 20" className={`shrink-0 text-brand ${lg ? "h-6 w-6" : "h-5 w-5"}`} fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-          <circle cx="9" cy="9" r="6" /><path d="M14 14l4 4" strokeLinecap="round" />
-        </svg>
+            className={`flex items-center gap-1.5 rounded-pill border-2 bg-white pr-1.5 transition-shadow
+                        ${show ? "border-brand shadow-lift" : "border-brand/80 shadow-card hover:border-brand focus-within:border-brand focus-within:shadow-lift"}
+                        ${xl ? "pl-5 sm:pl-7" : lg ? "pl-5" : "pl-4"}`}>
         <input
           ref={input}
+          data-portal-search
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); setCur(-1); }}
           onFocus={() => setOpen(true)}
@@ -118,7 +123,8 @@ export default function PortalSearch({
             : placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…")}
           aria-label="통합 검색"
           enterKeyHint="search"
-          className={`w-full min-w-0 bg-transparent outline-none placeholder:text-faint ${lg ? "h-14 text-[1.0625rem]" : "h-11 text-[15px]"}`}
+          className={`w-full min-w-0 bg-transparent outline-none placeholder:text-faint ${
+            xl ? "h-[52px] text-[17px] sm:h-[58px] sm:text-[19px]" : lg ? "h-[50px] text-[16.5px]" : "h-11 text-[15px]"}`}
         />
         {q && (
           <button type="button" onClick={() => { setQ(""); setCur(-1); input.current?.focus(); }} aria-label="지우기"
@@ -126,22 +132,28 @@ export default function PortalSearch({
             <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M5 5l10 10M15 5L5 15" /></svg>
           </button>
         )}
-        <button type="submit" className={`btn btn-primary shrink-0 !rounded-[12px] ${lg ? "px-5 py-2.5" : "!px-4 !py-2 !text-[14px]"}`}>찾기</button>
+        <button type="submit" aria-label="검색"
+                className={`flex shrink-0 items-center justify-center rounded-full bg-brand text-white transition-colors hover:bg-brandDeep ${
+                  xl ? "h-10 w-10 sm:h-11 sm:w-11" : lg ? "h-10 w-10" : "h-8 w-8"}`}>
+          <svg viewBox="0 0 20 20" className={xl || lg ? "h-5 w-5" : "h-4 w-4"} fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden>
+            <circle cx="9" cy="9" r="5.8" /><path d="M13.6 13.6l4 4" strokeLinecap="round" />
+          </svg>
+        </button>
       </form>
 
       {show && (
         <div id="portal-suggest" role="listbox"
-             className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[14px] border border-line bg-white shadow-lift">
+             className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[18px] border border-line bg-white text-left shadow-lift">
           {rows.map((r, i) => (
             <button key={r.key} type="button" role="option" aria-selected={i === cur}
                     onMouseEnter={() => setCur(i)} onClick={r.act}
-                    className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[15px] ${i === cur ? "bg-brandSoft text-brand" : "hover:bg-ground"}`}>
+                    className={`flex w-full items-center justify-between gap-3 px-5 py-2.5 text-left text-[15px] ${i === cur ? "bg-ground text-ink" : "hover:bg-ground"}`}>
               <span className="min-w-0 truncate">{r.label}</span>
               <span className="shrink-0 text-[12px] text-faint">{r.tag}</span>
             </button>
           ))}
           {(bits.length > 0 || related.length > 0) && (
-            <div className="border-t border-line bg-surface2 px-4 py-2.5 text-[12.5px] text-muted">
+            <div className="border-t border-line bg-surface2 px-5 py-2.5 text-[12.5px] text-muted">
               {bits.length > 0 && (
                 <p>조건으로 알아들음 <b className="text-ink2">{bits.join(" · ")}</b>
                   {" · "}<Link href={`/?${toParams(parsed)}`} className="font-bold text-brand underline underline-offset-4" onClick={() => setOpen(false)}>이 조건의 지원금 보기</Link>
@@ -154,12 +166,18 @@ export default function PortalSearch({
       )}
 
       {hot.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <span className="text-[12px] text-faint" title="지난 7일 동안 많이 찾은 말. 매일 새로 셉니다.">많이 찾는 말</span>
-          {/* 휴대폰에서는 여섯 개까지만. 열 개가 네 줄로 늘어서면 조건 고르기가 화면 밖으로 밀린다. */}
+        // 휴대폰에서는 한 줄로 두고 옆으로 밀어 본다(열 개 모두). 넓은 화면은 한 줄에 드는 여덟 개까지.
+        <div className={`mt-3 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
+                         sm:flex-wrap sm:overflow-visible ${center ? "sm:justify-center" : ""} -mx-5 px-5 sm:mx-0 sm:px-0`}>
+          <span className="shrink-0 text-[12.5px] font-bold text-ink2" title="지난 7일 동안 많이 찾은 말. 매일 새로 셉니다.">
+            많이 찾는 말
+          </span>
           {hot.map((h, i) => (
             <Link key={h} href={`${base}?q=${encodeURIComponent(h)}`}
-                  className={`chip !py-1 !text-[12.5px] ${i >= 6 ? "!hidden sm:!inline-flex" : ""}`}>{h}</Link>
+                  className={`shrink-0 rounded-pill bg-white px-3 py-1 text-[13px] font-medium text-ink2 ring-1 ring-inset ring-line
+                              transition-colors hover:text-brand hover:ring-brand/40 ${i >= 8 ? "sm:hidden" : ""}`}>
+              {h}
+            </Link>
           ))}
         </div>
       )}

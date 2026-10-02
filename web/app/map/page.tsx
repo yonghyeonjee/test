@@ -51,7 +51,7 @@ export default async function MapPage() {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="red"
         eyebrow="정책지도"
         title="내 주변 지원금과 채용, 지도에서"
         sub="시·군·구마다 지금 접수 중인 지원사업과 공공기관 채용을 지도에 놓았습니다. 내 위치를 켜면 가까운 순으로 보고, 점을 누르면 요약이 뜹니다."

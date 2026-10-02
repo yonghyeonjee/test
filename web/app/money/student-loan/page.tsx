@@ -38,7 +38,7 @@ export default function StudentLoan() {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="cyan"
         eyebrow="생활금융"
         title="학자금 대출 이자, 지자체가 내주는 곳이 있습니다"
         sub={`전국 ${LOAN_ORGS.length}개 기관이 한국장학재단과 협약을 맺고 있습니다. 사는 곳이 여기 있으면 이자를 내지 않아도 되는 경우가 많습니다.`}

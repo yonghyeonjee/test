@@ -38,7 +38,7 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="blue"
         eyebrow="취업 통계"
         title="전공을 고르기 전에, 졸업생이 어디로 갔는지"
         sub="교육부 취업통계를 학과 이름으로 묶었습니다. 취업률 숫자 하나보다 졸업자 수와 3년 흐름을 같이 보셔야 제대로 읽힙니다."
@@ -51,9 +51,9 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
             { n: pct(o.rateM), label: "남성 취업률" },
             { n: pct(o.rateF), label: "여성 취업률" },
           ].map((b) => (
-            <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
-              <b className="num block text-[1.35rem] font-extrabold text-white">{b.n}</b>
-              <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
+            <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+              <b className="num block text-[1.35rem] font-extrabold text-ink">{b.n}</b>
+              <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
             </div>
           ))}
         </div>

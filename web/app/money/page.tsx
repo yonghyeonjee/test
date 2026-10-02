@@ -62,7 +62,7 @@ const CARDS = [
 export default function MoneyIndex() {
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="cyan"
         eyebrow="생활금융"
         title="받는 것만 지원이 아닙니다"
         sub="나가는 돈을 줄여 주는 제도가 따로 있습니다. 이자를 깎아 주거나 대신 내주는 쪽은 신청만 하면 되는데도 몰라서 그냥 내는 분이 많습니다."

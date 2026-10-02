@@ -51,7 +51,7 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="indigo"
         eyebrow="공공기관"
         title="공공기관이 여는 교육과 행사"
         sub="무료 강좌, 체험, 견학, 공모전. 공공기관은 국민 참여 행사를 꾸준히 열지만 기관 홈페이지에만 올라와 지나치기 쉽습니다."

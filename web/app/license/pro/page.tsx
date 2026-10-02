@@ -45,7 +45,7 @@ export default async function ProLicensePage() {
 
   return (
     <div className="pb-4">
-      <PageBanner
+      <PageBanner tone="orange"
         eyebrow="자격증"
         title="국가전문자격"
         sub="기능사·기사 같은 등급 체계가 없는 자격들입니다. 자격마다 근거 법령과 시행 기관이 따로 있어, 응시 자격과 시험 일정도 자격마다 다릅니다."
@@ -57,11 +57,11 @@ export default async function ProLicensePage() {
               { n: board.all.length, label: "시행 종목" },
               { n: board.series.length, label: "자격 수" },
             ].map((b) => (
-              <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
-                <b className="num block text-[1.35rem] font-extrabold text-white">
+              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+                <b className="num block text-[1.35rem] font-extrabold text-ink">
                   {b.n.toLocaleString()}
                 </b>
-                <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
+                <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
               </div>
             ))}
           </div>
