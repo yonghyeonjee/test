@@ -21,6 +21,11 @@ npm run dev
 2. **Root Directory 를 `web` 으로 지정** (저장소 루트에는 파이썬 파이프라인이 있다)
 3. 환경변수 3개 등록: `NEXT_PUBLIC_SUPABASE_URL`,
    `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`
+   - 선택: `NEXT_PUBLIC_KAKAO_MAP_KEY` — 정책지도를 카카오맵으로 그린다.
+     [카카오 디벨로퍼스](https://developers.kakao.com) 에서 앱을 만들고 플랫폼 > Web 에
+     `https://jiwon.knowhow-it.com` 을 등록한 뒤 그 앱의 **JavaScript 키**를 넣는다
+     (개인 계정·무료, 등록한 도메인에서만 먹는 키라 브라우저에 보여도 된다). 없으면
+     Leaflet + OpenStreetMap 으로 그린다.
 4. Settings > Domains 에 `jiwon.knowhow-it.com` 추가 → 안내되는 CNAME 을 DNS 에 등록
 
 ## 관리자 (/admin)

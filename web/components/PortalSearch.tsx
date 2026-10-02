@@ -155,7 +155,7 @@ export default function PortalSearch({
 
       {hot.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <span className="text-[12px] text-faint">많이 찾는 말</span>
+          <span className="text-[12px] text-faint" title="지난 7일 동안 많이 찾은 말. 매일 새로 셉니다.">많이 찾는 말</span>
           {/* 휴대폰에서는 여섯 개까지만. 열 개가 네 줄로 늘어서면 조건 고르기가 화면 밖으로 밀린다. */}
           {hot.map((h, i) => (
             <Link key={h} href={`${base}?q=${encodeURIComponent(h)}`}

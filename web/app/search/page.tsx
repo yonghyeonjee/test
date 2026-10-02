@@ -3,6 +3,7 @@ import SearchView from "@/app/_search/SearchView";
 import RelatedLinks from "@/components/RelatedLinks";
 import { dbConfigured, getSigunguIndex } from "@/lib/db";
 import { blogIndexRelated } from "@/lib/related";
+import { getHotTerms } from "@/lib/hotTerms";
 import { unifiedSearch } from "@/lib/search";
 import { withOg } from "@/lib/seo";
 
@@ -31,9 +32,10 @@ export function generateMetadata({ searchParams }: { searchParams: SP }): Metada
 
 export default async function SearchPage({ searchParams }: { searchParams: SP }) {
   const q = one(searchParams.q);
-  const [r, idx] = await Promise.all([
+  const [r, idx, hot] = await Promise.all([
     unifiedSearch(q),
     dbConfigured ? getSigunguIndex().then((m) => Object.fromEntries(m)).catch(() => ({})) : Promise.resolve({}),
+    getHotTerms(),
   ]);
   return (
     <>
@@ -41,6 +43,7 @@ export default async function SearchPage({ searchParams }: { searchParams: SP })
         q={q} r={r} idx={idx} scope="all" eyebrow="통합 검색"
         title={q ? <>‘{q}’ 찾은 결과</> : "무엇이든 한 줄로 찾아보세요"}
         sub="복지·기업 지원사업, 공공기관 채용, 국가자격, 공공기관 사업, 안내 글을 한 번에. 비슷한 말도 같이 찾습니다."
+        hot={hot.welfare}
       />
       <RelatedLinks items={blogIndexRelated()} />
     </>

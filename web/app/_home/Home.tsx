@@ -10,7 +10,7 @@ import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
 import PortalSearch from "@/components/PortalSearch";
-import { HOT_BUSINESS } from "@/lib/thesaurus";
+import { getHotTerms } from "@/lib/hotTerms";
 import { IllusEmpty } from "@/components/Illus";
 import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
@@ -182,7 +182,7 @@ function Results({ results, total, label, myAge, terms, q }: {
 export default async function Home({ searchParams, forceTab }: { searchParams: SP; forceTab?: "business" }) {
   const tab = forceTab ?? (one(searchParams.tab) === "business" ? "business" : "welfare");
   const via = one(searchParams.via) ?? "form";
-  const bundle = await getHomeBundle();
+  const [bundle, hotTerms] = await Promise.all([getHomeBundle(), getHotTerms()]);
   const { coverage, settings } = bundle;
   const sido = one(searchParams.sido);
   const q = cleanQuery(one(searchParams.q));
@@ -214,7 +214,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
         {/* 검색창이 맨 위. 메뉴 띠를 지나자마자 보이게. */}
         {!asked && (
           <div className="mt-4">
-            <PortalSearch index={bundle.sggIndex} hot={HOT_BUSINESS} scope="business"
+            <PortalSearch index={bundle.sggIndex} hot={hotTerms.business} scope="business"
                           placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
                           placeholderNarrow="수출, 스마트공장, 폐업, 특허…" />
           </div>
@@ -307,7 +307,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             closing={closingCount}
             // 검색 포털의 얼굴. 메뉴 띠 바로 아래 — 휴대폰에서도 첫 화면 안에 있어야 한다.
             // 한 줄 적으면 복지·기업·채용·자격증·공공기관을 한 번에 찾고 연관어까지 같이 본다.
-            top={<PortalSearch index={sggIndex} autoFocus />}
+            top={<PortalSearch index={sggIndex} hot={hotTerms.welfare} autoFocus />}
           >
             <Tabs active="welfare" counts={coverage} compact />
             <Suspense fallback={<div className="h-40" />}>

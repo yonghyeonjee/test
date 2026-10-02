@@ -299,18 +299,55 @@
   }
 }
 
-/* 정책지도 — 점을 누르면 뜨는 요약 */
+/* 정책지도 — 핀(두 엔진이 같은 HTML) */
 .leaflet-container { font-family: inherit; font-size: 13px; }
-.leaflet-container a.leaflet-popup-close-button { color: #8B87A8; }
-.pm-pop-wrap .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 14px 36px -14px rgba(23,21,50,.4); }
-.pm-pop-wrap .leaflet-popup-content { margin: 12px 14px; line-height: 1.45; min-width: 220px; }
-.pm-pop b { font-size: 14px; color: #1E1B4B; }
-.pm-pop .pm-n { color: #5A4BE0; font-weight: 700; margin-left: 6px; font-size: 12.5px; }
-.pm-pop .pm-approx { display: inline-block; margin-left: 6px; font-size: 11px; color: #8B87A8; }
-.pm-pop ul { margin: 8px 0 0; padding: 0; list-style: none; }
-.pm-pop li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-top: 1px solid #ECEAFF; }
-.leaflet-container .pm-pop li a { color: #1E1B4B; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.leaflet-container .pm-pop li a:hover { color: #5A4BE0; }
-.pm-pop li span { flex: none; color: #8B87A8; font-size: 11.5px; }
-.pm-pop .pm-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 9px; font-size: 12.5px; }
-.leaflet-container .pm-pop .pm-links a { color: #5A4BE0; font-weight: 700; text-decoration: none; }
+.leaflet-div-icon.pm-wrap { background: transparent; border: 0; }
+.pm-pin { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px 4px 8px; border-radius: 999px;
+  background: #fff; border: 2px solid #5A4BE0; color: #1E1B4B; font-weight: 700; font-size: 12.5px; line-height: 1.2; white-space: nowrap;
+  box-shadow: 0 8px 18px -8px rgba(23,21,50,.5); cursor: pointer; transform: translate(-50%, calc(-100% - 8px)); user-select: none; }
+.pm-pin::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 10px; height: 10px; background: #fff;
+  border-right: 2px solid #5A4BE0; border-bottom: 2px solid #5A4BE0; transform: translateX(-50%) rotate(45deg); }
+.pm-pin i { font-style: normal; font-size: 11px; color: #fff; background: #5A4BE0; border-radius: 999px; padding: 1px 6px; }
+.pm-pin:hover, .pm-pin.pm-sel { background: #ECEAFF; }
+.pm-pin.pm-jobs { border-color: #0F766E; } .pm-pin.pm-jobs::after { border-color: #0F766E; } .pm-pin.pm-jobs i { background: #0F766E; }
+.pm-pin.pm-approx { border-style: dashed; opacity: .9; }
+.pm-pin.pm-mid { padding: 0; width: 32px; height: 32px; justify-content: center; border-radius: 50%; transform: translate(-50%, -50%); }
+.pm-pin.pm-mid::after { display: none; }
+.pm-pin.pm-mid i { background: transparent; color: #5A4BE0; font-size: 12px; padding: 0; }
+.pm-pin.pm-mid.pm-jobs i { color: #0F766E; }
+.pm-pin.pm-far { background: #5A4BE0; color: #fff; border-color: #fff; transform: translate(-50%, -50%); font-size: 13px; padding: 5px 11px; }
+.pm-pin.pm-far::after { display: none; }
+.pm-pin.pm-far i { background: rgba(255,255,255,.22); }
+.pm-pin.pm-far.pm-jobs { background: #0F766E; }
+.pm-me { width: 16px; height: 16px; border-radius: 50%; background: #D97706; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(217,119,6,.25); transform: translate(-50%, -50%); }
+.pm-legend { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 3px; vertical-align: -1px; }
+.pm-legend-p { background: #5A4BE0; } .pm-legend-j { background: #0F766E; } .pm-legend-a { border: 2px dashed #5A4BE0; }
+
+/* 핀을 누르면 뜨는 카드 */
+.pm-pop-wrap .leaflet-popup-content-wrapper { border-radius: 16px; padding: 0; box-shadow: 0 16px 40px -16px rgba(23,21,50,.45); }
+.pm-pop-wrap .leaflet-popup-content { margin: 0; line-height: 1.45; width: auto !important; }
+.pm-pop-wrap .leaflet-popup-tip { box-shadow: none; }
+.pm-pop-wrap .pm-close { display: none; }
+.pm-kcard { position: relative; transform: translate(-50%, calc(-100% - 24px)); width: 300px; max-width: calc(100vw - 40px); }
+.pm-kcard-near { transform: translate(-50%, calc(-100% - 52px)); }
+.pm-kcard::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 16px; height: 16px; background: #fff; transform: translateX(-50%) rotate(45deg); box-shadow: 4px 4px 8px -4px rgba(23,21,50,.25); }
+.pm-card { position: relative; padding: 14px 16px 14px; background: #fff; border-radius: 16px; min-width: 240px; font-size: 13px; color: #1E1B4B; }
+.pm-card .pm-close { position: absolute; top: 8px; right: 10px; width: 28px; height: 28px; border: 0; background: transparent; color: #8B87A8; font-size: 20px; line-height: 1; cursor: pointer; }
+.pm-card .pm-title { display: block; font-size: 15px; font-weight: 800; padding-right: 24px; }
+.pm-card .pm-dist { margin-top: 3px; color: #5A4BE0; font-size: 12.5px; }
+.pm-card .pm-dist b { font-weight: 800; }
+.pm-card .pm-approx-tag { color: #8B87A8; }
+.pm-card .pm-meta { margin-top: 2px; color: #6B6890; font-size: 12.5px; }
+.pm-card .pm-items { margin: 8px 0 0; padding: 0; list-style: none; }
+.pm-card .pm-items li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-top: 1px solid #ECEAFF; }
+.pm-card .pm-items li a { color: #1E1B4B; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-card .pm-items li a:hover { color: #5A4BE0; }
+.pm-card .pm-items li span { flex: none; color: #8B87A8; font-size: 11.5px; }
+.pm-card .pm-wait { color: #8B87A8; }
+.pm-card .pm-nav { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 12.5px; }
+.pm-card .pm-nav a { color: #5A4BE0; font-weight: 700; text-decoration: none; }
+.pm-card .pm-nav a::before { content: "➜ "; color: #C4B5FD; }
+.pm-card .pm-btns { display: flex; gap: 6px; margin-top: 10px; }
+.pm-card .pm-btn { flex: 1; text-align: center; padding: 7px 8px; border-radius: 999px; border: 1.5px solid #CFCBE6; color: #1E1B4B; font-weight: 700; font-size: 12.5px; text-decoration: none; }
+.pm-card .pm-btn-primary { background: #5A4BE0; border-color: #5A4BE0; color: #fff; }
+.leaflet-container .pm-card a { color: inherit; }

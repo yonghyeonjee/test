@@ -1,6 +1,5 @@
 import Link from "next/link";
 import PortalSearch from "@/components/PortalSearch";
-import { HOT_BUSINESS, HOT_WELFARE } from "@/lib/thesaurus";
 import ProgramEntry from "@/components/ProgramEntry";
 import { SEARCH_SUGGEST, type JobHit, type SearchResult } from "@/lib/search";
 
@@ -63,12 +62,14 @@ function Related({ terms, base, label = "연관 검색어" }: { terms: string[];
 }
 
 export default function SearchView({
-  q, r, idx, scope, eyebrow, title, sub, placeholder, placeholderNarrow,
+  q, r, idx, scope, eyebrow, title, sub, placeholder, placeholderNarrow, hot,
 }: {
   q: string;
   r: SearchResult;
   idx: Record<string, { sido: string; full: string }>;
   scope: Scope;
+  /** 많이 찾는 말(lib/hotTerms). 빈 검색창 아래와 빈 결과에 쓴다. */
+  hot: string[];
   eyebrow: string;
   title: React.ReactNode;
   sub: string;
@@ -180,7 +181,7 @@ export default function SearchView({
         <h1 className="display mt-1.5 text-[1.5rem] leading-tight sm:text-[1.75rem]">{title}</h1>
         <p className="mt-1.5 text-[13.5px] text-muted">{sub}</p>
         <div className="mt-4">
-          <PortalSearch index={idx} initial={q} scope={scope} hot={q ? [] : biz ? HOT_BUSINESS : HOT_WELFARE}
+          <PortalSearch index={idx} initial={q} scope={scope} hot={q ? [] : hot}
                         placeholder={placeholder} placeholderNarrow={placeholderNarrow} />
         </div>
       </section>
@@ -245,7 +246,7 @@ export default function SearchView({
                 </p>
               )}
               <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                {(biz ? HOT_BUSINESS : SEARCH_SUGGEST).map((s) => (
+                {(biz ? hot : SEARCH_SUGGEST).map((s) => (
                   <Link key={s} href={`${base}?q=${encodeURIComponent(s)}`} className="chip">{s}</Link>
                 ))}
               </div>
