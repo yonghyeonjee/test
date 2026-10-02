@@ -15,25 +15,29 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo";
 const BASE: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "정부지원금·청년지원금 조회 — 로그인 없이 내 조건으로 | 나라지원",
+    default: "나라지원 — 정부지원금·청년지원금 조회, 로그인 없이 내 조건으로",
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "사는 지역과 나이만 넣으면 받을 수 있는 정부지원금·복지서비스를 찾아드립니다. " +
+    "나라지원은 사는 지역과 나이만 넣으면 받을 수 있는 정부지원금·복지서비스를 찾아 주는 곳입니다. " +
     "회원가입도 주민등록번호도 필요 없습니다. 전국 지자체·중앙부처 공고를 매일 모읍니다.",
   keywords: [
-    "정부지원금", "청년지원금", "복지서비스", "국민취업지원제도", "청년정책",
+    "나라지원", "정부지원금", "청년지원금", "복지서비스", "국민취업지원제도", "청년정책",
     "정부지원금 조회", "지원금 찾기", "지자체 지원금", "소상공인 지원사업",
   ],
   applicationName: SITE_NAME,
+  // 작성자·발행자가 비어 있다고 점검 도구가 지적했다. 사이트 자체가 둘 다다.
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
     locale: "ko_KR",
     url: SITE_URL,
-    title: "내가 받을 수 있는 정부지원금, 로그인 없이 확인하세요",
+    title: "나라지원 — 내가 받을 수 있는 정부지원금, 로그인 없이 확인하세요",
     description:
-      "지역·나이·상황만 고르면 해당될 수 있는 지원금과 복지서비스를 찾아드립니다.",
+      "나라지원에서 지역·나이·상황만 고르면 해당될 수 있는 지원금과 복지서비스를 찾아드립니다.",
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
