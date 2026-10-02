@@ -1,0 +1,31 @@
+name: cron-jobs
+
+# 매일 09:00 KST "최신" 수집. Vercel 크론(vercel.json)이 하던 일을 AWS 로 옮긴 뒤 여기서 한다.
+# 저장소 변수 HOSTING 이 aws 일 때만 돈다(그 전에는 Vercel 크론과 겹치지 않게 건너뛴다).
+# 필요한 secret: CRON_SECRET
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # UTC 00:00 = KST 09:00
+  workflow_dispatch:
+
+jobs:
+  latest:
+    if: vars.HOSTING == 'aws' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 최신 수집
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -u
+          [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }
+          # 한 번에 끝나지 않으면 응답의 more 가 true — 끝날 때까지 다시 부른다(최대 20회).
+          for round in $(seq 1 20); do
+            body=$(curl -sS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/jobs") || { echo "요청 실패(회차 $round)"; exit 1; }
+            echo "회차 $round: $(echo "$body" | head -c 400)"
+            [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || exit 0
+            sleep 2
+          done

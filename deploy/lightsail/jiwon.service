@@ -1,0 +1,22 @@
+# 나라지원 Next.js 서버(standalone). setup.sh 가 /etc/systemd/system/jiwon.service 로 깐다.
+[Unit]
+Description=narajiwon (Next.js standalone)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=jiwon
+WorkingDirectory=/srv/jiwon/current
+EnvironmentFile=/srv/jiwon/shared/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=127.0.0.1
+# 1GB 서버: 힙을 600MB 로 묶고, 넘치면 systemd 가 다시 띄운다.
+ExecStart=/usr/bin/node --max-old-space-size=600 server.js
+Restart=always
+RestartSec=3
+MemoryMax=850M
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

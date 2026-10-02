@@ -1,0 +1,16 @@
+# Caddy: HTTPS 인증서를 스스로 받고 갱신한다. setup.sh 가 /etc/caddy/Caddyfile 로 깐다.
+#
+# jiwon.knowhow-it.com 은 DNS 를 이 서버로 돌린 뒤에 인증서가 나온다(그 전에는 Caddy 가 조용히 다시 시도).
+# origin.jiwon.knowhow-it.com 은 나중에 CloudFront 를 앞에 둘 때 CloudFront 가 찾아오는 주소.
+
+jiwon.knowhow-it.com, origin.jiwon.knowhow-it.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+}
+
+# 도메인을 돌리기 전 점검용: http://<서버 IP>/ 로 들어온 요청. 검색엔진에는 숨긴다.
+:80 {
+	header X-Robots-Tag "noindex, nofollow"
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+}
