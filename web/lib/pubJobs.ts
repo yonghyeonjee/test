@@ -272,6 +272,25 @@ export async function getJob(sourceId: string): Promise<Job | null> {
  * 어떤 소스에든 이 번호가 있는지. 상세 쪽이 gojobs 에서 못 찾았을 때
  * 해외채용(worldjob) 번호면 그쪽 목록으로 보내 주려고 본다.
  */
+/** 정책브리핑(korea.kr)에서 받아 둔 첨부파일. pipeline/korea_attach.py 가 raw.korea 에 적는다. */
+export type JobFile = { name: string; ext: string; dl: string; view: string };
+export type JobAttach = { id: string; url: string; org: string | null; reg: string | null; end: string | null; files: JobFile[] };
+
+export async function getJobAttach(sourceId: string): Promise<JobAttach | null> {
+  if (!dbConfigured) return null;
+  try {
+    const { data } = await db
+      .from("job_posts").select("korea:raw->korea")
+      .eq("source", "gojobs").eq("source_id", sourceId).maybeSingle();
+    const k = (data as { korea?: Partial<JobAttach> | null } | null)?.korea;
+    if (!k || !k.url || !Array.isArray(k.files)) return null;
+    return { id: String(k.id ?? ""), url: k.url, org: k.org ?? null, reg: k.reg ?? null, end: k.end ?? null,
+             files: k.files.filter((f) => f && f.name && f.dl) };
+  } catch {
+    return null;
+  }
+}
+
 export async function findJobSource(sourceId: string): Promise<string | null> {
   if (!dbConfigured) return null;
   const { data } = await db

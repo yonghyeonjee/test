@@ -10,7 +10,7 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { STATUS_LABEL } from "@/lib/db";
-import { dot, findJobSource, getJob, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
+import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { employmentFromTitle, jobLocation } from "@/lib/jobSchema";
@@ -78,11 +78,15 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const rawDetail = detailOf(job.title);
   const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
   const stage = stageOf(job.title);
+  const attach = await getJobAttach(job.id);
+  const fileNote = attach && attach.files.length
+    ? ` 첨부 ${attach.files.length}개: ${attach.files.slice(0, 3).map((f) => f.name).join(", ")}${attach.files.length > 3 ? " 등" : ""}.`
+    : "";
   return {
     ...(stale ? { robots: { index: false, follow: true } } : {}),
     title: seoJobTitle(job, role, detail, stage),
     // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
-    description: `${job.title}. ${role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}`,
+    description: `${job.title}. ${role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}${fileNote}`,
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
@@ -149,7 +153,11 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     return <JobGone />;
   }
-  const [related, stat] = await Promise.all([getRelatedJobs(job), job.org ? getOrgStat(job.org) : Promise.resolve(null)]);
+  const [related, stat, attach] = await Promise.all([
+    getRelatedJobs(job),
+    job.org ? getOrgStat(job.org) : Promise.resolve(null),
+    getJobAttach(job.id),
+  ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
   const role = detectRole(job.title, job.org);
@@ -219,6 +227,36 @@ export default async function JobDetail({ params }: P) {
           <b className="block text-[14px] font-bold">{STAGE_TEXT[stage].label}</b>
           <p className="mt-1 text-[13.5px] leading-relaxed text-ink2">{STAGE_TEXT[stage].body}</p>
         </div>
+      )}
+
+      {/* 정책브리핑에 올라온 첨부(공고문·양식). 사람이 제일 먼저 찾는 것이라 위에 둔다. */}
+      {attach && attach.files.length > 0 && (
+        <section className="card mt-6 p-5" id="files">
+          <h2 className="text-[15px] font-extrabold">
+            첨부파일 <span className="num ml-1 text-[13px] font-semibold text-muted">{attach.files.length}개</span>
+          </h2>
+          <ol className="mt-3 divide-y divide-line">
+            {attach.files.map((f, i) => (
+              <li key={f.dl} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
+                <span className={`inline-flex h-5 min-w-[2.6rem] items-center justify-center rounded px-1 text-[10.5px] font-bold uppercase ${
+                  f.ext === "pdf" ? "bg-alertSoft text-alert" : f.ext === "hwp" || f.ext === "hwpx" ? "bg-brandSoft text-brand" : "bg-surface2 text-muted"}`}>
+                  {f.ext || "파일"}
+                </span>
+                <span className="min-w-0 flex-1 break-all text-[14px] leading-snug text-ink">
+                  <span className="num mr-1 text-muted">{i + 1}.</span>{f.name}
+                </span>
+                <span className="flex shrink-0 gap-1.5">
+                  <a href={f.view} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-ghost px-3 py-1.5 text-[13px]">바로보기</a>
+                  <a href={f.dl} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-primary px-3 py-1.5 text-[13px]">내려받기</a>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-3 text-xs leading-relaxed text-faint">
+            파일은 <a href={attach.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-brand">대한민국 정책브리핑(korea.kr)</a>에
+            기관이 올린 원본으로 바로 이어집니다. HWP 는 한글 또는 한컴 뷰어로 엽니다.
+          </p>
+        </section>
       )}
 
       {/* 이 자리가 무슨 일인지. 제목에서 읽은 직무의 통례다 — 이 공고의 사실이 아니라는 것을 매번 적는다. */}
