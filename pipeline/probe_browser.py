@@ -176,6 +176,17 @@ def check_ref(browser, url: str) -> None:
         print(f"   [{tag}] status {r.status if r else '-'} title={page.title()!r} 높이={page.evaluate('document.body.scrollHeight')}")
         sdk = sorted({re.sub(r'^https?://([^/?]+).*$', r'\1', s) for s in scripts if re.search(r'map|kakao|naver|google', s, re.I)})
         print(f"   [{tag}] 지도 관련 스크립트 호스트:", sdk)
+        # 데스크톱은 첫 화면(위 1,400px) 구조만 짧게 — 기둥 폭·검색창·바로가기·오른쪽 기둥을 본다.
+        if tag == "데스크톱":
+            print("   [데스크톱] 화면 구조(위 1400px):")
+            for o in [o for o in page.evaluate(OUTLINE_JS) if o["y"] < 1400][:90]:
+                bits = [f"y{o['y']}", f"x{o['x']}", f"{o['w']}x{o['h']}", o["tag"]]
+                for k in ("cls", "bg", "radius"):
+                    if o.get(k):
+                        bits.append(f"{k}={o[k]}")
+                if o.get("text"):
+                    bits.append(f"“{o['text'][:60]}”")
+                print("     -", " ".join(bits))
         if tag == "휴대폰":
             body = page.evaluate("document.body.innerText").replace("\t", " ")
             body = re.sub(r"\n{2,}", "\n", body)
