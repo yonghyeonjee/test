@@ -174,7 +174,7 @@ export default function PortalSearch({
           </span>
           {hot.map((h, i) => (
             <Link key={h} href={`${base}?q=${encodeURIComponent(h)}`}
-                  className={`shrink-0 rounded-pill bg-white px-3 py-1 text-[13px] font-medium text-ink2 ring-1 ring-inset ring-line
+                  className={`shrink-0 rounded-pill bg-white px-3 py-1.5 text-[13px] font-medium text-ink2 ring-1 ring-inset ring-line
                               transition-colors hover:text-brand hover:ring-brand/40 ${i >= 8 ? "sm:hidden" : ""}`}>
               {h}
             </Link>

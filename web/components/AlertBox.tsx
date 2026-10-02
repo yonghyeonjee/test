@@ -23,7 +23,7 @@ export default function AlertBox({ findHref = "/#find" }: { findHref?: string })
           <PortalIcon name="bell" className="h-5 w-5" strokeWidth={2} />
         </span>
         <h2 className="text-[15px] font-extrabold tracking-[-.02em]">내 조건 · 알림</h2>
-        <span className="ml-auto rounded-pill bg-ground px-2 py-0.5 text-[11px] font-bold text-muted">알림 준비 중</span>
+        <span className="ml-auto rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-muted">알림 준비 중</span>
       </div>
       {n > 0 ? (
         <>

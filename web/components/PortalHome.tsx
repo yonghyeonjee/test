@@ -82,7 +82,7 @@ export function Box({ title, sub, more, moreLabel = "더보기", className = "",
         <h2 className="text-[15px] font-extrabold tracking-[-.02em]">{title}</h2>
         {sub && <span className="min-w-0 flex-1 truncate text-[12px] text-faint">{sub}</span>}
         {more && (
-          <Link href={more} className="shrink-0 text-[12.5px] font-semibold text-muted hover:text-ink">
+          <Link href={more} className="-my-1.5 shrink-0 py-1.5 text-[12.5px] font-semibold text-muted hover:text-ink">
             {moreLabel} ›
           </Link>
         )}
@@ -124,7 +124,7 @@ const KIND: Record<Slide["kind"], { label: string; cls: string }> = {
 /** 남은 날 배지. 사흘 안은 빨강, 이레 안은 주황. */
 export function DueBadge({ days }: { days: number }) {
   const cls = days <= 3 ? "bg-alertSoft text-alert" : days <= 7 ? "bg-accentSoft text-accent" : "bg-ground text-muted";
-  return <span className={`num shrink-0 rounded-pill px-2 py-0.5 text-[11.5px] font-bold ${cls}`}>{dueLabel(days)}</span>;
+  return <span className={`num shrink-0 rounded-pill px-2 py-0.5 text-[12px] font-bold ${cls}`}>{dueLabel(days)}</span>;
 }
 
 /** 놓치기 쉬운 마감 모음(지원금·시험·채용·기업). 휴대폰은 위쪽 돌림 띠가 같은 것을 보여 준다. */
@@ -136,7 +136,7 @@ export function DeadlineList({ slides, className = "" }: { slides: Slide[]; clas
         {slides.slice(0, 6).map((s) => (
           <li key={s.key}>
             <Link href={s.href} className="group flex items-center gap-2 py-2">
-              <span className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[11px] font-bold ${KIND[s.kind].cls}`}>{KIND[s.kind].label}</span>
+              <span className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[12px] font-bold ${KIND[s.kind].cls}`}>{KIND[s.kind].label}</span>
               <span className="min-w-0 flex-1 truncate text-[13.5px] text-ink2 group-hover:text-ink">{s.title}</span>
               <DueBadge days={s.days} />
             </Link>
@@ -195,17 +195,17 @@ export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean 
           <span className="mt-0.5 block truncate text-[12.5px] text-muted">{[p.org_name, place].filter(Boolean).join(" · ")}</span>
         </span>
         {st === "always" ? (
-          <span className="shrink-0 rounded-pill bg-cat-blueSoft px-2 py-0.5 text-[11.5px] font-bold text-cat-blue">상시</span>
+          <span className="shrink-0 rounded-pill bg-cat-blueSoft px-2 py-0.5 text-[12px] font-bold text-cat-blue">상시</span>
         ) : st === "upcoming" ? (
-          <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[11.5px] font-bold text-muted">예정</span>
+          <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-muted">예정</span>
         ) : st === "closed" ? (
-          <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[11.5px] font-bold text-faint">마감</span>
+          <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-faint">마감</span>
         ) : left !== null && left <= 30 ? (
           <DueBadge days={left} />
         ) : fresh ? (
-          <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2 py-0.5 text-[11.5px] font-bold text-cat-green">새로</span>
+          <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2 py-0.5 text-[12px] font-bold text-cat-green">새로</span>
         ) : (
-          <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2 py-0.5 text-[11.5px] font-bold text-cat-green">접수 중</span>
+          <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2 py-0.5 text-[12px] font-bold text-cat-green">접수 중</span>
         )}
       </Link>
     </li>

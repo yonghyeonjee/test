@@ -120,7 +120,7 @@ export function SiteFooter() {
             {/* 휴대폰: 갈래 묶음 대신 한 줄 링크 */}
             <p className="mt-4 flex flex-wrap gap-x-3 gap-y-1 md:hidden">
               {quick.map(([label, href]) => (
-                <Link key={href} href={href} className="py-1 font-semibold text-ink2 hover:text-ink">{label}</Link>
+                <Link key={href} href={href} className="py-1.5 font-semibold text-ink2 hover:text-ink">{label}</Link>
               ))}
             </p>
           </div>
@@ -143,14 +143,14 @@ export function SiteFooter() {
         <p className="mt-3 hidden flex-wrap items-center gap-x-3 text-[12px] text-faint md:flex">
           <span className="font-bold text-muted">자료 출처</span>
           {SOURCES.map(([name, href]) => (
-            <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1 hover:text-ink">{name}</a>
+            <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1.5 hover:text-ink">{name}</a>
           ))}
         </p>
         <details className="mt-3 text-[12px] text-faint md:hidden">
           <summary className="cursor-pointer py-1 font-bold text-muted">자료 출처</summary>
           <p className="flex flex-wrap gap-x-3">
             {SOURCES.map(([name, href]) => (
-              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1 hover:text-ink">{name}</a>
+              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1.5 hover:text-ink">{name}</a>
             ))}
           </p>
         </details>

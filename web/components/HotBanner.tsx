@@ -177,7 +177,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
               onClick={() => go(idx)}
               aria-label={`${idx + 1}번째 안내 보기`}
               aria-current={idx === i}
-              className="flex h-6 items-center px-0.5"
+              className="flex h-6 min-w-[24px] items-center justify-center px-0.5"
             >
               <span className={`block h-1.5 rounded-pill transition-all ${
                 idx === i ? "w-5 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"}`} />

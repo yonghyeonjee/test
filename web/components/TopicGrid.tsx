@@ -16,7 +16,7 @@ export default function TopicGrid({ counts, limit = 8, className = "mt-12" }: {
           <h2 className="sec-title text-[1.0625rem] font-extrabold">분야별로 찾기</h2>
           <p className="mt-1 text-[13px] text-muted">무엇이 필요한지로 고릅니다. 주거·일자리·건강처럼.</p>
         </div>
-        <Link href="/topic" className="shrink-0 text-[12.5px] font-semibold text-muted hover:text-ink">
+        <Link href="/topic" className="-my-1.5 shrink-0 py-1.5 text-[12.5px] font-semibold text-muted hover:text-ink">
           전체 분야 ›
         </Link>
       </div>

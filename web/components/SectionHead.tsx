@@ -22,7 +22,7 @@ export default function SectionHead({
       </div>
       {more && (
         <Link href={more}
-              className="shrink-0 text-[12.5px] font-semibold text-muted transition-colors hover:text-ink">
+              className="-my-1.5 shrink-0 py-1.5 text-[12.5px] font-semibold text-muted transition-colors hover:text-ink">
           {moreLabel} ›
         </Link>
       )}
