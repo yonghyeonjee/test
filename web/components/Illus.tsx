@@ -288,3 +288,20 @@ export function BrandMark({ className = "h-7 w-7" }: P) {
     </svg>
   );
 }
+
+/** 정책지도: 접힌 지도 + 핀 + 점선 길 */
+export function IllusMap({ className = "" }: P) {
+  return (
+    <Frame className={className}>
+      <Blob />
+      <g {...S}>
+        <path d="M40 48l40-12 40 12 40-12v62l-40 12-40-12-40 12z" fill="#fff" />
+        <path d="M80 36v62M120 48v62" />
+        <path d="M50 90c18-10 28 4 46-6s26 2 44-8" stroke={PALE} strokeDasharray="4 5" />
+      </g>
+      <path d="M100 22c-11 0-19 8-19 19 0 14 19 34 19 34s19-20 19-34c0-11-8-19-19-19z" {...S} fill={B2} />
+      <circle cx="100" cy="41" r="7" fill="#fff" stroke={B} strokeWidth="2.2" />
+      <circle cx="148" cy="92" r="5" fill={GOLD} />
+    </Frame>
+  );
+}

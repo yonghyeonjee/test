@@ -1,5 +1,7 @@
 import Link from "next/link";
+import CalendarAdd from "./CalendarAdd";
 import { korDate } from "@/lib/faq";
+import { SITE_URL } from "@/lib/seo";
 import { gradeOfSeries, type Upcoming } from "@/lib/qnetExam";
 
 /**
@@ -69,6 +71,9 @@ export default function ExamRoundsFor({
               <span className="mt-1.5 block text-[13.5px] text-muted">
                 {u.stage.label} · <span className="num">{korDate(u.stage.from)} ~ {korDate(u.stage.to)}</span>
               </span>
+              <CalendarAdd size="sm" className="mt-2" file={`${name} ${u.round.round}`}
+                           events={[{ title: `[${name}] ${u.round.round} ${u.stage.label}`, start: u.stage.from, end: u.stage.to,
+                                      details: "큐넷 원서접수는 정해진 기간에만 열립니다.", url: `${SITE_URL}/license/schedule` }]} />
             </li>
           ))}
         </ul>

@@ -92,17 +92,6 @@ export type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 
-/** 큰 검색창 아래, 조건 고르기 앞에 두는 구분선. */
-function Or({ children = "또는 조건을 골라 찾기" }: { children?: React.ReactNode }) {
-  return (
-    <div className="my-6 flex items-center gap-3" aria-hidden>
-      <span className="h-px flex-1 bg-line" />
-      <span className="text-[12.5px] font-semibold text-faint">{children}</span>
-      <span className="h-px flex-1 bg-line" />
-    </div>
-  );
-}
-
 function Row({ title, sub, items, more, wide }: {
   title: string; sub?: string; items: Program[]; more?: string; wide?: boolean;
 }) {
@@ -222,6 +211,14 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
 
     return (
       <>
+        {/* 검색창이 맨 위. 메뉴 띠를 지나자마자 보이게. */}
+        {!asked && (
+          <div className="mt-4">
+            <PortalSearch index={bundle.sggIndex} hot={HOT_BUSINESS} scope="business"
+                          placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
+                          placeholderNarrow="수출, 스마트공장, 폐업, 특허…" />
+          </div>
+        )}
         <Tabs active="business" counts={coverage} />
         <Suspense fallback={<div className="h-56" />}>
           {asked ? (
@@ -231,12 +228,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             />
           ) : (
             <div className="card border-t-[3px] border-t-brand p-4 shadow-card sm:p-5">
-              {/* 포털 검색창이 먼저. 조건 고르기는 그 아래. */}
-              <PortalSearch index={bundle.sggIndex} hot={HOT_BUSINESS} scope="business"
-                            placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
-                            placeholderNarrow="수출, 스마트공장, 폐업, 특허…" />
-              <Or />
-              {/* 낱말 칸(KeywordBar)은 여기 두지 않는다 — 바로 위 검색창과 겹친다.
+              {/* 낱말 칸(KeywordBar)은 여기 두지 않는다 — 위 검색창과 겹친다.
                   조건을 고른 결과 화면에서는 조건과 함께 거는 칸으로 다시 나온다. */}
               <BusinessSentence sidos={sidos} />
             </div>
@@ -294,15 +286,8 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
 
   return (
     <>
-      <Tabs active="welfare" counts={coverage} />
-
-      {!asked && (
-        <Suspense fallback={null}>
-          <SavedList />
-        </Suspense>
-      )}
-      {/* 지난번에 넣은 조건. 다시 온 사람은 또 고르지 않아도 된다. */}
-      {!asked && <LastConditions />}
+      {/* 결과 화면에서는 갈래 탭이 맨 위. 첫 화면에서는 검색창이 먼저고 탭은 조건 카드 안에. */}
+      {asked && <Tabs active="welfare" counts={coverage} />}
       {/* 사람이 직접 고른 조건만 기억한다. 글이나 정책 전체에서 "서울에서 찾기" 같은
           링크로 들어온 조건은 그 사람의 것이 아니다. */}
       {asked && (sido || age) && (via === "form" || via === "last") && (
@@ -320,15 +305,22 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
           <Hero
             count={coverage.welfare + coverage.business}
             closing={closingCount}
+            // 검색 포털의 얼굴. 메뉴 띠 바로 아래 — 휴대폰에서도 첫 화면 안에 있어야 한다.
+            // 한 줄 적으면 복지·기업·채용·자격증·공공기관을 한 번에 찾고 연관어까지 같이 본다.
+            top={<PortalSearch index={sggIndex} autoFocus />}
           >
-            <Suspense fallback={<div className="h-56" />}>
-              {/* 검색 포털의 얼굴. 한 줄 적으면 복지·기업·채용·자격증·공공기관을 한 번에
-                  찾고, 연관어(경비 → 경호·보안)까지 같이 본다. 조건 고르기는 그 아래. */}
-              <PortalSearch index={sggIndex} autoFocus />
-              <Or />
+            <Tabs active="welfare" counts={coverage} compact />
+            <Suspense fallback={<div className="h-40" />}>
               <ConditionSentence regions={regions} />
             </Suspense>
           </Hero>
+          {/* 저장해 둔 조건과 지난번 조건. 조건 카드 바로 아래가 제자리다. */}
+          <div className="mt-5">
+            <Suspense fallback={null}>
+              <SavedList />
+            </Suspense>
+            <LastConditions />
+          </div>
           {/* 마감이 걸린 것부터. 무엇이 있는지 모르고 들어온 사람에게는
               이 띠가 곧 안내다. */}
           <HotBanner slides={hot} />
@@ -420,6 +412,12 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
                 </Link>
               ))}
             </div>
+            <Link href="/map" className="btn btn-ghost mt-3">
+              <svg viewBox="0 0 24 24" className="mr-1.5 h-4 w-4 text-brand" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 21s7-6.5 7-11.5a7 7 0 10-14 0C5 14.5 12 21 12 21z" /><circle cx="12" cy="9.5" r="2" />
+              </svg>
+              정책지도에서 내 주변 보기
+            </Link>
           </section>
 
           <section className="mt-12">

@@ -3,9 +3,12 @@ import Link from "next/link";
 export default function Tabs({
   active,
   counts,
+  compact = false,
 }: {
   active: "welfare" | "business";
   counts: { welfare: number; business: number };
+  /** 카드 안에 넣을 때. 위아래 여백을 줄인다. */
+  compact?: boolean;
 }) {
   const items = [
     { key: "welfare", label: "개인 복지", href: "/", n: counts.welfare },
@@ -18,7 +21,7 @@ export default function Tabs({
   ] as const;
 
   return (
-    <nav className="mb-9 mt-5 flex gap-6 border-b border-line">
+    <nav className={`flex gap-6 border-b border-line ${compact ? "mb-5" : "mb-9 mt-5"}`}>
       {items.map((it) => {
         const on = it.key === active;
         return (

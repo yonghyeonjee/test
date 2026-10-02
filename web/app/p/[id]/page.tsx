@@ -18,6 +18,10 @@ import MyFit from "@/components/MyFit";
 import RecentTracker from "@/components/RecentTracker";
 import TopicIcon from "@/components/TopicIcon";
 import Glyph, { fileGlyph } from "@/components/Glyph";
+import CalendarAdd from "@/components/CalendarAdd";
+import MiniMap from "@/components/MiniMap";
+import { programEvents } from "@/lib/calEvents";
+import { locate } from "@/lib/geo";
 import { TOPICS } from "@/lib/topics";
 import {
   ageLabel,
@@ -288,6 +292,30 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         {p.org_name && <Row label="담당">{p.dept_name || p.org_name}</Row>}
         {p.contact && <Row label="문의">{p.contact}</Row>}
       </dl>
+
+      {/* 마감을 캘린더에, 자리는 지도에. 찾아가야 하는 사업이 많다. */}
+      {(() => {
+        const events = programEvents(p);
+        const place = locate(p.sido, p.sigungu);
+        if (!events.length && !place) return null;
+        return (
+          <section className="mt-5 grid gap-3">
+            {events.length > 0 && (
+              <div className="card flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
+                <span className="min-w-0 flex-1 text-[14px] leading-snug">
+                  <b>마감 {korDate(p.apply_end!)}</b>
+                  <span className="text-muted"> — 잊지 않게 내 캘린더에 담아 두세요.</span>
+                </span>
+                <CalendarAdd events={events} file={p.title} />
+              </div>
+            )}
+            {place && (
+              <MiniMap lat={place.lat} lng={place.lng} label={place.label} approx={place.approx}
+                       query={place.sigungu ? `${place.sigungu}청` : (p.dept_name || p.org_name || place.sido)} kind="programs" />
+            )}
+          </section>
+        );
+      })()}
 
       <MidAd name="detail_mid" context={promoContextForProgram(p)} seed={p.source_id} />
 

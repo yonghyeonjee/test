@@ -15,35 +15,59 @@ const TILES = [
 
 const TRUST = ["회원가입 없음", "주민등록번호 안 받음", "무료"];
 
+/**
+ * 첫 화면의 머리.
+ *
+ * 차례가 곧 쓰임새다. 포털의 첫 화면은 검색이라, 메뉴 띠를 지나자마자 검색창(top)이
+ * 오고, 그 아래 네 갈래 바로가기, 그다음에야 소개 띠와 조건 고르기 카드가 온다.
+ * 예전에는 소개 띠가 먼저라 휴대폰에서 검색창이 첫 화면 밖에 있었다.
+ *
+ * 휴대폰에서는 소개 띠를 줄인다 — 긴 설명문은 넓은 화면에서만.
+ */
 export default function Hero({
-  count, closing, children,
+  count, closing, top, children,
 }: {
   count: number;
   closing: number;
-  /** 히어로에 걸쳐 올라오는 카드 안에 들어갈 것 — 찾기 화면. */
+  /** 맨 위에 오는 것 — 검색창. */
+  top?: React.ReactNode;
+  /** 소개 띠에 걸쳐 올라오는 카드 안에 들어갈 것 — 조건 고르기. */
   children: React.ReactNode;
 }) {
   const video = hasPublic("video/hero.mp4") ? "/video/hero.mp4" : "/login-bg.mp4";
   return (
     <>
-      <section className="hero -mx-5 px-6 pb-24 pt-12 text-white sm:mx-0 sm:rounded-card sm:px-10">
+      {top && <div className="mt-4">{top}</div>}
+
+      <div className="mt-3 grid grid-cols-4 gap-2 sm:gap-3">
+        {TILES.map((t) => (
+          <Link key={t.label} href={t.href}
+                className="tile group !items-center !gap-1.5 !p-2.5 sm:!items-start sm:!gap-2.5 sm:!p-[18px]">
+            <span className={`tile-ic ${t.tone}`}><Glyph name={t.glyph} className="h-5 w-5" /></span>
+            <b className="display text-[1rem] text-ink group-hover:text-brand sm:text-[1.15rem]">{t.label}</b>
+            <small className="hidden text-[12.5px] leading-snug text-muted sm:block">{t.desc}</small>
+          </Link>
+        ))}
+      </div>
+
+      <section className="hero -mx-5 mt-6 px-6 pb-20 pt-8 text-white sm:mx-0 sm:rounded-card sm:px-10 sm:pb-24 sm:pt-12">
         <AmbientVideo src={video} poster="/poster.jpg" />
         <div className="grid items-center gap-8 md:grid-cols-[1.15fr_.85fr]">
           <div>
             <p className="eyebrow !text-[#C4B5FD]">
               공공데이터 <CountUp value={count} />건 · 매일 새벽 갱신
             </p>
-            <h1 className="display mt-4 text-[2.25rem] leading-[1.15] sm:text-[2.9rem]">
+            <h1 className="display mt-3 text-[1.75rem] leading-[1.15] sm:mt-4 sm:text-[2.9rem]">
               나라에서 주는 지원,
               <br />
               <span className="text-[#C4B5FD]">받을 수 있는</span> 지원.
             </h1>
-            <p className="mt-5 max-w-[27rem] text-[15.5px] leading-[1.8] text-[#C7C3EA]">
+            <p className="mt-4 hidden max-w-[27rem] text-[15.5px] leading-[1.8] text-[#C7C3EA] sm:block">
               중앙부처와 지자체가 내놓은 지원사업을 한자리에 모아,
               <b className="font-bold text-white"> 내 조건에 실제로 해당되는 것만</b>{" "}
               남깁니다. 사는 곳과 나이만 넣으면 됩니다.
             </p>
-            <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#C7C3EA]">
+            <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[13px] text-[#C7C3EA] sm:mt-6 sm:gap-x-5 sm:gap-y-2">
               {TRUST.map((t) => (
                 <li key={t} className="flex items-center gap-1.5">
                   <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#C4B5FD]" fill="none"
@@ -65,20 +89,10 @@ export default function Hero({
         </div>
       </section>
 
-      {/* 히어로가 position:relative 라 그냥 두면 검색 카드 위를 덮는다.
+      {/* 히어로가 position:relative 라 그냥 두면 카드 위를 덮는다.
           끌어올린 쪽에도 스택 순서를 줘야 입력칸이 눌린다. */}
-      <div className="relative z-10 -mt-16 px-0.5">
+      <div className="relative z-10 -mt-14 px-0.5 sm:-mt-16">
         <div className="card border-t-[3px] border-t-brand p-4 shadow-lift sm:p-5">{children}</div>
-
-        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {TILES.map((t) => (
-            <Link key={t.label} href={t.href} className="tile group">
-              <span className={`tile-ic ${t.tone}`}><Glyph name={t.glyph} className="h-5 w-5" /></span>
-              <b className="display text-[1.15rem] text-ink group-hover:text-brand">{t.label}</b>
-              <small className="text-[12.5px] leading-snug text-muted">{t.desc}</small>
-            </Link>
-          ))}
-        </div>
       </div>
     </>
   );
