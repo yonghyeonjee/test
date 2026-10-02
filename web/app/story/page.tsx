@@ -4,20 +4,20 @@ import { ArtJeonse } from "@/components/Art";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { blogIndexRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 import { getStories, KIND_LABEL } from "@/lib/stories";
 
 /**
  * 블로그. 제도 설명(지원금 안내)과 달리, 한 사람이 실제로 겪을 법한 상황을
  * 따라가며 방법을 안내하는 글을 둔다. 사례는 각색한다.
  */
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "블로그 — 사례로 보는 지원 제도, 이럴 때 이렇게",
   description:
     "전세 만기에 집주인이 집을 판다고 할 때, 대출을 옮겨 이사할 때처럼 실제로 겪을 법한 상황을 따라가며 순서와 서류, 돈 계산을 안내합니다.",
   keywords: [...brandKeys("블로그", "사례"), "전세대출 연장 사례", "버팀목 이사"],
   alternates: { canonical: "/story" },
-};
+});
 
 const STORIES = [
   {

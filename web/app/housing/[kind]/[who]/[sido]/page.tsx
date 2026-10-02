@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import HousingPage from "@/components/HousingPage";
 import {
@@ -23,12 +24,12 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: { kind: string; who: string; sido: string } }): Promise<Metadata> {
   const { kind, who } = params;
   const sido = decodeURIComponent(params.sido);
-  if (!isKind(kind) || !isWho(who)) return { title: "찾을 수 없는 쪽" };
+  if (!isKind(kind) || !isWho(who)) return withOg({ title: "찾을 수 없는 쪽" });
   const counts = await housingCounts().catch(() => []);
   const n = countFor(counts, kind, who, sido);
   const k = KINDS[kind], w = WHO[who];
   const title = housingTitle(kind, who, sido, n);
-  return {
+  return withOg({
     title,
     description: `${sido} ${w.label} ${k.noun} 지원 총정리. 지금 접수 중인 시·군 사업 ${n}건과 주택도시기금 대출 조건을 한 화면에서 봅니다.`,
     keywords: [
@@ -39,7 +40,7 @@ export async function generateMetadata({ params }: { params: { kind: string; who
     alternates: { canonical: housingPath(kind, who, sido) },
     // 사업이 없는 시·도는 얇은 쪽이다. 색인하지 않는다.
     ...(n === 0 ? { robots: { index: false, follow: true } } : {}),
-  };
+  });
 }
 
 export default function Page({ params }: { params: { kind: string; who: string; sido: string } }) {

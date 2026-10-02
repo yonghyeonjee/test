@@ -1,0 +1,454 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { headers } from "next/headers";
+import { isBot } from "@/lib/bot";
+import { getHotSlides } from "@/lib/hotBanner";
+import { Suspense } from "react";
+import BizSearchBox from "@/components/BizSearchBox";
+import BusinessSentence from "@/components/BusinessSentence";
+import ConditionSentence from "@/components/ConditionSentence";
+import ProgramEntry from "@/components/ProgramEntry";
+import Finder from "@/components/Finder";
+import LastConditions from "@/components/LastConditions";
+import RecentStrip from "@/components/RecentStrip";
+import RememberMe from "@/components/RememberMe";
+import GuideBanner from "@/components/GuideBanner";
+import KeywordBar from "@/components/KeywordBar";
+import QuickMenu from "@/components/QuickMenu";
+import TopicGrid from "@/components/TopicGrid";
+import SectionHead from "@/components/SectionHead";
+import StatsBand from "@/components/StatsBand";
+import { Reveal } from "@/components/Motion";
+import AdSlot from "@/components/AdSlot";
+import HotBanner from "@/components/HotBanner";
+import { TrustIcon } from "@/components/Infographic";
+import PromoBanner from "@/components/PromoBanner";
+import RelatedLinks from "@/components/RelatedLinks";
+import SaveBar from "@/components/SaveBar";
+import SavedList from "@/components/SavedList";
+import Hero from "@/components/Hero";
+import SearchBox from "@/components/SearchBox";
+import StatTables from "@/components/StatTables";
+import Tabs from "@/components/Tabs";
+import TrackResults from "@/components/Track";
+import { promoContextFor } from "@/lib/promo";
+import { SUGGEST_BUSINESS, SUGGEST_WELFARE, cleanQuery } from "@/lib/keywords";
+import { blogIndexRelated } from "@/lib/related";
+import { LOAN_ORGS } from "@/lib/studentLoan";
+import { MAJORS } from "@/lib/majors";
+import { SITE_URL, withOg } from "@/lib/seo";
+import {
+  countByTopic,
+  countBusiness, countWelfare, feedClosing, getBusinessRegions, getHomeBundle,
+  logSearch, matchBusiness, matchWelfare, type Program,
+} from "@/lib/db";
+
+
+/** 기업 지원사업 첫 화면의 메타데이터. /business 가 쓴다. */
+export function businessMetadata(): Metadata {
+  return withOg({
+    title: { absolute: "나라지원 — 중소기업·소상공인 지원사업 조회, 지역·업종·업력으로" },
+    description:
+      "지역과 사업체 형태만 고르면 신청할 수 있는 정부 지원사업 공고를 " +
+      "찾아드립니다. 자금·기술·인력·수출·판로 분야를 마감일 순으로 정리했습니다.",
+    keywords: ["나라지원", "소상공인 지원사업", "중소기업 지원사업", "창업 지원사업", "정부 지원사업 조회"],
+    // 물음표 주소(/?tab=business)는 Next 가 정본 주소에서 물음표 뒤를 떼어 버려
+    // 첫 화면과 같은 쪽으로 보였다. 그래서 /business 라는 제 길을 줬다.
+    alternates: { canonical: "/business" },
+  });
+}
+
+export async function homeMetadata({ searchParams }: { searchParams: SP }):
+  Promise<Metadata> {
+  const biz = (Array.isArray(searchParams.tab) ? searchParams.tab[0] : searchParams.tab)
+    === "business";
+  if (biz) return businessMetadata();
+  // 사이트 이름이 제목에 없으면 "나라지원"으로 검색해도 첫 화면이 안 걸린다.
+  // 이름을 맨 앞에 두고, 설명문도 이름으로 시작한다.
+  return withOg({
+    title: { absolute: "나라지원 — 정부지원금·청년지원금 조회, 사는 곳과 나이만 넣으면 됩니다" },
+    description:
+      "나라지원은 전국 지자체와 중앙부처의 정부지원금·복지서비스를 한자리에 모은 곳입니다. " +
+      "사는 곳과 나이를 넣으면 해당될 만한 것만 남습니다. " +
+      "회원가입도 주민등록번호도 필요 없습니다.",
+    keywords: [
+      "나라지원",
+      "나라지원 사이트",
+      "정부지원금 조회",
+      "청년지원금",
+      "복지서비스",
+      "정부복지",
+      "지원금 찾기",
+      "지원금 신청 방법",
+    ],
+    alternates: { canonical: SITE_URL },
+  });
+}
+
+export type SP = { [k: string]: string | string[] | undefined };
+const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
+const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+
+function Row({ title, sub, items, more, wide }: {
+  title: string; sub?: string; items: Program[]; more?: string; wide?: boolean;
+}) {
+  if (!items.length) return null;
+  return (
+    <section className="mt-10 min-w-0">
+      <SectionHead title={title} sub={sub} more={more} />
+      <div className={`grid gap-3 ${wide ? "sm:grid-cols-2" : ""}`}>
+        {items.map((p) => <ProgramEntry key={p.id} p={p} compact />)}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * 마감 임박과 새 공고를 나란히 놓는 자리.
+ *
+ * 마감 임박이 0건인 날이 있다(마감일이 적힌 공고가 그 기간에 없을 때).
+ * 그럴 때 2열을 그대로 두면 한 칸이 통째로 비어 화면 절반이 허옇게 남는다.
+ * 남은 한 줄만 있으면 폭을 다 쓰고, 대신 카드를 2열로 깔아 더 보여 준다.
+ */
+function RowPair({ rows }: {
+  rows: { title: string; sub: string; items: Program[] }[];
+}) {
+  const shown = rows.filter((r) => r.items.length);
+  if (!shown.length) return null;
+  const solo = shown.length === 1;
+  return (
+    <div className={`grid gap-x-6 ${solo ? "" : "md:grid-cols-2"}`}>
+      {shown.map((r) => (
+        <Row key={r.title} title={r.title} sub={r.sub} more="/policies"
+             items={r.items.slice(0, solo ? 8 : 5)} wide={solo} />
+      ))}
+    </div>
+  );
+}
+
+function Results({ results, total, label, myAge, terms, q }: {
+  results: Program[]; total?: number; label: string; myAge?: number; terms: string[]; q?: string;
+}) {
+  // 목록은 60건까지만 받는다. 전체 건수를 따로 세어 왔으면 그 수를, 못 세어
+  // 왔으면 "60건+" 로 적는다.
+  const n = total ?? results.length;
+  return (
+    <section className="mt-8">
+      {results.length > 0 && (
+        <Suspense fallback={null}>
+          <SaveBar label={terms} />
+        </Suspense>
+      )}
+
+      <div className="mb-3 mt-8 flex items-baseline justify-between">
+        <h1 className="text-[1.0625rem] font-bold">{label}</h1>
+        <span className="num text-sm text-muted">
+          {n.toLocaleString("ko-KR")}건{total === undefined && results.length >= 60 && "+"}
+          {total !== undefined && total > results.length && (
+            <span className="ml-1 text-xs text-faint">중 {results.length}건 표시</span>
+          )}
+        </span>
+      </div>
+
+      {results.length === 0 ? (
+        <div className="card p-8 text-center">
+          <p className="leading-relaxed text-muted">
+            입력하신 조건에 걸리는 사업을 찾지 못했습니다.
+            <br />
+            {q
+              ? `‘${q}’ 을(를) 다른 말로 바꾸거나 빼고, 지역을 시·도 단위로 넓혀 보세요.`
+              : "지역을 시·도 단위로 넓히거나 선택을 줄여 보세요."}
+          </p>
+          <Link href="/" className="btn btn-ghost mt-5">처음부터 다시</Link>
+        </div>
+      ) : (
+        <div className="grid gap-3">
+          {results.map((p) => <ProgramEntry key={p.id} p={p} myAge={myAge} />)}
+        </div>
+      )}
+
+      <p className="mt-8 text-xs leading-relaxed text-muted">
+        여기 나온 사업이 곧 신청 자격이 있다는 뜻은 아닙니다. 소득·재산 기준처럼
+        화면에 담기지 않은 요건이 남아 있을 수 있으니, 눌러서 원문을 확인하세요.
+      </p>
+    </section>
+  );
+}
+
+export default async function Home({ searchParams, forceTab }: { searchParams: SP; forceTab?: "business" }) {
+  const tab = forceTab ?? (one(searchParams.tab) === "business" ? "business" : "welfare");
+  const via = one(searchParams.via) ?? "form";
+  const bundle = await getHomeBundle();
+  const { coverage, settings } = bundle;
+  const sido = one(searchParams.sido);
+  const q = cleanQuery(one(searchParams.q));
+
+  if (tab === "business") {
+    const sidos = await getBusinessRegions();
+    const bizTarget = one(searchParams.target);
+    const bizField = many(searchParams.field);
+    const yearsRaw = one(searchParams.years);
+    const bizYears = yearsRaw ? Number(yearsRaw) : undefined;
+    const industry = many(searchParams.ind);
+    const asked = Boolean(
+      sido || bizTarget || bizField.length || yearsRaw || industry.length || q
+    );
+
+    const bq = { sido, bizTarget, bizField, bizYears, industry, q };
+    const [results, total] = asked
+      ? await Promise.all([matchBusiness(bq), countBusiness(bq).catch(() => undefined)])
+      : [[], 0];
+    // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
+    if (asked && !isBot(headers().get("user-agent")))
+      logSearch({ kind: "business", sido, bizTarget, bizField,
+                  n: results.length, entry: via });
+
+    const closing = asked ? [] : await feedClosing("business", 6);
+
+    return (
+      <>
+        <Tabs active="business" counts={coverage} />
+        <Suspense fallback={<div className="h-56" />}>
+          <Finder
+            pick={<><BusinessSentence sidos={sidos} /><KeywordBar suggest={SUGGEST_BUSINESS} tab="business" /></>}
+            search={<BizSearchBox autoFocus={!asked} />}
+          />
+        </Suspense>
+        {asked ? (
+          <Results
+            results={results}
+            total={total}
+            label="신청할 수 있는 지원사업"
+            q={q}
+            terms={[sido, bizTarget, yearsRaw ? `${yearsRaw}년차` : "", ...bizField, q && `‘${q}’`]
+              .filter(Boolean) as string[]}
+          />
+        ) : (
+          <>
+            {/* 검색엔진은 쪽마다 제목(h1) 하나를 기대한다. 기업 쪽 첫 화면에는 없었다. */}
+            <h1 className="display mt-8 text-[1.5rem] leading-tight">
+              기업·소상공인 지원사업, 내 사업에 맞는 것만
+            </h1>
+            <p className="num mt-2 text-sm text-muted">
+              현재 {coverage.business.toLocaleString()}건의 지원사업을 지역·대상·업종·연차로
+              골라 볼 수 있습니다.
+            </p>
+            <Row title="놓치면 내년까지 기다려야 합니다"
+                 sub={`${settings.closingDays}일 이내`} items={closing} />
+          </>
+        )}
+        <PromoBanner placement={asked ? "business-results" : "business"} context="business" />
+      </>
+    );
+  }
+
+  const { regions, areas, stats, sggIndex } = bundle;
+
+  const sigungu = one(searchParams.sigungu);
+  const ageRaw = one(searchParams.age);
+  const age = ageRaw ? Number(ageRaw) : undefined;
+  const employment = one(searchParams.emp);
+  const household = many(searchParams.hh);
+  const asked = Boolean(sido || age || employment || household.length || q);
+  const topicCounts = asked ? {} : await countByTopic().catch(() => ({} as Record<string, number>));
+
+  const wq = { sido, sigungu, age, employment, household, q };
+  const [results, total] = asked
+    ? await Promise.all([matchWelfare(wq), countWelfare(wq).catch(() => undefined)])
+    : [[], 0];
+  if (asked && !isBot(headers().get("user-agent")))
+    logSearch({ kind: "welfare", sido, sigungu, age, employment,
+                household, n: results.length, entry: via });
+
+  const { closing, closingFallback, fresh, closingCount } = bundle;
+  // 조건을 넣기 전 첫 화면에서만. 결과를 보는 중에 띠가 돌면 방해가 된다.
+  const hot = asked ? [] : await getHotSlides().catch(() => []);
+
+  return (
+    <>
+      <Tabs active="welfare" counts={coverage} />
+
+      {!asked && (
+        <Suspense fallback={null}>
+          <SavedList />
+        </Suspense>
+      )}
+      {/* 지난번에 넣은 조건. 다시 온 사람은 또 고르지 않아도 된다. */}
+      {!asked && <LastConditions />}
+      {asked && (sido || age) && (
+        <RememberMe sido={sido} sigungu={sigungu} age={age} emp={employment} hh={household} />
+      )}
+
+      {settings.notice && (
+        <p className="mb-6 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">
+          {settings.notice}
+        </p>
+      )}
+
+      {!asked ? (
+        <>
+          <Hero
+            count={coverage.welfare + coverage.business}
+            closing={closingCount}
+          >
+            <Suspense fallback={<div className="h-56" />}>
+              <Finder
+                pick={<><ConditionSentence regions={regions} /><KeywordBar suggest={SUGGEST_WELFARE} tab="welfare" /></>}
+                search={<SearchBox index={sggIndex} autoFocus />}
+              />
+            </Suspense>
+          </Hero>
+          {/* 마감이 걸린 것부터. 무엇이 있는지 모르고 들어온 사람에게는
+              이 띠가 곧 안내다. */}
+          <HotBanner slides={hot} />
+          <RecentStrip className="mt-10" />
+          <TopicGrid counts={topicCounts} />
+          <QuickMenu />
+        </>
+      ) : (
+        <Suspense fallback={<div className="h-56" />}>
+          {/* 결과 화면에서는 자동 초점을 주지 않는다. 초점이 가면 브라우저가
+              검색칸을 화면에 맞추느라 쪽을 내려 버려, 조건을 고르자마자
+              "해당될 수 있는 사업"부터 보였다. */}
+          <Finder
+            pick={<><ConditionSentence regions={regions} /><KeywordBar suggest={SUGGEST_WELFARE} tab="welfare" /></>}
+            search={<SearchBox index={sggIndex} />}
+          />
+        </Suspense>
+      )}
+
+      {asked ? (
+        <>
+          <Results
+            results={results}
+            total={total}
+            label="해당될 수 있는 사업"
+            myAge={age}
+            q={q}
+            terms={[sigungu || sido, age ? `${age}세` : "", employment, ...household, q && `‘${q}’`]
+              .filter(Boolean) as string[]}
+          />
+          <AdSlot name="results_bottom" />
+          <PromoBanner
+            placement="results"
+            context={promoContextFor({ employment, household, age })}
+          />
+        </>
+      ) : (
+        <>
+          <Reveal as="section" className="mt-14">
+            <p className="eyebrow">이렇게 찾습니다</p>
+            <h2 className="display mt-2 text-[1.5rem] leading-tight">
+              검색어를 몰라도 됩니다. 조건만 고르세요.
+            </h2>
+            <ol className="mt-6 grid gap-6 sm:grid-cols-3">
+              {[
+                ["01", "사는 곳과 나이를 넣습니다", "시·군·구까지 넣으면 우리 동네 사업이 같이 나옵니다. 가구 사정과 취업 상태는 골라도, 안 골라도 됩니다."],
+                ["02", "해당되는 공고만 남습니다", "공고 원문에서 추려낸 나이·거주·가구 조건으로 거릅니다. 마감된 것은 표시되고, 마감 임박은 앞에 옵니다."],
+                ["03", "원문에서 신청합니다", "화면에 담기지 않은 소득·재산 기준이 남아 있을 수 있어, 원문 링크로 넘어가 최종 확인 뒤 신청합니다."],
+              ].map(([n, h, b]) => (
+                <li key={n} className="border-t-2 border-ink pt-4">
+                  <span className="numeral">{n}</span>
+                  <b className="mt-2 block text-[15.5px] font-bold">{h}</b>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
+
+          <AdSlot name="home_mid" />
+
+          <RowPair rows={[
+            { title: "놓치면 내년까지 기다려야 합니다",
+              sub: closingFallback
+                ? "마감일이 가까운 순"
+                : `${settings.closingDays}일 이내 마감`,
+              items: closing },
+            { title: "이번 주에 새로 올라왔어요",
+              sub: `최근 ${settings.newDays}일`, items: fresh },
+          ]} />
+
+          <section className="mt-14">
+            <SectionHead title="어디에 해당되시나요"
+                         sub="눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다." more="/policies" />
+            <StatTables areas={areas} age={stats.age}
+                        employment={stats.employment} household={stats.household} />
+          </section>
+
+          <section id="areas" className="mt-12">
+            <SectionHead title="우리 동네 지원금"
+                         sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />
+            <div className="card grid grid-cols-2 gap-x-6 gap-y-1 p-5 sm:grid-cols-3">
+              {areas.map((a) => (
+                <Link key={a.sido} href={`/area/${encodeURIComponent(a.sido)}`}
+                      className="flex items-baseline justify-between rounded-[8px]
+                                 px-2 py-2 text-sm transition-colors hover:bg-ground
+                                 hover:text-brand">
+                  <span>{a.sido}</span>
+                  <span className="num text-xs text-muted">{a.n}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-12">
+            <Link href="/policies" className="card card-link block border-l-4 border-l-brand p-6 sm:flex
+                                              sm:items-center sm:justify-between sm:gap-6">
+              <span className="block">
+                <b className="block text-[1.0625rem] font-bold">
+                  무엇을 찾아야 할지 모르겠다면
+                </b>
+                <span className="mt-1.5 block text-sm leading-relaxed text-muted">
+                  대상·분야·지역·업종을 전부 펼쳐 두었습니다. 누르기만 하면 그 조건에
+                  걸리는 공고만 남습니다.
+                </span>
+              </span>
+              <span className="btn btn-primary mt-4 shrink-0 sm:mt-0">
+                정책 전체 보기
+              </span>
+            </Link>
+          </section>
+
+          <GuideBanner />
+
+          <RelatedLinks
+            title="처음이시라면 이것부터"
+            items={blogIndexRelated().filter((r) => r.href !== "/")}
+          />
+
+          <Reveal as="section" className="mt-16 border-y border-line py-10">
+            <p className="eyebrow">믿을 수 있는 이유</p>
+            <h2 className="display mt-2 text-[1.5rem] leading-tight">숫자 하나까지 출처가 있습니다</h2>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {([
+                ["source", "정부 공개 자료만 씁니다", "복지로·기업마당·소상공인24 등 10곳의 공공데이터를 그대로 색인합니다. 저희가 지어낸 사업은 없습니다."],
+                ["link", "모든 공고에 원문 링크", "요약만 보고 판단하지 않도록, 한 건마다 발행 기관의 원문으로 이어집니다."],
+                ["lock", "개인정보를 저장하지 않습니다", "나이와 지역은 화면에서만 쓰고, 검색 기록에 IP·이름·원문 입력을 남기지 않습니다."],
+                ["clock", "매일 새벽 갱신", "새 공고와 마감을 매일 새벽 반영합니다. 마지막 수집 시각은 관리자 화면에서 확인합니다."],
+              ] as const).map(([ic, h, b]) => (
+                <div key={ic}>
+                  <TrustIcon name={ic} />
+                  <b className="mt-3 block text-[15px] font-bold">{h}</b>
+                  <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+
+          <StatsBand
+            welfare={coverage.welfare}
+            business={coverage.business}
+            items={[
+              { n: areas.length, label: "시·도" },
+              { n: 9, label: "자료 출처 기관" },
+              { n: LOAN_ORGS.length, label: "학자금 이자지원 기관" },
+              { n: MAJORS.length, label: "학과별 취업 통계" },
+            ]}
+          />
+
+          <PromoBanner placement="home" />
+        </>
+      )}
+    </>
+  );
+}

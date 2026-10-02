@@ -9,7 +9,7 @@ const TILES = [
   { href: "/?age=28&via=chip",  label: "청년",   desc: "월세 · 학자금 · 취업" },
   { href: "/?age=70&via=chip",  label: "어르신", desc: "돌봄 · 의료 · 수당" },
   { href: "/?hh=%EC%A0%80%EC%86%8C%EB%93%9D&via=chip", label: "저소득", desc: "생계 · 주거 · 의료" },
-  { href: "/?tab=business", label: "사업자", desc: "자금 · 판로 · 인력" },
+  { href: "/business", label: "사업자", desc: "자금 · 판로 · 인력" },
 ];
 
 const TRUST = ["회원가입 없음", "주민등록번호 안 받음", "무료"];

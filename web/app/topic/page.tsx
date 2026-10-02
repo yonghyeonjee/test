@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import GuideBanner from "@/components/GuideBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -9,11 +10,11 @@ import { policiesRelated } from "@/lib/related";
 import { TOPICS } from "@/lib/topics";
 
 export const revalidate = 3600;
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "분야별 정부지원 — 주거, 일자리, 교육, 건강, 출산, 돌봄",
   description: "정부·지자체 지원을 분야별로 나눴습니다. 주거지원, 취업지원, 교육비, 의료비, 출산지원금, 돌봄서비스까지 무엇이 필요한지로 고르세요.",
   alternates: { canonical: "/topic" },
-};
+});
 
 export default async function TopicIndex() {
   const counts = await countByTopic().catch(() => ({} as Record<string, number>));

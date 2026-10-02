@@ -4,14 +4,14 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { HowItWorksArt, TrustIcon } from "@/components/Infographic";
 import { IntroVideo } from "@/components/Video";
 import { aboutRelated } from "@/lib/related";
-import { SITE_NAME, t } from "@/lib/seo";
+import { SITE_NAME, t, withOg } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "나라지원 소개 — 무엇을 하는 곳이고, 무엇을 받지 않는가",
   description:
     "나라지원은 흩어져 있는 정부·지자체 지원사업 중에서 내 조건에 해당되는 것만 골라 보여줍니다. 회원가입도 주민등록번호도 필요 없습니다.",
   alternates: { canonical: "/about" },
-};
+});
 
 const USES = [
   {

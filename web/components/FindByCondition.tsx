@@ -14,11 +14,10 @@ export default function FindByCondition({
 }) {
   const base = (sido?: string) => {
     const sp = new URLSearchParams();
-    if (tab === "business") sp.set("tab", "business");
     if (sido) sp.set("sido", sido);
     sp.set("q", q);
     sp.set("via", via);
-    return `/?${sp}`;
+    return `${tab === "business" ? "/business" : "/"}?${sp}`;
   };
   return (
     <section className="mt-10 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-5">

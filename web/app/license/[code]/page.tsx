@@ -14,7 +14,7 @@ import { licenseFaq, licenseIntro, seriesEligibility } from "@/lib/licenseText";
 import { getExamRounds, upcomingForSeries } from "@/lib/qnetExam";
 import { getLicenses, type License } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, withOg } from "@/lib/seo";
 
 /** 종목 목록은 일주일에 한 번이면 된다. 빌드 때 API 가 죽어 있으면 요청 때 만든다. */
 export const revalidate = 604800;
@@ -41,15 +41,15 @@ async function find(code: string): Promise<{ l: License; same: License[] } | nul
 
 export async function generateMetadata({ params }: { params: { code: string } }): Promise<Metadata> {
   const r = await find(params.code);
-  if (!r) return { title: "찾을 수 없는 종목" };
+  if (!r) return withOg({ title: "찾을 수 없는 종목" });
   const { l } = r;
   const title = `${l.name} 자격증 — 응시 자격, 시험 일정, 취득 지원 제도`;
   const description = `${l.name}(${l.series}, ${l.field})의 응시 자격과 시험 준비 방법, 학원비·응시료를 지원하는 정부 제도, 이 자격으로 지원할 수 있는 채용을 정리했습니다.`;
-  return {
+  return withOg({
     title, description,
     keywords: [`${l.name}`, `${l.name} 자격증`, `${l.name} 응시자격`, `${l.name} 시험일정`, `${l.series} 자격증`],
     alternates: { canonical: `${SITE_URL}/license/${encodeURIComponent(l.code)}` },
-  };
+  });
 }
 
 export default async function LicensePage({ params }: { params: { code: string } }) {

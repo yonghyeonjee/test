@@ -5,15 +5,15 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { POSTS } from "@/lib/posts";
 import { blogIndexRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "정부 지원금 안내 — 종류, 신청 방법, 대상 확인",
   description:
     "정부 지원금의 종류와 신청 방법, 대상 확인하는 법을 정리했습니다. 청년 지원 정책과 중소기업·창업 지원사업 안내도 함께 보실 수 있습니다.",
   keywords: [...brandKeys("안내 글", "지원금 안내", "블로그"), "정부 지원금 종류", "지원금 신청 방법"],
   alternates: { canonical: "/blog" },
-};
+});
 
 export default function BlogIndex() {
   return (

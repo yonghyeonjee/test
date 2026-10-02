@@ -13,7 +13,7 @@ import { getLicenses, proBoard, techBoard } from "@/lib/qnet";
 import { getExamRounds, upcoming } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { LICENSE_FAQ } from "@/lib/pageFaq";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 /** 종목 목록은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 충분하다. */
 
@@ -23,7 +23,7 @@ import { brandKeys } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "국가자격증 찾기 — 종목별 응시 자격·시험 일정·지원 제도",
   description:
     "한국산업인력공단이 시행하는 국가기술자격 600여 종목을 이름으로 찾고, 응시 자격과 다가오는 " +
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     "자격증 응시료 지원",
   ],
   alternates: { canonical: "/license" },
-};
+});
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);

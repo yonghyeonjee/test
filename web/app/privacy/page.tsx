@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, withOg } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "개인정보 처리방침",
   description:
     `${SITE_NAME}는 찾아보기만 할 때는 아무것도 받지 않습니다. 저장 목록을 쓰실 때만 ` +
     "사용자명을 만들고, 이름·연락처는 그때도 선택입니다. 주민등록번호는 어떤 경우에도 " +
     "받지 않습니다.",
   alternates: { canonical: `${SITE_URL}/privacy` },
-};
+});
 
 function H({ children }: { children: React.ReactNode }) {
   return (

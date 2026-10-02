@@ -12,12 +12,12 @@ import ProLicenseList from "@/components/ProLicenseList";
 import { getLicenses, proBoard } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
 import { PRO_LICENSE_FAQ } from "@/lib/pageFaq";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 /** 종목 명단은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 넉넉하다. */
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "국가전문자격 종류 — 공인중개사·감정평가사·청소년상담사 목록",
   description:
     "등급 없이 자격마다 따로 시행하는 국가전문자격을 한자리에 모았습니다. " +
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     "전문자격증 목록",
   ],
   alternates: { canonical: "/license/pro" },
-};
+});
 
 export default async function ProLicensePage() {
   const all = await getLicenses();

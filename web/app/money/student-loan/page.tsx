@@ -13,9 +13,9 @@ import { hasNote } from "@/lib/areaNotes";
 import {
   LOAN_BASE, LOAN_ORGS, loanGrouped, productLabel,
 } from "@/lib/studentLoan";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "학자금 대출 이자지원 지자체 — 어디가 대신 내주나",
   description:
     "한국장학재단과 협약해 학자금 대출 이자를 대신 내주는 지자체를 지역별로 정리했습니다. " +
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     "대학생 학자금 지원",
   ],
   alternates: { canonical: "/money/student-loan" },
-};
+});
 
 const ymd = (s: string) => s.replaceAll("-", ".");
 

@@ -11,7 +11,7 @@ import ShareButton from "@/components/ShareButton";
 import Toc from "@/components/Toc";
 import { postRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
 
 /**
  * 나라일터 안내 글.
@@ -32,7 +32,7 @@ const DESC =
   "나라일터 공고 3만 2천 건을 세어 보니 절반이 접수 시작 일주일 안에 마감됐습니다. 공무직·기간제·" +
   "임기제 공고가 언제 올라오고 어디서 지원하는지, 오늘 접수 중인 공고까지 한 번에 확인하세요.";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: TITLE,
   description: DESC,
   keywords: [
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     publishedTime: UPDATED,
     modifiedTime: UPDATED,
   },
-};
+});
 
 // ── 최근 1년 공고에서 센 숫자 ────────────────────────────────
 const YEAR_TOTAL = 32406;
@@ -161,6 +161,7 @@ export default function GojobsGuidePage() {
     crumbs: [{ name: "지원금 안내", path: "/blog" }, { name: "나라일터 이용법" }],
     about: {
       "@type": "BlogPosting",
+      image: [OG_IMAGE],
       "@id": `${SITE_URL}${PATH}#post`,
       headline: TITLE,
       description: DESC,

@@ -23,9 +23,10 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
     const next = new URLSearchParams(sp.toString());
     const v = cleanQuery(value);
     if (v) next.set("q", v); else next.delete("q");
-    if (tab === "business") next.set("tab", "business");
+    next.delete("tab");
     if (v) track("keyword_apply", { tab, words: v.split(" ").length });
-    router.replace(next.toString() ? `/?${next}` : "/", { scroll: false });
+    const base = tab === "business" ? "/business" : "/";
+    router.replace(next.toString() ? `${base}?${next}` : base, { scroll: false });
   };
 
   const active = cleanQuery(current);

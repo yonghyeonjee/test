@@ -11,6 +11,9 @@ const nextConfig = {
     return [
       // 블로그 메뉴를 따로 두면서 옮겼다. 이미 색인된 주소가 죽지 않게.
       { source: "/blog/jeonse-extension", destination: "/story/jeonse-extension", permanent: true },
+      // 기업 지원사업 첫 화면에 제 길(/business)을 줬다. 물음표 주소는 정본에서
+      // 물음표 뒤가 떨어져 첫 화면의 복제로 보였다. 나머지 조건은 그대로 따라간다.
+      { source: "/", has: [{ type: "query", key: "tab", value: "business" }], destination: "/business", permanent: true },
     ];
   },
   async headers() {

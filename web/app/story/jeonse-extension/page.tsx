@@ -12,7 +12,7 @@ import Toc from "@/components/Toc";
 import { Timeline } from "@/components/YouthSavingsArt";
 import { jeonsePostRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
 
 /**
  * 블로그 글. 전세 만기에 집주인이 집을 팔겠다고 할 때 버팀목 대출 세입자가
@@ -30,7 +30,7 @@ const DESC =
   "변경을 합니다. 집주인이 집을 판다고 할 때 집주인에게 보낼 문자, 은행 서류, 10% 상환 대신 붙는 " +
   "가산금리, 돈 계산까지 순서대로 안내합니다.";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: TITLE,
   description: DESC,
   keywords: [
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     publishedTime: "2026-09-30",
     modifiedTime: UPDATED,
   },
-};
+});
 
 const H2 = "sec-title text-[1.0625rem] font-extrabold";
 const P = "mt-2 text-[15px] leading-[1.85] text-ink2";
@@ -123,6 +123,7 @@ export default function JeonseExtensionPage() {
     crumbs: [{ name: "블로그", path: "/story" }, { name: "버팀목 전세대출 1개월 연장" }],
     about: {
       "@type": "BlogPosting",
+      image: [OG_IMAGE],
       "@id": `${SITE_URL}${PATH}#post`,
       headline: TITLE,
       description: DESC,

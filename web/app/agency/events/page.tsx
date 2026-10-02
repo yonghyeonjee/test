@@ -10,7 +10,7 @@ import { EVT_CATE, SIDO_SHORT, callAlio, toEvent } from "@/lib/alioplus";
 import { EVENTS_INTRO, EVENTS_FAQ } from "@/lib/pageFaq";
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
-import { brandKeys } from "@/lib/seo";
+import { brandKeys, withOg } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
 // 그런데도 Next 는 빌드 때 한 번 시험 삼아 그려 보는데, 그 안에서 공공 API 를
@@ -18,7 +18,7 @@ import { brandKeys } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "공공기관 행사·교육 — 지역별 무료 강좌, 체험, 공모전",
   description:
     "전국 공공기관이 여는 교육·강연, 체험, 문화행사, 공모전을 지역과 유형으로 걸러 봅니다. " +
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   keywords: [
       ...brandKeys("행사", "공공기관 행사"),"공공기관 행사", "무료 교육 강좌", "공공기관 체험", "공모전", "지역 행사"],
   alternates: { canonical: "/agency/events" },
-};
+});
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;

@@ -338,7 +338,6 @@ export function describeBiz(p: ParsedBiz) {
 
 export function toBizParams(p: ParsedBiz) {
   const sp = new URLSearchParams();
-  sp.set("tab", "business");
   if (p.sido) sp.set("sido", p.sido);
   if (p.target) sp.set("target", p.target);
   if (p.years !== undefined) sp.set("years", String(p.years));

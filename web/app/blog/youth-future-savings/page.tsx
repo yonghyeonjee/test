@@ -13,7 +13,7 @@ import { CompareBars, SavingsHero, Timeline } from "@/components/YouthSavingsArt
 import { manwon as mw, standardFor, tableYear } from "@/lib/medianIncome";
 import { postRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
 
 /** 신청 기간이 걸려 있는 글이다. 하루 한 번은 새로 그린다. */
 export const revalidate = 86400;
@@ -25,7 +25,7 @@ const DESC =
   "청년미래적금 2차 가입 신청은 2026년 10월 7일부터 16일까지입니다. 나이·소득 조건과 " +
   "정부기여금 6%·12%의 차이, 3년 뒤 실제로 받는 금액을 계산기로 확인하세요.";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: TITLE,
   description: DESC,
   keywords: [
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     publishedTime: UPDATED,
     modifiedTime: UPDATED,
   },
-};
+});
 
 const STEPS = [
   {
@@ -118,6 +118,7 @@ export default function YouthFutureSavingsPage() {
     crumbs: [{ name: "지원금 안내", path: "/blog" }, { name: "청년미래적금 2차" }],
     about: {
       "@type": "BlogPosting",
+      image: [OG_IMAGE],
       "@id": `${SITE_URL}${PATH}#post`,
       headline: TITLE,
       description: DESC,

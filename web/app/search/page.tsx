@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import ProgramEntry from "@/components/ProgramEntry";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -21,11 +22,11 @@ const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v)?.trim() || "";
 
 export function generateMetadata({ searchParams }: { searchParams: SP }): Metadata {
   const q = one(searchParams.q);
-  return {
+  return withOg({
     title: q ? `‘${q}’ 통합 검색` : "통합 검색",
     description: "복지·기업 지원사업, 공공기관 채용, 국가자격, 공공기관 사업, 안내 글을 한 번에 찾습니다.",
     robots: { index: false, follow: true },
-  };
+  });
 }
 
 const H2 = "text-[1.0625rem] font-bold";

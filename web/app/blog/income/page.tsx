@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import { PostArt } from "@/components/Art";
@@ -13,7 +14,7 @@ import { pageGraph } from "@/lib/schema";
 
 export const revalidate = 86400;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withOg({
   title: "기준 중위소득 소득 기준 계산기 — 내 연소득은 몇 %일까",
   description:
     "공고에 적힌 '기준 중위소득 180% 이하'가 얼마인지 금액으로 확인합니다. 연소득과 가구원 수를 " +
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
     "의료급여 기준", "주거급여 기준", "가구원수별 중위소득",
   ],
   alternates: { canonical: "/blog/income" },
-};
+});
 
 /**
  * 복지로가 직접 굴리는 진단·모의계산. 확정은 여기서 한다.

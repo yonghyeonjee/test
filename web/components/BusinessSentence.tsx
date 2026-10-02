@@ -94,13 +94,13 @@ export default function BusinessSentence({ sidos }: { sidos: string[] }) {
 
   const set = (patch: Record<string, string | string[] | null>) => {
     const next = new URLSearchParams(sp.toString());
-    next.set("tab", "business");
+    next.delete("tab");
     for (const [k, v] of Object.entries(patch)) {
       next.delete(k);
       if (Array.isArray(v)) v.forEach((x) => next.append(k, x));
       else if (v) next.set(k, v);
     }
-    router.replace(`/?${next}`, { scroll: false });
+    router.replace(next.toString() ? `/business?${next}` : "/business", { scroll: false });
   };
 
   const yearOpts = [

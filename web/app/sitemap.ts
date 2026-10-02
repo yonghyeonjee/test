@@ -75,7 +75,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 색인 상태를 보며 단계적으로 늘린다. 지금은 지역 + 상위 400건.
   return [
     { url: SITE, changeFrequency: "daily" as const, priority: 1 },
-    { url: `${SITE}/?tab=business`, changeFrequency: "daily" as const, priority: 0.9 },
+    { url: `${SITE}/business`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${SITE}/policies`, changeFrequency: "daily" as const, priority: 0.9 },
     { url: `${SITE}/topic`, changeFrequency: "weekly" as const, priority: 0.8 },
     ...TOPICS.map((t) => ({ url: `${SITE}/topic/${t.slug}`, changeFrequency: "daily" as const, priority: 0.8 })),
