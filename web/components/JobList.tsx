@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATUS_LABEL } from "@/lib/db";
+import { STATUS_LABEL } from "@/lib/consts";
 import { dot, facets, filterJobs, type JobBoard } from "@/lib/pubJobs";
 import { jobPath, jobPathPage, jobPathWith, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
 
@@ -84,12 +84,12 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
       <div className="mt-4 flex flex-wrap gap-2">
         <Link href={jobPathWith(route, { open: !route.open })}
               className={`chip ${route.open ? "chip-on" : ""}`}>
-          접수 중만 <span className="num text-[11.5px] opacity-70">{openN}</span>
+          접수 중만 <span className="num text-[12px] opacity-70">{openN}</span>
         </Link>
         {hires.slice(0, 6).map((h) => (
           <Link key={h.v} href={jobPathWith(route, { hire: route.hire === h.v ? undefined : h.v })}
                 className={`chip ${route.hire === h.v ? "chip-on" : ""}`}>
-            {h.v} <span className="num text-[11.5px] opacity-70">{h.n}</span>
+            {h.v} <span className="num text-[12px] opacity-70">{h.n}</span>
           </Link>
         ))}
       </div>
@@ -98,12 +98,12 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           {regions.slice(0, 20).map((r) => (
             <Link key={r.v} href={jobPathWith(route, { region: r.v })}
                   className="text-muted transition-colors hover:text-brand">
-              {r.v}<span className="num ml-1 text-[11px] text-faint">{r.n}</span>
+              {r.v}<span className="num ml-1 text-[12px] text-faint">{r.n}</span>
             </Link>
           ))}
           {noRegionN > 0 && (
             <span className="text-faint" title="공고에 근무 지역이 적혀 있지 않은 것. 중앙부처 공고가 대부분입니다.">
-              지역 미표기<span className="num ml-1 text-[11px]">{noRegionN}</span>
+              지역 미표기<span className="num ml-1 text-[12px]">{noRegionN}</span>
             </span>
           )}
         </div>

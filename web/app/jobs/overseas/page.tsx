@@ -71,7 +71,7 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
             ].map((b) => (
               <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
                 <b className="num block text-[1.35rem] font-extrabold text-white">{b.n.toLocaleString()}</b>
-                <span className="mt-0.5 block text-[11.5px] text-white/70">{b.label}</span>
+                <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
               </div>
             ))}
           </div>
@@ -107,7 +107,7 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
             {nations.slice(0, 24).map((n) => (
               <Link key={n.v} href={href(cur, { nation: cur.nation === n.v ? undefined : n.v })}
                     className={`transition-colors hover:text-brand ${cur.nation === n.v ? "font-bold text-brand" : "text-muted"}`}>
-                {n.v}<span className="num ml-1 text-[11px] text-faint">{n.n}</span>
+                {n.v}<span className="num ml-1 text-[12px] text-faint">{n.n}</span>
               </Link>
             ))}
           </div>

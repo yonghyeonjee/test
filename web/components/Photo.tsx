@@ -27,7 +27,7 @@ export default function Photo({
       <img src={`/img/${name}.jpg`} alt={alt} className="h-full w-full object-cover" loading="lazy" />
       {credit && (
         <figcaption className="absolute bottom-1.5 right-2 rounded-pill bg-black/40 px-2 py-0.5
-                               text-[10px] text-white/80">
+                               text-[12px] text-white/80">
           {credit}
         </figcaption>
       )}

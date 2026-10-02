@@ -53,7 +53,7 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
           ].map((b) => (
             <div key={b.label} className="rounded-card bg-white/10 px-3 py-3 text-center">
               <b className="num block text-[1.35rem] font-extrabold text-white">{b.n}</b>
-              <span className="mt-0.5 block text-[11.5px] text-white/70">{b.label}</span>
+              <span className="mt-0.5 block text-[12px] text-white/70">{b.label}</span>
             </div>
           ))}
         </div>
@@ -66,7 +66,7 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
             <div key={y}>
               <span className="block text-xs text-muted">{y}년</span>
               <b className="num block text-[1.25rem] font-extrabold text-brand">{pct(OVERALL[y].rate)}</b>
-              <span className="num block text-[11.5px] text-muted">졸업 {OVERALL[y].grads.toLocaleString()}</span>
+              <span className="num block text-[12px] text-muted">졸업 {OVERALL[y].grads.toLocaleString()}</span>
             </div>
           ))}
         </div>

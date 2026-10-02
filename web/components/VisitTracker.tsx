@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { db, dbConfigured } from "@/lib/db";
 import { readVisit } from "@/lib/referrer";
 
 const ONCE_KEY = "jw.visit";
@@ -15,10 +14,11 @@ const ONCE_KEY = "jw.visit";
  */
 export default function VisitTracker() {
   useEffect(() => {
-    // 환경변수가 빌드에 안 실리면 db 는 건드리는 즉시 던지는 대역이다.
-    // 통계 한 줄 때문에 화면 전체가 죽으면 안 되므로 먼저 확인하고,
-    // 그 밖의 사고도 통째로 삼킨다.
-    if (!dbConfigured) return;
+    // supabase-js 를 쓰지 않는다. 그 꾸러미는 300KB 라 쪽마다 실으면 모바일이
+    // 느려진다. 통계 한 줄은 fetch 로 보낸다. 환경변수가 없으면 그냥 보내지 않는다.
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
 
     try {
       try {
@@ -32,8 +32,11 @@ export default function VisitTracker() {
       if (!v) return; // 사이트 내부 이동
 
       // 응답을 기다리지 않는다. 기록이 화면을 늦추면 안 된다.
-      void db
-        .rpc("log_visit", {
+      void fetch(`${url}/rest/v1/rpc/log_visit`, {
+        method: "POST",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
           p_channel: v.channel,
           p_ref_host: v.refHost,
           p_term: v.term,
@@ -41,11 +44,8 @@ export default function VisitTracker() {
           p_utm_source: v.utmSource,
           p_utm_medium: v.utmMedium,
           p_utm_campaign: v.utmCampaign,
-        })
-        .then(
-          () => {},
-          () => {}
-        );
+        }),
+      }).then(() => {}, () => {});
     } catch {
       // 유입 기록은 없어도 되는 것이다. 화면을 막지 않는다.
     }

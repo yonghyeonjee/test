@@ -48,7 +48,7 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
         />
         {active && (
           <button type="button" onClick={() => { setQ(""); apply(""); }}
-                  className="shrink-0 text-xs text-muted hover:text-brand" aria-label="찾는 말 지우기">
+                  className="shrink-0 py-2 text-xs text-muted hover:text-brand" aria-label="찾는 말 지우기">
             지우기
           </button>
         )}

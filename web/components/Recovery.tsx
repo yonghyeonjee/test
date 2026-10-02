@@ -50,8 +50,8 @@ export default function Recovery({ compact }: { compact?: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`text-xs text-muted underline underline-offset-4 hover:text-brand ${
-          compact ? "" : "mt-2"
+        className={`py-2 text-xs text-muted underline underline-offset-4 hover:text-brand ${
+          compact ? "" : "mt-1"
         }`}
       >
         저장한 조건 옮기기 · 되찾기
@@ -94,7 +94,7 @@ export default function Recovery({ compact }: { compact?: boolean }) {
               코드 만들기
             </button>
           )}
-          <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+          <p className="mt-1.5 text-[12px] leading-relaxed text-faint">
             적어두거나 화면을 찍어두세요. 이 코드를 아는 사람은 저장 목록을 볼
             수 있으니 남에게 알려주지 마세요.
           </p>

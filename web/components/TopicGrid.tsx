@@ -23,7 +23,7 @@ export default function TopicGrid({ counts, limit = 8 }: { counts: Record<string
             <TopicIcon slug={t.slug} color={t.color} soft={t.soft} />
             <span className="text-[12.5px] font-bold text-ink2 group-hover:text-brand">{t.name}</span>
             {counts[t.key] !== undefined && (
-              <span className="num text-[10.5px] text-faint">{counts[t.key].toLocaleString()}</span>
+              <span className="num text-[12px] text-faint">{counts[t.key].toLocaleString()}</span>
             )}
           </Link>
         ))}

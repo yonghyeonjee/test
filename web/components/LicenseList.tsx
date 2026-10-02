@@ -35,7 +35,7 @@ export default function LicenseList({ board, picked, footer }: {
           <div className="mt-4 flex flex-wrap gap-2">
             <Link href="/license" className={`chip ${picked ? "" : "chip-on"}`}>
               전체
-              <span className="num text-[11.5px] font-bold opacity-70">{board.all.length}</span>
+              <span className="num text-[12px] font-bold opacity-70">{board.all.length}</span>
             </Link>
             {board.series.map((s) => (
               <Link
@@ -44,7 +44,7 @@ export default function LicenseList({ board, picked, footer }: {
                 className={`chip ${picked === s.name ? "chip-on" : ""}`}
               >
                 {s.name}
-                <span className="num text-[11.5px] font-bold opacity-70">{s.n}</span>
+                <span className="num text-[12px] font-bold opacity-70">{s.n}</span>
               </Link>
             ))}
           </div>
@@ -77,7 +77,7 @@ export default function LicenseList({ board, picked, footer }: {
                               <Link href={`/license/${encodeURIComponent(l.code)}`} className="hover:text-brand hover:underline">{l.name}</Link>
                             ) : l.name}
                             {!picked && (
-                              <span className="ml-1 text-[11px] text-faint">{l.series}</span>
+                              <span className="ml-1 text-[12px] text-faint">{l.series}</span>
                             )}
                           </li>
                         ))}

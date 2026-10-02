@@ -7,7 +7,7 @@
  * 바탕이 되며, 어떤 조건이 많이 저장되는지 볼 수 있기 때문이다.
  */
 
-import { db } from "./db";
+import { rpc } from "./rest";
 
 const KEY = "jiwon.device.v1";
 
@@ -54,7 +54,7 @@ export const keyOf = (query: string) =>
 export async function listSaved(): Promise<Saved[]> {
   const key = deviceKey();
   if (!key) return [];
-  const { data } = await db.rpc("saved_list", { p_key: key });
+  const { data } = await rpc("saved_list", { p_key: key });
   return (data ?? []) as Saved[];
 }
 
@@ -65,7 +65,7 @@ export async function addSaved(
 ) {
   const key = deviceKey();
   if (!key) return false;
-  const { error } = await db.rpc("saved_add", {
+  const { error } = await rpc("saved_add", {
     p_key: key,
     p_cond: keyOf(query),
     p_kind: kind,
@@ -78,7 +78,7 @@ export async function addSaved(
 export async function removeSaved(condKey: string) {
   const key = deviceKey();
   if (!key) return;
-  await db.rpc("saved_remove", { p_key: key, p_cond: condKey });
+  await rpc("saved_remove", { p_key: key, p_cond: condKey });
 }
 
 // ── 복구 코드 ────────────────────────────────────────────
@@ -91,7 +91,7 @@ export async function removeSaved(condKey: string) {
 export async function getRecoveryCode(): Promise<string | null> {
   const key = deviceKey();
   if (!key) return null;
-  const { data } = await db.rpc("recovery_issue", { p_key: key });
+  const { data } = await rpc("recovery_issue", { p_key: key });
   return (data as string | null) ?? null;
 }
 
@@ -99,7 +99,7 @@ export async function getRecoveryCode(): Promise<string | null> {
 export async function claimRecoveryCode(code: string): Promise<boolean> {
   const clean = code.trim().toUpperCase().replace(/[^A-Z2-9]/g, "");
   if (clean.length !== 8) return false;
-  const { data } = await db.rpc("recovery_claim", { p_code: clean });
+  const { data } = await rpc("recovery_claim", { p_code: clean });
   const key = data as string | null;
   if (!key) return false;
   try {
@@ -114,10 +114,5 @@ export async function claimRecoveryCode(code: string): Promise<boolean> {
 export function markOpened(query: string) {
   const key = deviceKey();
   if (!key) return;
-  void db
-    .rpc("saved_open", { p_key: key, p_cond: keyOf(query) })
-    .then(
-      () => {},
-      () => {}
-    );
+  void rpc("saved_open", { p_key: key, p_cond: keyOf(query) }).then(() => {}, () => {});
 }
