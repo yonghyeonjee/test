@@ -13,6 +13,7 @@ import RecentTracker from "@/components/RecentTracker";
 import OrgMark from "@/components/OrgMark";
 import Glyph, { fileGlyph } from "@/components/Glyph";
 import CalendarAdd from "@/components/CalendarAdd";
+import TopStripAd from "@/components/TopStripAd";
 import MiniMap from "@/components/MiniMap";
 import { jobEvents } from "@/lib/calEvents";
 import { locateJob } from "@/lib/geo";
@@ -220,6 +221,8 @@ export default async function JobDetail({ params }: P) {
           <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{jobSummary(job)}</p>
         </div>
       </header>
+
+      <TopStripAd className="mt-5" />
 
       <dl className="card mt-6 p-5">
         <Row k="기관" v={job.org} />

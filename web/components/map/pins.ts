@@ -122,7 +122,8 @@ const fmtN = (n: number) => n.toLocaleString("ko-KR");
  */
 export function pinHtml(p: Pin, tier: Tier, pos: Pos | undefined, selected = false): string {
   const labeled = pos !== undefined;
-  const cls = ["pm-pin", tier === "far" || p.level === "sido" ? "pm-far" : "pm-near", labeled ? `pm-at-${pos}` : "pm-dot",
+  const heat = p.n >= 50 ? "pm-t1" : p.n >= 20 ? "pm-t2" : "pm-t3";
+  const cls = ["pm-pin", tier === "far" || p.level === "sido" ? "pm-far" : "pm-near", labeled ? `pm-at-${pos}` : `pm-dot ${heat}`,
                p.kind === "jobs" ? "pm-jobs" : "", p.approx ? "pm-approx" : "", selected ? "pm-sel" : ""].filter(Boolean).join(" ");
   const title = `${esc(p.label)}${p.n > 0 ? ` ${fmtN(p.n)}건` : ""}`;
   if (!labeled) return `<div class="${cls}" title="${title}"><i>${p.n > 0 ? fmtN(p.n) : ""}</i></div>`;

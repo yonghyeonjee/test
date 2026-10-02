@@ -4,47 +4,79 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SIDO_POINT } from "@/lib/geoData";
 import { SIDO_SHORT, fmtKm, haversineKm, mapLinks, type LatLng } from "@/lib/geo";
-import type { MapItem } from "@/lib/mapData";
+import type { ListItem, MapItem } from "@/lib/mapData";
 import { fromRows, type MapDataLite } from "@/lib/mapShape";
 import MapCanvas, { type Handle } from "./map/MapCanvas";
-import { itemHref, itemWhen, toPin, type Kind } from "./map/pins";
+import { itemHref, toPin, type Kind } from "./map/pins";
 import { track } from "./Gtm";
 
 const RADII = [10, 30, 50, 100, 0];
 export const GEO_KEY = "jw.geo.v1";
+const PAGE = 30;
 const itemKey = (kind: Kind, key: string) => `${kind}|${key}`;
+type Status = "all" | "soon" | "always";
+type Sort = "near" | "end";
+
+/** 한국 시각 오늘. 카드의 D-day 가 서버(한국 시각)와 맞아야 한다. */
+const kstToday = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+const dayDiff = (a: string, b: string) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 864e5);
+const dot = (s: string | null) => (s ? s.slice(2).replaceAll("-", ".") : "");
+
+/** 카드 머리의 상태 배지. 마감 임박은 빨강, 접수 중은 초록, 상시는 파랑, 예정은 회색. */
+function statusOf(it: MapItem, today: string): { label: string; cls: string } {
+  if (it.always || !it.end) return { label: "상시", cls: "pm-st-always" };
+  if (it.start && it.start > today) return { label: `${dot(it.start)} 시작`, cls: "pm-st-soon" };
+  const d = dayDiff(today, it.end);
+  if (d < 0) return { label: "마감", cls: "pm-st-closed" };
+  if (d === 0) return { label: "오늘 마감", cls: "pm-st-urgent" };
+  if (d <= 3) return { label: `D-${d}`, cls: "pm-st-urgent" };
+  if (d <= 7) return { label: `D-${d}`, cls: "pm-st-warn" };
+  return { label: "접수 중", cls: "pm-st-open" };
+}
+
+const KIND_LABEL: Record<MapItem["kind"], string> = { welfare: "복지", business: "기업", job: "채용" };
 
 /**
- * 정책지도.
+ * 정책지도 — kjebi "Smart 기업 입찰 지도"처럼 왼쪽은 공고 카드, 오른쪽은 지도.
  *
- * 시·군·구마다 핀 하나(접수 중인 지원사업 / 채용). 멀리서는 시·도 묶음, 가까이
- * 가면 이름과 건수가 적힌 핀. 핀을 누르면 카드(요약·거리·길찾기·상세보기).
- * "내 위치로 보기"를 누르면 가까운 순으로 늘어놓고 반경으로 거른다. 위치 권한이
- * 없으면 시·도를 골라도 된다.
+ *  - 카드: 핀 아이콘 · 제목 · 상태 배지(마감 임박 D-n / 접수 중 / 상시 / 시작 예정) · 기관 ·
+ *    지역(내 위치에서 몇 km) · 접수 기간. 제목은 상세로, 카드의 나머지를 누르면 지도에서 그 자리.
+ *  - 위: 지원사업/채용, 내 위치로 보기·지역 고르기, 반경. 카드 위: 상태(전체·7일 안 마감·상시)와
+ *    정렬(가까운 순·마감 임박 순).
+ *  - 지도의 핀을 누르면 그 자리 카드만 남는다("시흥시만 ×" 로 풀기).
+ *  - 공고에는 주소가 없어 핀은 시·군·구마다 하나다(가운데 좌표). 그래서 카드는 공고마다,
+ *    핀은 자리마다다. 카드 목록은 /api/map/list 에서 쪽마다 받는다.
  *
- * 쪽에는 핀(이름·좌표·건수)만 싣고, 요약(제목 몇 건)은 핀을 누르거나 목록을 펼칠
- * 때 /api/map/items 에서 받는다 — 전부 실으면 HTML 이 400KB 를 넘는다.
- * 목록은 서버에서 그려진다(검색엔진·느린 회선). 주소의 ?kind= ?lat= ?lng= 는
- * 붙은 뒤에 읽는다 — useSearchParams 를 쓰면 정적 쪽이 클라이언트 렌더로 바뀐다.
- *
- * 지도 자체는 components/map/MapCanvas — 카카오맵 키가 있으면 카카오맵, 없으면 Leaflet.
+ * 지도는 components/map/MapCanvas — 카카오맵 키가 있으면 카카오맵(kjebi 와 같은 기술),
+ * 없으면 네이버·Leaflet.
  */
-export default function PolicyMap({ data, initialKind = "programs" }: { data: MapDataLite; initialKind?: Kind }) {
-  const [kind, setKind] = useState<Kind>(initialKind);
+export default function PolicyMap({ data, initial }: { data: MapDataLite; initial?: { total: number; items: ListItem[] } }) {
+  const [kind, setKind] = useState<Kind>("programs");
   const [me, setMe] = useState<LatLng | null>(null);
   const [meLabel, setMeLabel] = useState("");
   const [radius, setRadius] = useState(30);
   const [sel, setSel] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>("all");
+  const [sort, setSort] = useState<Sort>("near");
   const [geoErr, setGeoErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [shown, setShown] = useState(20);
+  const [list, setList] = useState<{ total: number; items: ListItem[] }>(initial ?? { total: 0, items: [] });
+  const [loading, setLoading] = useState(false);
+  const [today, setToday] = useState("");
   const [items, setItems] = useState<Record<string, MapItem[]>>({});
   const canvas = useRef<Handle>(null);
   const mapBox = useRef<HTMLDivElement>(null);
+  const listBox = useRef<HTMLOListElement>(null);
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const kindRef = useRef(kind);
+  kindRef.current = kind;
+  const reqId = useRef(0);
 
-  /** 핀 하나의 요약을 받는다. 한 번 받으면 둔다. */
+  useEffect(() => setToday(kstToday()), []);
+
+  /** 핀 하나의 요약(지도 카드에 쓰는 것). 한 번 받으면 둔다. */
   const loadItems = useCallback(async (k: Kind, key: string): Promise<MapItem[]> => {
     const ik = itemKey(k, key);
     const have = itemsRef.current[ik];
@@ -52,9 +84,9 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
     try {
       const r = await fetch(`/api/map/items?kind=${k}&key=${encodeURIComponent(key)}`);
       const j = (await r.json()) as { items: MapItem[] };
-      const list = Array.isArray(j.items) ? j.items : [];
-      setItems((cur) => ({ ...cur, [ik]: list }));
-      return list;
+      const got = Array.isArray(j.items) ? j.items : [];
+      setItems((cur) => ({ ...cur, [ik]: got }));
+      return got;
     } catch {
       return [];
     }
@@ -80,25 +112,58 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
     const inR = me && radius > 0 ? withD.filter((x) => (x.km ?? 0) <= radius) : withD;
     return inR.sort((a, b) => (me ? (a.km ?? 0) - (b.km ?? 0) : b.p.n - a.p.n));
   }, [points, me, radius]);
+  const kmOf = useMemo(() => new Map(rows.map((x) => [x.p.key, x.km])), [rows]);
   const pins = useMemo(() => rows.map(({ p, km }) => toPin(p, kind, km)), [rows, kind]);
-  const totalN = useMemo(() => rows.reduce((a, x) => a + x.p.n, 0), [rows]);
   const allN = (k: Kind) => (k === "jobs" ? data.j : data.p).reduce((a, r) => a + r[4], 0);
+  const regionPoint = region ? points.find((p) => p.key === region) : undefined;
+  const regionLabel = regionPoint?.label ?? "";
+  const sortEff: Sort = me ? sort : "end";
+
+  /** 카드 목록 받기. 자리(가까운 순)·상태·정렬이 바뀌면 처음부터, "더 보기"는 이어서. */
+  const fetchList = useCallback(async (offset: number) => {
+    const id = ++reqId.current;
+    setLoading(true);
+    const qs = new URLSearchParams({ kind, status, sort: sortEff, offset: String(offset), limit: String(PAGE) });
+    if (region) qs.set("region", region);
+    else if (me) { qs.set("lat", String(me[0])); qs.set("lng", String(me[1])); qs.set("r", String(radius)); }
+    try {
+      const r = await fetch(`/api/map/list?${qs}`);
+      const j = (await r.json()) as { total: number; items: ListItem[] };
+      if (id !== reqId.current) return;
+      setList((cur) => (offset ? { total: j.total, items: [...cur.items, ...j.items] } : j));
+    } catch {
+      if (id === reqId.current && !offset) setList({ total: 0, items: [] });
+    } finally {
+      if (id === reqId.current) setLoading(false);
+    }
+  }, [kind, status, sortEff, region, me, radius]);
+
+  // 첫 그림은 서버가 넣어 준 전국 마감 임박 순(initial). 조건이 바뀌면 다시 받는다.
+  const first = useRef(true);
+  useEffect(() => {
+    const untouched = !me && kind === "programs" && status === "all" && !region;
+    if (first.current && initial && untouched) { first.current = false; return; }
+    first.current = false;
+    void fetchList(0);
+    listBox.current?.scrollTo({ top: 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, status, sortEff, region, me, radius]);
 
   const remember = (pt: LatLng, label: string) => {
     try { localStorage.setItem(GEO_KEY, JSON.stringify({ pt, label, at: Date.now() })); } catch { /* 저장 못 해도 화면은 된다 */ }
   };
   const locateMe = () => {
-    if (!("geolocation" in navigator)) { setGeoErr("이 브라우저는 위치를 지원하지 않습니다. 아래에서 지역을 골라 주세요."); return; }
+    if (!("geolocation" in navigator)) { setGeoErr("이 브라우저는 위치를 지원하지 않습니다. 옆에서 지역을 골라 주세요."); return; }
     setBusy(true); setGeoErr(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const pt: LatLng = [+pos.coords.latitude.toFixed(4), +pos.coords.longitude.toFixed(4)];
-        setMe(pt); setMeLabel("내 위치"); setBusy(false); remember(pt, "내 위치");
+        setMe(pt); setMeLabel("내 위치"); setBusy(false); setRegion(null); setSort("near"); remember(pt, "내 위치");
         track("map_locate", { ok: true });
       },
       (err) => {
         setBusy(false);
-        setGeoErr(err.code === 1 ? "위치 권한이 꺼져 있습니다. 아래에서 지역을 골라도 됩니다." : "위치를 읽지 못했습니다. 아래에서 지역을 골라 주세요.");
+        setGeoErr(err.code === 1 ? "위치 권한이 꺼져 있습니다. 옆에서 지역을 골라도 됩니다." : "위치를 읽지 못했습니다. 옆에서 지역을 골라 주세요.");
         track("map_locate", { ok: false, code: err.code });
       },
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 },
@@ -108,19 +173,26 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
     const pt = SIDO_POINT[s];
     if (!pt) return;
     const label = `${SIDO_SHORT[s]} 가운데`;
-    setMe(pt); setMeLabel(label); setGeoErr(null); remember(pt, label);
+    setMe(pt); setMeLabel(label); setGeoErr(null); setRegion(null); setSort("near"); remember(pt, label);
     track("map_locate", { ok: true, how: "sido" });
   };
-  const clearMe = () => { setMe(null); setMeLabel(""); try { localStorage.removeItem(GEO_KEY); } catch { /* */ } };
+  const clearMe = () => { setMe(null); setMeLabel(""); setRegion(null); try { localStorage.removeItem(GEO_KEY); } catch { /* */ } };
+  /** 카드 → 지도에서 그 자리. (지도가 곧 onSelect 를 부르는데, 카드에서 온 것이면 목록을 거르지 않는다.) */
+  const fromCardAt = useRef(0);
   const focus = (key: string) => {
     setSel(key);
+    fromCardAt.current = Date.now();
     canvas.current?.focus(key);
-    mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    track("map_point", { kind, from: "list" });
+    if (window.matchMedia("(max-width: 1023px)").matches) mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    track("map_point", { kind, from: "card" });
   };
-  const onSelect = useCallback((key: string | null) => { setSel(key); if (key) track("map_point", { kind: kindRef.current, from: "pin" }); }, []);
-  const kindRef = useRef(kind);
-  kindRef.current = kind;
+  /** 지도의 핀 → 그 자리 카드만. */
+  const onSelect = useCallback((key: string | null) => {
+    setSel(key);
+    if (!key || Date.now() - fromCardAt.current < 1500) return;
+    setRegion(key);
+    track("map_point", { kind: kindRef.current, from: "pin" });
+  }, []);
 
   return (
     <div>
@@ -129,7 +201,7 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
           <div role="tablist" aria-label="갈래" className="flex rounded-pill bg-ground p-1">
             {(["programs", "jobs"] as Kind[]).map((k) => (
               <button key={k} role="tab" type="button" aria-selected={kind === k}
-                      onClick={() => { setKind(k); setSel(null); setShown(20); }}
+                      onClick={() => { setKind(k); setSel(null); setRegion(null); }}
                       className={`rounded-pill px-3.5 py-1.5 text-[13.5px] font-bold transition-colors ${
                         kind === k ? "bg-brand text-white" : "text-muted hover:text-brand"}`}>
                 {k === "programs" ? "지원사업" : "채용"} <span className="num ml-0.5 opacity-80">{allN(k).toLocaleString("ko-KR")}</span>
@@ -153,98 +225,117 @@ export default function PolicyMap({ data, initialKind = "programs" }: { data: Ma
             <span className="text-muted"><b className="text-ink2">{meLabel}</b> 기준</span>
             <div className="flex flex-wrap gap-1" role="group" aria-label="반경">
               {RADII.map((r) => (
-                <button key={r} type="button" onClick={() => { setRadius(r); setShown(20); }} aria-pressed={radius === r}
+                <button key={r} type="button" onClick={() => { setRadius(r); setRegion(null); }} aria-pressed={radius === r}
                         className={`chip !py-1 !text-[12.5px] ${radius === r ? "chip-on" : ""}`}>
                   {r ? `${r}km` : "전체"}
                 </button>
               ))}
             </div>
-            <span className="num text-muted">{rows.length}곳 · {totalN.toLocaleString("ko-KR")}건</span>
+            <span className="num text-muted">{rows.length}곳</span>
             <button type="button" onClick={clearMe} className="text-muted underline underline-offset-4 hover:text-brand">위치 지우기</button>
           </div>
         )}
         {geoErr && <p className="mt-2 text-[13px] text-alert">{geoErr}</p>}
-        <p className="mt-2 text-[12.5px] leading-relaxed text-faint">
-          점은 시·군·구마다 하나, 크기는 지금 접수 중인 건수입니다. 거리는 시·군·구 가운데 기준 직선거리라
-          청사까지의 길 거리와 다릅니다. 흐린 점은 시·군·구를 몰라 시·도 가운데에 둔 것.
-        </p>
       </div>
 
-      <div ref={mapBox} className="mt-3 overflow-hidden rounded-card border border-line bg-ground">
-        <MapCanvas ref={canvas} pins={pins} kind={kind} me={me} meLabel={meLabel} radius={radius}
-                   selected={sel} onSelect={onSelect} loadItems={loadItems}
-                   className="h-[62vh] min-h-[380px] w-full" />
-      </div>
-      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-faint">
-        <span><i className="pm-legend pm-legend-p" /> 지원사업</span>
-        <span><i className="pm-legend pm-legend-j" /> 채용</span>
-        <span><i className="pm-legend pm-legend-a" /> 시·군·구 미표기(시·도 가운데)</span>
-        <span>멀리서는 시·도 묶음, 가까이 가면 시·군·구 핀. 핀을 누르면 요약 카드.</span>
-      </p>
-
-      <div className="mb-3 mt-6 flex items-baseline justify-between">
-        <h2 className="text-[1.0625rem] font-bold">
-          {me ? `${meLabel}에서 가까운 순` : kind === "jobs" ? "채용이 많은 곳부터" : "지원사업이 많은 곳부터"}
-        </h2>
-        <span className="num text-sm text-muted">{rows.length}곳 · {totalN.toLocaleString("ko-KR")}건</span>
-      </div>
-      {rows.length === 0 ? (
-        <div className="card p-8 text-center text-muted">
-          {me ? "이 반경 안에는 없습니다. 반경을 넓혀 보세요." : "아직 지도에 올릴 공고를 받아오지 못했습니다."}
+      {/* 넓은 화면: 왼쪽 카드 목록(지도와 같은 높이, 안에서 스크롤) + 오른쪽 지도.
+          좁은 화면: 지도 → 카드 목록. */}
+      <div className="mt-3 lg:grid lg:grid-cols-[minmax(330px,390px)_1fr] lg:gap-4">
+        <div className="lg:order-2">
+          <div ref={mapBox} className="overflow-hidden rounded-card border border-line bg-ground">
+            <MapCanvas ref={canvas} pins={pins} kind={kind} me={me} meLabel={meLabel} radius={radius}
+                       selected={sel} onSelect={onSelect} loadItems={loadItems}
+                       className="h-[56vh] min-h-[360px] w-full lg:h-[680px]" />
+          </div>
+          <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-faint">
+            <span><i className="pm-legend pm-legend-p" /> 지원사업 자리</span>
+            <span><i className="pm-legend pm-legend-j" /> 채용 자리</span>
+            <span className="flex items-center gap-1"><i className="pm-legend pm-legend-t1" /><i className="pm-legend pm-legend-t2" /><i className="pm-legend pm-legend-t3" /> 건수 많음·보통·적음</span>
+            <span>핀은 시·군·구 가운데, 거리는 직선거리.</span>
+          </p>
         </div>
-      ) : (
-        <ol className="grid gap-2.5">
-          {rows.slice(0, shown).map(({ p, km }) => {
-            const links = mapLinks(`${p.sigungu ?? p.sido}청`);
-            const list = items[itemKey(kind, p.key)];
-            return (
-              <li key={p.key} className={`card transition-colors ${sel === p.key ? "border-brand" : ""}`}>
-                {/* 누르면 요약(제목 몇 건)이 펼쳐진다. 펼칠 때 받아 온다. */}
-                <details className="group" onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) void loadItems(kind, p.key); }}>
-                  <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-                    <span className="text-[15px] font-bold group-open:text-brand">
-                      {p.label}
-                      {p.approx && <span className="ml-1.5 text-[12px] font-normal text-faint">시·도 가운데</span>}
-                    </span>
-                    <span className="num text-[12.5px] text-muted">
-                      {km !== null && <b className="mr-2 text-ink2">{fmtKm(km)}</b>}
-                      {kind === "jobs" ? `채용 ${p.n}` : `복지 ${p.nW} · 기업 ${p.nB}`}
-                      <span className="ml-2 text-faint" aria-hidden>▾</span>
-                    </span>
-                  </summary>
-                  <div className="border-t border-line px-4 pb-4 pt-3">
-                    {list === undefined ? (
-                      <p className="text-[13px] text-faint">불러오는 중…</p>
-                    ) : list.length === 0 ? (
-                      <p className="text-[13px] text-faint">요약을 못 받았습니다. 모두 보기로 가 주세요.</p>
-                    ) : (
-                      <ul className="grid gap-1 text-[13.5px]">
-                        {list.slice(0, 5).map((it) => (
-                          <li key={it.id} className="flex justify-between gap-3">
-                            <Link href={itemHref(it)} className="min-w-0 truncate hover:text-brand">{it.t}</Link>
-                            <span className="num shrink-0 text-[12px] text-faint">{itemWhen(it)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    <div className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1 text-[12.5px]">
-                      <Link href={p.more} className="font-semibold text-brand">{p.n}건 모두 보기 →</Link>
-                      <button type="button" onClick={() => focus(p.key)} className="text-muted hover:text-brand">지도에서 보기</button>
-                      <a href={links.kakao} target="_blank" rel="noopener noreferrer" className="text-muted hover:text-brand">카카오맵 길찾기</a>
-                      <a href={links.naver} target="_blank" rel="noopener noreferrer" className="text-muted hover:text-brand">네이버지도</a>
+
+        <section aria-label="공고 카드" className="mt-5 lg:order-1 lg:mt-0 lg:flex lg:h-[680px] lg:flex-col lg:overflow-hidden lg:rounded-card lg:border lg:border-line lg:bg-surface">
+          <div className="pb-2 lg:border-b lg:border-line lg:px-4 lg:pb-3 lg:pt-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-[1.0625rem] font-bold">
+                총 <span className="num text-brand">{list.total.toLocaleString("ko-KR")}</span>건
+              </h2>
+              <select value={sortEff} onChange={(e) => setSort(e.target.value as Sort)} aria-label="정렬" disabled={!me}
+                      className="h-8 rounded-pill border border-line bg-surface px-2.5 text-[12.5px] text-ink2 outline-none focus:border-brand disabled:opacity-60">
+                <option value="near">가까운 순</option>
+                <option value="end">마감 임박 순</option>
+              </select>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="상태">
+              {([["all", "전체"], ["soon", "7일 안 마감"], ["always", "상시"]] as [Status, string][]).map(([v, l]) => (
+                <button key={v} type="button" aria-pressed={status === v} onClick={() => setStatus(v)}
+                        className={`pm-filter ${status === v ? `pm-filter-on pm-filter-${v}` : ""}`}>{l}</button>
+              ))}
+              {region && (
+                <button type="button" onClick={() => { setRegion(null); setSel(null); }}
+                        className="pm-filter pm-filter-on pm-filter-region" aria-label={`${regionLabel} 거르기 풀기`}>
+                  {regionLabel}만 <span aria-hidden>×</span>
+                </button>
+              )}
+            </div>
+            {!me && <p className="mt-1.5 text-[12px] text-faint">전국 마감 임박 순입니다. 내 위치를 켜면 가까운 순으로 바뀝니다.</p>}
+          </div>
+
+          {list.items.length === 0 ? (
+            <div className="card p-8 text-center text-[14px] text-muted lg:m-3">
+              {loading ? "불러오는 중…" : me && radius ? "이 반경 안에는 없습니다. 반경을 넓히거나 상태를 '전체'로 바꿔 보세요." : "조건에 맞는 공고가 없습니다."}
+            </div>
+          ) : (
+            <ol ref={listBox} className={`grid gap-2 lg:flex-1 lg:content-start lg:overflow-y-auto lg:p-3 ${loading ? "opacity-60" : ""}`}>
+              {list.items.map((it) => {
+                const st = statusOf(it, today || kstToday());
+                const km = kmOf.get(it.key);
+                return (
+                  <li key={`${it.key}|${it.id}`}>
+                    <div role="button" tabIndex={0} onClick={() => focus(it.key)}
+                         onKeyDown={(e) => { if (e.key === "Enter") focus(it.key); }}
+                         className={`pm-lcard ${sel === it.key ? "pm-lcard-on" : ""}`}>
+                      <div className="flex items-start gap-2">
+                        <svg viewBox="0 0 24 24" className={`mt-0.5 h-5 w-5 shrink-0 ${it.kind === "job" ? "text-[#0F766E]" : "text-[#E0242B]"}`} aria-hidden>
+                          <path fill="currentColor" d="M12 2C7.6 2 4 5.5 4 9.9 4 15.6 12 22 12 22s8-6.4 8-12.1C20 5.5 16.4 2 12 2z" />
+                          <circle cx="12" cy="9.8" r="3.1" fill="#fff" />
+                        </svg>
+                        <Link href={itemHref(it)} onClick={(e) => e.stopPropagation()}
+                              className="min-w-0 flex-1 text-[14.5px] font-bold leading-snug text-ink hover:text-brand">
+                          <span className="line-clamp-2">{it.t}</span>
+                        </Link>
+                        <span className={`pm-st ${st.cls}`}>{st.label}</span>
+                      </div>
+                      <dl className="pm-ldl">
+                        <div><dt>{it.kind === "job" ? "기관" : "담당"}</dt><dd>{it.org ?? "—"}</dd></div>
+                        <div><dt>지역</dt><dd>{it.label}{km != null && <b className="ml-1.5 text-brand">{fmtKm(km)}</b>}</dd></div>
+                        <div><dt>{it.always || !it.end ? "접수" : "기간"}</dt>
+                          <dd className="num">{it.always || !it.end ? "상시 접수" : `${it.start ? dot(it.start) : ""} ~ ${dot(it.end)}`}
+                            <span className="ml-1.5 text-faint">{KIND_LABEL[it.kind]}</span></dd></div>
+                      </dl>
                     </div>
-                  </div>
-                </details>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-      {rows.length > shown && (
-        <button type="button" onClick={() => setShown((s) => s + 20)} className="btn btn-ghost mt-4 w-full">
-          더 보기 <span className="num ml-1 text-muted">{rows.length - shown}곳</span>
-        </button>
-      )}
+                  </li>
+                );
+              })}
+              {list.items.length < list.total && (
+                <li>
+                  <button type="button" disabled={loading} onClick={() => void fetchList(list.items.length)} className="btn btn-ghost w-full">
+                    {loading ? "불러오는 중…" : <>더 보기 <span className="num ml-1 text-muted">{(list.total - list.items.length).toLocaleString("ko-KR")}건</span></>}
+                  </button>
+                </li>
+              )}
+            </ol>
+          )}
+          {regionPoint && (
+            <div className="mt-2 px-1 text-[12.5px] lg:mt-0 lg:border-t lg:border-line lg:px-4 lg:py-2">
+              <Link href={regionPoint.more} className="font-semibold text-brand">{regionLabel} 공고 모두 보기 →</Link>
+              <a href={mapLinks(`${regionPoint.sigungu ?? regionLabel}청`).kakao} target="_blank" rel="noopener noreferrer"
+                 className="ml-3 text-muted hover:text-brand">카카오맵 길찾기</a>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

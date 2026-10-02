@@ -7,7 +7,7 @@ import PageBanner from "@/components/PageBanner";
 import PolicyMap from "@/components/PolicyMap";
 import RelatedLinks from "@/components/RelatedLinks";
 import { SIDO_SHORT } from "@/lib/geo";
-import { EMPTY_MAP, getMapData, liteOf } from "@/lib/mapData";
+import { EMPTY_MAP, getMapData, listItems, liteOf } from "@/lib/mapData";
 import { blogIndexRelated } from "@/lib/related";
 import { brandKeys, withOg } from "@/lib/seo";
 
@@ -58,7 +58,7 @@ export default async function MapPage() {
         art={<IllusMap />}
       />
 
-      <PolicyMap data={liteOf(data)} />
+      <PolicyMap data={liteOf(data)} initial={listItems(data, "programs", { sort: "end", limit: 30 })} />
 
       <section className="mt-14">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">시·도별로 보기</h2>

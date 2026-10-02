@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import TopStripAd from "./TopStripAd";
 
 /**
  * 자료 화면의 머리 띠. 히어로와 같은 먹초록에 명조 제목.
@@ -14,6 +15,7 @@ export default function PageBanner({
   children?: ReactNode;
 }) {
   return (
+    <>
     <section className="hero -mx-5 mt-2 px-6 py-9 sm:mx-0 sm:rounded-card sm:px-10">
       <div className="flex items-center gap-6">
         <div className="min-w-0 flex-1">
@@ -33,5 +35,8 @@ export default function PageBanner({
       </div>
       {children}
     </section>
+    {/* 머리 띠 바로 아래 작은 가로 광고(관리자가 켠 때만). */}
+    <TopStripAd />
+    </>
   );
 }

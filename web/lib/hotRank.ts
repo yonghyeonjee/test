@@ -17,9 +17,16 @@ import { TOPICS } from "./topics";
  * 원문 입력은 어디에도 저장하지 않는다 — 여기 쓰는 것은 이미 통계용으로 잘라 둔 유입
  * 검색어와 조건값뿐이고, 화면에는 둘 이상이 찾은 말만 올린다.
  */
+/** n 은 같은 줄이 몇 번인지(DB 가 묶어서 돌려준다). 없으면 1. */
 export type LogRows = {
-  visits: { term: string | null; landing: string | null }[];
-  searches: { kind: string | null; household: string[] | null; employment: string | null; biz_field: string[] | null; biz_target: string | null; entry: string | null }[];
+  visits: { term: string | null; landing: string | null; n?: number }[];
+  searches: { kind: string | null; household: string[] | null; employment?: string | null; biz_field: string[] | null; biz_target: string | null; entry?: string | null; n?: number }[];
+};
+
+/** 묶음 쪽(검색어가 아니라 메뉴로 들어온 곳) 가운데 찾는 말로 쓸 만한 것. */
+const SECTION: Record<string, string> = {
+  "/license": "자격증", "/license/schedule": "자격증 시험 일정", "/money/jeonse": "전세대출",
+  "/money/student-loan": "학자금", "/money/home-loan": "주택구입 대출", "/housing": "주거 지원",
 };
 
 const STRIP = /(채용\s*공고|채용\s*정보|채용|공고|홈페이지|사이트|누리집|바로가기|신청|조회|확인)\s*$/;
@@ -62,6 +69,7 @@ export function landingLabel(landing: string | null | undefined): { label: strin
   if (seg[0] === "jobs" && seg[1] === "q" && seg[2]) { const l = termLabel(seg[2]); return l ? { label: l, w: 2 } : null; }
   if (seg[0] === "jobs" && seg[1] === "org" && seg[2]) { const l = orgLabel(seg[2]); return l ? { label: l, w: 1 } : null; }
   if (seg[0] === "topic" && seg[1]) { const t = TOPICS.find((x) => x.slug === seg[1]); return t ? { label: t.name, w: 1 } : null; }
+  if (SECTION[path]) return { label: SECTION[path], w: 1 };
   if (seg[0] === "blog" && seg[1]) {
     const p = POSTS.find((x) => x.slug === seg[1]);
     const k = p?.keywords?.find((x) => x.length >= 2 && x.length <= 12);
@@ -73,26 +81,28 @@ export function landingLabel(landing: string | null | undefined): { label: strin
 /** 기록을 세어 두 목록으로. 순수 함수 — 시험이 바로 부른다. */
 export function rankHot(rows: LogRows, fallback = { welfare: HOT_WELFARE, business: HOT_BUSINESS }, n = 10) {
   const score = new Map<string, { label: string; s: number; c: number; biz: boolean }>();
-  const add = (label: string | null, w: number, biz = false) => {
+  const add = (label: string | null, w: number, biz = false, n = 1) => {
     if (!label) return;
     const key = label.replace(/\s+/g, "").toLowerCase();
     const cur = score.get(key) ?? { label, s: 0, c: 0, biz: biz || BIZ_WORDS.test(label) };
-    cur.s += w; cur.c += 1;
+    cur.s += w * n; cur.c += n;
     if (biz) cur.biz = true;
     score.set(key, cur);
   };
   for (const v of rows.visits) {
-    add(termLabel(v.term), 3);
+    const n = v.n ?? 1;
+    add(termLabel(v.term), 3, false, n);
     const l = landingLabel(v.landing);
-    if (l) add(l.label, l.w, l.label !== null && /^\/business/.test(v.landing ?? ""));
+    if (l) add(l.label, l.w, /^\/business/.test(v.landing ?? ""), n);
   }
   for (const s of rows.searches) {
     if (s.entry === "policies") continue;
+    const n = s.n ?? 1;
     if (s.kind === "business") {
-      for (const f of s.biz_field ?? []) add(f, 1, true);
-      if (s.biz_target) add(s.biz_target, 1, true);
+      for (const f of s.biz_field ?? []) add(f, 1, true, n);
+      if (s.biz_target) add(s.biz_target, 1, true, n);
     } else {
-      for (const h of s.household ?? []) add(h, 1);
+      for (const h of s.household ?? []) add(h, 1, false, n);
     }
   }
   // 한 사람이 한 번 친 말은 올리지 않는다 — 둘 이상이 찾은 말만.

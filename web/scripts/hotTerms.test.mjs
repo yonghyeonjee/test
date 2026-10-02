@@ -30,6 +30,9 @@ check("복지: 한 번 나온 말은 없음", !r.welfare.includes("한번만 나
 check("복지: 기본 말로 채워 열 개", r.welfare.length === 10 && r.welfare.includes("경비"));
 check("기업: 창업·수출", r.business[0] === "창업" && r.business.includes("수출"), r.business.join(","));
 check("기업: 복지 말은 안 섞임", !r.business.includes("저소득"));
+const agg = rankHot({ visits: [{ term: "한국농어촌공사 채용", landing: null, n: 5 }, { term: null, landing: "/license", n: 5 }],
+  searches: [{ kind: "welfare", household: ["저소득"], biz_field: null, biz_target: null, n: 18 }] });
+check("묶인 줄(n)도 센다", agg.welfare[0] === "저소득" && agg.welfare[1] === "한국농어촌공사" && agg.welfare.includes("자격증"), agg.welfare.join(","));
 check("기록이 비면 기본 목록", rankHot({ visits: [], searches: [] }).fromLog === false && rankHot({ visits: [], searches: [] }).welfare.length === 10);
 
 console.log(bad ? `${bad} failed` : "all passed");

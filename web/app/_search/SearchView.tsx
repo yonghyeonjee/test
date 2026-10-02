@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PortalSearch from "@/components/PortalSearch";
 import ProgramEntry from "@/components/ProgramEntry";
+import TopStripAd from "@/components/TopStripAd";
 import { SEARCH_SUGGEST, type JobHit, type SearchResult } from "@/lib/search";
 
 /**
@@ -185,6 +186,8 @@ export default function SearchView({
                         placeholder={placeholder} placeholderNarrow={placeholderNarrow} />
         </div>
       </section>
+
+      <TopStripAd />
 
       {q ? (
         <>
