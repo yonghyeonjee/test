@@ -53,7 +53,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   // 목록 자체를 이미 기관·지역으로 좁혀 받은 경우가 있다. 그때 같은
   // 조건을 한 번 더 거는 것은 값이 없지만, 걸어도 결과는 같다.
   const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open };
-  const { regions, hires, openN } = facets(board.jobs, filter);
+  const { regions, hires, openN, noRegionN } = facets(board.jobs, filter);
   const list = filterJobs(board.jobs, filter);
   const last = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const cur = Math.min(Math.max(1, route.page), last);
@@ -61,7 +61,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   const filtered = Boolean(route.q || route.region || route.hire || route.open);
   // 지역 칩은 전체 목록에서만 뜻이 있다. 지역별·기관별 쪽에서는 이미
   // 좁혀져 있어 눌러 봐야 갈 데가 없다.
-  const showRegions = !route.region && !route.org && regions.length > 0;
+  const showRegions = !route.region && !route.org && (regions.length > 0 || noRegionN > 0);
 
   return (
     <div className="mt-6">
@@ -100,6 +100,11 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
               {r.v}<span className="num ml-1 text-[11px] text-faint">{r.n}</span>
             </Link>
           ))}
+          {noRegionN > 0 && (
+            <span className="text-faint" title="공고에 근무 지역이 적혀 있지 않은 것. 중앙부처 공고가 대부분입니다.">
+              지역 미표기<span className="num ml-1 text-[11px]">{noRegionN}</span>
+            </span>
+          )}
         </div>
       )}
 

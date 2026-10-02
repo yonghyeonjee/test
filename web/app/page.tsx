@@ -36,7 +36,7 @@ import { MAJORS } from "@/lib/majors";
 import { SITE_URL } from "@/lib/seo";
 import {
   countByTopic,
-  feedClosing, getBusinessRegions, getHomeBundle,
+  countBusiness, countWelfare, feedClosing, getBusinessRegions, getHomeBundle,
   logSearch, matchBusiness, matchWelfare, type Program,
 } from "@/lib/db";
 
@@ -114,9 +114,12 @@ function RowPair({ rows }: {
   );
 }
 
-function Results({ results, label, myAge, terms, q }: {
-  results: Program[]; label: string; myAge?: number; terms: string[]; q?: string;
+function Results({ results, total, label, myAge, terms, q }: {
+  results: Program[]; total?: number; label: string; myAge?: number; terms: string[]; q?: string;
 }) {
+  // 목록은 60건까지만 받는다. 전체 건수를 따로 세어 왔으면 그 수를, 못 세어
+  // 왔으면 "60건+" 로 적는다.
+  const n = total ?? results.length;
   return (
     <section className="mt-8">
       {results.length > 0 && (
@@ -128,7 +131,10 @@ function Results({ results, label, myAge, terms, q }: {
       <div className="mb-3 mt-8 flex items-baseline justify-between">
         <h1 className="text-[1.0625rem] font-bold">{label}</h1>
         <span className="num text-sm text-muted">
-          {results.length}건{results.length >= 60 && "+"}
+          {n.toLocaleString("ko-KR")}건{total === undefined && results.length >= 60 && "+"}
+          {total !== undefined && total > results.length && (
+            <span className="ml-1 text-xs text-faint">중 {results.length}건 표시</span>
+          )}
         </span>
       </div>
 
@@ -176,9 +182,10 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
       sido || bizTarget || bizField.length || yearsRaw || industry.length || q
     );
 
-    const results = asked
-      ? await matchBusiness({ sido, bizTarget, bizField, bizYears, industry, q })
-      : [];
+    const bq = { sido, bizTarget, bizField, bizYears, industry, q };
+    const [results, total] = asked
+      ? await Promise.all([matchBusiness(bq), countBusiness(bq).catch(() => undefined)])
+      : [[], 0];
     // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
     if (asked && !isBot(headers().get("user-agent")))
       logSearch({ kind: "business", sido, bizTarget, bizField,
@@ -198,6 +205,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         {asked ? (
           <Results
             results={results}
+            total={total}
             label="신청할 수 있는 지원사업"
             q={q}
             terms={[sido, bizTarget, yearsRaw ? `${yearsRaw}년차` : "", ...bizField, q && `‘${q}’`]
@@ -228,9 +236,10 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
   const asked = Boolean(sido || age || employment || household.length || q);
   const topicCounts = asked ? {} : await countByTopic().catch(() => ({} as Record<string, number>));
 
-  const results = asked
-    ? await matchWelfare({ sido, sigungu, age, employment, household, q })
-    : [];
+  const wq = { sido, sigungu, age, employment, household, q };
+  const [results, total] = asked
+    ? await Promise.all([matchWelfare(wq), countWelfare(wq).catch(() => undefined)])
+    : [[], 0];
   if (asked && !isBot(headers().get("user-agent")))
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
                 household, n: results.length, entry: via });
@@ -290,6 +299,7 @@ export default async function Home({ searchParams }: { searchParams: SP }) {
         <>
           <Results
             results={results}
+            total={total}
             label="해당될 수 있는 사업"
             myAge={age}
             q={q}

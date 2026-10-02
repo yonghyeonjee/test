@@ -232,6 +232,9 @@ export function facets(jobs: Job[], f: JobFilter = {}) {
   const forHire = filterJobs(jobs, { ...f, hire: undefined });
   return {
     regions: count(forRegion.flatMap((j) => regionTokens(j.region))),
+    /** 지역이 적히지 않은 공고(중앙부처 공고 대부분). 지역 칩 수와 목록 수가
+     *  안 맞아 보이지 않게 같이 보여 준다. */
+    noRegionN: forRegion.filter((j) => regionTokens(j.region).length === 0).length,
     hires: count(forHire.map((j) => j.hire)),
     /** "접수 중만" 칩에 붙일 수. 여기도 접수 여부를 뺀 나머지 조건 기준. */
     openN: filterJobs(jobs, { ...f, open: false }).filter((j) => j.status !== "closed").length,
