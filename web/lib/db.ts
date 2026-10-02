@@ -44,6 +44,21 @@ export const db = dbConfigured
       }
     ) as ReturnType<typeof createClient>);
 
+/**
+ * 캐시에 남기지 않는 같은 클라이언트. 사람마다 다른 조회(조건 검색·검색어)와 쓰기(검색 기록)에 쓴다.
+ *
+ * Next 14 는 fetch 결과를 기본으로 데이터 캐시에 저장한다. 검색 조건 조합마다 저장이 하나씩 쌓여
+ * Vercel 의 ISR Writes 를 무료 한도(월 20만)의 다섯 배 넘게 썼다. 다시 쓰일 일이 거의 없는 결과라
+ * 저장하지 않는다. 쪽 단위 캐시(revalidate)가 있는 화면에서는 쓰지 않는다 — no-store 가 그 쪽을
+ * 요청마다 그리는 동적 화면으로 바꾼다.
+ */
+export const dbLive = dbConfigured
+  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+      global: { fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }) },
+    })
+  : db;
+
 export type Program = {
   id: number;
   kind: "welfare" | "business" | "event";
@@ -122,8 +137,8 @@ export type WelfareQuery = {
   q?: string;
 };
 
-export async function matchWelfare(q: WelfareQuery, limit = 60) {
-  const { data, error } = await db.rpc("match_welfare", {
+export async function matchWelfare(q: WelfareQuery, limit = 60, live = false) {
+  const { data, error } = await (live ? dbLive : db).rpc("match_welfare", {
     p_sido: q.sido || null,
     p_sigungu: q.sigungu || null,
     p_age: q.age ?? null,
@@ -137,8 +152,8 @@ export async function matchWelfare(q: WelfareQuery, limit = 60) {
 }
 
 /** 조건에 걸리는 복지 사업의 전체 건수. 목록은 60건까지만 받으므로 따로 센다. */
-export async function countWelfare(q: WelfareQuery): Promise<number> {
-  const { data, error } = await db.rpc("count_welfare", {
+export async function countWelfare(q: WelfareQuery, live = false): Promise<number> {
+  const { data, error } = await (live ? dbLive : db).rpc("count_welfare", {
     p_sido: q.sido || null,
     p_sigungu: q.sigungu || null,
     p_age: q.age ?? null,
@@ -160,8 +175,8 @@ export type BusinessQuery = {
   q?: string;
 };
 
-export async function matchBusiness(q: BusinessQuery, limit = 60) {
-  const { data, error } = await db.rpc("match_business", {
+export async function matchBusiness(q: BusinessQuery, limit = 60, live = false) {
+  const { data, error } = await (live ? dbLive : db).rpc("match_business", {
     p_sido: q.sido || null,
     p_biz_target: q.bizTarget || null,
     p_biz_field: q.bizField?.length ? q.bizField : null,
@@ -174,8 +189,8 @@ export async function matchBusiness(q: BusinessQuery, limit = 60) {
   return (data ?? []) as Program[];
 }
 
-export async function countBusiness(q: BusinessQuery): Promise<number> {
-  const { data, error } = await db.rpc("count_business", {
+export async function countBusiness(q: BusinessQuery, live = false): Promise<number> {
+  const { data, error } = await (live ? dbLive : db).rpc("count_business", {
     p_sido: q.sido || null,
     p_biz_target: q.bizTarget || null,
     p_biz_field: q.bizField?.length ? q.bizField : null,
@@ -507,8 +522,8 @@ export function logSearch(a: {
   n: number;
   entry: string;
 }) {
-  // 응답을 기다리지 않는다. 통계 기록이 화면을 늦추면 안 된다.
-  void db
+  // 응답을 기다리지 않는다. 통계 기록이 화면을 늦추면 안 된다. 쓰기라 캐시에 남기지 않는다.
+  void dbLive
     .rpc("log_search", {
       p_kind: a.kind,
       p_sido: a.sido ?? null,
