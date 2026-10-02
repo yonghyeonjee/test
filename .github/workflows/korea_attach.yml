@@ -1,0 +1,46 @@
+name: korea-attach
+
+# 정책브리핑(korea.kr) 채용정보의 첨부파일 링크를 우리 공고에 붙인다.
+# 나라일터 수집(09:00 Vercel, 10:00 여기)이 끝난 뒤에 돈다.
+on:
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: "목록을 몇 쪽 읽나(쪽당 20건)"
+        required: false
+        default: "25"
+      ids:
+        description: "특정 dataId 만(쉼표). 비우면 목록"
+        required: false
+        default: ""
+      dry:
+        description: "적지 않고 보기만"
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 2 * * *"    # UTC 02:00 = KST 11:00
+
+concurrency:
+  group: korea-attach
+  cancel-in-progress: false
+
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: 첨부 붙이기
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python -u pipeline/korea_attach.py \
+            --pages "${{ inputs.pages || '25' }}" \
+            ${{ inputs.ids && format('--ids "{0}"', inputs.ids) || '' }} \
+            ${{ inputs.dry && '--dry' || '' }}
