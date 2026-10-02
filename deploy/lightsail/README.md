@@ -1,6 +1,6 @@
 # AWS Lightsail 로 옮기기
 
-Lightsail 서버 1대(서울, 1GB, 월 약 $7) + Caddy(HTTPS 자동). 빌드는 GitHub Actions 가 하고 서버는 실행만 한다.
+Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모자라면 스냅샷으로 $7 에 옮긴다) + Caddy(HTTPS 자동). 빌드는 GitHub Actions 가 하고 서버는 실행만 한다.
 나중에 CloudFront 를 앞에 둔다(아래 "다음 단계").
 
 | 파일 | 하는 일 |
@@ -13,7 +13,7 @@ Lightsail 서버 1대(서울, 1GB, 월 약 $7) + Caddy(HTTPS 자동). 빌드는 
 
 ## 순서
 
-1. Lightsail 인스턴스: 서울(ap-northeast-2a), Linux/Ubuntu 24.04, 1GB 요금제, 이름 `jiwon`.
+1. Lightsail 인스턴스: 서울(ap-northeast-2a), Linux operating system → Ubuntu 24.04 LTS, $5(512MB) 요금제, 이름 `jiwon`.
 2. 고정 IP 를 만들어 인스턴스에 붙인다.
 3. 네트워킹 방화벽: SSH 22, HTTP 80, HTTPS 443 열기.
 4. 브라우저 SSH 로 접속해 이 저장소의 `deploy/lightsail` 을 받아 `sudo bash setup.sh`.

@@ -5,11 +5,15 @@
 # 앱 파일은 GitHub Actions(deploy_aws.yml)가 /srv/jiwon/releases/<커밋> 에 올리고 current 로 잇는다.
 set -euo pipefail
 
-# 1GB 메모리에서 빌드는 안 하지만, 갑자기 몰릴 때를 대비해 스왑을 둔다.
+# 512MB 메모리라 갑자기 몰릴 때를 대비해 스왑 2GB 를 둔다(빌드는 서버에서 하지 않는다).
 if [ ! -f /swapfile ]; then
-  fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
   echo '/swapfile none swap sw 0 0' >> /etc/fstab
 fi
+
+# 메모리를 아끼려고 이 서버에서 안 쓰는 snapd 는 끈다.
+systemctl disable --now snapd.service snapd.socket 2>/dev/null || true
+sysctl -w vm.swappiness=20 >/dev/null && echo 'vm.swappiness=20' > /etc/sysctl.d/99-jiwon.conf
 
 apt-get update -y
 apt-get install -y ca-certificates curl gnupg debian-keyring debian-archive-keyring apt-transport-https
