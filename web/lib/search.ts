@@ -11,6 +11,7 @@ import { describe, parseQuery, toParams, type Parsed } from "./parse";
 import { POSTS } from "./posts";
 import { getLicenses, type License } from "./qnet";
 import { searchStories } from "./stories";
+import { expandTerms, expansions, relatedTerms } from "./thesaurus";
 import { TOPICS } from "./topics";
 
 /**
@@ -42,12 +43,17 @@ export type SearchResult = {
   term: string;
   welfare: Section<Program>;
   business: Section<Program>;
-  jobs: Section<JobHit> & { openOnly: boolean; allTotal: number | null };
+  /** also: 낱말 말고 같이 OR 로 찾은 연관어("경비" 에 경호·보안·방호). */
+  jobs: Section<JobHit> & { openOnly: boolean; allTotal: number | null; also: string[] };
   licenses: Section<License>;
   agency: Section<AlioItem>;
   guides: GuideHit[];
   /** 읽지 못한 갈래. 화면에 "지금은 못 읽었다"고 적는다. */
   failed: string[];
+  /** 연관 검색어. 누르면 그 말로 다시 찾는다. */
+  related: string[];
+  /** 낱말마다 어떤 연관어를 같이 찾았는지. */
+  expanded: { word: string; also: string[] }[];
 };
 
 const PER = 6;
@@ -112,10 +118,13 @@ const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 function findGuides(words: string[]): GuideHit[] {
   const ws = words.map(norm).filter((w) => w.length >= 2);
   if (!ws.length) return [];
+  // 낱말 그대로 걸리면 2점, 연관어("대학생" → 청년)로 걸리면 1점.
+  const exp = ws.map((w) => expandTerms(w).map(norm).filter((t) => t !== w && t.length >= 2));
   return PAGES
     .map((p) => {
       const hay = [p.title, ...p.keys].map(norm);
-      const score = ws.filter((w) => hay.some((h) => h.includes(w))).length;
+      const has = (t: string) => hay.some((h) => h.includes(t));
+      const score = ws.reduce((a, w, i) => a + (has(w) ? 2 : exp[i].some(has) ? 1 : 0), 0);
       return { p, score };
     })
     .filter((x) => x.score > 0)
@@ -128,23 +137,34 @@ function findGuides(words: string[]): GuideHit[] {
 /** PostgREST or() 안에 들어가는 값. 쉼표·괄호가 있으면 식이 깨진다. */
 const safe = (w: string) => w.replace(/[,()%]/g, "").trim();
 
+/**
+ * 낱말 하나를 "제목이나 기관명에 이 말 또는 연관어가 있다" 는 식으로.
+ * "경비" → title.ilike.%경비%,org.ilike.%경비%,title.ilike.%경호%,…
+ */
+function orClause(terms: string[]) {
+  return terms.flatMap((t) => [`title.ilike.%${t}%`, `org.ilike.%${t}%`]).join(",");
+}
+
 async function searchJobs(words: string[], sido?: string) {
-  const empty = { items: [] as JobHit[], total: 0, openOnly: true, allTotal: null as number | null };
+  const empty = { items: [] as JobHit[], total: 0, openOnly: true, allTotal: null as number | null, also: [] as string[] };
   const ws = words.map(safe).filter((w) => w.length >= 2);
   if (!dbConfigured || !ws.length) return empty;
   const today = new Date().toISOString().slice(0, 10);
   const region = sido?.replace(/(특별자치도|특별자치시|광역시|특별시)$/, "");
+  // 낱말마다 연관어 묶음. 접수 중 공고는 수백 건이라 OR 가 스물 넷이어도 빠르다.
+  const groups = ws.map((w) => Array.from(new Set(expandTerms(w).map(safe).filter((t) => t.length >= 2))));
+  const also = Array.from(new Set(groups.flatMap((g) => g.slice(1))));
 
-  const base = () => {
+  const base = (expand: boolean) => {
     let sel = db.from("job_posts").select("source_id,title,org,region,hire,end_date", { count: "exact" })
       .eq("source", "gojobs");
-    for (const w of ws) sel = sel.or(`title.ilike.%${w}%,org.ilike.%${w}%`);
+    for (const g of groups) sel = sel.or(orClause(expand ? g : g.slice(0, 1)));
     if (region) sel = sel.ilike("region", `%${region}%`);
     return sel;
   };
 
   // 접수 중인 것부터. 접수 중 공고는 수백 건이라 어떤 낱말이든 빠르다.
-  const open = await base().gte("end_date", today).order("end_date", { ascending: true }).limit(PER);
+  const open = await base(true).gte("end_date", today).order("end_date", { ascending: true }).limit(PER);
   if (open.error) throw open.error;
   const items: JobHit[] = (open.data ?? []).map((r) => ({
     id: String(r.source_id), title: String(r.title ?? ""), org: r.org ?? null, region: r.region ?? null,
@@ -152,17 +172,18 @@ async function searchJobs(words: string[], sido?: string) {
   }));
 
   // 두 글자 낱말은 trigram 색인을 못 타서 22만 건을 훑는다(3초). 그때는
-  // 접수 중만 보여 주고 지난 공고는 채용 화면으로 넘긴다.
+  // 접수 중만 보여 주고 지난 공고는 채용 화면으로 넘긴다. 지난 공고까지 셀
+  // 때는 연관어를 넓히지 않는다 — 연관어에는 두 글자가 많다.
   const longEnough = ws.every((w) => w.length >= 3);
-  if (!longEnough) return { items, total: open.count ?? items.length, openOnly: true, allTotal: null };
+  if (!longEnough) return { items, total: open.count ?? items.length, openOnly: true, allTotal: null, also };
 
-  const all = await base().limit(items.length ? 0 : PER).order("reg_date", { ascending: false, nullsFirst: false });
-  if (all.error) return { items, total: open.count ?? items.length, openOnly: true, allTotal: null };
+  const all = await base(false).limit(items.length ? 0 : PER).order("reg_date", { ascending: false, nullsFirst: false });
+  if (all.error) return { items, total: open.count ?? items.length, openOnly: true, allTotal: null, also };
   const closed: JobHit[] = items.length ? [] : (all.data ?? []).map((r) => ({
     id: String(r.source_id), title: String(r.title ?? ""), org: r.org ?? null, region: r.region ?? null,
     hire: r.hire ?? null, end: r.end_date ?? null, open: false,
   }));
-  return { items: items.length ? items : closed, total: open.count ?? items.length, openOnly: false, allTotal: all.count ?? null };
+  return { items: items.length ? items : closed, total: open.count ?? items.length, openOnly: false, allTotal: all.count ?? null, also };
 }
 
 // ── 자격증 ───────────────────────────────────────────
@@ -171,8 +192,20 @@ async function searchLicenses(words: string[]): Promise<Section<License>> {
   const href = `/license?q=${encodeURIComponent(words.join(" "))}`;
   if (!ws.length) return { items: [], total: 0, href };
   const board = await getLicenses();
-  const hits = board.all.filter((l) => ws.some((w) => norm(l.name).includes(w)));
-  return { items: hits.slice(0, PER), total: hits.length, href };
+  const byName = (t: string) => board.all.filter((l) => norm(l.name).includes(t));
+  const direct = board.all.filter((l) => ws.some((w) => norm(l.name).includes(w)));
+  if (direct.length) return { items: direct.slice(0, PER), total: direct.length, href };
+  // 종목 이름에 그 말이 없으면 연관어로 한 번 더("경호" → 경비지도사). 다만
+  // 종목의 2할 넘게 걸리는 말(기능사·기사)은 찾는 말이 아니라 등급이라 뺀다.
+  const cap = board.all.length * 0.2;
+  const seen = new Set<string>();
+  const near: License[] = [];
+  for (const w of ws) for (const t of expandTerms(w).map(norm).slice(1)) {
+    const hits = byName(t);
+    if (!hits.length || hits.length > cap) continue;
+    for (const l of hits) if (!seen.has(l.code)) { seen.add(l.code); near.push(l); }
+  }
+  return { items: near.slice(0, PER), total: near.length, href };
 }
 
 // ── 공공기관 ─────────────────────────────────────────
@@ -207,11 +240,13 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
     q, parsed, bits, term,
     welfare: empty(`/?${sp}`),
     business: empty(`/business?${bsp}`),
-    jobs: { ...empty<JobHit>(jobPath({ q: term, page: 1 })), openOnly: true, allTotal: null },
+    jobs: { ...empty<JobHit>(jobPath({ q: term, page: 1 })), openOnly: true, allTotal: null, also: [] },
     licenses: empty(`/license?q=${encodeURIComponent(term)}`),
     agency: empty(`/agency?q=${encodeURIComponent(term)}`),
     guides: findGuides(words),
     failed: [],
+    related: relatedTerms(words, 10),
+    expanded: expansions(words),
   };
   if (!q || !dbConfigured) return out;
 
@@ -236,7 +271,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   out.welfare.total = take(wn, "복지", out.welfare.items.length);
   out.business.items = take(b, "기업", []);
   out.business.total = take(bn, "기업", out.business.items.length);
-  const jobs = take(j, "채용", { items: [], total: 0, openOnly: true, allTotal: null });
+  const jobs = take(j, "채용", { items: [], total: 0, openOnly: true, allTotal: null, also: [] });
   out.jobs = { ...out.jobs, ...jobs };
   out.licenses = take(l, "자격증", out.licenses);
   const stories = take(st, "블로그", []);

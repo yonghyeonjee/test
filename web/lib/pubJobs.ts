@@ -1,5 +1,8 @@
 import { cache } from "react";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
+import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
+
+export { filterJobs, jobTermsUsed, regionTokens, type JobFilter } from "./jobFilter";
 
 /**
  * 공공기관 채용정보 (인사혁신처 나라일터, PblJobService).
@@ -185,29 +188,6 @@ export async function getJobs(): Promise<JobBoard> {
     jobs: [],
     total: 0,
   };
-}
-
-/** "서울,경기" / "서울 경기" / "전국" 처럼 오는 근무지를 시·도 조각으로. */
-export function regionTokens(region: string | null) {
-  if (!region) return [];
-  return region
-    .split(/[,/·\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length >= 2);
-}
-
-export type JobFilter = { q?: string; region?: string; hire?: string; open?: boolean };
-
-export function filterJobs(jobs: Job[], f: JobFilter) {
-  const q = f.q?.trim().toLowerCase();
-  return jobs.filter((j) => {
-    if (f.open && (j.status === "closed")) return false;
-    if (f.region && !regionTokens(j.region).some((t) => t.startsWith(f.region!) || f.region!.startsWith(t)))
-      return false;
-    if (f.hire && j.hire !== f.hire) return false;
-    if (q && !`${j.title} ${j.org ?? ""} ${j.sectors ?? ""}`.toLowerCase().includes(q)) return false;
-    return true;
-  });
 }
 
 /** 걸러 볼 수 있는 값 목록. 많이 나오는 순. */

@@ -1,0 +1,163 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { describe, parseQuery, toParams } from "@/lib/parse";
+import { relatedTerms, suggest } from "@/lib/thesaurus";
+import { tokenize } from "@/lib/keywords";
+import { track } from "./Gtm";
+
+type Idx = Record<string, { sido: string; full: string }>;
+
+export const HOT_WELFARE = ["경비", "간호사", "신혼부부 전세", "청년 월세", "기능사", "공무직", "학자금", "소상공인", "출산", "요양보호사"];
+export const HOT_BUSINESS = ["수출", "스마트공장", "인건비", "창업", "소상공인", "특허", "온라인판매", "폐업", "컨설팅", "시제품"];
+
+const clean = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+
+/**
+ * 포털의 큰 검색창. 어디서든 한 줄 적으면 복지·기업·채용·자격증·공공기관·
+ * 안내 글을 한 번에 찾는다.
+ *
+ *  - 적는 중에 낱말 추천(앞글자 → 포함)과, 조건으로 알아들은 것(지역·나이)을 보여 준다.
+ *  - 연관어를 같이 찾는다는 것을 미리 말해 준다("경비 → 경호·보안도").
+ *  - 화살표로 고르고 Enter 로 간다. 서버는 부르지 않는다 — 추천은 코드 안 목록이다.
+ *  - 자동 초점은 마우스가 있는 넓은 화면에서만. 휴대폰에서 자판이 먼저 올라오면
+ *    첫 화면이 밀려 올라간다.
+ */
+export default function PortalSearch({
+  index = {}, initial = "", size = "lg", autoFocus = false, hot = HOT_WELFARE, placeholder,
+}: {
+  index?: Idx; initial?: string; size?: "lg" | "md"; autoFocus?: boolean;
+  /** 아래에 붙는 "많이 찾는 말". 빈 배열이면 안 그린다. */
+  hot?: string[];
+  placeholder?: string;
+}) {
+  const router = useRouter();
+  const [q, setQ] = useState(initial);
+  const [open, setOpen] = useState(false);
+  const [cur, setCur] = useState(-1);
+  // 휴대폰에서는 긴 보기글이 잘린다. 처음 그릴 때는 서버와 같게(넓은 화면 기준) 두고
+  // 붙은 뒤에 바꾼다 — 그래야 서버 HTML 과 어긋나지 않는다.
+  const [narrow, setNarrow] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const map = useMemo(() => new Map(Object.entries(index)), [index]);
+  const parsed = useMemo(() => parseQuery(q, map), [q, map]);
+  // 낱말("‘경비’ 포함")은 조건이 아니다. 지역·나이·상태·가구만 조건으로 보여 준다.
+  const bits = describe(parsed).filter((b) => !b.endsWith(" 포함"));
+  const words = useMemo(() => tokenize(q), [q]);
+  const related = useMemo(() => relatedTerms(words, 5), [words]);
+  const last = q.trim().split(/\s+/).pop() ?? "";
+  const items = useMemo(
+    () => suggest(last, 7).filter((v) => clean(v.t) !== clean(last)).slice(0, 6),
+    [last],
+  );
+
+  useEffect(() => {
+    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, []);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const on = () => setNarrow(mq.matches);
+    on(); mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  useEffect(() => {
+    if (!autoFocus) return;
+    if (window.matchMedia("(min-width: 768px) and (hover: hover)").matches) input.current?.focus({ preventScroll: true });
+  }, [autoFocus]);
+
+  const go = (text: string) => {
+    const t = text.trim();
+    if (!t) { input.current?.focus(); return; }
+    track("search_submit", { entry: "portal", matched: bits.length });
+    setOpen(false);
+    router.push(`/search?q=${encodeURIComponent(t)}`);
+  };
+  /** 마지막 낱말을 추천어로 바꾼다. "서울 경비" + 추천 "경비원" → "서울 경비원" */
+  const pick = (t: string) => {
+    const parts = q.trim().split(/\s+/); parts[Math.max(0, parts.length - 1)] = t;
+    go(parts.join(" "));
+  };
+  const rows = [
+    ...(q.trim() ? [{ key: "all", label: `‘${q.trim()}’ 전체에서 찾기`, tag: "통합 검색", act: () => go(q) }] : []),
+    ...items.map((v) => ({ key: "v:" + v.t, label: v.t, tag: v.tag, act: () => pick(v.t) })),
+  ];
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setCur((c) => Math.min(rows.length - 1, c + 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setCur((c) => Math.max(-1, c - 1)); }
+    else if (e.key === "Enter") { e.preventDefault(); if (cur >= 0 && rows[cur]) rows[cur].act(); else go(q); }
+    else if (e.key === "Escape") setOpen(false);
+  };
+  const lg = size === "lg";
+  const show = open && q.trim().length > 0 && (rows.length > 0 || bits.length > 0 || related.length > 0);
+
+  return (
+    <div ref={box} className="relative">
+      <form role="search" onSubmit={(e) => { e.preventDefault(); go(q); }}
+            className={`flex items-center gap-2 rounded-[16px] border-2 bg-white pr-2 shadow-card transition-colors
+                        ${show ? "border-brand shadow-lift" : "border-line hover:border-line2 focus-within:border-brand"} ${lg ? "pl-4" : "pl-3.5"}`}>
+        <svg viewBox="0 0 20 20" className={`shrink-0 text-brand ${lg ? "h-6 w-6" : "h-5 w-5"}`} fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+          <circle cx="9" cy="9" r="6" /><path d="M14 14l4 4" strokeLinecap="round" />
+        </svg>
+        <input
+          ref={input}
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); setCur(-1); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKey}
+          role="combobox" aria-expanded={show} aria-controls="portal-suggest" aria-autocomplete="list"
+          placeholder={narrow ? "경비, 신혼부부 전세, 기능사…" : placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…")}
+          aria-label="통합 검색"
+          enterKeyHint="search"
+          className={`w-full min-w-0 bg-transparent outline-none placeholder:text-faint ${lg ? "h-14 text-[1.0625rem]" : "h-11 text-[15px]"}`}
+        />
+        {q && (
+          <button type="button" onClick={() => { setQ(""); setCur(-1); input.current?.focus(); }} aria-label="지우기"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-faint hover:bg-ground hover:text-ink">
+            <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden><path d="M5 5l10 10M15 5L5 15" /></svg>
+          </button>
+        )}
+        <button type="submit" className={`btn btn-primary shrink-0 !rounded-[12px] ${lg ? "px-5 py-2.5" : "!px-4 !py-2 !text-[14px]"}`}>찾기</button>
+      </form>
+
+      {show && (
+        <div id="portal-suggest" role="listbox"
+             className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[14px] border border-line bg-white shadow-lift">
+          {rows.map((r, i) => (
+            <button key={r.key} type="button" role="option" aria-selected={i === cur}
+                    onMouseEnter={() => setCur(i)} onClick={r.act}
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-[15px] ${i === cur ? "bg-brandSoft text-brand" : "hover:bg-ground"}`}>
+              <span className="min-w-0 truncate">{r.label}</span>
+              <span className="shrink-0 text-[12px] text-faint">{r.tag}</span>
+            </button>
+          ))}
+          {(bits.length > 0 || related.length > 0) && (
+            <div className="border-t border-line bg-surface2 px-4 py-2.5 text-[12.5px] text-muted">
+              {bits.length > 0 && (
+                <p>조건으로 알아들음 <b className="text-ink2">{bits.join(" · ")}</b>
+                  {" · "}<Link href={`/?${toParams(parsed)}`} className="font-bold text-brand underline underline-offset-4" onClick={() => setOpen(false)}>이 조건의 지원금 보기</Link>
+                </p>
+              )}
+              {related.length > 0 && <p className={bits.length ? "mt-1" : ""}>같이 찾는 말 <b className="text-ink2">{related.join(" · ")}</b></p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {hot.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="text-[12px] text-faint">많이 찾는 말</span>
+          {/* 휴대폰에서는 여섯 개까지만. 열 개가 네 줄로 늘어서면 조건 고르기가 화면 밖으로 밀린다. */}
+          {hot.map((h, i) => (
+            <Link key={h} href={`/search?q=${encodeURIComponent(h)}`}
+                  className={`chip !py-1 !text-[12.5px] ${i >= 6 ? "!hidden sm:!inline-flex" : ""}`}>{h}</Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

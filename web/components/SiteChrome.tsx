@@ -8,35 +8,32 @@ import { BrandMark } from "./Illus";
 import TopSearch from "./TopSearch";
 
 /**
- * 주 메뉴. sub 가 있는 항목은 그 안에 들어갔을 때 아래에 갈래 줄이 하나
- * 더 붙는다 — 채용 안에 무엇이 있는지 화면 안까지 들어가 봐야 알던 것을
- * 메뉴에서 바로 보이게 한다.
+ * 주 메뉴. 일곱 묶음.
+ *
+ * 열세 개가 한 줄에 늘어서 있었다 — 지원금 찾기·분야별·지역별·전체 정책이
+ * 따로 서 있고, 지원금 안내·블로그·무료 서비스·소개가 또 따로. 사람이 보는
+ * 갈래는 "지원금 / 기업 / 채용 / 자격증 / 금융 / 공공기관 / 읽을거리" 일곱이다.
+ * 나머지는 그 안의 하위 메뉴로 넣는다. 묶음 안에 들어가 있으면 아래에 갈래
+ * 줄이 하나 더 붙는다.
+ *
+ * match 는 그 묶음으로 치는 주소 앞머리. /p/… (공고 하나), /area/… (지역)
+ * 처럼 메뉴에 직접 없는 쪽도 제 묶음이 켜지게.
  */
-type NavItem = { href: string; label: string; sub?: { href: string; label: string }[] };
+type Leaf = { href: string; label: string; match?: string[] };
+type NavItem = Leaf & { sub?: Leaf[] };
 
 const NAV: NavItem[] = [
-  { href: "/", label: "지원금 찾기" },
-  { href: "/topic", label: "분야별" },
-  { href: "/#areas", label: "지역별" },
-  { href: "/business", label: "기업지원" },
-  { href: "/policies", label: "전체 정책" },
   {
-    href: "/money", label: "생활금융",
+    href: "/", label: "지원금 찾기", match: ["/p/", "/area/", "/topic", "/policies", "/housing"],
     sub: [
-      { href: "/housing", label: "주거 지원 찾기" },
-      { href: "/money/jeonse", label: "전세대출 금리" },
-      { href: "/money/home-loan", label: "구입자금 금리" },
-      { href: "/money/student-loan", label: "학자금 이자지원" },
+      { href: "/", label: "내 조건으로 찾기", match: ["/p/"] },
+      { href: "/topic", label: "분야별" },
+      { href: "/#areas", label: "지역별", match: ["/area/"] },
+      { href: "/housing", label: "주거 지원" },
+      { href: "/policies", label: "정책 전체" },
     ],
   },
-  {
-    href: "/license", label: "자격증",
-    sub: [
-      { href: "/license", label: "종목 찾기" },
-      { href: "/license/pro", label: "국가전문자격" },
-      { href: "/license/schedule", label: "시험 일정" },
-    ],
-  },
+  { href: "/business", label: "기업·창업" },
   {
     href: "/jobs", label: "채용",
     sub: [
@@ -48,6 +45,23 @@ const NAV: NavItem[] = [
     ],
   },
   {
+    href: "/license", label: "자격증",
+    sub: [
+      { href: "/license", label: "종목 찾기" },
+      { href: "/license/pro", label: "국가전문자격" },
+      { href: "/license/schedule", label: "시험 일정" },
+    ],
+  },
+  {
+    href: "/money", label: "생활금융",
+    sub: [
+      { href: "/money/jeonse", label: "전세대출 금리" },
+      { href: "/money/home-loan", label: "구입자금 금리" },
+      { href: "/money/student-loan", label: "학자금 이자지원" },
+      { href: "/housing", label: "주거 지원 찾기" },
+    ],
+  },
+  {
     href: "/agency", label: "공공기관",
     sub: [
       { href: "/agency", label: "기관 사업" },
@@ -55,18 +69,27 @@ const NAV: NavItem[] = [
       { href: "/agency/facilities", label: "시설 이용" },
     ],
   },
-  { href: "/free", label: "무료 서비스" },
   {
-    href: "/blog", label: "지원금 안내",
+    href: "/blog", label: "읽을거리", match: ["/story", "/free", "/about"],
     sub: [
-      { href: "/blog", label: "안내 글 전체" },
-      { href: "/blog/youth-future-savings", label: "청년미래적금" },
+      { href: "/blog", label: "지원금 안내" },
+      { href: "/story", label: "블로그" },
       { href: "/blog/income", label: "소득 기준 계산기" },
+      { href: "/free", label: "무료 서비스" },
+      { href: "/about", label: "소개" },
     ],
   },
-  { href: "/story", label: "블로그" },
-  { href: "/about", label: "소개" },
 ];
+
+/** 주소가 이 항목(또는 그 아래)인가. "/" 는 첫 화면만, "/#areas" 는 match 로만. */
+function hit(path: string | null, leaf: Leaf): boolean {
+  if (!path) return false;
+  const base = leaf.href.split("?")[0].split("#")[0];
+  if (leaf.match?.some((m) => path === m.replace(/\/$/, "") || path.startsWith(m))) return true;
+  if (leaf.href.includes("#")) return false;
+  if (base === "/") return path === "/";
+  return path === base || path.startsWith(base + "/");
+}
 
 /** 관리자 화면은 내부용이다. 방문자용 머리말·꼬리말을 달지 않는다. */
 function useIsAdmin() {
@@ -78,12 +101,12 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
   const path = usePathname();
   if (path?.startsWith("/admin")) return null;
   // 지금 들어와 있는 묶음. 그 묶음의 갈래 줄을 아래에 한 줄 더 편다.
-  const open = NAV.find((n) => n.sub && (path === n.href || path?.startsWith(n.href + "/")));
-  const current = (href: string) => {
-    const base = href.split("?")[0].split("#")[0];
-    if (base === "/") return path === "/" && !href.includes("?");
-    return path === base || path?.startsWith(base + "/");
-  };
+  // 하위 항목 가운데 가장 긴 주소가 맞는 것을 켠다 — /blog/income 은 "소득
+  // 기준 계산기"이고 "지원금 안내"(/blog)가 아니다.
+  const open = NAV.find((n) => hit(path, n) || n.sub?.some((t) => hit(path, t)));
+  const leaf = open?.sub
+    ?.filter((t) => hit(path, t))
+    .sort((a, b) => b.href.length - a.href.length)[0];
   return (
     <header data-site-header className="pb-2 pt-4">
       <HeaderFx />
@@ -112,7 +135,7 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
           <Link
             key={n.href}
             href={n.href}
-            aria-current={current(n.href) ? "page" : undefined}
+            aria-current={open ? (open.href === n.href ? "page" : undefined) : hit(path, n) ? "page" : undefined}
             className="shrink-0 px-3 py-2.5 font-semibold transition-colors"
           >
             {n.label}
@@ -120,7 +143,7 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
         ))}
       </nav>
 
-      {open && (
+      {open?.sub && (
         <nav
           aria-label={`${open.label} 하위 메뉴`}
           className="-mx-5 flex gap-1 overflow-x-auto border-b border-line px-3 pb-1 pt-2
@@ -130,9 +153,9 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
             <Link
               key={t.href}
               href={t.href}
-              aria-current={path === t.href ? "page" : undefined}
+              aria-current={leaf === t ? "page" : undefined}
               className={`shrink-0 rounded-pill px-3 py-1.5 font-semibold transition-colors ${
-                path === t.href
+                leaf === t
                   ? "bg-brandSoft text-brand"
                   : "text-muted hover:bg-ground hover:text-brand"}`}
             >
@@ -148,9 +171,9 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
 export function SiteFooter() {
   if (useIsAdmin()) return null;
   const cols: { h: string; items: [string, string][] }[] = [
-    { h: "찾기", items: [["내 조건으로 찾기", "/"], ["기업 지원사업", "/business"], ["정책 전체", "/policies"], ["주거 지원", "/housing"], ["지역별", "/#areas"]] },
-    { h: "정보", items: [["채용·취업", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
-    { h: "안내", items: [["무료 서비스", "/free"], ["지원금 안내 글", "/blog"], ["블로그", "/story"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
+    { h: "찾기", items: [["통합 검색", "/search"], ["내 조건으로 찾기", "/"], ["기업·창업 지원", "/business"], ["분야별", "/topic"], ["지역별", "/#areas"], ["정책 전체", "/policies"]] },
+    { h: "정보", items: [["공공기관 채용", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["자격증·시험 일정", "/license"], ["생활금융 금리", "/money"], ["주거 지원", "/housing"], ["공공기관 사업", "/agency"]] },
+    { h: "읽을거리", items: [["지원금 안내 글", "/blog"], ["블로그", "/story"], ["소득 기준 계산기", "/blog/income"], ["무료 서비스", "/free"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];
   const sources: [string, string][] = [
     ["복지로", "https://www.bokjiro.go.kr"], ["기업마당", "https://www.bizinfo.go.kr"],

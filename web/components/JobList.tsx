@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { STATUS_LABEL } from "@/lib/consts";
-import { dot, facets, filterJobs, type JobBoard } from "@/lib/pubJobs";
+import { dot, facets, filterJobs, jobTermsUsed, type JobBoard } from "@/lib/pubJobs";
 import MyRegionJobs from "./MyRegionJobs";
 import OrgMark from "./OrgMark";
 import { IllusEmpty } from "./Illus";
@@ -66,6 +66,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   // 지역 칩은 전체 목록에서만 뜻이 있다. 지역별·기관별 쪽에서는 이미
   // 좁혀져 있어 눌러 봐야 갈 데가 없다.
   const showRegions = !route.region && !route.org && (regions.length > 0 || noRegionN > 0);
+  // "경비" 로 찾았는데 경호·보안 공고가 같이 나왔으면 그 사실을 적는다.
+  const also = route.q ? jobTermsUsed(list, route.q) : [];
 
   return (
     <div id="list" className="mt-6 scroll-mt-24">
@@ -137,6 +139,17 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
             모두 지우기
           </Link>
         </div>
+      )}
+      {also.length > 0 && (
+        <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted">
+          <span>연관어도 함께 찾았습니다 —</span>
+          {also.map((t) => (
+            <Link key={t} href={jobPathWith(route, { q: t, page: 1 })}
+                  className="font-semibold text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">
+              {t}
+            </Link>
+          ))}
+        </p>
       )}
 
       <div className="mb-3 mt-8 flex items-baseline justify-between">

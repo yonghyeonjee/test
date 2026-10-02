@@ -7,7 +7,8 @@ const ITEMS = [
   // 마감이 걸린 것을 맨 위에 둔다. 나머지와 달리 눈에 띄게 그린다.
   { href: "/blog/youth-future-savings", label: "HOT 정부지원", hot: true,
     d: "M12 3c1 3.5-1 5-2.5 6.5C8 11 7 12.5 7 14.5a5 5 0 0010 0c0-3-2-5-2.5-7-1.5 1-2 2.5-2.5 3 0-3 1-6 0-7.5z" },
-  { href: "/", label: "내 조건으로 찾기", d: "M9 3a6 6 0 100 12A6 6 0 009 3zm5 11l5 5" },
+  { href: "/search", label: "통합 검색", d: "M9 3a6 6 0 100 12A6 6 0 009 3zm5 11l5 5" },
+  { href: "/", label: "내 조건으로 찾기", d: "M4 6h16M8 12h8M11 18h2" },
   { href: "/policies", label: "전체 정책", d: "M4 5h16v14H4z M8 9h8M8 13h5" },
   { href: "/jobs", label: "채용·취업", d: "M3 8h18v12H3z M8 8V5h8v3" },
   { href: "/license", label: "자격증", d: "M12 3l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L3 10l6-1z" },
