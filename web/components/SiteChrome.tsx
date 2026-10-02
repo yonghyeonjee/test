@@ -63,6 +63,7 @@ const NAV: NavItem[] = [
       { href: "/blog/income", label: "소득 기준 계산기" },
     ],
   },
+  { href: "/story", label: "블로그" },
   { href: "/about", label: "소개" },
 ];
 
@@ -147,7 +148,7 @@ export function SiteFooter() {
   const cols: { h: string; items: [string, string][] }[] = [
     { h: "찾기", items: [["내 조건으로 찾기", "/"], ["기업 지원사업", "/?tab=business"], ["정책 전체", "/policies"], ["주거 지원", "/housing"], ["지역별", "/#areas"]] },
     { h: "정보", items: [["채용·취업", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["학과별 취업률", "/jobs/majors"], ["자격증", "/license"], ["생활금융", "/money"], ["공공기관", "/agency"]] },
-    { h: "안내", items: [["무료 서비스", "/free"], ["지원금 안내 글", "/blog"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
+    { h: "안내", items: [["무료 서비스", "/free"], ["지원금 안내 글", "/blog"], ["블로그", "/story"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];
   const sources: [string, string][] = [
     ["복지로", "https://www.bokjiro.go.kr"], ["기업마당", "https://www.bizinfo.go.kr"],

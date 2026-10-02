@@ -7,6 +7,12 @@ const nextConfig = {
   staticPageGenerationTimeout: 180,
   compress: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      // 블로그 메뉴를 따로 두면서 옮겼다. 이미 색인된 주소가 죽지 않게.
+      { source: "/blog/jeonse-extension", destination: "/story/jeonse-extension", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

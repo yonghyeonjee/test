@@ -8,6 +8,7 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import Toc from "@/components/Toc";
 import { postRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_URL } from "@/lib/seo";
@@ -199,7 +200,9 @@ export default function GojobsGuidePage() {
         <div className="mt-5"><GojobsHero /></div>
       </header>
 
-      <section className="mt-8">
+      <Toc items={[{ id: "glance", label: "한눈에" }, { id: "steps", label: "지원하는 순서" }, { id: "deadline", label: "접수 기간은 생각보다 짧습니다" }, { id: "roles", label: "어떤 자리가 올라오나" }, { id: "when", label: "언제 올라오나" }, { id: "where", label: "어디 자리가 많나" }, { id: "pitfalls", label: "처음 쓰면 막히는 곳" }, { id: "services", label: "나라일터에 있는 다른 서비스" }, { id: "faq", label: "자주 묻는 질문" }, { id: "sources", label: "확인한 곳" }]} />
+
+      <section id="glance" className="mt-8 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">한눈에</h2>
         <dl className="mt-4 grid gap-2.5 sm:grid-cols-2">
           {[
@@ -218,7 +221,7 @@ export default function GojobsGuidePage() {
         </dl>
       </section>
 
-      <section className="mt-12">
+      <section id="steps" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">지원하는 순서</h2>
         <ol className="mt-4 grid gap-3">
           {STEPS.map((s) => (
@@ -239,7 +242,7 @@ export default function GojobsGuidePage() {
 
       <MidAd name="detail_mid" context="job" seed="gojobs-guide" className="mt-10" />
 
-      <section className="mt-12">
+      <section id="deadline" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">접수 기간은 생각보다 짧습니다</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           등록일부터 마감일까지 며칠인지 세어 봤습니다. 절반({withinWeek}%)이 일주일 안에,
@@ -252,7 +255,7 @@ export default function GojobsGuidePage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section id="roles" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">어떤 자리가 올라오나</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           제목으로 갈라 보면 공무직, 기간제 교사·교원, 임기제 공무원 세 가지가 가장 많습니다.
@@ -269,7 +272,7 @@ export default function GojobsGuidePage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section id="when" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">언제 올라오나</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           공고는 근무일에 올라옵니다. 월요일과 금요일이 가장 많고 토·일요일은 거의 없습니다.
@@ -287,7 +290,7 @@ export default function GojobsGuidePage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section id="where" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">어디 자리가 많나</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           공고의 절반 남짓은 근무지를 따로 적지 않습니다(중앙부처처럼 전국 단위이거나, 공고문
@@ -299,7 +302,7 @@ export default function GojobsGuidePage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section id="pitfalls" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">처음 쓰면 막히는 곳</h2>
         <ul className="mt-4 space-y-3 text-[15px] leading-[1.8] text-ink2">
           {[
@@ -317,7 +320,7 @@ export default function GojobsGuidePage() {
         </ul>
       </section>
 
-      <section className="mt-12">
+      <section id="services" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">나라일터에 있는 다른 서비스</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           채용 공고 말고도 공무원을 위한 메뉴가 같이 있습니다. 구직자라면 몰라도 되지만, 이름이
@@ -332,7 +335,7 @@ export default function GojobsGuidePage() {
 
       <Faq items={FAQ} />
 
-      <section className="mt-12">
+      <section id="sources" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">확인한 곳</h2>
         <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-ink2">
           {[

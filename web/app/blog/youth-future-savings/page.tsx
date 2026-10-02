@@ -7,6 +7,7 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import Toc from "@/components/Toc";
 import YouthSavingsCalc from "@/components/YouthSavingsCalc";
 import { CompareBars, SavingsHero, Timeline } from "@/components/YouthSavingsArt";
 import { manwon as mw, standardFor, tableYear } from "@/lib/medianIncome";
@@ -153,8 +154,10 @@ export default function YouthFutureSavingsPage() {
         <div className="mt-5"><SavingsHero /></div>
       </header>
 
+      <Toc items={[{ id: "glance", label: "한눈에" }, { id: "schedule", label: "언제 무엇을 하나" }, { id: "amount", label: "얼마를 받나" }, { id: "who", label: "누가 되나" }, { id: "types", label: "일반형과 우대형" }, { id: "switch", label: "청년도약계좌에서 갈아타기" }, { id: "pitfalls", label: "놓치기 쉬운 것" }, { id: "changes", label: "앞으로 바뀔 수 있는 것" }, { id: "faq", label: "자주 묻는 질문" }, { id: "sources", label: "확인한 곳" }]} />
+
       {/* 급한 사람을 위해 결론부터 */}
-      <section className="mt-8">
+      <section id="glance" className="mt-8 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">한눈에</h2>
         <dl className="mt-4 grid gap-2.5 sm:grid-cols-2">
           {[
@@ -173,7 +176,7 @@ export default function YouthFutureSavingsPage() {
         </dl>
       </section>
 
-      <section className="mt-12">
+      <section id="schedule" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">언제 무엇을 하나</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           신청만 하면 끝이 아닙니다. 심사를 거쳐 정해진 기간에 계좌를 열어야 가입이
@@ -190,7 +193,7 @@ export default function YouthFutureSavingsPage() {
 
       <MidAd name="detail_mid" context="money" seed="youth-savings" className="mt-10" />
 
-      <section className="mt-12">
+      <section id="amount" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">얼마를 받나</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           &ldquo;연 14% 효과&rdquo; 같은 말이 기사에 많이 나오지만, 그건 정부기여금과 세금 면제를
@@ -200,7 +203,7 @@ export default function YouthFutureSavingsPage() {
         <YouthSavingsCalc />
       </section>
 
-      <section className="mt-12">
+      <section id="who" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">누가 되나</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           세 가지를 모두 충족해야 합니다. 하나라도 걸리면 가입이 안 되고, 소득 구간에 따라
@@ -262,7 +265,7 @@ export default function YouthFutureSavingsPage() {
         )}
       </section>
 
-      <section className="mt-12">
+      <section id="types" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">일반형과 우대형</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           같은 돈을 넣어도 유형에 따라 정부가 얹어 주는 돈이 두 배 차이 납니다. 3년이면
@@ -301,7 +304,7 @@ export default function YouthFutureSavingsPage() {
         </p>
       </section>
 
-      <section className="mt-12">
+      <section id="switch" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">청년도약계좌에서 갈아타기</h2>
         <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
           <p>
@@ -317,7 +320,7 @@ export default function YouthFutureSavingsPage() {
         </div>
       </section>
 
-      <section className="mt-12">
+      <section id="pitfalls" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">놓치기 쉬운 것</h2>
         <ul className="mt-4 space-y-3 text-[15px] leading-[1.85] text-ink2">
           {[
@@ -335,7 +338,7 @@ export default function YouthFutureSavingsPage() {
         </ul>
       </section>
 
-      <section className="mt-12">
+      <section id="changes" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">앞으로 바뀔 수 있는 것</h2>
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           정부는 우대형 기여금 비율을 12%에서 15%로, 지방 중소기업 재직자는 25%까지 올리는
@@ -347,7 +350,7 @@ export default function YouthFutureSavingsPage() {
 
       <Faq items={FAQ} />
 
-      <section className="mt-12">
+      <section id="sources" className="mt-12 scroll-mt-24">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">확인한 곳</h2>
         <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-ink2">
           {[
