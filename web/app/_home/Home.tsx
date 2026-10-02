@@ -23,6 +23,7 @@ import SectionHead from "@/components/SectionHead";
 import AdSlot from "@/components/AdSlot";
 import HotBanner from "@/components/HotBanner";
 import HomeMap from "@/components/HomeMap";
+import HomeTopAd from "@/components/HomeTopAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
@@ -316,8 +317,12 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
       {/* 검색 포털의 얼굴: 가운데 큰 검색창 → 많이 찾는 말 → 색 아이콘 바로가기.
           휴대폰에서는 이것만으로 첫 화면이 찬다. 긴 소개·통계 띠는 넓은 화면의
           오른쪽 기둥으로 줄여 옮겼다. */}
-      {/* 휴대폰·태블릿: 마감 롤링 띠를 맨 위에. 넓은 화면은 본문 기둥(조건 카드 아래). */}
+      {/* 맨 위 롤링 띠. 넓은 화면은 아래 두 기둥과 같은 폭으로 나눠 오른쪽에 광고 지면(비면 우리 배너). */}
       <HotBanner slides={hot} className="mt-3 lg:hidden" />
+      <div className="mt-4 hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+        <HotBanner slides={hot} className="" />
+        <HomeTopAd />
+      </div>
       <PortalTop
         index={sggIndex} hot={hotTerms.welfare}
         h1="나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
@@ -339,8 +344,6 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             <LastConditions />
           </div>
           <RecentStrip />
-          {/* 넓은 화면의 마감 롤링 띠(얇은 한 줄). 처음 온 사람에게는 조건 카드 바로 아래다. */}
-          <HotBanner slides={hot} className="hidden lg:block" />
           {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
           <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />
           <FeedTabs tabs={[

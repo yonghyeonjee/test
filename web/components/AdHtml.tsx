@@ -29,12 +29,14 @@ import { useEffect, useRef } from "react";
  * 다만 페이지 단위 광고를 켜는 push(enable_page_level_ads)는 코드에 들어
  * 있으면 그대로 실행되니, 그것만 걸러 낸다.
  */
-export default function AdHtml({ html }: { html: string }) {
+export default function AdHtml({ html, minWidth = 0 }: { html: string; minWidth?: number }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // 넓은 화면 전용 지면(홈 맨 위)은 좁은 화면에서 감춰져 있다. 폭 0 인 자리에 광고를 부르면 오류만 난다.
+    if (minWidth && !window.matchMedia(`(min-width: ${minWidth}px)`).matches) return;
     el.innerHTML = html;
     for (const old of Array.from(el.querySelectorAll("script"))) {
       const src = old.getAttribute("src");
@@ -53,7 +55,7 @@ export default function AdHtml({ html }: { html: string }) {
       old.replaceWith(s);
     }
     return () => { el.innerHTML = ""; };
-  }, [html]);
+  }, [html, minWidth]);
 
   return <div ref={ref} className="ad-html" />;
 }

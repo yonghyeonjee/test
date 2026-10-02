@@ -397,7 +397,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
           좁은 화면: 지도 → 카드 목록. */}
       <div className="mt-3 lg:grid lg:grid-cols-[minmax(330px,390px)_1fr] lg:gap-4">
         <div className="lg:order-2">
-          <div ref={mapBox} className="overflow-hidden rounded-card border border-line bg-ground">
+          <div ref={mapBox} className="isolate overflow-hidden rounded-card border border-line bg-ground">
             <MapCanvas ref={canvas} pins={pins} kind={kind} me={me} meLabel={meLabel} radius={radius}
                        selected={sel} onSelect={onSelect} loadItems={loadItems} extra={dongPins} onView={onView}
                        className="h-[56vh] min-h-[360px] w-full lg:h-[680px]" />

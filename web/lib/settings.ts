@@ -26,13 +26,14 @@ export type Seo = {
 
 export type AdKind = "html" | "image";
 export type AdSlotCfg = { on: boolean; kind: AdKind; html: string; img: string; href: string; alt: string };
-export const AD_SLOTS = ["top_strip", "home_mid", "results_bottom", "post_bottom", "page_bottom", "detail_bottom", "detail_mid", "post_mid", "side_rail"] as const;
+export const AD_SLOTS = ["home_top", "top_strip", "home_mid", "results_bottom", "post_bottom", "page_bottom", "detail_bottom", "detail_mid", "post_mid", "side_rail"] as const;
 export type AdSlotName = (typeof AD_SLOTS)[number];
 export type Ads = Record<AdSlotName, AdSlotCfg>;
 
 export const AD_SLOT_LABEL: Record<AdSlotName, string> = {
+  home_top: "홈 맨 위 롤링 띠 오른쪽 (넓은 화면, 1024px 이상) — 폭 300px·높이 72px. 이미지면 가로 배너(600×144 권장), 애드센스면 style 을 display:block;width:100%;height:72px 로. 비우면 우리 사이트 배너",
   top_strip: "제목 아래 작은 가로 띠 (공고·채용 상세, 검색 결과, 자료 화면 머리 띠 아래) — 애드센스 '디스플레이 광고 · 가로형' 단위. 코드의 style 을 display:block;width:100%;height:90px 로 두면 휴대폰 100px·넓은 화면 90px 안에 맞춘다",
-  home_mid: "홈 · 절차 설명 아래",
+  home_mid: "홈 · 마감 임박 목록 아래 — 휴대폰 100px·넓은 화면 120px 높이로 묶는다(반응형 광고도 이 높이에 맞춰 나온다)",
   results_bottom: "조회 결과 목록 아래",
   post_bottom: "안내 글 본문 끝",
   page_bottom: "자료 화면(채용·공공기관·정책·지역) 본문 끝",
