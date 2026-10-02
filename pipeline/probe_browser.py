@@ -168,6 +168,14 @@ def check_dong(browser) -> None:
         ctx.close()
 
 
+def tab_on_top(page) -> str:
+    """지도를 탭 막대 뒤로 내린 뒤, 탭 막대 자리 맨 위 요소가 탭 막대인가."""
+    return page.evaluate("""() => { const m = [...document.querySelectorAll('[role="application"]')].find((x) => x.offsetParent);
+      if (m) window.scrollTo(0, m.getBoundingClientRect().top + scrollY - 500);
+      const e = document.elementFromPoint(innerWidth / 2, innerHeight - 20);
+      return e && e.closest('nav[aria-label="빠른 이동"]') ? '탭 막대' : (e ? (e.className.toString() || e.tagName).slice(0, 40) : '없음'); }""")
+
+
 def home_map(page) -> dict | None:
     """첫 화면 정책지도 미리보기: 보이는 것으로 내려가 지도가 뜨기를 기다린 뒤 핀 이름표·타일 수."""
     sec = page.locator('section[aria-label="정책지도 미리보기"]')
@@ -214,6 +222,11 @@ def check_home(browser, path: str) -> None:
     }""")
     print("   [휴대폰] 자리:", json.dumps(spots, ensure_ascii=False))
     print("   [휴대폰] 지도 미리보기:", json.dumps(home_map(page), ensure_ascii=False))
+    page.wait_for_timeout(2500)
+    print("   [휴대폰] 광고 상자(높이·폭):", page.evaluate("""() => [...document.querySelectorAll('main .ad-slot')].filter((e) => e.offsetParent)
+      .map((e) => { const r = e.getBoundingClientRect(), i = e.querySelector('ins, img, iframe'); const q = i && i.getBoundingClientRect();
+        return [Math.round(r.height), Math.round(r.width), q ? Math.round(q.height) : null, q ? Math.round(q.width) : null]; })"""))
+    print("   [휴대폰] 탭 막대 위 맨 위 요소:", tab_on_top(page))
     print("   오류:", errs[:6] or "없음")
     ctx.close()
     # 넓은 화면: 오른쪽 기둥 상자들
@@ -232,9 +245,11 @@ def check_home(browser, path: str) -> None:
     }""")
     print("   [데스크톱] 오른쪽 기둥:", json.dumps(aside, ensure_ascii=False))
     print("   [데스크톱] 지도 미리보기:", json.dumps(home_map(page), ensure_ascii=False))
-    band = page.evaluate("""() => { const e = document.querySelector('section[aria-roledescription="carousel"]'); if (!e) return null;
+    band = page.evaluate("""() => { const e = [...document.querySelectorAll('section[aria-roledescription="carousel"]')].find((x) => x.offsetParent); if (!e) return null;
       const r = e.getBoundingClientRect(); return { y: Math.round(r.top), h: Math.round(r.height), text: (e.querySelector('a[tabindex="0"]') || e).innerText.replace(/\\s+/g, ' ').slice(0, 60) }; }""")
     print("   [데스크톱] 롤링 띠:", json.dumps(band, ensure_ascii=False))
+    print("   [데스크톱] 맨 위 광고 지면:", page.evaluate("""() => { const e = document.querySelector('main .ad-band') || document.querySelector('main a.card.h-\\\\[72px\\\\]');
+      if (!e) return null; const r = e.getBoundingClientRect(); return [e.tagName, Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height), e.innerText.replace(/\\s+/g, ' ').slice(0, 30)]; }"""))
     print("   [데스크톱] 오류:", derr[:6] or "없음")
     ctx.close()
 
