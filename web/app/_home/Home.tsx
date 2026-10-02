@@ -9,6 +9,7 @@ import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
+import PortalSearch, { HOT_BUSINESS } from "@/components/PortalSearch";
 import { IllusEmpty } from "@/components/Illus";
 import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
@@ -89,6 +90,17 @@ export async function homeMetadata({ searchParams }: { searchParams: SP }):
 export type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
 const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+
+/** 큰 검색창 아래, 조건 고르기 앞에 두는 구분선. */
+function Or({ children = "또는 조건을 골라 찾기" }: { children?: React.ReactNode }) {
+  return (
+    <div className="my-6 flex items-center gap-3" aria-hidden>
+      <span className="h-px flex-1 bg-line" />
+      <span className="text-[12.5px] font-semibold text-faint">{children}</span>
+      <span className="h-px flex-1 bg-line" />
+    </div>
+  );
+}
 
 function Row({ title, sub, items, more, wide }: {
   title: string; sub?: string; items: Program[]; more?: string; wide?: boolean;
@@ -211,10 +223,22 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
       <>
         <Tabs active="business" counts={coverage} />
         <Suspense fallback={<div className="h-56" />}>
-          <Finder
-            pick={<><BusinessSentence sidos={sidos} /><KeywordBar suggest={SUGGEST_BUSINESS} tab="business" /></>}
-            search={<BizSearchBox autoFocus={!asked} />}
-          />
+          {asked ? (
+            <Finder
+              pick={<><BusinessSentence sidos={sidos} /><KeywordBar suggest={SUGGEST_BUSINESS} tab="business" /></>}
+              search={<BizSearchBox />}
+            />
+          ) : (
+            <div className="card border-t-[3px] border-t-brand p-4 shadow-card sm:p-5">
+              {/* 포털 검색창이 먼저. 조건 고르기는 그 아래. */}
+              <PortalSearch index={bundle.sggIndex} hot={HOT_BUSINESS}
+                            placeholder="무엇이든 찾아보세요 — 수출 바우처, 스마트공장, 소상공인 폐업" />
+              <Or />
+              {/* 낱말 칸(KeywordBar)은 여기 두지 않는다 — 바로 위 검색창과 겹친다.
+                  조건을 고른 결과 화면에서는 조건과 함께 거는 칸으로 다시 나온다. */}
+              <BusinessSentence sidos={sidos} />
+            </div>
+          )}
         </Suspense>
         {asked ? (
           <Results
@@ -296,10 +320,11 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             closing={closingCount}
           >
             <Suspense fallback={<div className="h-56" />}>
-              <Finder
-                pick={<><ConditionSentence regions={regions} /><KeywordBar suggest={SUGGEST_WELFARE} tab="welfare" /></>}
-                search={<SearchBox index={sggIndex} autoFocus />}
-              />
+              {/* 검색 포털의 얼굴. 한 줄 적으면 복지·기업·채용·자격증·공공기관을 한 번에
+                  찾고, 연관어(경비 → 경호·보안)까지 같이 본다. 조건 고르기는 그 아래. */}
+              <PortalSearch index={sggIndex} autoFocus />
+              <Or />
+              <ConditionSentence regions={regions} />
             </Suspense>
           </Hero>
           {/* 마감이 걸린 것부터. 무엇이 있는지 모르고 들어온 사람에게는

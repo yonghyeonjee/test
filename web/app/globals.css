@@ -208,7 +208,13 @@
 [data-site-header] { position: sticky; top: 0; z-index: 30; transition: box-shadow .2s, background-color .2s; }
 /* 좁은 화면에서는 머리말이 세 줄(로고·메뉴 띠·갈래 줄)로 164px 가 된다. 812px
    화면의 20% 를 늘 가리고 있어서 붙박이를 푼다. 메뉴는 오른쪽 아래 + 단추가 받는다. */
-@media (max-width: 639px) { [data-site-header] { position: static; } }
+/* 붙박이를 풀면 ::before(아래) 가 머리말이 아니라 화면 전체를 기준으로 놓여
+   inset:-20px 만큼 오른쪽으로 삐져나온다 — 휴대폰에서 문서가 20px 가로로
+   흔들렸다. 붙박이가 아니면 유리판도 필요 없다. */
+@media (max-width: 639px) {
+  [data-site-header] { position: static; }
+  [data-site-header]::before { display: none; }
+}
 [data-site-header]::before {
   content: ""; position: absolute; inset: 0 -20px; z-index: -1;
   background: rgba(247,247,251,.72); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
