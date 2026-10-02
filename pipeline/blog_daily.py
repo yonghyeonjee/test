@@ -53,38 +53,38 @@ TOPICS = [
     {"slug": "newlywed-all", "label": "신혼부부 지원", "q": ["신혼"], "who": None, "hub": "/housing/jeonse/newlywed", "hub_label": "신혼부부 주거 지원 모아보기", "search": "신혼부부"},
 ]
 
-# 직무. 제목 정규식은 웹의 jobRole 과 뜻을 맞춘다(같은 식은 아니다 — SQL 정규식).
+# 직무. 제목에 든 낱말 목록(부분 일치). 정규식이 아니라 trigram 색인을 타는 ilike 다.
 ROLES = [
-    {"key": "nurse", "name": "간호사", "pattern": r"간호사|간호직|간호\s"},
-    {"key": "librarian", "name": "사서", "pattern": r"사서"},
-    {"key": "cook", "name": "조리·급식", "pattern": r"조리|급식"},
-    {"key": "cleaning", "name": "환경미화", "pattern": r"환경미화|미화원|청소"},
-    {"key": "driver", "name": "운전", "pattern": r"운전"},
-    {"key": "guard", "name": "경비·방호", "pattern": r"경비|방호|청원경찰"},
-    {"key": "it", "name": "전산·정보화", "pattern": r"전산|정보화|정보보안|데이터"},
-    {"key": "research", "name": "연구원", "pattern": r"연구원|연구직|연구사|연구관"},
-    {"key": "welfare", "name": "사회복지·돌봄", "pattern": r"사회복지|돌봄|요양|생활지도"},
-    {"key": "teacher-temp", "name": "기간제교사", "pattern": r"기간제\s*교(사|원)|계약제\s*교원"},
-    {"key": "lecturer", "name": "강사", "pattern": r"강사"},
-    {"key": "childcare", "name": "보육·유아교육", "pattern": r"보육교사|유치원|어린이집"},
-    {"key": "counsel", "name": "상담", "pattern": r"상담"},
-    {"key": "lang", "name": "통역·번역", "pattern": r"통역|번역"},
-    {"key": "clerical", "name": "행정·사무", "pattern": r"행정|사무"},
-    {"key": "intern", "name": "청년인턴", "pattern": r"인턴|체험형"},
-    {"key": "public-worker", "name": "공무직", "pattern": r"공무직|무기계약"},
-    {"key": "term-official", "name": "임기제공무원", "pattern": r"임기제"},
-    {"key": "facility", "name": "시설·전기·안전관리", "pattern": r"시설관리|전기|안전관리|소방"},
-    {"key": "doctor", "name": "의사", "pattern": r"의사|진료|전문의"},
-    {"key": "pharma", "name": "약사", "pattern": r"약사|약무"},
-    {"key": "nutrition", "name": "영양사", "pattern": r"영양사"},
-    {"key": "therapy", "name": "물리·작업치료", "pattern": r"물리치료|작업치료"},
-    {"key": "medtech", "name": "임상병리·방사선", "pattern": r"임상병리|방사선"},
-    {"key": "postal", "name": "집배·우편", "pattern": r"집배|우편"},
-    {"key": "ta", "name": "대학 조교", "pattern": r"조교"},
-    {"key": "youth", "name": "청소년 지도·상담", "pattern": r"청소년"},
-    {"key": "martial", "name": "무도실무관", "pattern": r"무도\s*실무관"},
-    {"key": "psy", "name": "심리", "pattern": r"심리"},
-    {"key": "survey", "name": "조사원", "pattern": r"조사원|조사요원"},
+    {"key": "nurse", "name": "간호사", "terms": ["간호사", "간호직", "간호 "]},
+    {"key": "librarian", "name": "사서", "terms": ["사서"]},
+    {"key": "cook", "name": "조리·급식", "terms": ["조리", "급식"]},
+    {"key": "cleaning", "name": "환경미화", "terms": ["환경미화", "미화원", "청소"]},
+    {"key": "driver", "name": "운전", "terms": ["운전"]},
+    {"key": "guard", "name": "경비·방호", "terms": ["경비", "방호", "청원경찰"]},
+    {"key": "it", "name": "전산·정보화", "terms": ["전산", "정보화", "정보보안", "데이터"]},
+    {"key": "research", "name": "연구원", "terms": ["연구원", "연구직", "연구사", "연구관"]},
+    {"key": "welfare", "name": "사회복지·돌봄", "terms": ["사회복지", "돌봄", "요양", "생활지도"]},
+    {"key": "teacher-temp", "name": "기간제교사", "terms": ["기간제교사", "기간제 교사", "기간제교원", "기간제 교원", "계약제교원"]},
+    {"key": "lecturer", "name": "강사", "terms": ["강사"]},
+    {"key": "childcare", "name": "보육·유아교육", "terms": ["보육교사", "유치원", "어린이집"]},
+    {"key": "counsel", "name": "상담", "terms": ["상담"]},
+    {"key": "lang", "name": "통역·번역", "terms": ["통역", "번역"]},
+    {"key": "clerical", "name": "행정·사무", "terms": ["행정", "사무"]},
+    {"key": "intern", "name": "청년인턴", "terms": ["인턴", "체험형"]},
+    {"key": "public-worker", "name": "공무직", "terms": ["공무직", "무기계약"]},
+    {"key": "term-official", "name": "임기제공무원", "terms": ["임기제"]},
+    {"key": "facility", "name": "시설·전기·안전관리", "terms": ["시설관리", "전기", "안전관리", "소방"]},
+    {"key": "doctor", "name": "의사", "terms": ["의사", "진료", "전문의"]},
+    {"key": "pharma", "name": "약사", "terms": ["약사", "약무"]},
+    {"key": "nutrition", "name": "영양사", "terms": ["영양사"]},
+    {"key": "therapy", "name": "물리·작업치료", "terms": ["물리치료", "작업치료"]},
+    {"key": "medtech", "name": "임상병리·방사선", "terms": ["임상병리", "방사선"]},
+    {"key": "postal", "name": "집배·우편", "terms": ["집배", "우편"]},
+    {"key": "ta", "name": "대학 조교", "terms": ["조교"]},
+    {"key": "youth", "name": "청소년 지도·상담", "terms": ["청소년"]},
+    {"key": "martial", "name": "무도실무관", "terms": ["무도실무관", "무도 실무관"]},
+    {"key": "psy", "name": "심리", "terms": ["심리"]},
+    {"key": "survey", "name": "조사원", "terms": ["조사원", "조사요원"]},
 ]
 
 MONTHS = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"]
@@ -543,7 +543,7 @@ def pick(kind: str, done: set[tuple[str, str]], sb, subject: str | None = None) 
         cands = [r for r in ROLES if subject in (None, r["key"], r["name"])]
         fresh = [r for r in cands if ("role", r["key"]) not in done] or cands
         for r in fresh:
-            s = sb.rpc("blog_role_stats", {"p_pattern": r["pattern"]}).execute().data
+            s = sb.rpc("blog_role_stats", {"p_terms": r["terms"]}).execute().data
             if int(s.get("n3y") or 0) >= 20:
                 return r["key"], {"role": r, "stats": s}
         raise SystemExit("직무 글감 없음(3년 공고 20건 미만)")
