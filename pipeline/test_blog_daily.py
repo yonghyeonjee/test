@@ -30,7 +30,7 @@ ok("None" not in text and "nan" not in text.lower(), "빈 값이 글에 섞이�
 ok(any(x["type"] == "bars" for x in p["body"]) and any(x["type"] == "table" for x in p["body"]), "막대·표")
 ok("49% 늘" in text or "늘었습니다" in text, "2025년 증가 시사점: 57→85")
 
-ROLE = {"pattern": "간호", "n3y": 574, "orgs_n": 161, "open_n": 3,
+ROLE = {"terms": ["간호사"], "n3y": 574, "orgs_n": 161, "open_n": 3,
         "by_year": [{"y": 2024, "n": 177}, {"y": 2025, "n": 205}, {"y": 2026, "n": 158}],
         "by_month": [{"m": m, "n": n} for m, n in zip(range(1, 13), [43, 44, 62, 61, 40, 56, 42, 42, 53, 40, 46, 45])],
         "win_med": 11, "win_le7": 115, "win_n": 572,
@@ -38,7 +38,7 @@ ROLE = {"pattern": "간호", "n3y": 574, "orgs_n": 161, "open_n": 3,
         "regions": [{"region": "부산광역시", "n": 103}, {"region": "서울특별시", "n": 62}],
         "hires": [{"hire": "지자체", "n": 339}, {"hire": "국가", "n": 137}],
         "open_list": [{"id": "304790", "title": "간호직 공무원 경력경쟁채용시험 공고", "org": "보건복지부 국립재활원", "end": "2026-10-13", "region": None}]}
-p = b.write_role({"key": "nurse", "name": "간호사", "pattern": "간호"}, ROLE)
+p = b.write_role({"key": "nurse", "name": "간호사", "terms": ["간호사"]}, ROLE)
 text = json.dumps(p, ensure_ascii=False)
 ok(p["slug"] == "role-nurse" and "574건" in p["title"], p["title"])
 ok("59%" in text, "지자체 비중 59%")
