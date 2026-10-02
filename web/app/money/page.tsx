@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArtJeonse, ArtMoney, ArtStudy } from "@/components/Art";
+import { ArtJeonse, ArtStudy } from "@/components/Art";
+import HubCard from "@/components/HubCard";
+import { IllusHousing, IllusMoney } from "@/components/Illus";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -25,7 +27,7 @@ const CARDS = [
     desc:
       "전세·월세·매매로 나눠, 주택도시기금 대출 조건과 지금 접수 중인 시·군 이자지원·월세 사업을 " +
       "지역별로 봅니다. 대출은 전국 공통, 이자지원은 사는 곳마다 다릅니다.",
-    Art: ArtMoney,
+    Art: IllusHousing,
     tag: "대상·지역별",
   },
   {
@@ -34,7 +36,7 @@ const CARDS = [
     desc:
       "집 살 때 쓰는 정책대출의 이번 달 공시 금리를 소득 구간·만기별로 옮겨 두었습니다. " +
       "신혼·다자녀·청년 우대금리까지 한 표에서 봅니다.",
-    Art: ArtMoney,
+    Art: IllusMoney,
     tag: "매월 갱신",
   },
   {
@@ -64,19 +66,12 @@ export default function MoneyIndex() {
         eyebrow="생활금융"
         title="받는 것만 지원이 아닙니다"
         sub="나가는 돈을 줄여 주는 제도가 따로 있습니다. 이자를 깎아 주거나 대신 내주는 쪽은 신청만 하면 되는데도 몰라서 그냥 내는 분이 많습니다."
-        art={<ArtMoney />}
+        art={<IllusMoney />}
       />
 
       <div className="mt-8 grid gap-3 sm:grid-cols-2">
         {CARDS.map((c) => (
-          <Link key={c.href} href={c.href} className="card card-link block p-6">
-            <div className="h-20 w-28">
-              <c.Art />
-            </div>
-            <span className="badge badge-new mt-3">{c.tag}</span>
-            <h2 className="mt-2 text-[1.0625rem] font-bold leading-snug">{c.title}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{c.desc}</p>
-          </Link>
+          <HubCard key={c.href} href={c.href} tag={c.tag} title={c.title} desc={c.desc} art={<c.Art />} />
         ))}
       </div>
 

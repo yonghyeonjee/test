@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusSearch } from "@/components/Illus";
 import Link from "next/link";
-import { ArtPolicy } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -110,7 +111,7 @@ export default async function Policies() {
         eyebrow="전체 보기"
         title="찾아볼 수 있는 정책을 전부 펼쳐 두었습니다"
         sub="무엇을 검색해야 할지 모르겠다면 여기서 시작하세요. 대상·분야·지역·업종을 누르기만 하면 그 조건에 걸리는 공고만 남습니다."
-        art={<ArtPolicy />}
+        art={<IllusSearch />}
       >
         <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {band.map((b) => (

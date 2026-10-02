@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusLicense } from "@/components/Illus";
 import Link from "next/link";
-import { ArtLicense } from "@/components/Art";
+
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
@@ -65,7 +66,7 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
         eyebrow="자격증"
         title="국가자격증 찾기"
         sub="자격증 이름을 넣으면 응시 자격과 다가오는 시험 일정, 학원비·응시료를 지원하는 제도까지 한 번에 나옵니다. 아래 목록은 등급이 있는 국가기술자격이고, 국가전문자격은 따로 모아 두었습니다."
-        art={<ArtLicense />}
+        art={<IllusLicense />}
       >
         {all.ok && (
           <div className="mt-7 grid grid-cols-3 gap-3">

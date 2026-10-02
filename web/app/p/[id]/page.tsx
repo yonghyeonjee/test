@@ -16,6 +16,9 @@ import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import MyFit from "@/components/MyFit";
 import RecentTracker from "@/components/RecentTracker";
+import TopicIcon from "@/components/TopicIcon";
+import Glyph, { fileGlyph } from "@/components/Glyph";
+import { TOPICS } from "@/lib/topics";
 import {
   ageLabel,
   applyStatus,
@@ -166,7 +169,21 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         )}
       </nav>
 
-      <p className="text-sm font-bold">{where}</p>
+      {(() => {
+        const topic = TOPICS.find((t) => p.topics?.includes(t.key));
+        return (
+          <p className="flex flex-wrap items-center gap-2 text-sm font-bold">
+            {topic && (
+              <span className="inline-flex items-center gap-1.5 rounded-pill py-0.5 pl-0.5 pr-2.5 text-[13px]"
+                    style={{ background: topic.soft, color: topic.color }}>
+                <TopicIcon slug={topic.slug} color={topic.color} soft="transparent" size={24} />
+                {topic.name}
+              </span>
+            )}
+            <span>{where}</span>
+          </p>
+        );
+      })()}
       <h1 className="mt-1.5 text-[1.75rem] font-extrabold leading-tight">
         {p.title}
         <span className="mt-1.5 block text-[1.05rem] font-semibold leading-snug text-ink2">{programTagline(p)}</span>
@@ -295,10 +312,10 @@ export default async function ProgramPage({ params }: { params: { id: string } }
                 <ol className="mt-3 divide-y divide-line">
                   {files.map((f, i) => (
                     <li key={f.url} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                      <span className={`inline-flex h-5 min-w-[2.6rem] items-center justify-center rounded px-1 text-[12px] font-bold uppercase ${
-                        f.ext === "pdf" ? "bg-alertSoft text-alert" : f.ext === "hwp" || f.ext === "hwpx" ? "bg-brandSoft text-brand" : "bg-surface2 text-muted"}`}>
-                        {f.ext || "파일"}
-                      </span>
+                      <span className={`inline-flex h-7 items-center gap-1 rounded-[8px] px-1.5 text-[11px] font-extrabold uppercase ${
+                  f.ext === "pdf" ? "bg-alertSoft text-alert" : f.ext === "hwp" || f.ext === "hwpx" ? "bg-brandSoft text-brand" : "bg-surface2 text-muted"}`}>
+                  <Glyph name={fileGlyph(f.ext)} className="h-4 w-4" strokeWidth={2.2} />{f.ext || "파일"}
+                </span>
                       <span className="min-w-0 flex-1 break-all text-[14px] leading-snug text-ink">
                         <span className="num mr-1 text-muted">{i + 1}.</span>{f.name}
                       </span>

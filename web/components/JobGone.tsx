@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { dot, getOpenJobs } from "@/lib/pubJobs";
 import RecentStrip from "./RecentStrip";
+import { IllusEmpty } from "./Illus";
 
 /**
  * 없는 공고 번호로 들어왔을 때 상세 쪽이 대신 그리는 내용.
@@ -21,11 +22,16 @@ export default async function JobGone() {
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/jobs" className="inline-block py-1 hover:text-brand">채용</Link>
       </nav>
-      <h1 className="display mt-2 text-[1.5rem] leading-tight">이 채용 공고는 내려갔습니다</h1>
-      <p className="mt-3 text-[14.5px] leading-relaxed text-muted">
-        접수가 끝나 목록에서 빠졌거나 주소가 바뀐 공고입니다. 나라일터에는 하루에도
-        수백 건이 새로 올라오니, 지금 접수 중인 공고에서 비슷한 자리를 찾아보세요.
-      </p>
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <h1 className="display mt-2 text-[1.5rem] leading-tight">이 채용 공고는 내려갔습니다</h1>
+          <p className="mt-3 text-[14.5px] leading-relaxed text-muted">
+            접수가 끝나 목록에서 빠졌거나 주소가 바뀐 공고입니다. 나라일터에는 하루에도
+            수백 건이 새로 올라오니, 지금 접수 중인 공고에서 비슷한 자리를 찾아보세요.
+          </p>
+        </div>
+        <div className="hidden h-28 w-40 shrink-0 sm:block"><IllusEmpty /></div>
+      </div>
 
       <form action="/jobs/search" method="get" className="mt-5 flex gap-2">
         <input
@@ -39,11 +45,11 @@ export default async function JobGone() {
       </form>
 
       <div className="mt-4 flex flex-wrap gap-2 text-[13px]">
-        <Link href="/jobs" className="badge badge-quiet hover:text-brand">전체 공고</Link>
-        <Link href="/jobs/region" className="badge badge-quiet hover:text-brand">지역별</Link>
-        <Link href="/jobs/org" className="badge badge-quiet hover:text-brand">기관별</Link>
-        <Link href="/jobs/status/open" className="badge badge-quiet hover:text-brand">접수 중만</Link>
-        <Link href="/jobs/overseas" className="badge badge-quiet hover:text-brand">해외 채용</Link>
+        <Link href="/jobs" className="badge badge-quiet py-1.5 hover:text-brand">전체 공고</Link>
+        <Link href="/jobs/region" className="badge badge-quiet py-1.5 hover:text-brand">지역별</Link>
+        <Link href="/jobs/org" className="badge badge-quiet py-1.5 hover:text-brand">기관별</Link>
+        <Link href="/jobs/status/open" className="badge badge-quiet py-1.5 hover:text-brand">접수 중만</Link>
+        <Link href="/jobs/overseas" className="badge badge-quiet py-1.5 hover:text-brand">해외 채용</Link>
       </div>
 
       {/* 내려간 공고를 찾아온 사람은 방금 보던 것으로 돌아가고 싶은 경우가 많다. */}

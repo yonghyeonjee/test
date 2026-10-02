@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { IllusJobs } from "@/components/Illus";
 import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArtJobs } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
@@ -72,7 +73,7 @@ export default async function JobsByOrg({ params }: P) {
         eyebrow="채용 · 기관별"
         title={org}
         sub={`${org}이(가) 나라일터에 낸 채용 공고입니다. 접수 중인 것이 앞에 오고, 그 뒤로 지난 공고가 등록일순으로 이어집니다.`}
-        art={<ArtJobs />}
+        art={<IllusJobs />}
       >
         {stat && (
           <p className="num mt-4 text-sm text-white/80">

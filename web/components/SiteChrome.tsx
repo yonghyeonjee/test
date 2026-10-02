@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import BigText from "./BigText";
 import { HeaderFx } from "./Motion";
+import { BrandMark } from "./Illus";
 import TopSearch from "./TopSearch";
 
 /**
@@ -87,7 +88,8 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
     <header data-site-header className="pb-2 pt-4">
       <HeaderFx />
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="flex shrink-0 items-baseline gap-2">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
+          <BrandMark className="h-7 w-7" />
           <span className="display text-[1.5rem] text-deep">나라지원</span>
           <span className="hidden text-xs text-muted lg:inline">
             나라에서 주는 지원, 받을 수 있는 지원
@@ -161,7 +163,7 @@ export function SiteFooter() {
     <footer className="band-deep -mx-5 mt-24 px-6 pb-8 pt-12 text-[13px] text-white/70 sm:mx-0 sm:rounded-t-card sm:px-10">
       <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
         <div>
-          <p className="display text-[1.35rem] text-white">나라지원</p>
+          <p className="flex items-center gap-2"><BrandMark className="h-6 w-6" /><span className="display text-[1.35rem] text-white">나라지원</span></p>
           <p className="mt-3 max-w-[22rem] leading-relaxed">
             모르고 지나칠 정부 지원 혜택을 찾는 서비스입니다. 복지로와 기업마당이 공공데이터포털에
             개방한 자료를 매일 새벽 색인합니다.

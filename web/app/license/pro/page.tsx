@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusLicense } from "@/components/Illus";
 import Link from "next/link";
-import { ArtLicense } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -48,7 +49,7 @@ export default async function ProLicensePage() {
         eyebrow="자격증"
         title="국가전문자격"
         sub="기능사·기사 같은 등급 체계가 없는 자격들입니다. 자격마다 근거 법령과 시행 기관이 따로 있어, 응시 자격과 시험 일정도 자격마다 다릅니다."
-        art={<ArtLicense />}
+        art={<IllusLicense />}
       >
         {board.ok && (
           <div className="mt-7 grid grid-cols-2 gap-3">

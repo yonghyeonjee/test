@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { IllusAgency } from "@/components/Illus";
 import Link from "next/link";
 import AgencyList from "@/components/AgencyList";
-import { ArtAgency } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -33,7 +34,6 @@ export const metadata: Metadata = withOg({
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;
 
-
 export default async function AgencyPage({ searchParams }: { searchParams: SP }) {
   const current = {
     life: one(searchParams.life), cate: one(searchParams.cate),
@@ -55,7 +55,7 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
         eyebrow="공공기관"
         title="공공기관이 국민에게 하는 사업, 한자리에"
         sub="장학금·직업훈련·의료지원처럼 공공기관이 직접 운영하는 사업입니다. 지자체 공고와 다른 곳에서 나와 따로 찾아야 했던 것들입니다."
-        art={<ArtAgency />}
+        art={<IllusAgency />}
       />
       <AgencyList
         base="/agency" items={items} ok={res.ok} reason={res.ok ? null : res.reason}

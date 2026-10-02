@@ -72,7 +72,7 @@ export default function IncomePage() {
         })}
       />
       <nav aria-label="위치" className="text-[13px] text-muted">
-        <Link href="/blog" className="hover:text-brand">지원금 안내</Link>
+        <Link href="/blog" className="inline-block py-1 hover:text-brand">지원금 안내</Link>
         {" · "}
         <span className="text-ink2">소득 기준</span>
       </nav>

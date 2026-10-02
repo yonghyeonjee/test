@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusAgency } from "@/components/Illus";
 import AgencyList from "@/components/AgencyList";
-import { ArtAgency } from "@/components/Art";
+
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
@@ -54,7 +55,7 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
         eyebrow="공공기관"
         title="공공기관이 여는 교육과 행사"
         sub="무료 강좌, 체험, 견학, 공모전. 공공기관은 국민 참여 행사를 꾸준히 열지만 기관 홈페이지에만 올라와 지나치기 쉽습니다."
-        art={<ArtAgency />}
+        art={<IllusAgency />}
       />
       <AgencyList
         base="/agency/events" items={items} ok={res.ok} reason={res.ok ? null : res.reason}

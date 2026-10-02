@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusJobs } from "@/components/Illus";
 import Link from "next/link";
-import { ArtJobs } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -37,7 +38,7 @@ export default async function JobOrgIndex() {
         eyebrow="채용 · 기관별"
         title="어느 기관이 얼마나 자주 뽑나"
         sub="모아 둔 공고를 기관별로 묶었습니다. 이미 끝난 공고는 지원할 수 없지만, 그 기관이 얼마나 자주 뽑고 접수를 며칠 받는지는 알려 줍니다."
-        art={<ArtJobs />}
+        art={<IllusJobs />}
       >
         {overview && (
           <p className="num mt-4 text-sm text-white/80">

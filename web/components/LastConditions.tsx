@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { clearMe, meLabel, meQuery, readMe, type Me } from "@/lib/me";
+import Glyph from "./Glyph";
 
 /**
  * 지난번에 넣은 조건으로 바로 보기.
@@ -16,9 +17,10 @@ export default function LastConditions() {
   if (!me) return null;
   return (
     <div className="mb-5 rounded-card border border-brand/30 bg-brandSoft/60 px-4 py-3 text-[14px]">
-      <p className="leading-snug">
-        <span className="font-bold text-brand">지난번 조건</span>{" "}
-        <span className="text-ink2">{meLabel(me)}</span>
+      <p className="flex items-start gap-2 leading-snug">
+        <span className="mt-0.5 text-brand" aria-hidden><Glyph name="history" className="h-4 w-4" strokeWidth={2.2} /></span>
+        <span><span className="font-bold text-brand">지난번 조건</span>{" "}
+        <span className="text-ink2">{meLabel(me)}</span></span>
       </p>
       <div className="mt-2.5 flex flex-wrap gap-1.5">
         <Link href={meQuery(me, { via: "last" })} className="btn btn-primary px-3.5 py-1.5 text-[13px]">

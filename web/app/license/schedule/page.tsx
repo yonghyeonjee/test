@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusLicense } from "@/components/Illus";
 import Link from "next/link";
-import { ArtLicense } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -96,7 +97,7 @@ export default async function ExamSchedule() {
         eyebrow="자격증"
         title="시험 일정, 접수 마감부터"
         sub="원서접수는 정해진 기간에만 열립니다. 하루라도 지나면 다음 회차를 기다려야 합니다."
-        art={<ArtLicense />}
+        art={<IllusLicense />}
       />
 
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">

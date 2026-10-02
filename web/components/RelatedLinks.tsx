@@ -23,24 +23,15 @@ export default function RelatedLinks({
       </h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {items.map((it) => (
-          <Link key={it.href} href={it.href} className="card card-link block p-5">
-            <b className="flex items-center gap-1 text-[15px] leading-snug">
-              {it.title}
-              <svg
-                viewBox="0 0 24 24"
-                className="h-3.5 w-3.5 shrink-0 text-faint"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M9 6l6 6-6 6" />
-              </svg>
-            </b>
-            <span className="mt-1.5 block text-sm leading-relaxed text-muted">
-              {it.desc}
+          <Link key={it.href} href={it.href} className="card card-link group flex items-start gap-4 p-5">
+            <span className="min-w-0 flex-1">
+              <b className="block text-[15px] leading-snug group-hover:text-brand">{it.title}</b>
+              <span className="mt-1.5 block text-sm leading-relaxed text-muted">
+                {it.desc}
+              </span>
+            </span>
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brandSoft text-brand transition-transform group-hover:translate-x-0.5" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </span>
           </Link>
         ))}

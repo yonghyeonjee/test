@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Glyph from "@/components/Glyph";
+import { IllusFree } from "@/components/Illus";
 import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import PageBanner from "@/components/PageBanner";
 import RelatedLinks from "@/components/RelatedLinks";
-import { ArtStudy } from "@/components/Art";
+
 import { FREE_GROUPS, withUtm } from "@/lib/freeServices";
 import { moneyRelated } from "@/lib/related";
 import { brandKeys, withOg } from "@/lib/seo";
@@ -24,6 +26,9 @@ export const metadata: Metadata = withOg({
   alternates: { canonical: "/free" },
 });
 
+/** 갈래 이름표 → 아이콘. 없는 갈래는 별. */
+const GLYPH: Record<string, string> = { "심리": "brain", "영어": "book", "마케팅": "chart" };
+
 export default function FreePage() {
   return (
     <div className="pb-4">
@@ -31,7 +36,7 @@ export default function FreePage() {
         eyebrow="무료 서비스"
         title="가입도 결제도 없이 쓰는 것들"
         sub="지원금 찾는 김에 같이 보시라고 모아 뒀습니다. 심리 테스트, 영어 문법, 마케팅 용어 — 전부 무료입니다."
-        art={<ArtStudy />}
+        art={<IllusFree />}
       />
 
       <p className="mt-8 text-[15px] leading-[1.85] text-ink2">
@@ -42,8 +47,13 @@ export default function FreePage() {
 
       {FREE_GROUPS.map((g, i) => (
         <section key={g.key} className="mt-14">
-          <p className="eyebrow">{g.tag}</p>
-          <h2 className="sec-title mt-2 text-[1.0625rem] font-extrabold">{g.title}</h2>
+          <div className="flex items-center gap-3">
+            <span className="tile-ic" aria-hidden><Glyph name={GLYPH[g.tag] ?? "spark"} className="h-5 w-5" /></span>
+            <div>
+              <p className="eyebrow">{g.tag}</p>
+              <h2 className="text-[1.0625rem] font-extrabold">{g.title}</h2>
+            </div>
+          </div>
           <p className="mt-3 text-[14.5px] leading-relaxed text-muted">{g.lead}</p>
 
           <ul className="mt-5 grid gap-3 sm:grid-cols-2">

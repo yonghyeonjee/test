@@ -26,7 +26,10 @@ export default function PageBanner({
           </p>
         </div>
         {/* 좁은 화면에서는 그림을 접는다. 글이 먼저다. */}
-        <div className="hidden h-28 w-40 shrink-0 opacity-90 sm:block">{art}</div>
+        <div className="relative hidden h-32 w-48 shrink-0 sm:block md:h-36 md:w-56">
+          <span aria-hidden className="absolute inset-2 rounded-full bg-white/10 blur-2xl" />
+          <span className="banner-art relative block h-full w-full">{art}</span>
+        </div>
       </div>
       {children}
     </section>

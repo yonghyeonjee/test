@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { IllusJobs } from "@/components/Illus";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArtJobs } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import MidAd from "@/components/MidAd";
 import Faq from "@/components/Faq";
@@ -62,7 +63,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
         eyebrow="채용"
         title="공공기관 채용, 어디서 뽑는지 한 번에"
         sub="인사혁신처 나라일터에 올라오는 중앙부처·지자체·공공기관 채용 공고입니다. 지역과 기관 구분으로 걸러 접수 중인 것부터 봅니다."
-        art={<ArtJobs />}
+        art={<IllusJobs />}
       >
         {board.ok && (
           <div className="mt-7 grid grid-cols-3 gap-3">

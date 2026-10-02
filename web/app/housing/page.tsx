@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusHousing } from "@/components/Illus";
 import Link from "next/link";
-import { ArtJeonse } from "@/components/Art";
+
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import {
@@ -31,7 +32,7 @@ export default async function HousingHub() {
         eyebrow="주거 지원"
         title="전세·월세·매매, 누가 무엇을 받을 수 있나"
         sub="신혼부부·청년·무주택 가구가 받는 주거 지원을 대상과 종류로 갈랐습니다. 정부 대출 조건은 글로, 시·군 사업은 매일 새로 받은 공고로 채웁니다."
-        art={<ArtJeonse />}
+        art={<IllusHousing />}
       />
 
       <div className="mt-8 grid gap-6">

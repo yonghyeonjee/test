@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { meLabel, readMe, type Me } from "@/lib/me";
+import Glyph from "./Glyph";
 
 type Mark = "ok" | "no" | "ask";
 
@@ -48,7 +49,11 @@ export default function MyFit({
   const color = (m: Mark) => m === "ok" ? "text-brand" : m === "no" ? "text-alert" : "text-gold";
 
   return (
-    <div className="mt-4 rounded-card border border-line bg-surface p-4">
+    <div className="mt-4 flex gap-3.5 rounded-card border border-line bg-surface p-4">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-brandSoft text-brand" aria-hidden>
+        <Glyph name="user" className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
       <p className="text-[13px] text-muted">
         내 조건 <span className="text-ink2">{meLabel(me)}</span>
         {" · "}
@@ -63,6 +68,7 @@ export default function MyFit({
           </li>
         ))}
       </ul>
+      </div>
     </div>
   );
 }

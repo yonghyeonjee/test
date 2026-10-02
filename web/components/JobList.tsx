@@ -2,6 +2,8 @@ import Link from "next/link";
 import { STATUS_LABEL } from "@/lib/consts";
 import { dot, facets, filterJobs, type JobBoard } from "@/lib/pubJobs";
 import MyRegionJobs from "./MyRegionJobs";
+import OrgMark from "./OrgMark";
+import { IllusEmpty } from "./Illus";
 import RecentStrip from "./RecentStrip";
 import { jobPath, jobPathPage, jobPathWith, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
 
@@ -148,7 +150,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
 
       {list.length === 0 ? (
         <div className="card p-8 text-center">
-          <p className="leading-relaxed text-muted">조건에 맞는 공고가 없습니다.</p>
+          <div className="mx-auto h-28 w-40"><IllusEmpty /></div>
+          <p className="mt-2 leading-relaxed text-muted">조건에 맞는 공고가 없습니다.</p>
           <Link href={jobPath({ org: route.org, page: 1 })} className="btn btn-ghost mt-5">
             조건 지우기
           </Link>
@@ -159,23 +162,26 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
             <li key={j.id}>
               {/* 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
                   안 주는 공고가 많아 예전에는 눌러도 아무 일이 없었다. */}
-              <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="card card-link block p-5">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {(j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
-                  {j.reg && <span className="num badge badge-quiet">{dot(j.reg)} 등록</span>}
-                  {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
-                  {j.recruit && <span className="badge badge-quiet">{j.recruit}</span>}
-                </div>
-                <b className="mt-2 block text-[15px] leading-snug">{j.title}</b>
-                <span className="mt-1 block text-[13px] text-muted">
-                  {[j.org, j.region, j.sectors, j.headcount && `${j.headcount}명`]
-                    .filter(Boolean).join(" · ")}
-                </span>
-                {(j.start || j.end) && (
-                  <span className="num mt-1.5 block text-xs text-muted">
-                    접수 {dot(j.start) ?? "—"} ~ {dot(j.end) ?? "—"}
+              <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="card card-link flex gap-3.5 p-4 sm:p-5">
+                <OrgMark org={j.org} hire={j.hire} />
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-1.5">
+                    {(j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
+                    {j.reg && <span className="num badge badge-quiet">{dot(j.reg)} 등록</span>}
+                    {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
+                    {j.recruit && <span className="badge badge-quiet">{j.recruit}</span>}
                   </span>
-                )}
+                  <b className="mt-2 block text-[15px] leading-snug">{j.title}</b>
+                  <span className="mt-1 block text-[13px] text-muted">
+                    {[j.org, j.region, j.sectors, j.headcount && `${j.headcount}명`]
+                      .filter(Boolean).join(" · ")}
+                  </span>
+                  {(j.start || j.end) && (
+                    <span className="num mt-1.5 block text-xs text-muted">
+                      접수 {dot(j.start) ?? "—"} ~ {dot(j.end) ?? "—"}
+                    </span>
+                  )}
+                </span>
               </Link>
             </li>
           ))}
