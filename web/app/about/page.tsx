@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { IllusAbout } from "@/components/Illus";
 import Link from "next/link";
 import RelatedLinks from "@/components/RelatedLinks";
 import { HowItWorksArt, TrustIcon } from "@/components/Infographic";
@@ -35,11 +36,14 @@ const USES = [
 export default function About() {
   return (
     <div className="py-4">
-      <h1 className="display text-[2rem] leading-tight sm:text-[2.4rem]">
-        받을 수 있는 지원만
-        <br />
-        골라서 보여드립니다
-      </h1>
+      <div className="flex items-start justify-between gap-6">
+        <h1 className="display text-[2rem] leading-tight sm:text-[2.4rem]">
+          받을 수 있는 지원만
+          <br />
+          골라서 보여드립니다
+        </h1>
+        <div className="hidden h-32 w-44 shrink-0 sm:block"><IllusAbout /></div>
+      </div>
 
       <p className="mt-5 max-w-[36rem] text-[1.0625rem] leading-relaxed text-ink2">
         지원금은 대부분 <b className="font-bold">신청해야만</b> 받습니다. 가만히

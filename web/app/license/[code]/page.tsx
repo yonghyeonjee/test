@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { IllusLicense } from "@/components/Illus";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArtLicense } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -71,7 +72,7 @@ export default async function LicensePage({ params }: { params: { code: string }
         eyebrow={`${l.kind === "T" ? "국가기술자격" : l.kindName || "국가자격"} · ${l.series}`}
         title={`${l.name} 자격증`}
         sub={`${l.field}${l.subField ? ` › ${l.subField}` : ""} 분야. 응시 자격과 준비 방법, 비용을 줄여 주는 제도까지 한 화면에.`}
-        art={<ArtLicense />}
+        art={<IllusLicense />}
       />
 
       <p className="mt-8 text-[15.5px] leading-[1.85] text-ink2">{licenseIntro(l)}</p>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArtJeonse } from "@/components/Art";
+import StoryCover from "@/components/StoryCover";
+import { IllusStory } from "@/components/Illus";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { blogIndexRelated } from "@/lib/related";
@@ -36,30 +38,40 @@ export default async function StoryIndex() {
   const posts = await getStories(60);
   return (
     <div className="py-4">
-      <h1 className="text-[1.75rem] font-extrabold leading-tight">블로그</h1>
-      <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
-        제도 설명은 지원금 안내에 있습니다. 여기서는 모아 둔 자료를 세어 나온 것을 매일 한 편씩
-        적습니다 — 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지. 사례 글은
-        여러 경우를 섞어 각색합니다.
-      </p>
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <p className="eyebrow">블로그</p>
+          <h1 className="display mt-2 text-[1.9rem] leading-tight">자료가 말해 주는 것, 매일 한 편</h1>
+          <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
+            제도 설명은 지원금 안내에 있습니다. 여기서는 모아 둔 자료를 세어 나온 것을 매일 한 편씩
+            적습니다 — 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지. 사례 글은
+            여러 경우를 섞어 각색합니다.
+          </p>
+        </div>
+        <div className="hidden h-32 w-44 shrink-0 sm:block"><IllusStory /></div>
+      </div>
 
-      <div className="mt-8 grid gap-3">
-        {posts.map((s) => (
-          <Link key={s.slug} href={`/story/${encodeURIComponent(s.slug)}`} className="card card-link block p-5">
-            <span className="text-[12px] font-semibold text-brand">{KIND_LABEL[s.kind] ?? "글"}</span>
-            <b className="mt-0.5 block text-[15.5px] leading-snug">{s.title}</b>
-            <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">{s.summary}</span>
-            <span className="num mt-2 block text-xs text-faint">{s.published_at}</span>
+      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        {STORIES.map((s) => (
+          <Link key={s.href} href={s.href} className="card card-link group flex flex-col overflow-hidden">
+            <span className="flex h-36 items-center justify-center bg-gradient-to-br from-brandSoft to-surface2 px-6 py-3">
+              <span className="h-full w-44 transition-transform duration-300 group-hover:scale-[1.04]"><s.Art /></span>
+            </span>
+            <span className="flex flex-1 flex-col p-5">
+              <span className="text-[12px] font-bold text-brand">{s.tag} · 사례</span>
+              <b className="mt-1 block text-[15.5px] leading-snug group-hover:text-brand">{s.title}</b>
+              <span className="mt-1.5 line-clamp-3 text-[13.5px] leading-relaxed text-muted">{s.desc}</span>
+              <span className="num mt-auto block pt-3 text-xs text-faint">{s.date}</span>
+            </span>
           </Link>
         ))}
-        {STORIES.map((s) => (
-          <Link key={s.href} href={s.href} className="card card-link flex gap-5 p-5">
-            <span className="hidden shrink-0 sm:block"><s.Art /></span>
-            <span className="min-w-0">
-              <span className="text-[12px] font-semibold text-brand">{s.tag}</span>
-              <b className="mt-0.5 block text-[15.5px] leading-snug">{s.title}</b>
-              <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">{s.desc}</span>
-              <span className="num mt-2 block text-xs text-faint">{s.date}</span>
+        {posts.map((s) => (
+          <Link key={s.slug} href={`/story/${encodeURIComponent(s.slug)}`} className="card card-link group flex flex-col overflow-hidden">
+            <StoryCover kind={s.kind} label={KIND_LABEL[s.kind] ?? "글"} />
+            <span className="flex flex-1 flex-col p-5">
+              <b className="block text-[15.5px] leading-snug group-hover:text-brand">{s.title}</b>
+              <span className="mt-1.5 line-clamp-3 text-[13.5px] leading-relaxed text-muted">{s.summary}</span>
+              <span className="num mt-auto block pt-3 text-xs text-faint">{s.published_at}</span>
             </span>
           </Link>
         ))}

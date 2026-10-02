@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusMoney } from "@/components/Illus";
 import Link from "next/link";
-import { ArtMoney } from "@/components/Art";
+
 import Faq from "@/components/Faq";
 import HomeLoanRates from "@/components/HomeLoanRates";
 import JsonLd from "@/components/JsonLd";
@@ -55,7 +56,7 @@ export default async function HomeLoanPage() {
         eyebrow="생활금융"
         title="집 살 때 정책대출 금리, 이번 달 표"
         sub="주택도시기금 디딤돌대출과 주택금융공사 보금자리론의 공시 금리를 소득 구간·만기별로 옮겨 두었습니다. 우대금리를 빼면 얼마가 되는지도 같이 봅니다."
-        art={<ArtMoney />}
+        art={<IllusMoney />}
       />
       <div className="mt-6">
         {r ? <HomeLoanRates /> : (

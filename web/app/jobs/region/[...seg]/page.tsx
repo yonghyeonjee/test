@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import { IllusJobs } from "@/components/Illus";
 import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArtJobs } from "@/components/Art";
+
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
@@ -51,7 +52,7 @@ export default async function JobsByRegion({ params }: P) {
         eyebrow={`채용 · ${sido}`}
         title={`${sido}에서 뽑는 자리`}
         sub={`${sido}에 있는 공공기관과 지자체가 낸 채용 공고입니다. 접수 중인 것이 앞에 옵니다.`}
-        art={<ArtJobs />}
+        art={<IllusJobs />}
       >
         {board.ok && (
           <p className="num mt-4 text-sm text-white/80">

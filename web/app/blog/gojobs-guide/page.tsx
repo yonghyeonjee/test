@@ -181,7 +181,7 @@ export default function GojobsGuidePage() {
       <JsonLd data={ld} />
 
       <nav aria-label="위치" className="text-[13px] text-muted">
-        <Link href="/blog" className="hover:text-brand">지원금 안내</Link>
+        <Link href="/blog" className="inline-block py-1 hover:text-brand">지원금 안내</Link>
         {" · "}
         <span className="text-ink2">나라일터 이용법</span>
       </nav>

@@ -3,13 +3,14 @@ import HeroPeople from "./HeroPeople";
 import Photo from "./Photo";
 import { AmbientVideo, hasPublic } from "./Video";
 import { CountUp } from "./Motion";
+import Glyph from "./Glyph";
 
 /** 대상자 중심 입구. "무엇을 지원하나"가 아니라 "누가 받나"로 묻는다. */
 const TILES = [
-  { href: "/?age=28&via=chip",  label: "청년",   desc: "월세 · 학자금 · 취업" },
-  { href: "/?age=70&via=chip",  label: "어르신", desc: "돌봄 · 의료 · 수당" },
-  { href: "/?hh=%EC%A0%80%EC%86%8C%EB%93%9D&via=chip", label: "저소득", desc: "생계 · 주거 · 의료" },
-  { href: "/business", label: "사업자", desc: "자금 · 판로 · 인력" },
+  { href: "/?age=28&via=chip",  label: "청년",   desc: "월세 · 학자금 · 취업", glyph: "youth",     tone: "bg-brandSoft text-brand" },
+  { href: "/?age=70&via=chip",  label: "어르신", desc: "돌봄 · 의료 · 수당",   glyph: "senior",    tone: "bg-[#FDF0DC] text-[#B45309]" },
+  { href: "/?hh=%EC%A0%80%EC%86%8C%EB%93%9D&via=chip", label: "저소득", desc: "생계 · 주거 · 의료", glyph: "lowincome", tone: "bg-[#DDF4F0] text-[#0F766E]" },
+  { href: "/business", label: "사업자", desc: "자금 · 판로 · 인력",   glyph: "business",  tone: "bg-[#FCE7F3] text-[#9D174D]" },
 ];
 
 const TRUST = ["회원가입 없음", "주민등록번호 안 받음", "무료"];
@@ -71,9 +72,9 @@ export default function Hero({
 
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {TILES.map((t) => (
-            <Link key={t.label} href={t.href} className="tile">
-              <b className="display text-[1.15rem] text-ink">{t.label}</b>
-              <span className="h-[2px] w-6 bg-brand" aria-hidden />
+            <Link key={t.label} href={t.href} className="tile group">
+              <span className={`tile-ic ${t.tone}`}><Glyph name={t.glyph} className="h-5 w-5" /></span>
+              <b className="display text-[1.15rem] text-ink group-hover:text-brand">{t.label}</b>
               <small className="text-[12.5px] leading-snug text-muted">{t.desc}</small>
             </Link>
           ))}

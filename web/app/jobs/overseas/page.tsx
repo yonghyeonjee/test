@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusJobs } from "@/components/Illus";
 import Link from "next/link";
-import { ArtJobs } from "@/components/Art";
+
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
@@ -60,7 +61,7 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
         eyebrow="채용"
         title="해외취업, 공단이 고른 자리부터"
         sub="한국산업인력공단이 근로조건과 비자를 확인해 우수일자리로 올린 해외 채용 공고입니다. 국가와 직종으로 걸러 보세요."
-        art={<ArtJobs />}
+        art={<IllusJobs />}
       >
         {all.ok && (
           <div className="mt-7 grid grid-cols-3 gap-3">

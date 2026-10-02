@@ -10,6 +10,8 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import RecentTracker from "@/components/RecentTracker";
+import OrgMark from "@/components/OrgMark";
+import Glyph, { fileGlyph } from "@/components/Glyph";
 import { STATUS_LABEL } from "@/lib/db";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
@@ -202,14 +204,17 @@ export default async function JobDetail({ params }: P) {
         )}
       </nav>
 
-      <header className="mt-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {(job.start || job.end) && <span className="badge">{STATUS_LABEL[job.status]}</span>}
-          {job.reg && <span className="num badge badge-quiet">{dot(job.reg)} 등록</span>}
-          {job.hire && <span className="badge badge-quiet">{job.hire}</span>}
+      <header className="mt-2 flex items-start gap-4">
+        <OrgMark org={job.org} hire={job.hire} size="lg" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(job.start || job.end) && <span className="badge">{STATUS_LABEL[job.status]}</span>}
+            {job.reg && <span className="num badge badge-quiet">{dot(job.reg)} 등록</span>}
+            {job.hire && <span className="badge badge-quiet">{job.hire}</span>}
+          </div>
+          <h1 className="display mt-3 text-[1.5rem] leading-tight">{job.title}</h1>
+          <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{jobSummary(job)}</p>
         </div>
-        <h1 className="display mt-3 text-[1.5rem] leading-tight">{job.title}</h1>
-        <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{jobSummary(job)}</p>
       </header>
 
       <dl className="card mt-6 p-5">
@@ -242,9 +247,9 @@ export default async function JobDetail({ params }: P) {
           <ol className="mt-3 divide-y divide-line">
             {attach.files.map((f, i) => (
               <li key={f.dl} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
-                <span className={`inline-flex h-5 min-w-[2.6rem] items-center justify-center rounded px-1 text-[12px] font-bold uppercase ${
+                <span className={`inline-flex h-7 items-center gap-1 rounded-[8px] px-1.5 text-[11px] font-extrabold uppercase ${
                   f.ext === "pdf" ? "bg-alertSoft text-alert" : f.ext === "hwp" || f.ext === "hwpx" ? "bg-brandSoft text-brand" : "bg-surface2 text-muted"}`}>
-                  {f.ext || "파일"}
+                  <Glyph name={fileGlyph(f.ext)} className="h-4 w-4" strokeWidth={2.2} />{f.ext || "파일"}
                 </span>
                 <span className="min-w-0 flex-1 break-all text-[14px] leading-snug text-ink">
                   <span className="num mr-1 text-muted">{i + 1}.</span>{f.name}

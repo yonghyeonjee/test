@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusAgency } from "@/components/Illus";
 import AgencyList from "@/components/AgencyList";
-import { ArtAgency } from "@/components/Art";
+
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
@@ -48,7 +49,7 @@ export default async function AgencyFacilities({ searchParams }: { searchParams:
         eyebrow="공공기관"
         title="공공기관 시설, 국민도 쓸 수 있습니다"
         sub="체육관, 강당, 회의실, 주차장. 공공기관 시설 상당수가 개방되어 있고 무료거나 매우 쌉니다. 어디가 열려 있는지 지역별로 봅니다."
-        art={<ArtAgency />}
+        art={<IllusAgency />}
       />
       <AgencyList
         base="/agency/facilities" items={items} ok={res.ok} reason={res.ok ? null : res.reason}

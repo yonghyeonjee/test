@@ -9,6 +9,7 @@ import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
+import { IllusEmpty } from "@/components/Illus";
 import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
 import RememberMe from "@/components/RememberMe";
@@ -152,7 +153,8 @@ function Results({ results, total, label, myAge, terms, q }: {
 
       {results.length === 0 ? (
         <div className="card p-8 text-center">
-          <p className="leading-relaxed text-muted">
+          <div className="mx-auto h-28 w-40"><IllusEmpty /></div>
+          <p className="mt-2 leading-relaxed text-muted">
             입력하신 조건에 걸리는 사업을 찾지 못했습니다.
             <br />
             {q

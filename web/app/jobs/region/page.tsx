@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { IllusJobs } from "@/components/Illus";
 import Link from "next/link";
-import { ArtJobs } from "@/components/Art";
+
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
@@ -31,7 +32,7 @@ export default async function JobRegionIndex() {
         eyebrow="채용"
         title="사는 곳에서 다닐 수 있는 자리부터"
         sub="공공기관 채용 공고를 시·도별로 나눠 두었습니다. 근무 지역은 공고를 낸 기관 이름에서 읽어 냅니다."
-        art={<ArtJobs />}
+        art={<IllusJobs />}
       />
 
       {regions.length === 0 ? (

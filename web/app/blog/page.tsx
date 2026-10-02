@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { IllusStory } from "@/components/Illus";
 import Link from "next/link";
 import { PostArt } from "@/components/Art";
 import PromoBanner from "@/components/PromoBanner";
@@ -18,13 +19,17 @@ export const metadata: Metadata = withOg({
 export default function BlogIndex() {
   return (
     <div className="py-4">
-      <h1 className="text-[1.75rem] font-extrabold leading-tight">
-        지원금 안내
-      </h1>
-      <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
-        처음 찾아보면 용어부터 막힙니다. 자주 헷갈리는 것들을 갈래별로
-        정리했습니다.
-      </p>
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <p className="eyebrow">지원금 안내</p>
+          <h1 className="display mt-2 text-[1.9rem] leading-tight">처음 찾아보는 분을 위한 안내</h1>
+          <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
+            처음 찾아보면 용어부터 막힙니다. 자주 헷갈리는 것들을 갈래별로
+            정리했습니다.
+          </p>
+        </div>
+        <div className="hidden h-32 w-44 shrink-0 sm:block"><IllusStory /></div>
+      </div>
 
       {/* 신청 기간이 열려 있는 것부터. 날짜가 걸린 글은 늦으면 소용이 없다. */}
       <Link href="/blog/youth-future-savings"

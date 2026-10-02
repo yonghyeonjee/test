@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ArtJeonse } from "@/components/Art";
+import { IllusHousing } from "@/components/Illus";
+
 import Faq from "@/components/Faq";
 import FindByCondition from "@/components/FindByCondition";
 import GuideBanner from "@/components/GuideBanner";
@@ -45,7 +46,7 @@ export default async function Jeonse() {
         eyebrow="생활금융"
         title="전세자금대출, 은행마다 금리가 다릅니다"
         sub="한국주택금융공사가 보증하는 전세자금 대출의 은행별 금리입니다. 같은 보증을 받고도 어디서 빌리느냐에 따라 매달 나가는 돈이 달라집니다."
-        art={<ArtJeonse />}
+        art={<IllusHousing />}
       />
 
       {board.ok ? (
