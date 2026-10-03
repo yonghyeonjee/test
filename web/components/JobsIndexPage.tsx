@@ -62,7 +62,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
       <PageBanner tone="blue"
         eyebrow="채용"
         title="공공기관 채용, 어디서 뽑는지 한 번에"
-        sub="인사혁신처 나라일터에 올라오는 중앙부처·지자체·공공기관 채용 공고입니다. 지역과 기관 구분으로 걸러 접수 중인 것부터 봅니다."
+        sub="인사혁신처 나라일터와 공공기관 채용정보시스템(잡알리오)에 올라오는 중앙부처·지자체·공공기관 채용 공고입니다. 지역과 기관 구분으로 걸러 접수 중인 것부터 봅니다."
         art={<IllusJobs />}
       >
         {board.ok && (

@@ -392,6 +392,36 @@ export async function discoverStep(budgetMs = 40_000): Promise<StepResult> {
 
 // ── 3. crawl: 게시판 첫 쪽 ───────────────────────────
 
+type Item = { title: string; url: string; posted: string | null };
+type Db = ReturnType<typeof svcDb>;
+
+/**
+ * 읽은 글 목록을 거르고 넣는다. crawl(서버에서 HTML 로)과 ingest(Playwright 가 브라우저로 읽어 보낸 것)가 같이 쓴다.
+ * 돌려주는 err: "글 없음"(목록 자체를 못 읽음 — 스크립트로 그리는 게시판일 때가 많다)과
+ * "쓸모 있는 글 없음"(읽었지만 공지가 다 입찰·처분 같은 것이라 걸렀음)을 나눈다.
+ */
+export async function saveItems(db: Db, org: string, kind: "job" | "notice", board: string, pageUrl: string, raw: Item[]):
+  Promise<{ got: number; err: string | null }> {
+  if (!raw.length) return { got: 0, err: `${kind} 글 없음(못 읽음)` };
+  let items = raw.filter((it) => kind === "job" || noticeUseful(it.title));
+  if (!items.length) return { got: 0, err: `${kind} 쓸모 있는 글 없음` };
+  // 같은 누리집의 같은 글(제목·날짜)이 이미 다른 기관에 붙어 있으면 넣지 않는다. 한 게시판을 여러 기관이 보여 주는 경우.
+  const host = new URL(pageUrl).hostname;
+  const dup = await db.from("org_posts").select("title,posted,url").neq("org", org).in("title", items.map((it) => it.title)).limit(200);
+  const taken = new Set(((dup.data ?? []) as { title: string; posted: string | null; url: string }[])
+    .filter((d) => { try { return new URL(d.url).hostname === host; } catch { return false; } })
+    .map((d) => `${d.title}|${d.posted}`));
+  items = items.filter((it) => !taken.has(`${it.title}|${it.posted}`));
+  if (!items.length) return { got: 0, err: `${kind} 다른 기관과 같은 게시판` };
+  const now = new Date().toISOString();
+  const up = await db.from("org_posts").upsert(
+    items.map((it) => ({ org, kind, title: it.title, url: it.url, posted: it.posted, board, last_seen: now })),
+    { onConflict: "url", ignoreDuplicates: true },
+  );
+  if (up.error) return { got: 0, err: up.error.message.slice(0, 120) };
+  return { got: items.length, err: null };
+}
+
 export async function crawlStep(budgetMs = 40_000): Promise<StepResult> {
   const until = Date.now() + budgetMs;
   const db = svcDb();
@@ -411,33 +441,64 @@ export async function crawlStep(budgetMs = 40_000): Promise<StepResult> {
       if (!(await allowed(board))) { err = "robots"; continue; }
       const r = await fetchText(board);
       if (!r.ok) { err = `${kind} ${r.status}`; continue; }
-      let items = boardItems(r.text, r.url).filter((it) => kind === "job" || noticeUseful(it.title));
-      if (!items.length) { err = err ?? `${kind} 글 0`; continue; }
-      // 같은 누리집의 같은 글(제목·날짜)이 이미 다른 기관에 붙어 있으면 넣지 않는다. 한 게시판을 여러 기관이 보여 주는 경우.
-      const host = new URL(r.url).hostname;
-      const dup = await db.from("org_posts").select("title,posted,url").neq("org", s.org).in("title", items.map((it) => it.title)).limit(200);
-      const taken = new Set(((dup.data ?? []) as { title: string; posted: string | null; url: string }[])
-        .filter((d) => { try { return new URL(d.url).hostname === host; } catch { return false; } })
-        .map((d) => `${d.title}|${d.posted}`));
-      items = items.filter((it) => !taken.has(`${it.title}|${it.posted}`));
-      if (!items.length) { err = err ?? `${kind} 다른 기관과 같은 게시판`; continue; }
-      const up = await db.from("org_posts").upsert(
-        items.map((it) => ({ org: s.org, kind, title: it.title, url: it.url, posted: it.posted, board, last_seen: now })),
-        { onConflict: "url", ignoreDuplicates: true },
-      );
-      if (up.error) { err = up.error.message.slice(0, 120); continue; }
-      got += items.length;
+      const out = await saveItems(db, s.org, kind, board, r.url, boardItems(r.text, r.url));
+      got += out.got;
+      if (out.err) err = err ?? out.err;
     }
     const ok = got > 0;
     if (ok) res.found += got; else res.errors++;
     await db.from("org_sites").update({
       crawled_at: now, ok_at: ok ? now : undefined, last_count: got, last_error: err,
-      fails: ok ? 0 : s.fails + 1,
+      // 못 읽는 게시판은 실패로 세지 않는다(브라우저로 읽을 차례를 기다린다).
+      fails: ok || /못 읽음|쓸모 있는/.test(err ?? "") ? 0 : s.fails + 1,
     }).eq("org", s.org);
     res.done++;
   }, until);
   res.more = sites.length === 40;
   return res;
+}
+
+// ── 3b. 브라우저로 읽기(Playwright, GitHub Actions) ─
+
+/** 서버가 HTML 로는 글을 못 읽은 게시판(스크립트로 그리는 곳). robots.txt 가 허용한 곳만. */
+export async function jsBoards(limit = 80): Promise<{ org: string; kind: "job" | "notice"; board: string }[]> {
+  const db = svcDb();
+  const { data, error } = await db.from("org_sites").select("org,job_board,notice_board,last_error")
+    .like("last_error", "%못 읽음%").eq("robots_block", false).limit(limit);
+  if (error) throw error;
+  const out: { org: string; kind: "job" | "notice"; board: string }[] = [];
+  for (const r of (data ?? []) as { org: string; job_board: string | null; notice_board: string | null; last_error: string }[]) {
+    const kind = r.last_error.startsWith("notice") ? "notice" : "job";
+    const board = kind === "job" ? r.job_board : r.notice_board;
+    if (board && !skipHost(board) && (await allowed(board))) out.push({ org: r.org, kind, board });
+  }
+  return out;
+}
+
+/** Playwright 가 읽어 보낸 글. 제목·주소·날짜 꼴을 다시 확인하고 saveItems 로. */
+export async function ingestItems(body: { org?: string; kind?: string; board?: string; items?: unknown[] }): Promise<{ got: number; err: string | null }> {
+  const db = svcDb();
+  const kind = body.kind === "notice" ? "notice" : "job";
+  if (!body.org || !body.board) return { got: 0, err: "org·board 없음" };
+  const site = await db.from("org_sites").select("org,job_board,notice_board").eq("org", body.org).maybeSingle();
+  const s = site.data as { job_board: string | null; notice_board: string | null } | null;
+  // 우리가 내준 게시판에 대한 것만 받는다.
+  if (!s || (kind === "job" ? s.job_board : s.notice_board) !== body.board) return { got: 0, err: "모르는 게시판" };
+  const host = new URL(body.board).hostname;
+  const items: Item[] = [];
+  for (const x of (Array.isArray(body.items) ? body.items : []).slice(0, 60)) {
+    const it = x as { title?: unknown; url?: unknown; posted?: unknown };
+    const title = typeof it.title === "string" ? it.title.replace(/\s+/g, " ").trim().slice(0, 200) : "";
+    const url = typeof it.url === "string" ? it.url : "";
+    const posted = typeof it.posted === "string" && /^\d{4}-\d{2}-\d{2}$/.test(it.posted) ? it.posted : null;
+    try { if (new URL(url).hostname !== host) continue; } catch { continue; }
+    if (title.length >= 6 && posted) items.push({ title, url, posted });
+  }
+  const out = await saveItems(db, body.org, kind, body.board, body.board, items);
+  await db.from("org_sites").update({
+    last_count: out.got, last_error: out.err ? `${out.err} (브라우저)` : null, ok_at: out.got ? new Date().toISOString() : undefined,
+  }).eq("org", body.org);
+  return out;
 }
 
 // ── 4. tidy: 지저분한 제목 지우기 ────────────────────

@@ -1,0 +1,29 @@
+name: org-js
+
+# 스크립트로 그리는 기관 게시판을 Playwright(크롬)로 읽는다. 매일 07:30 KST(org-sites 다음).
+# 서버가 robots.txt 를 허용한 게시판만 내준다. 미국 IP 라 외국 접속을 막는 누리집은 건너뛴다.
+# 필요한 secret: CRON_SECRET
+on:
+  schedule:
+    - cron: "30 22 * * *"   # UTC 22:30 = KST 07:30
+  workflow_dispatch:
+
+concurrency:
+  group: org-js
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q playwright requests
+      - name: 브라우저로 읽기
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: python -u pipeline/org_js.py
