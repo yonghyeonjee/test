@@ -8,6 +8,10 @@ on:
       urls:
         description: "주소(쉼표, 최대 6개)"
         required: true
+      snip:
+        description: "이 낱말 앞뒤 HTML 도 보기(선택)"
+        required: false
+        default: ""
 
 jobs:
   probe:
@@ -18,5 +22,6 @@ jobs:
           SITE: https://jiwon.knowhow-it.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           URLS: ${{ inputs.urls }}
+          SNIP: ${{ inputs.snip }}
         run: |
-          curl -sS --max-time 120 -G -H "Authorization: Bearer $CRON_SECRET" --data-urlencode "url=$URLS" "$SITE/api/cron/probe" | jq .
+          curl -sS --max-time 120 -G -H "Authorization: Bearer $CRON_SECRET" --data-urlencode "url=$URLS" --data-urlencode "snip=$SNIP" "$SITE/api/cron/probe" | jq .
