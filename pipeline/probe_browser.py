@@ -93,6 +93,13 @@ def check_map(browser) -> None:
       label: s.getAttribute('aria-label'), value: s.selectedOptions[0]?.textContent, disabled: s.disabled, n: s.options.length }))""")
     print("   지역 칸:", json.dumps(picks, ensure_ascii=False))
     print("   기준 글:", page.evaluate("() => [...document.querySelectorAll('span')].filter(e => /기준$/.test(e.textContent.trim())).map(e => e.textContent.trim()).slice(0, 3)"))
+    print("   위치 오류 글:", page.evaluate("() => [...document.querySelectorAll('p,span')].map(e => e.textContent.trim()).filter(t => /위치 권한|위치를 읽지|지원하지 않습니다/.test(t)).slice(0, 2)"))
+    # 주소의 lat/lng(상세 쪽 "주변 더 보기")로 들어왔을 때 지역 칸이 채워지는지.
+    page.goto(BASE + "/map?kind=jobs&lat=37.3800&lng=126.8029", wait_until="domcontentloaded")
+    page.wait_for_timeout(4000)
+    print("   주소 lat/lng 지역 칸:", json.dumps(page.evaluate("""() => [...document.querySelectorAll('[aria-label="지역 고르기"] select')].map(s => s.selectedOptions[0]?.textContent + (s.disabled ? '(잠김)' : '') + '/' + s.options.length)"""), ensure_ascii=False))
+    page.goto(BASE + "/map", wait_until="domcontentloaded")
+    page.wait_for_selector(".pm-pin", timeout=20000)
     print("   where:", page.evaluate("() => fetch('/api/map/where?lat=37.380&lng=126.803').then(r => r.text()).then(t => t.slice(0, 300))"))
     print("   내 위치 30km:", json.dumps(page.evaluate(OVERLAP_JS), ensure_ascii=False))
     head = page.locator('section[aria-label="공고 카드"] h2')
