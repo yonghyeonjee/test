@@ -30,6 +30,8 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: 타입 검사
         run: npx tsc --noEmit -p .
+      - name: 공유 카드 점검 (새 쪽도 withOg)
+        run: node scripts/check-og.mjs
       - name: 빌드 (standalone, 운영과 같게)
         env:
           STANDALONE: "1"

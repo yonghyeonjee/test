@@ -11,7 +11,7 @@ import { unstable_cache } from "next/cache";
 import { getSigunguIndex } from "@/lib/db";
 import { getSiteConfig } from "@/lib/settings";
 import "./globals.css";
-import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const BASE: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -39,8 +39,10 @@ const BASE: Metadata = {
     title: "나라지원 — 내가 받을 수 있는 정부지원금, 로그인 없이 확인하세요",
     description:
       "나라지원에서 지역·나이·상황만 고르면 해당될 수 있는 지원금과 복지서비스를 찾아드립니다.",
+    // 메타데이터를 따로 주지 않은 쪽도 그림 없는 카드가 되지 않게. 쪽마다 그림은 withOg 가 단다.
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: { card: "summary_large_image", images: [OG_IMAGE] },
   robots: { index: true, follow: true },
   formatDetection: { telephone: false },
 };
