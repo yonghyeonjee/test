@@ -1,9 +1,10 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import PortalSearch from "@/components/PortalSearch";
 import ProgramEntry from "@/components/ProgramEntry";
 import TopStripAd from "@/components/TopStripAd";
 import { Box, HotRank } from "@/components/PortalHome";
-import { SEARCH_SUGGEST, type JobHit, type SearchResult } from "@/lib/search";
+import { SEARCH_SUGGEST, type JobHit, type SearchResult, type SectionKey } from "@/lib/search";
 
 /**
  * 검색 결과 화면의 몸통. 통합 검색(/search)과 사업자 검색(/business/search)이
@@ -86,14 +87,15 @@ export default function SearchView({
         ["공공기관", r.agency.total, "agency"],
         ["안내 글", r.guides.length, "guides"],
       ]
-    : [
+    : ([
         ["복지", r.welfare.total, "welfare"],
         ["기업", r.business.total, "business"],
         ["채용", r.jobs.total, "jobs"],
         ["안내 글", r.guides.length, "guides"],
         ["자격증", r.licenses.total, "licenses"],
         ["공공기관", r.agency.total, "agency"],
-      ]) as readonly (readonly [string, number, string])[];
+      ] as [string, number, string][]).sort((a, b) => r.order.indexOf(a[2] as SectionKey) - r.order.indexOf(b[2] as SectionKey))
+    ) as readonly (readonly [string, number, string])[];
   const grand = counts.reduce((a, c) => a + c[1], 0);
   // 사업자 검색에서 빼 둔 갈래. 건수만 적고 통합 검색으로 보낸다.
   const elsewhere = biz ? r.welfare.total + r.jobs.total + r.licenses.total : 0;
@@ -224,6 +226,9 @@ export default function SearchView({
                 {conds.length > 0 && <>조건으로 알아들은 것: <b className="text-ink2">{conds.join(" · ")}</b>{r.term && " · "}</>}
                 {r.term && <>낱말: <b className="text-ink2">‘{r.term}’</b></>}
                 {" · "}모두 <b className="num text-ink2">{grand.toLocaleString("ko-KR")}건</b>
+                {r.mapHref && !biz && (
+                  <>{" · "}<Link href={r.mapHref} className="font-semibold text-brand underline underline-offset-4">{r.parsed.sigungu?.split(/\s+/).pop() ?? r.parsed.sido} 지도에서 보기</Link></>
+                )}
               </p>
               {r.expanded.length > 0 && (
                 <p className="mt-1 text-[13px] text-muted">
@@ -273,7 +278,8 @@ export default function SearchView({
                 </div>
               )}
 
-              {biz ? (<>{business}{agency}{guides}</>) : (<>{welfare}{business}{jobs}{guides}{licenses}{agency}</>)}
+              {/* 갈래 순서는 찾는 말에 맞춰(lib/search orderSections). "경비" 면 채용이 먼저. */}
+              {biz ? (<>{business}{agency}{guides}</>) : r.order.map((k) => <Fragment key={k}>{({ welfare, business, jobs, guides, licenses, agency })[k]}</Fragment>)}
 
               {/* 휴대폰: 상세 검색을 맨 아래에. 넓은 화면은 오른쪽 기둥. */}
               <section className="card mt-10 p-4 lg:hidden">

@@ -5,6 +5,7 @@ import {
   matchBusiness, matchWelfare, type Program,
 } from "./db";
 import { FREE_GROUPS } from "./freeServices";
+import { SIDO_SHORT, locate } from "./geo";
 import { jobPath } from "./jobRoute";
 import { tokenize } from "./keywords";
 import { describe, parseQuery, toParams, type Parsed } from "./parse";
@@ -54,6 +55,10 @@ export type SearchResult = {
   related: string[];
   /** 낱말마다 어떤 연관어를 같이 찾았는지. */
   expanded: { word: string; also: string[] }[];
+  /** 갈래를 보일 순서(찾는 말에 맞는 갈래부터). */
+  order: SectionKey[];
+  /** 지역을 같이 적었으면 그 자리 정책지도. */
+  mapHref: string | null;
 };
 
 const PER = 6;
@@ -145,12 +150,55 @@ function orClause(terms: string[]) {
   return terms.flatMap((t) => [`title.ilike.%${t}%`, `org.ilike.%${t}%`]).join(",");
 }
 
-async function searchJobs(words: string[], sido?: string) {
+/** 지역 거르기. 채용 공고의 절반 넘게 region 칸이 비어 있어, 기관명·제목에 지역 이름이 있어도 넣는다. */
+function regionClause(sido?: string, sigungu?: string): string | null {
+  if (sigungu) {
+    const last = sigungu.trim().split(/\s+/).pop() ?? "";
+    const stem = last.length > 2 ? last.replace(/(시|군|구)$/, "") : last;
+    const ts = Array.from(new Set([last, stem].map(safe).filter((t) => t.length >= 2)));
+    if (ts.length) return ts.flatMap((t) => [`org.ilike.%${t}%`, `title.ilike.%${t}%`]).join(",");
+  }
+  if (!sido) return null;
+  const shorts = (SIDO_SHORT[sido] ?? "").split("·").map(safe).filter((t) => t.length >= 2);
+  return [`region.ilike.%${safe(sido)}%`, ...shorts.flatMap((t) => [`org.ilike.%${t}%`, `title.ilike.%${t}%`])].join(",");
+}
+
+/** 직업·채용을 찾는 말. 이런 말이면 채용 갈래를 맨 위로 올린다. */
+const JOB_INTENT = /채용|모집|구인|공고|일자리|알바|취업|공무직|기간제|계약직|정규직|무기계약|인턴|경비|보안|청소|미화|환경관리|조리|영양|급식|운전|기사|간호|요양|보육교사|사무|행정|연구원|강사|상담사|사회복지사|시설관리|당직|방호|주차|검침|배달|생산|물류|교사|직원|사원/;
+
+export type SectionKey = "welfare" | "business" | "jobs" | "guides" | "licenses" | "agency";
+
+/**
+ * 갈래 순서. 늘 복지부터가 아니라, 찾는 말과 제목이 맞는 갈래를 위로.
+ * 채용을 찾는 말(직업 이름)이면 채용이 먼저다. 정책을 찾았을 수도 있으니 아래에 다 남긴다.
+ */
+function orderSections(words: string[], r: SearchResult): SectionKey[] {
+  const ws = words.map((w) => w.replace(/\s+/g, "")).filter((w) => w.length >= 2);
+  const hitRate = (titles: string[]) => {
+    if (!titles.length || !ws.length) return 0;
+    const n = titles.filter((t) => ws.some((w) => t.replace(/\s+/g, "").includes(w))).length;
+    return n / titles.length;
+  };
+  const score: Record<SectionKey, number> = {
+    welfare: hitRate(r.welfare.items.map((x) => x.title)) + (r.welfare.total ? 0.15 : 0),
+    business: hitRate(r.business.items.map((x) => x.title)) + (r.business.total ? 0.1 : 0),
+    jobs: hitRate(r.jobs.items.map((x) => x.title)) + (r.jobs.total ? 0.1 : 0)
+      + (ws.some((w) => JOB_INTENT.test(w)) && r.jobs.items.length ? 1 : 0),
+    licenses: r.licenses.items.length ? hitRate(r.licenses.items.map((x) => x.name)) * 0.9 : 0,
+    agency: r.agency.items.length ? 0.05 : 0,
+    guides: r.guides.length ? 0.04 : 0,
+  };
+  const base: SectionKey[] = ["welfare", "business", "jobs", "guides", "licenses", "agency"];
+  // 같은 점수면 원래 순서. 안내 글은 늘 결과 갈래들 뒤.
+  return base.slice().sort((a, b) => score[b] - score[a] || base.indexOf(a) - base.indexOf(b));
+}
+
+async function searchJobs(words: string[], sido?: string, sigungu?: string) {
   const empty = { items: [] as JobHit[], total: 0, openOnly: true, allTotal: null as number | null, also: [] as string[] };
   const ws = words.map(safe).filter((w) => w.length >= 2);
   if (!dbConfigured || !ws.length) return empty;
   const today = new Date().toISOString().slice(0, 10);
-  const region = sido?.replace(/(특별자치도|특별자치시|광역시|특별시)$/, "");
+  let region = regionClause(sido, sigungu);
   // 낱말마다 연관어 묶음. 접수 중 공고는 수백 건이라 OR 가 스물 넷이어도 빠르다.
   const groups = ws.map((w) => Array.from(new Set(expandTerms(w).map(safe).filter((t) => t.length >= 2))));
   const also = Array.from(new Set(groups.flatMap((g) => g.slice(1))));
@@ -159,13 +207,19 @@ async function searchJobs(words: string[], sido?: string) {
     let sel = db.from("job_posts").select("source_id,title,org,region,hire,end_date", { count: "exact" })
       .eq("source", "gojobs");
     for (const g of groups) sel = sel.or(orClause(expand ? g : g.slice(0, 1)));
-    if (region) sel = sel.ilike("region", `%${region}%`);
+    if (region) sel = sel.or(region);
     return sel;
   };
 
   // 접수 중인 것부터. 접수 중 공고는 수백 건이라 어떤 낱말이든 빠르다.
-  const open = await base(true).gte("end_date", today).order("end_date", { ascending: true }).limit(PER);
+  let open = await base(true).gte("end_date", today).order("end_date", { ascending: true }).limit(PER);
   if (open.error) throw open.error;
+  // 시·군·구로 거르면 없을 때가 많다(공고 대부분에 시·군·구가 안 적힘). 그때는 시·도로 넓힌다.
+  if (sigungu && sido && !open.count) {
+    region = regionClause(sido);
+    open = await base(true).gte("end_date", today).order("end_date", { ascending: true }).limit(PER);
+    if (open.error) throw open.error;
+  }
   const items: JobHit[] = (open.data ?? []).map((r) => ({
     id: String(r.source_id), title: String(r.title ?? ""), org: r.org ?? null, region: r.region ?? null,
     hire: r.hire ?? null, end: r.end_date ?? null, open: true,
@@ -247,7 +301,14 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
     failed: [],
     related: relatedTerms(words, 10),
     expanded: expansions(words),
+    order: ["welfare", "business", "jobs", "guides", "licenses", "agency"],
+    mapHref: null,
   };
+  if (sido) {
+    const sggName = sigungu?.trim().split(/\s+/).pop() ?? null;
+    const at = locate(sido, sggName);
+    if (at) out.mapHref = `/map?kind=${words.some((w) => JOB_INTENT.test(w)) ? "jobs" : "programs"}&lat=${at.lat.toFixed(4)}&lng=${at.lng.toFixed(4)}`;
+  }
   if (!q || !dbConfigured) return out;
 
   const [w, wn, b, bn, j, l, a, st] = await Promise.allSettled([
@@ -255,7 +316,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
     term || hasCond ? countWelfare(wq) : Promise.resolve(0),
     term || sido ? matchBusiness(bq, PER) : Promise.resolve([] as Program[]),
     term || sido ? countBusiness(bq) : Promise.resolve(0),
-    searchJobs(words, sido),
+    searchJobs(words, sido, sigungu),
     searchLicenses(words),
     searchAgency(words),
     searchStories(words),
@@ -282,6 +343,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   out.agency = take(a, "공공기관", out.agency);
   // 같은 이름이 두 번 들어갈 수 있다(목록·건수). 하나로.
   out.failed = Array.from(new Set(out.failed));
+  out.order = orderSections(words, out);
   return out;
 }
 
