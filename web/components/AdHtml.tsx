@@ -34,7 +34,8 @@ const smallSize = (w: number): [number, number] => (w >= 728 ? [728, 90] : w >= 
 
 export default function AdHtml({ html, minWidth = 0, small = false }: {
   html: string; minWidth?: number;
-  /** 본문 안 키 작은 자리. 애드센스 반응형(auto)은 상자 CSS 를 무시하고 280px 로 키우니, 부르기 전에 고정 크기 단위로 바꾼다. */
+  /** 본문 안 키 작은 자리·제목 아래 띠. 애드센스 반응형(auto)은 부모 상자 높이를 inline !important 로 풀어
+   *  280px 로 키우니(CSS max-height 가 진다), 부르기 전에 고정 크기 단위로 바꾼다. */
   small?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
