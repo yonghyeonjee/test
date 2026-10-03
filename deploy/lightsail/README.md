@@ -9,7 +9,7 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
 | `jiwon.service` | Next.js 서버를 띄우고 죽으면 다시 띄운다 |
 | `Caddyfile` | 443 HTTPS 인증서 자동, 3000 으로 넘김. IP 로 들어오면 검색엔진에 숨김 |
 | `../../.github/workflows/deploy_aws.yml` | main 에 합치면 빌드 → 서버로 올림 → 다시 띄움 → 200 확인 |
-| `../../.github/workflows/cron_jobs.yml` | 매일 09:00 KST 최신 수집(Vercel 크론 대신). 저장소 변수 `HOSTING=aws` 일 때만 |
+| `../../.github/workflows/cron_jobs.yml` | 매일 09:00 KST 최신 수집(Vercel 크론 대신) |
 
 ## 순서
 
@@ -21,7 +21,7 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
    서버 비밀값(deploy_aws.yml 머리말 목록)을 넣는다.
 6. Actions → deploy-aws → Run workflow. 끝나면 `http://<고정 IP>/` 로 확인.
 7. DNS: `jiwon` A 레코드를 고정 IP 로(TTL 300). Caddy 가 몇 분 안에 인증서를 받는다.
-8. 저장소 변수 `HOSTING=aws` → Vercel 크론 대신 cron-jobs 가 돈다. Vercel 프로젝트의 Git 연결을 끊는다.
+8. Vercel 크론은 vercel.json 에서 뺐고 cron-jobs 가 대신 돈다. Vercel 프로젝트의 Git 연결을 끊는다.
 
 ## 다음 단계: CloudFront
 

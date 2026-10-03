@@ -1,7 +1,6 @@
 name: cron-jobs
 
-# 매일 09:00 KST "최신" 수집. Vercel 크론(vercel.json)이 하던 일을 AWS 로 옮긴 뒤 여기서 한다.
-# 저장소 변수 HOSTING 이 aws 일 때만 돈다(그 전에는 Vercel 크론과 겹치지 않게 건너뛴다).
+# 매일 09:00 KST "최신" 수집. Vercel 크론(vercel.json)이 하던 일을 AWS 로 옮겨 여기서 한다.
 # 필요한 secret: CRON_SECRET
 
 on:
@@ -11,7 +10,6 @@ on:
 
 jobs:
   latest:
-    if: vars.HOSTING == 'aws' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
