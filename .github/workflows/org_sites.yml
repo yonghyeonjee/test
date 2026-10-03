@@ -1,0 +1,42 @@
+name: org-sites
+
+# 기관 홈페이지 공고 수집. 매일 06:30 KST. 서울 서버의 /api/cron/orgsites 를 부른다.
+# seed(새 기관 홈페이지) → discover(게시판 찾기, 한 달에 한 번) → crawl(게시판 첫 쪽, 하루 한 번).
+# 필요한 secret: CRON_SECRET
+
+on:
+  schedule:
+    - cron: "30 21 * * *"   # UTC 21:30 = KST 06:30
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "돌릴 단계(쉼표)"
+        required: false
+        default: "seed,discover,crawl"
+
+concurrency:
+  group: org-sites
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: 수집
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          STEPS: ${{ inputs.steps || 'seed,discover,crawl' }}
+        run: |
+          set -u
+          [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }
+          for step in ${STEPS//,/ }; do
+            # 단계마다 최대 40회(한 번에 40곳 안팎). more 가 false 면 다음 단계로.
+            for round in $(seq 1 40); do
+              body=$(curl -sS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/orgsites?step=$step") || { echo "$step 요청 실패(회차 $round)"; break; }
+              echo "$step $round: $(echo "$body" | head -c 300)"
+              [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || break
+              sleep 3
+            done
+          done

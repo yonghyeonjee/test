@@ -12,7 +12,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { YearBars } from "@/components/TrendBars";
-import { getOrgTrend, indexWord, pctChange, titleMix } from "@/lib/jobTrend";
+import { getOrgPosts, getOrgTrend, indexWord, pctChange, titleMix, type OrgPost } from "@/lib/jobTrend";
 import { dot, getJobsByOrg, getOrgStat, peakMonths } from "@/lib/pubJobs";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
@@ -64,7 +64,7 @@ export default async function JobsByOrg({ params }: P) {
   const route = readJobRoute(["org"], params.seg);
   if (!route) notFound();
   const org = route.org!;
-  const [board, stat, trend] = await Promise.all([getJobsByOrg(org), getOrgStat(org), getOrgTrend(org)]);
+  const [board, stat, trend, own] = await Promise.all([getJobsByOrg(org), getOrgStat(org), getOrgTrend(org), getOrgPosts(org)]);
   if (!stat && !board.jobs.length) notFound();
   // 공고가 있는 기관인데 목록만 못 읽었으면 잠깐 DB 가 늦은 것이다. 이 그림을 세 시간 동안
   // 캐시에 남기지 않게 던진다. 다시 그리는 중이면 Next 가 이전에 그린 쪽을 계속 보인다.
@@ -212,6 +212,8 @@ export default async function JobsByOrg({ params }: P) {
 
       <JobList board={board} route={route} />
 
+      {own.length > 0 && <OwnPosts org={org} posts={own} />}
+
       <AdSlot name="page_bottom" />
 
       <section className="mt-14">
@@ -294,5 +296,41 @@ function Stat({ label, value, note }: { label: string; value: string; note: stri
       <b className="num mt-0.5 block text-[1.35rem] leading-tight text-ink">{value}</b>
       <span className="mt-1 block text-[12px] leading-snug text-muted">{note}</span>
     </div>
+  );
+}
+
+/** 기관 홈페이지 게시판에만 올라온 글. 나라일터 목록과 겹칠 수 있다. 원문으로 바로 보낸다. */
+function OwnPosts({ org, posts }: { org: string; posts: OrgPost[] }) {
+  const jobs = posts.filter((p) => p.kind === "job").slice(0, 10);
+  const notices = posts.filter((p) => p.kind === "notice").slice(0, 6);
+  const home = posts.find((p) => p.homepage)?.homepage;
+  const List = ({ rows }: { rows: OrgPost[] }) => (
+    <ul className="mt-2 divide-y divide-line">
+      {rows.map((p) => (
+        <li key={p.url}>
+          <a href={p.url} target="_blank" rel="noopener noreferrer nofollow"
+             className="flex items-baseline justify-between gap-3 py-2.5 text-[14px] hover:text-brand">
+            <span className="min-w-0 flex-1 leading-snug">{p.title}</span>
+            <span className="num shrink-0 text-[12px] text-faint">{p.posted ? dot(p.posted) : ""} ↗</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <section className="card mt-6 p-5" aria-labelledby="own-h">
+      <h2 id="own-h" className="text-[15px] font-bold">{org} 홈페이지에 올라온 글</h2>
+      <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+        나라일터에 올리지 않고 기관 홈페이지에만 올리는 공고가 있어 함께 모았습니다. 제목만 옮겼고, 누르면 기관 홈페이지 원문으로 갑니다.
+        지원 자격과 마감은 원문에서 확인하세요.
+      </p>
+      {jobs.length > 0 && (<><h3 className="mt-4 text-[13px] font-bold text-ink2">채용 게시판</h3><List rows={jobs} /></>)}
+      {notices.length > 0 && (<><h3 className="mt-4 text-[13px] font-bold text-ink2">공지·고시공고</h3><List rows={notices} /></>)}
+      {home && (
+        <a href={home} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 inline-block text-[13px] font-semibold text-brand underline underline-offset-4">
+          {org} 홈페이지 ↗
+        </a>
+      )}
+    </section>
   );
 }
