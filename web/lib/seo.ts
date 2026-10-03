@@ -36,6 +36,32 @@ import type { Metadata } from "next";
 /** 공유 카드·Article 구조화 데이터에 쓰는 대표 이미지. app/opengraph-image.tsx 가 그린다. */
 export const OG_IMAGE = `${SITE_URL}/opengraph-image`;
 
+/** 주소로 갈래 이름. 공유 그림 왼쪽 위 딱지. */
+function kindOf(path: string | undefined): string {
+  const p = decodeURI(path ?? "").replace(/^https?:\/\/[^/]+/, "");
+  if (p.startsWith("/jobs")) return "채용";
+  if (p.startsWith("/business")) return "기업·소상공인";
+  if (p.startsWith("/license")) return "자격증";
+  if (p.startsWith("/map")) return "정책지도";
+  if (p.startsWith("/agency")) return "공공기관 사업";
+  if (p.startsWith("/p/")) return "지원사업";
+  if (p.startsWith("/blog") || p.startsWith("/story")) return "안내 글";
+  if (p.startsWith("/search")) return "검색";
+  return "지원금";
+}
+
+/**
+ * 쪽마다 다른 공유 그림(app/og). 제목에서 " | 나라지원" 을 떼고, " — " 뒤는 작은 줄로 내린다.
+ * 작은 줄이 없으면 설명의 첫 마디.
+ */
+export function ogImageFor(title: string | undefined, description: string | undefined, path: string | undefined): string {
+  const clean = (title ?? SITE_NAME).replace(/\s*\|\s*나라지원\s*$/, "").trim();
+  const [head, ...rest] = clean.split(/\s+—\s+/);
+  const sub = rest.join(" — ") || (description ?? "").split(/(?<=[.다])\s/)[0] || "";
+  const q = new URLSearchParams({ k: kindOf(path), t: head.slice(0, 60), s: sub.slice(0, 60) });
+  return `${SITE_URL}/og?${q}`;
+}
+
 export function withOg(m: Metadata): Metadata {
   const t = m.title;
   const title = typeof t === "string" ? t : t && "absolute" in t ? t.absolute : undefined;
@@ -43,6 +69,8 @@ export function withOg(m: Metadata): Metadata {
   const canon = m.alternates?.canonical;
   const path = typeof canon === "string" ? canon : canon && "url" in canon ? String(canon.url) : undefined;
   const url = path ? (path.startsWith("http") ? path : `${SITE_URL}${path}`) : undefined;
+  // 첫 화면("/")은 사이트 그림 그대로. 나머지는 쪽 제목으로 그린 그림.
+  const img = path && path !== "/" ? ogImageFor(title, description, path) : OG_IMAGE;
   return {
     ...m,
     openGraph: {
@@ -55,14 +83,14 @@ export function withOg(m: Metadata): Metadata {
       // app/opengraph-image.tsx 는 첫 화면에만 붙는다(2026-10 확인). 나머지 쪽은
       // 공유 카드에 그림이 없었다. 쪽이 따로 준 그림이 없으면 사이트 그림을 단다.
       // 첫 화면은 파일 기반 그림이 이것보다 우선해 그대로 간다.
-      images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
+      images: [{ url: img, width: 1200, height: 630, alt: title ?? SITE_NAME }],
       ...(m.openGraph ?? {}),
     },
     twitter: {
       card: "summary_large_image",
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
-      images: [OG_IMAGE],
+      images: [img],
       ...(m.twitter ?? {}),
     },
   };
