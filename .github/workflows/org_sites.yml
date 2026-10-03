@@ -1,7 +1,7 @@
 name: org-sites
 
 # 기관 홈페이지 공고 수집. 매일 06:30 KST. 서울 서버의 /api/cron/orgsites 를 부른다.
-# seed(새 기관 홈페이지) → discover(게시판 찾기, 한 달에 한 번) → crawl(게시판 첫 쪽, 하루 한 번).
+# tidy(지저분한 제목 정리) → seed(새 기관 홈페이지) → discover(게시판 찾기, 한 달에 한 번) → crawl(게시판 첫 쪽, 하루 한 번).
 # 필요한 secret: CRON_SECRET
 
 on:
@@ -12,7 +12,7 @@ on:
       steps:
         description: "돌릴 단계(쉼표)"
         required: false
-        default: "seed,discover,crawl"
+        default: "tidy,seed,discover,crawl"
 
 concurrency:
   group: org-sites
@@ -27,7 +27,7 @@ jobs:
         env:
           SITE: https://jiwon.knowhow-it.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          STEPS: ${{ inputs.steps || 'seed,discover,crawl' }}
+          STEPS: ${{ inputs.steps || 'tidy,seed,discover,crawl' }}
         run: |
           set -u
           [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }

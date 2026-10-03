@@ -134,7 +134,9 @@ export async function allowed(url: string): Promise<boolean> {
 
 // ── HTML 에서 링크 읽기 ──────────────────────────────
 
-const strip = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/&amp;/g, "&")
+const strip = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ")
+  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+  .replace(/&amp;/g, "&")
   .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/\s+/g, " ").trim();
 
 type Link = { href: string; text: string; at: number; end: number; js?: boolean };
@@ -204,9 +206,12 @@ const NOTICE_KEEP = /지원|모집|사업|공모|신청|접수|채용|선발|보
 const NOTICE_DROP = /입찰|매각|반송|우편물|보관\s?공고|사칭|금품|청탁|정전|전산\s?장애|업무\s?중지|휴무|휴관|개국|폐국|이벤트|당첨|추첨|경품|우표|사기\s?주의|공시송달|도로\s?점용|행정처분|개인정보|열람\s?공고|결정\s?고시/;
 export const noticeUseful = (t: string) => NOTICE_KEEP.test(t) && !NOTICE_DROP.test(t);
 
-/** 공지판을 읽지 않는 누리집. 우체국들은 한 공지판을 지점마다 다른 주소로 보여 줘서 같은 글이 수십 곳에 붙는다. */
-const SKIP_NOTICE_HOST = /(^|\.)koreapost\.go\.kr$/;
-const skipNotice = (u: string) => { try { return SKIP_NOTICE_HOST.test(new URL(u).hostname); } catch { return true; } };
+/**
+ * 읽지 않는 누리집. 우체국들은 지방우정청의 채용판·공지판을 지점마다 다른 주소로 보여 줘서
+ * 같은 글이 우체국 수십 곳에 붙었다(첫 돌림에 4,763건 중 3,428건). 우정 채용은 나라일터에도 올라온다.
+ */
+const SKIP_HOST = /(^|\.)koreapost\.go\.kr$/;
+const skipHost = (u: string) => { try { return SKIP_HOST.test(new URL(u).hostname); } catch { return true; } };
 
 /** 짧은 표지(FNV-1a). 같은 게시판에서 같은 제목이면 같은 값. */
 function hash(t: string): string {
@@ -229,7 +234,9 @@ export function boardItems(html: string, base: string): { title: string; url: st
   const today = Date.now();
   for (let i = 0; i < ls.length; i++) {
     const l = ls[i];
-    const title = l.text.replace(/\s*(새\s?글|new|N)$/i, "").trim();
+    // 게시판이 제목 칸에 같이 그리는 표시를 뗀다: 앞의 "제목", 끝의 "새글·첨부파일 있음·N·HOT".
+    let title = l.text.replace(/^(글\s?)?제목\s*[:：]?\s*/, "").trim();
+    for (let k = 0; k < 4; k++) title = title.replace(/\s*(새\s?글|새\s?게시물|첨부\s?파일(\s?있음)?|파일\s?첨부|new|hot|N)\s*$/i, "").trim();
     if (title.length < 6 || title.length > 200 || NAV_WORD.test(title)) continue;
     const next = ls[i + 1]?.at ?? html.length;
     const after = html.slice(l.end, Math.min(next, l.end + 400));
@@ -400,12 +407,20 @@ export async function crawlStep(budgetMs = 40_000): Promise<StepResult> {
     let got = 0;
     let err: string | null = null;
     for (const [kind, board] of [["job", s.job_board], ["notice", s.notice_board]] as const) {
-      if (!board || (kind === "notice" && skipNotice(board))) continue;
+      if (!board || skipHost(board)) continue;
       if (!(await allowed(board))) { err = "robots"; continue; }
       const r = await fetchText(board);
       if (!r.ok) { err = `${kind} ${r.status}`; continue; }
-      const items = boardItems(r.text, r.url).filter((it) => kind === "job" || noticeUseful(it.title));
+      let items = boardItems(r.text, r.url).filter((it) => kind === "job" || noticeUseful(it.title));
       if (!items.length) { err = err ?? `${kind} 글 0`; continue; }
+      // 같은 누리집의 같은 글(제목·날짜)이 이미 다른 기관에 붙어 있으면 넣지 않는다. 한 게시판을 여러 기관이 보여 주는 경우.
+      const host = new URL(r.url).hostname;
+      const dup = await db.from("org_posts").select("title,posted,url").neq("org", s.org).in("title", items.map((it) => it.title)).limit(200);
+      const taken = new Set(((dup.data ?? []) as { title: string; posted: string | null; url: string }[])
+        .filter((d) => { try { return new URL(d.url).hostname === host; } catch { return false; } })
+        .map((d) => `${d.title}|${d.posted}`));
+      items = items.filter((it) => !taken.has(`${it.title}|${it.posted}`));
+      if (!items.length) { err = err ?? `${kind} 다른 기관과 같은 게시판`; continue; }
       const up = await db.from("org_posts").upsert(
         items.map((it) => ({ org: s.org, kind, title: it.title, url: it.url, posted: it.posted, board, last_seen: now })),
         { onConflict: "url", ignoreDuplicates: true },
@@ -422,5 +437,30 @@ export async function crawlStep(budgetMs = 40_000): Promise<StepResult> {
     res.done++;
   }, until);
   res.more = sites.length === 40;
+  return res;
+}
+
+// ── 4. tidy: 지저분한 제목 지우기 ────────────────────
+
+/**
+ * 예전 판독이 남긴 제목(앞의 "제목", 끝의 "새글·첨부파일 있음", &#40; 같은 숫자 엔티티)을 지운다.
+ * 다음 crawl 에서 깨끗한 제목으로 다시 들어온다. 하루 한 번 돌아도 지울 것이 없으면 곧 끝난다.
+ */
+export async function tidyStep(): Promise<StepResult> {
+  const db = svcDb();
+  const res: StepResult = { step: "tidy", done: 0, found: 0, errors: 0, more: false, notes: [] };
+  const { data, error } = await db.from("org_posts").select("id")
+    .or("title.ilike.%새글%,title.ilike.%새 글%,title.ilike.%첨부파일%,title.ilike.%첨부 파일%,title.ilike.%&#%,title.ilike.제목%")
+    .limit(500);
+  if (error) throw error;
+  const ids = ((data ?? []) as { id: number }[]).map((r) => r.id);
+  if (ids.length) {
+    const del = await db.from("org_posts").delete().in("id", ids);
+    if (del.error) { res.errors++; res.notes.push(del.error.message); }
+    else res.found = ids.length;
+    // 이 기관들은 다음 crawl 에서 다시 읽게.
+  }
+  res.done = ids.length;
+  res.more = ids.length === 500;
   return res;
 }
