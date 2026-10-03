@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { allow, ipOf } from "@/lib/rateLimit";
+import { deviceFromCookieHeader } from "@/lib/session";
 import { svcConfigured, svcDb } from "@/lib/svcDb";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   try { body = await req.json(); } catch { return bad("본문이 비었습니다."); }
   const db = svcDb();
   if (body.action === "issue") {
-    const key = req.headers.get("x-device-key") ?? "";
+    const key = deviceFromCookieHeader(req.headers.get("cookie")) ?? (req.headers.get("x-device-key") ?? "");
     if (!UUID.test(key)) return bad("기기 열쇠가 없습니다.");
     const { data } = await db.rpc("recovery_issue", { p_key: key.toLowerCase() });
     return NextResponse.json({ code: (data as string | null) ?? null }, { headers: { "Cache-Control": "no-store" } });

@@ -49,6 +49,9 @@ export default function AlertBox({ findHref = "/#find" }: { findHref?: string })
       <Link href={findHref} className="btn btn-primary mt-3 w-full !py-2.5 text-[14px]">
         {n > 0 ? "조건 하나 더 고르기" : "내 조건 고르기"}
       </Link>
+      <Link href="/account" className="mt-2 block text-center text-[12.5px] font-semibold text-muted underline underline-offset-4 hover:text-brand">
+        로그인 · 알림 설정
+      </Link>
     </section>
   );
 }

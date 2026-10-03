@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { allow, ipOf } from "@/lib/rateLimit";
+import { deviceFromCookieHeader } from "@/lib/session";
 import { svcConfigured, svcDb } from "@/lib/svcDb";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,10 @@ const COND = /^[\x20-\x7e가-힣]{0,600}$/;
 
 const bad = (msg: string, status = 400) => NextResponse.json({ error: msg }, { status });
 
+/** 로그인 세션(쿠키)이 있으면 그 기기 열쇠, 아니면 브라우저가 보낸 머리글. */
 function keyOf(req: Request) {
+  const s = deviceFromCookieHeader(req.headers.get("cookie"));
+  if (s) return s;
   const k = req.headers.get("x-device-key") ?? "";
   return UUID.test(k) ? k.toLowerCase() : null;
 }
