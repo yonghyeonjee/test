@@ -1,0 +1,46 @@
+name: ci
+
+# PR 마다 타입 검사와 운영과 같은 standalone 빌드를 돌린다. Vercel 미리보기 빌드를 머지 전 검사로
+# 쓰던 것을 대신한다(Vercel 은 이제 사이트를 띄우지 않는다). 빌드에는 공개값이 필요하다
+# (NEXT_PUBLIC_*). 같은 저장소의 PR 은 secrets 를 받는다.
+
+on:
+  pull_request:
+    paths: ["web/**", ".github/workflows/ci.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: 타입 검사
+        run: npx tsc --noEmit -p .
+      - name: 빌드 (standalone, 운영과 같게)
+        env:
+          STANDALONE: "1"
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_KAKAO_MAP_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_MAP_KEY }}
+          NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_SITE_URL: https://jiwon.knowhow-it.com
+        run: npx next build
+      - name: 쪽 목록(정적·동적)
+        run: |
+          echo "standalone 크기: $(du -sh .next/standalone | cut -f1)"
