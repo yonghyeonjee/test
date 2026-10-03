@@ -29,8 +29,8 @@ import { useEffect, useRef } from "react";
  * 다만 페이지 단위 광고를 켜는 push(enable_page_level_ads)는 코드에 들어
  * 있으면 그대로 실행되니, 그것만 걸러 낸다.
  */
-/** 자리 폭에 맞는 작은 가로 광고 크기(애드센스 표준 크기). */
-const smallSize = (w: number): [number, number] => (w >= 728 ? [728, 90] : w >= 468 ? [468, 60] : [320, 100]);
+/** 자리 폭에 맞는 작은 가로 광고 크기(애드센스 표준). 휴대폰은 320×50 으로 낮게. */
+const smallSize = (w: number): [number, number] => (w >= 728 ? [728, 90] : w >= 468 ? [468, 60] : [320, 50]);
 
 export default function AdHtml({ html, minWidth = 0, small = false }: {
   html: string; minWidth?: number;

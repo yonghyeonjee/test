@@ -245,29 +245,26 @@
 .ad-html ins, .ad-html iframe { max-width: 100%; }
 /* 멀티플렉스처럼 세로로 긴 광고. 자르지 않는다. */
 .ad-tall { max-height: none; }
-/* 제목 아래 작은 가로 띠: 테두리·여백 없이 휴대폰 100px, 넓은 화면 90px */
+/* 제목 아래 작은 가로 띠: 테두리·여백 없이. 휴대폰 320×50, 넓은 화면 468×60 또는 728×90(components/AdHtml.tsx 가 고른다). */
 .ad-slot.ad-strip { position: relative; border: 0; border-radius: 10px; background: transparent; padding: 0;
-  max-width: 970px; height: 100px !important; max-height: 100px !important; margin-left: auto; margin-right: auto; }
-@media (min-width: 640px) { .ad-slot.ad-strip { height: 90px !important; max-height: 90px !important; } }
+  max-width: 970px; height: auto !important; max-height: 56px !important; margin-left: auto; margin-right: auto; text-align: center; }
+@media (min-width: 640px) { .ad-slot.ad-strip { max-height: 96px !important; } }
 .ad-strip .ad-tag { position: absolute; top: 0; left: 0; z-index: 1; margin: 0; padding: 1px 6px; font-size: 10.5px;
   letter-spacing: .06em; background: rgba(255,255,255,.88); border-radius: 0 0 6px 0; }
-.ad-strip ins.adsbygoogle { max-height: 100% !important; }
-.ad-strip .ad-html { height: 100%; overflow: hidden; }
-.ad-strip img { max-height: 100%; }
-/* 본문 안 광고(키 작은 자리): 애드센스 반응형은 상자를 무시하고 화면 폭·높이를 키운다(쿠팡 광고가 430px).
-   광고 단위(ins)의 높이를 휴대폰 100px·넓은 화면 120px 로 묶고 폭은 상자 안으로. 애드센스는 이 높이에 맞는
-   광고를 고른다. 오른쪽 세로 레일·멀티플렉스(ad-tall)·제목 아래 띠·홈 맨 위 띠는 제 규칙이 있다. */
-main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) { position: relative; max-height: 132px !important; padding: 16px 12px 12px; }
+.ad-strip img { max-height: 50px; }
+@media (min-width: 640px) { .ad-strip img { max-height: 90px; } }
+/* 본문 안 광고(키 작은 자리). 애드센스 반응형은 상자를 무시하고 화면 폭·높이를 키운다(쿠팡 광고가 430px).
+   그래서 부르기 전에 고정 크기 단위로 바꾼다(AdHtml small): 휴대폰 320×50, 넓으면 468×60·728×90.
+   상자는 그 크기에 꼭 맞게 낮게. 오른쪽 세로 레일·멀티플렉스(ad-tall)·홈 맨 위 띠(ad-band)는 제 규칙이 있다. */
+main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) { position: relative; max-height: 72px !important; padding: 14px 8px 6px; text-align: center; }
 main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) .ad-tag { position: absolute; top: 0; left: 0; margin: 0; padding: 1px 7px;
   font-size: 10.5px; letter-spacing: .06em; background: #F5F6F8; border-radius: 0 0 6px 0; }
-main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) ins.adsbygoogle {
-  display: block !important; width: 100% !important; max-width: 100% !important; height: 100px !important; max-height: 100px !important;
-  margin: 0 !important; left: auto !important; right: auto !important; overflow: hidden !important; }
-main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) img { max-height: 100px; }
+main .ad-slot:not(.ad-tall):not(.ad-band) ins.adsbygoogle {
+  max-width: 100% !important; max-height: 90px !important; margin: 0 auto !important; overflow: hidden !important; }
+main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) img { max-height: 50px; }
 @media (min-width: 640px) {
-  main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) { max-height: 152px !important; }
-  main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) ins.adsbygoogle { height: 120px !important; max-height: 120px !important; }
-  main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) img { max-height: 120px; }
+  main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) { max-height: 112px !important; }
+  main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) img { max-height: 90px; }
 }
 /* 휴대폰 지도: 한 손가락으로 끌면 "두 손가락으로" 안내(components/map/touch.ts). */
 .pm-hint { position: absolute; left: 50%; top: 50%; z-index: 1200; transform: translate(-50%, -50%); padding: 10px 16px;
