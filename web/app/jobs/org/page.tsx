@@ -74,11 +74,11 @@ export default async function JobOrgIndex() {
                 {yoy != null && <>, 그 전 12개월보다 <b className={`num ${yoy >= 0 ? "text-brand" : "text-ink2"}`}>{yoy >= 0 ? `${yoy}% 많습니다` : `${-yoy}% 적습니다`}</b></>}.
               </p>
               <div className="mt-4 grid gap-6 lg:grid-cols-2">
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-[13px] font-bold text-ink2">달별 공고 수 · 최근 2년</h3>
                   <MonthTrend months={trend.months} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-[13px] font-bold text-ink2">연도별 공고 수</h3>
                   <YearBars years={trend.years} height={80} />
                 </div>
@@ -91,7 +91,7 @@ export default async function JobOrgIndex() {
           )}
 
           {(busy.length > 0 || rising.length > 0) && (
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
               {busy.length > 0 && (
                 <OrgRank title="요즘 많이 뽑는 기관" sub="최근 12개월 공고 수" rows={busy} />
               )}
@@ -178,7 +178,7 @@ export default async function JobOrgIndex() {
 /** 기관 순위 상자. 누르면 그 기관 쪽(연도별 공고·채용 지수). */
 function OrgRank({ title, sub, rows, ratio }: { title: string; sub: string; rows: OrgRecent[]; ratio?: boolean }) {
   return (
-    <section className="card p-5">
+    <section className="card min-w-0 p-5">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-bold">{title}</h2>
         <span className="text-[12px] text-faint">{sub}</span>
@@ -190,7 +190,7 @@ function OrgRank({ title, sub, rows, ratio }: { title: string; sub: string; rows
             <li key={r.org}>
               <Link href={`/jobs/org/${encodeURIComponent(r.org)}`} className="flex items-center gap-3 py-2 text-[13.5px] hover:text-brand">
                 <span className="num w-5 shrink-0 text-center font-bold text-faint">{i + 1}</span>
-                <span className="min-w-0 flex-1 truncate font-semibold">{r.org}</span>
+                <span className="w-0 min-w-0 flex-1 truncate font-semibold">{r.org}</span>
                 <span className="num shrink-0 text-ink2">{r.n12.toLocaleString("ko-KR")}건</span>
                 <span className={`num w-16 shrink-0 text-right text-[12px] ${d != null && d >= 0 ? "text-brand" : "text-muted"}`}>
                   {ratio && r.p12 ? `${(r.n12 / r.p12).toFixed(1)}배` : d == null ? "새로" : `${d >= 0 ? "▲" : "▼"}${Math.abs(d)}%`}

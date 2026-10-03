@@ -460,6 +460,8 @@ def check_org(browser, path: str) -> None:
       out: [...document.querySelectorAll('a[target=_blank]')].map(a => a.innerText.replace(/\\n/g, ' ') + ' ' + a.href).filter(t => /saramin|jobkorea/.test(t)).slice(0, 6),
       listErr: /불러오지 못했습니다/.test(document.body.innerText),
       sw: document.documentElement.scrollWidth,
+      wide: [...document.querySelectorAll('main *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1).slice(0, 4)
+        .map(e => e.tagName + '.' + String(e.className).slice(0, 50) + ' ' + Math.round(e.getBoundingClientRect().right)),
     })""")
     print("   ", json.dumps(info, ensure_ascii=False))
     print("   오류:", errs[:6] or "없음")
