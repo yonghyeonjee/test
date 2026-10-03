@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SIDO_SHORT } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/consts";
 import { dot, facets, filterJobs, jobTermsUsed, type JobBoard } from "@/lib/pubJobs";
 import MyRegionJobs from "./MyRegionJobs";
@@ -100,21 +101,40 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           </Link>
         ))}
       </div>
+      {/* 지역은 거르기(필터)다. 열일곱 줄이 결과 앞에 깔려 있으면 공고가 화면 밖으로 밀려난다.
+          접어 두고 펼치면 칸으로. 자바스크립트 없이 details 로 — 링크는 접혀 있어도 문서에 있다. */}
       {showRegions && (
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
-          <MyRegionJobs current={route.region} />
-          {regions.slice(0, 20).map((r) => (
-            <Link key={r.v} href={jobPathWith(route, { region: r.v })}
-                  className="inline-block py-1 text-muted transition-colors hover:text-brand">
-              {r.v}<span className="num ml-1 text-[12px] text-faint">{r.n}</span>
-            </Link>
-          ))}
-          {noRegionN > 0 && (
-            <span className="text-faint" title="공고에 근무 지역이 적혀 있지 않은 것. 중앙부처 공고가 대부분입니다.">
-              지역 미표기<span className="num ml-1 text-[12px]">{noRegionN}</span>
+        <details className="group mt-3 rounded-card border border-line bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-[13.5px] [&::-webkit-details-marker]:hidden">
+            <span className="font-bold text-ink2">지역별 보기</span>
+            <span className="flex min-w-0 items-center gap-2 text-[12.5px] text-muted">
+              <span className="truncate">{regions.slice(0, 3).map((r) => SIDO_SHORT[r.v] ?? r.v).join(" · ")}{regions.length > 3 && ` 외 ${regions.length - 3}곳`}</span>
+              <span className="shrink-0 font-semibold text-brand group-open:hidden">더보기</span>
+              <span className="hidden shrink-0 font-semibold text-brand group-open:inline">접기</span>
+              <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m5 8 5 5 5-5" /></svg>
             </span>
-          )}
-        </div>
+          </summary>
+          <div className="border-t border-line px-3 pb-3 pt-2.5">
+            <MyRegionJobs current={route.region} />
+            <ul className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
+              {regions.slice(0, 20).map((r) => (
+                <li key={r.v}>
+                  <Link href={jobPathWith(route, { region: r.v })} title={r.v}
+                        className="flex items-center justify-between gap-1 rounded-lg bg-ground px-2.5 py-2 text-[13px] text-ink2 transition-colors hover:text-brand">
+                    <span className="truncate">{SIDO_SHORT[r.v] ?? r.v}</span>
+                    <span className="num shrink-0 text-[12px] text-faint">{r.n}</span>
+                  </Link>
+                </li>
+              ))}
+              {noRegionN > 0 && (
+                <li className="flex items-center justify-between gap-1 rounded-lg px-2.5 py-2 text-[13px] text-faint"
+                    title="공고에 근무 지역이 적혀 있지 않은 것. 중앙부처 공고가 대부분입니다.">
+                  <span className="truncate">미표기</span><span className="num shrink-0 text-[12px]">{noRegionN}</span>
+                </li>
+              )}
+            </ul>
+          </div>
+        </details>
       )}
 
       {filtered && (
