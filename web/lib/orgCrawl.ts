@@ -31,6 +31,17 @@ export type StepResult = { step: string; done: number; found: number; errors: nu
 
 /** 글자판(EUC-KR 이 아직 많다)을 맞춰 읽는다. 너무 크면 앞부분만. */
 export async function fetchText(url: string, ms = FETCH_MS): Promise<{ ok: boolean; status: number; url: string; text: string }> {
+  const r = await fetchOnce(url, ms);
+  // 정부 누리집 가운데 중간 인증서를 빠뜨려 https 검증이 실패하는 곳이 많다. 같은 주소의 http 로 한 번 더.
+  // (검증을 끄지는 않는다. http 로 열리는 곳만 읽는다.)
+  if (r.status === 0 && url.startsWith("https://") && !/aborted/i.test(r.text)) {
+    const h = await fetchOnce(url.replace(/^https:/, "http:"), ms);
+    if (h.status !== 0) return h;
+  }
+  return r;
+}
+
+async function fetchOnce(url: string, ms: number): Promise<{ ok: boolean; status: number; url: string; text: string }> {
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), ms);
   try {
@@ -136,8 +147,32 @@ export function findBoards(html: string, base: string): { job: string | null; no
     if (!job && JOB_MENU.test(t)) job = l.href;
     for (const [re, score] of NOTICE_MENU) if (score > best && re.test(t)) { notice = l.href; best = score; }
   }
+  // 메뉴 이름이 딱 맞지 않으면 한 번 더 느슨하게: 짧은 글에 '채용'이 들었거나 주소에 recruit·employ 가 든 링크.
+  if (!job) {
+    for (const l of links(html, base)) {
+      const t = l.text.trim();
+      if (!same(l.href) || t.length > 20) continue;
+      if (/채용/.test(t) && !/결과|합격|안내문|FAQ/i.test(t)) { job = l.href; break; }
+      if (/recruit|employ|hiring|chaeyong/i.test(l.href) && t.length >= 2) { job = l.href; break; }
+    }
+  }
+  if (!notice) {
+    for (const l of links(html, base)) {
+      const t = l.text.trim();
+      if (same(l.href) && t.length <= 12 && /고시|공고|공지/.test(t)) { notice = l.href; break; }
+    }
+  }
   return { job, notice };
 }
+
+/** 공지 게시판 글 가운데 이용자에게 쓸모 있는 것: 지원·모집·사업·신청. 입찰·매각·사칭 주의·휴무 같은 것은 뺀다. */
+const NOTICE_KEEP = /지원|모집|사업|공모|신청|접수|채용|선발|보조|바우처|수당|장려금|장학|교육생|참여자|입주|대상자|혜택|감면|대출|급여|일자리|창업|청년|출산|육아|어르신|장애인|소상공인/;
+const NOTICE_DROP = /입찰|매각|반송|우편물|보관\s?공고|사칭|금품|청탁|정전|전산\s?장애|업무\s?중지|휴무|휴관|개국|폐국|이벤트|당첨|추첨|경품|우표|사기\s?주의|공시송달|도로\s?점용|행정처분|개인정보|열람\s?공고|결정\s?고시/;
+export const noticeUseful = (t: string) => NOTICE_KEEP.test(t) && !NOTICE_DROP.test(t);
+
+/** 공지판을 읽지 않는 누리집. 우체국들은 한 공지판을 지점마다 다른 주소로 보여 줘서 같은 글이 수십 곳에 붙는다. */
+const SKIP_NOTICE_HOST = /(^|\.)koreapost\.go\.kr$/;
+const skipNotice = (u: string) => { try { return SKIP_NOTICE_HOST.test(new URL(u).hostname); } catch { return true; } };
 
 const DATE_RE = /(20\d{2})\s*[.\-\/년]\s*(\d{1,2})\s*[.\-\/월]\s*(\d{1,2})/;
 const NAV_WORD = /^(처음|이전|다음|마지막|더보기|목록|홈|home|top|로그인|회원가입|사이트맵|검색|닫기|열기|\d+)$/i;
@@ -208,12 +243,17 @@ export async function seedStep(budgetMs = 40_000): Promise<StepResult> {
   const db = svcDb();
   const res: StepResult = { step: "seed", done: 0, found: 0, errors: 0, more: false, notes: [] };
   // 최근 1년 안에 공고를 낸 기관 가운데 아직 시드하지 않은 곳.
-  const [recent, have] = await Promise.all([
-    db.from("job_org_recent").select("org,n12").gt("n12", 0).order("n12", { ascending: false }).limit(5000),
-    allOrgs(),
-  ]);
-  if (recent.error) throw recent.error;
-  const todo = ((recent.data ?? []) as { org: string }[]).map((r) => r.org).filter((o) => !have.has(o));
+  const have = await allOrgs();
+  const recent: string[] = [];
+  // PostgREST 는 한 번에 1000줄까지만 준다. 나눠 받는다.
+  for (let from = 0; from < 20_000; from += 1000) {
+    const { data, error } = await db.from("job_org_recent").select("org").gt("n12", 0)
+      .order("n12", { ascending: false }).order("org").range(from, from + 999);
+    if (error) throw error;
+    for (const r of (data ?? []) as { org: string }[]) recent.push(r.org);
+    if (!data || data.length < 1000) break;
+  }
+  const todo = recent.filter((o) => !have.has(o));
   while (todo.length && Date.now() - t0 < budgetMs) {
     const batch = todo.splice(0, 60);
     const names = new Map<string, string>();
@@ -284,6 +324,13 @@ export async function discoverStep(budgetMs = 40_000): Promise<StepResult> {
       return;
     }
     const b = findBoards(r.text, r.url);
+    // 여러 기관이 한 게시판을 같이 쓰면(우체국들이 한 공지판) 글이 엉뚱한 기관에 붙는다. 이미 다른 기관 것이면 비운다.
+    for (const k of ["job", "notice"] as const) {
+      const col = k === "job" ? "job_board" : "notice_board";
+      if (!b[k]) continue;
+      const dup = await db.from("org_sites").select("org", { count: "exact", head: true }).eq(col, b[k]!).neq("org", s.org);
+      if ((dup.count ?? 0) > 0) b[k] = null;
+    }
     if (b.job || b.notice) res.found++;
     await db.from("org_sites").update({
       discovered_at: now, job_board: b.job, notice_board: b.notice, fails: 0, last_error: b.job || b.notice ? null : "게시판 링크 못 찾음",
@@ -311,15 +358,15 @@ export async function crawlStep(budgetMs = 40_000): Promise<StepResult> {
     let got = 0;
     let err: string | null = null;
     for (const [kind, board] of [["job", s.job_board], ["notice", s.notice_board]] as const) {
-      if (!board) continue;
+      if (!board || (kind === "notice" && skipNotice(board))) continue;
       if (!(await allowed(board))) { err = "robots"; continue; }
       const r = await fetchText(board);
       if (!r.ok) { err = `${kind} ${r.status}`; continue; }
-      const items = boardItems(r.text, r.url);
+      const items = boardItems(r.text, r.url).filter((it) => kind === "job" || noticeUseful(it.title));
       if (!items.length) { err = err ?? `${kind} 글 0`; continue; }
       const up = await db.from("org_posts").upsert(
         items.map((it) => ({ org: s.org, kind, title: it.title, url: it.url, posted: it.posted, board, last_seen: now })),
-        { onConflict: "url" },
+        { onConflict: "url", ignoreDuplicates: true },
       );
       if (up.error) { err = up.error.message.slice(0, 120); continue; }
       got += items.length;
