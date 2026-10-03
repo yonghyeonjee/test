@@ -36,8 +36,10 @@ export function middleware(req: NextRequest) {
 
   if (url.pathname === "/" || url.pathname === "/business") {
     if (!FIND_KEYS.some((k) => url.searchParams.has(k))) return undefined;
-    const to = new URL("/find", req.url);
-    url.searchParams.forEach((v, k) => to.searchParams.append(k, v));
+    // nextUrl 을 복제해 쓴다. new URL("/find", req.url) 은 프록시(Caddy) 뒤에서 호스트가
+    // localhost:3000 으로 잡혀 Next 가 바깥 주소로 보고 프록시하려다 500 을 냈다.
+    const to = url.clone();
+    to.pathname = "/find";
     if (url.pathname === "/business") to.searchParams.set("tab", "business");
     return NextResponse.rewrite(to);
   }
@@ -47,13 +49,13 @@ export function middleware(req: NextRequest) {
   // /jobs/search?q=… — 폼이 보낸 것을 경로 주소로 바꿔 준다. GET 폼은
   // 물음표로만 보낼 수 있어서, 받는 즉시 여기서 넘긴다.
   if (segs.length === 1 && segs[0] === "search") {
-    return NextResponse.redirect(new URL(fromQuery(url.searchParams), req.url), 308);
+    return NextResponse.redirect(publicUrl(req, fromQuery(url.searchParams)), 308);
   }
 
   // /jobs — 옛 주소로 들어온 것만 넘긴다.
   if (segs.length === 0) {
     const to = fromQuery(url.searchParams);
-    return to === JOBS_BASE ? undefined : NextResponse.redirect(new URL(to, req.url), 308);
+    return to === JOBS_BASE ? undefined : NextResponse.redirect(publicUrl(req, to), 308);
   }
 
   // /jobs/303444(상세) · /jobs/region(목차) · /jobs/majors … 는 그대로.
@@ -67,9 +69,16 @@ export function middleware(req: NextRequest) {
 
   const canonical = jobPath(route);
   if (jobPathAsGiven(segs) !== canonical) {
-    return NextResponse.redirect(new URL(canonical, req.url), 308);
+    return NextResponse.redirect(publicUrl(req, canonical), 308);
   }
   return undefined;
+}
+
+/** 브라우저가 따라갈 공개 주소. 프록시 뒤에서 req.url 은 localhost:3000 이라 그대로 쓰면 안 된다. */
+function publicUrl(req: NextRequest, path: string) {
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+  const proto = req.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  return new URL(path, `${proto}://${host}`);
 }
 
 const one = (v: string | null) => v?.trim() || undefined;
@@ -95,5 +104,6 @@ function fromQuery(q: URLSearchParams) {
  * 돌려주면 사람에게는 흰 화면만 남는다.
  */
 function notFound(req: NextRequest) {
-  return NextResponse.rewrite(new URL("/_jobs-not-found", req.url), { status: 404 });
+  const nf = req.nextUrl.clone(); nf.pathname = "/_jobs-not-found"; nf.search = "";
+  return NextResponse.rewrite(nf, { status: 404 });
 }
