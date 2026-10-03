@@ -3,11 +3,5 @@
   "regions": [
     "icn1"
   ],
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/cron/jobs",
-      "schedule": "0 0 * * *"
-    }
-  ]
+  "framework": "nextjs"
 }
