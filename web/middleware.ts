@@ -32,13 +32,13 @@ export function middleware(req: NextRequest) {
   // /jobs/search?q=… — 폼이 보낸 것을 경로 주소로 바꿔 준다. GET 폼은
   // 물음표로만 보낼 수 있어서, 받는 즉시 여기서 넘긴다.
   if (segs.length === 1 && segs[0] === "search") {
-    return redirect308(fromQuery(url.searchParams));
+    return redirect308(req, fromQuery(url.searchParams));
   }
 
   // /jobs — 옛 주소로 들어온 것만 넘긴다.
   if (segs.length === 0) {
     const to = fromQuery(url.searchParams);
-    return to === JOBS_BASE ? undefined : redirect308(to);
+    return to === JOBS_BASE ? undefined : redirect308(req, to);
   }
 
   // /jobs/303444(상세) · /jobs/region(목차) · /jobs/majors … 는 그대로.
@@ -52,17 +52,22 @@ export function middleware(req: NextRequest) {
 
   const canonical = jobPath(route);
   if (jobPathAsGiven(segs) !== canonical) {
-    return redirect308(canonical);
+    return redirect308(req, canonical);
   }
   return undefined;
 }
 
 /**
- * 308 을 상대 주소로 보낸다. 프록시(Caddy) 뒤에서 req.url 은 localhost:3000 이라
- * new URL(path, req.url) 로 만들면 브라우저를 localhost 로 보내 버린다. 상대 Location 은
- * 브라우저가 지금 주소 기준으로 따라가니 호스트를 알 필요가 없다.
+ * 308 은 브라우저가 따라갈 공개 주소로 보낸다. 프록시(Caddy) 뒤에서 req.url 은
+ * localhost:3000 이라 new URL(path, req.url) 로 만들면 브라우저를 localhost 로 보내 버린다.
+ * 상대 Location 은 NextResponse 가 "Invalid URL" 로 거부하므로, 프록시가 넘겨 준
+ * X-Forwarded-Host(없으면 Host)·X-Forwarded-Proto 로 절대 주소를 만든다.
  */
-const redirect308 = (path: string) => new NextResponse(null, { status: 308, headers: { Location: path } });
+function redirect308(req: NextRequest, path: string) {
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+  const proto = req.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  return NextResponse.redirect(new URL(path, `${proto}://${host}`), 308);
+}
 
 const one = (v: string | null) => v?.trim() || undefined;
 
