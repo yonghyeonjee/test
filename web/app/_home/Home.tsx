@@ -8,7 +8,7 @@ import AlertBox from "@/components/AlertBox";
 import BizSearchBox from "@/components/BizSearchBox";
 import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
-import FeedTabs from "@/components/FeedTabs";
+import FeedPanels from "@/components/FeedPanels";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
 import { getHotTerms, type HotTerms } from "@/lib/hotTerms";
@@ -95,7 +95,8 @@ const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [
 /** 촘촘한 공고 목록(제목·기관·남은 날). 탭 카드 안에 들어간다. */
 function Lines({ items, fresh = false }: { items: Program[]; fresh?: boolean }) {
   if (!items.length) return null;
-  return <ul className="divide-y divide-line">{items.map((p) => <ProgramLine key={p.id} p={p} fresh={fresh} />)}</ul>;
+  // 휴대폰은 두 칸이 위아래로 쌓여 길어지니 넷째 줄까지만.
+  return <ul className="divide-y divide-line max-sm:[&>li:nth-child(n+5)]:hidden">{items.map((p) => <ProgramLine key={p.id} p={p} fresh={fresh} />)}</ul>;
 }
 
 /** 많이 찾는 말 상자의 기준 문구. */
@@ -226,8 +227,8 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
                 <BusinessSentence sidos={sidos} />
               </Suspense>
             </section>
-            <FeedTabs tabs={[
-              { key: "closing", label: "마감 임박", sub: `${settings.closingDays}일 이내 마감 · 놓치면 내년까지 기다려야 합니다`, more: "/policies",
+            <FeedPanels panels={[
+              { key: "closing", label: "마감 임박", sub: `${settings.closingDays}일 이내 마감`, more: "/policies",
                 content: closing.length ? <Lines items={closing} /> : null },
               { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
                 content: fresh.length ? <Lines items={fresh} fresh /> : null },
@@ -346,9 +347,9 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
           <RecentStrip />
           {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
           <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />
-          <FeedTabs tabs={[
+          <FeedPanels panels={[
             { key: "closing", label: "마감 임박",
-              sub: closingFallback ? "마감일이 가까운 순 · 놓치면 내년까지 기다려야 합니다" : `${settings.closingDays}일 이내 마감 · 놓치면 내년까지 기다려야 합니다`,
+              sub: closingFallback ? "마감일이 가까운 순" : `${settings.closingDays}일 이내 마감`,
               more: "/policies", content: closing.length ? <Lines items={closing.slice(0, 6)} /> : null },
             { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
               content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },

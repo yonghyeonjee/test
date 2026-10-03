@@ -203,7 +203,14 @@ def check_home(browser, path: str) -> None:
     hook(page, errs)
     t = time.time()
     r = page.goto(BASE + path, wait_until="networkidle")
-    print(f"   status {r.status}  {int((time.time() - t) * 1000)}ms")
+    print(f"   status {r.status}  {int((time.time() - t) * 1000)}ms  cache-control={r.headers.get('cache-control')!r}")
+    api = page.evaluate("""async () => {
+      const k = '11111111-1111-4111-8111-111111111111';
+      const a = await fetch('/api/saved', { headers: { 'X-Device-Key': k } });
+      const b = await fetch('/api/saved/recovery', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Device-Key': k }, body: JSON.stringify({ action: 'issue' }) });
+      return { saved: a.status, list: a.ok ? (await a.json()).length : null, recovery: b.status };
+    }""")
+    print("   저장 API:", json.dumps(api, ensure_ascii=False))
     box = page.locator('input[aria-controls="portal-suggest"]')
     if box.count():
         bb = box.first.bounding_box()

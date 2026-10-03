@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { expandQuery } from "./keywords";
 import { createClient } from "@supabase/supabase-js";
+import { svcConfigured, svcDb } from "./svcDb";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -523,7 +524,9 @@ export function logSearch(a: {
   entry: string;
 }) {
   // 응답을 기다리지 않는다. 통계 기록이 화면을 늦추면 안 된다. 쓰기라 캐시에 남기지 않는다.
-  void dbLive
+  // anon 키의 실행 권한은 거뒀으니 서버 키로 부른다.
+  if (!svcConfigured()) return;
+  void svcDb()
     .rpc("log_search", {
       p_kind: a.kind,
       p_sido: a.sido ?? null,

@@ -6,6 +6,7 @@ import type { MapItem } from "@/lib/mapData";
 import { NAVER_KEY, loadNaver, type NCircle, type NMap, type NMarker, type NaverMaps } from "./naver";
 import { KOREA_BOX, OV_K, boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
+import { cooperativeTouch } from "./touch";
 
 const KOREA: LatLng = [36.2, 127.9];
 
@@ -33,6 +34,7 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
 
   useEffect(() => {
     let dead = false;
+    let untouch = () => {};
     loadNaver(NAVER_KEY).then((n) => {
       if (dead || !el.current || map.current) return;
       N.current = n;
@@ -52,9 +54,10 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
       n.Event.addListener(m, "idle", () => { setView((v) => v + 1); tell(); });
       setTier(tierOfZoom(m.getZoom()));
       map.current = m;
+      if (interactive && el.current) untouch = cooperativeTouch(el.current, (on) => m.setOptions({ draggable: on }));
       setReady(true);
     }).catch((e: Error) => setErr(e.message));
-    return () => { dead = true; };
+    return () => { dead = true; untouch(); };
   }, [interactive]);
 
   const closeCard = () => { card.current?.setMap(null); card.current = null; latest.current.onSelect(null); };

@@ -400,7 +400,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
           <div ref={mapBox} className="isolate overflow-hidden rounded-card border border-line bg-ground">
             <MapCanvas ref={canvas} pins={pins} kind={kind} me={me} meLabel={meLabel} radius={radius}
                        selected={sel} onSelect={onSelect} loadItems={loadItems} extra={dongPins} onView={onView}
-                       className="h-[56vh] min-h-[360px] w-full lg:h-[680px]" />
+                       className="h-[52vh] max-h-[520px] min-h-[320px] w-full lg:h-[680px] lg:max-h-none" />
           </div>
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-faint">
             <span><i className="pm-legend pm-legend-p" /> 지원사업 자리</span>

@@ -1,17 +1,10 @@
 "use server";
 
-import { createClient } from "@supabase/supabase-js";
 import { verifyCaptcha } from "@/lib/captcha";
 import { hash, verify, weak } from "@/lib/password";
+import { svcDb as svc } from "@/lib/svcDb";
 
 /** 계정 관련 쓰기는 전부 서버에서. 서비스 키는 브라우저로 내려가지 않는다. */
-function svc() {
-  const key = process.env.SUPABASE_SERVICE_KEY;
-  if (!key) throw new Error("SUPABASE_SERVICE_KEY 가 없습니다.");
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
-    auth: { persistSession: false },
-  });
-}
 
 export type Result = { ok: boolean; error?: string; device?: string };
 

@@ -14,12 +14,7 @@ const ONCE_KEY = "jw.visit";
  */
 export default function VisitTracker() {
   useEffect(() => {
-    // supabase-js 를 쓰지 않는다. 그 꾸러미는 300KB 라 쪽마다 실으면 모바일이
-    // 느려진다. 통계 한 줄은 fetch 로 보낸다. 환경변수가 없으면 그냥 보내지 않는다.
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return;
-
+    // 통계 한 줄은 우리 서버(/api/visit)로 보낸다. 브라우저가 DB 를 직접 부르지 않는다.
     try {
       try {
         if (sessionStorage.getItem(ONCE_KEY)) return;
@@ -32,19 +27,11 @@ export default function VisitTracker() {
       if (!v) return; // 사이트 내부 이동
 
       // 응답을 기다리지 않는다. 기록이 화면을 늦추면 안 된다.
-      void fetch(`${url}/rest/v1/rpc/log_visit`, {
+      void fetch("/api/visit", {
         method: "POST",
         keepalive: true,
-        headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
-        body: JSON.stringify({
-          p_channel: v.channel,
-          p_ref_host: v.refHost,
-          p_term: v.term,
-          p_landing: v.landing,
-          p_utm_source: v.utmSource,
-          p_utm_medium: v.utmMedium,
-          p_utm_campaign: v.utmCampaign,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(v),
       }).then(() => {}, () => {});
     } catch {
       // 유입 기록은 없어도 되는 것이다. 화면을 막지 않는다.

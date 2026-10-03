@@ -19,6 +19,7 @@ export type NMap = {
   fitBounds(b: unknown, margin?: { top?: number; right?: number; bottom?: number; left?: number }): void;
   getSize(): { width: number; height: number };
   getBounds(): { getSW(): NLatLng; getNE(): NLatLng };
+  setOptions(o: { draggable?: boolean }): void;
 };
 export type NMarker = { setMap(m: NMap | null): void };
 export type NCircle = { setMap(m: NMap | null): void };
