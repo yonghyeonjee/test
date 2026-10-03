@@ -60,9 +60,11 @@ jobs:
           drain() {
             local src="$1"
             for round in $(seq 1 20); do
-              body=$(call "?source=$src") || { echo "  $src 요청 실패(회차 $round)"; return; }
+              body=$(call "?source=$src") || { echo "  $src 요청 실패(회차 $round)"; return 0; }
               echo "  $src 회차 $round: $(echo "$body" | jq -c '.results[0] | {ok, saved, reason, more}' 2>/dev/null || echo "$body" | head -c 300)"
-              [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || return
+              # more 가 false 면 이 소스는 끝. 'return' 만 쓰면 바로 앞 [ ] 의 실패(1)가 돌아가
+              # 마지막 소스에서 작업 전체가 실패로 찍혔다(받기는 다 됐는데). 0 으로 돌린다.
+              [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || return 0
               sleep 2
             done
           }
