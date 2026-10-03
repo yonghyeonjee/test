@@ -14,8 +14,8 @@ const KOREA: LatLng = [36.2, 127.9];
  * 핀·카드는 CustomOverlay 에 HTML 을 얹는다 — Leaflet 쪽과 같은 HTML, 같은 CSS.
  * NEXT_PUBLIC_KAKAO_MAP_KEY 가 있을 때만 쓰인다(components/map/kakao.ts).
  */
-const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
-  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView, overview }, ref,
+const KakaoEngine = forwardRef<Handle, EngineProps & { onFail?: () => void }>(function KakaoEngine(
+  { pins, kind, me, meLabel, radius, selected, onSelect, loadItems, interactive = true, className = "", extra, onView, overview, onFail }, ref,
 ) {
   const el = useRef<HTMLDivElement>(null);
   const K = useRef<KakaoMaps | null>(null);
@@ -53,7 +53,10 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
       setTier(tierOfLevel(m.getLevel()));
       map.current = m;
       setReady(true);
-    }).catch((e: Error) => setErr(e.message));
+    }).catch((e: Error) => {
+      if (dead) return;
+      if (onFail) onFail(); else setErr(e.message);
+    });
     return () => { dead = true; };
   }, [interactive]);
 
@@ -104,7 +107,6 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
       ov.setMap(m);
       overlays.current.push(ov);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pins, extra, tier, kind, selected, ready, view]);
 
   // 내 위치와 반경 원.
@@ -132,7 +134,6 @@ const KakaoEngine = forwardRef<Handle, EngineProps>(function KakaoEngine(
     } else {
       m.setCenter(new k.LatLng(me[0], me[1])); m.setLevel(10);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me, radius, meLabel, ready]);
 
   useImperativeHandle(ref, () => ({

@@ -59,15 +59,18 @@ export function loadKakao(key: string): Promise<KakaoMaps> {
   if (window.kakao?.maps?.Map) return Promise.resolve(window.kakao.maps);
   if (!loading) {
     loading = new Promise<KakaoMaps>((resolve, reject) => {
+      // 도메인이 앱에 등록돼 있지 않거나 카카오맵 사용 설정이 꺼져 있으면 SDK 가 오지 않거나
+      // load 콜백이 영영 안 온다. 8초 안에 준비되지 않으면 포기하고 Leaflet 으로 그린다.
+      const timer = window.setTimeout(() => reject(new Error("카카오맵이 응답하지 않습니다.")), 8000);
       const s = document.createElement("script");
       s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(key)}&autoload=false`;
       s.async = true;
       s.onload = () => {
         const k = window.kakao?.maps;
-        if (!k) { reject(new Error("kakao.maps 없음")); return; }
-        k.load(() => resolve(k));
+        if (!k) { window.clearTimeout(timer); reject(new Error("kakao.maps 없음")); return; }
+        k.load(() => { window.clearTimeout(timer); resolve(k); });
       };
-      s.onerror = () => { loading = null; reject(new Error("카카오맵 SDK 를 못 불러왔습니다.")); };
+      s.onerror = () => { window.clearTimeout(timer); reject(new Error("카카오맵 SDK 를 못 불러왔습니다.")); };
       document.head.appendChild(s);
     });
   }
