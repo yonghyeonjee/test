@@ -27,3 +27,18 @@ jobs:
             [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || exit 0
             sleep 2
           done
+
+  notify:
+    needs: latest
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 저장 조건 알림 메일
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -u
+          body=$(curl -sS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/notify") || { echo "요청 실패"; exit 1; }
+          echo "$body" | head -c 600; echo
