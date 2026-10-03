@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isBot } from "@/lib/bot";
 import { allow, ipOf } from "@/lib/rateLimit";
 import { svcConfigured, svcDb } from "@/lib/svcDb";
 
@@ -9,6 +10,8 @@ const S = (v: unknown, n = 120) => (typeof v === "string" ? v.slice(0, n) : null
 
 export async function POST(req: Request) {
   if (!svcConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
+  // 크롤러는 서버에서도 거른다(브라우저 쪽 검사가 빠져도 세지 않게).
+  if (isBot(req.headers.get("user-agent"))) return NextResponse.json({ ok: true, skipped: "bot" });
   if (!allow(`visit:${ipOf(req)}`, 20)) return NextResponse.json({ ok: false }, { status: 429 });
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
