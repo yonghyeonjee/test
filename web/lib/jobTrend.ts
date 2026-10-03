@@ -208,3 +208,18 @@ export function titleMix(all: string[], org: string): TitleMix {
     total,
   };
 }
+
+/** 기관 홈페이지 게시판에서 읽은 글(lib/orgCrawl). 제목·링크·날짜만. */
+export type OrgPost = { kind: "job" | "notice"; title: string; url: string; posted: string | null; homepage: string | null };
+
+export const getOrgPosts = cache(async (org: string): Promise<OrgPost[]> => {
+  if (!dbConfigured) return [];
+  try {
+    const since = new Date(Date.now() - 180 * 864e5).toISOString().slice(0, 10);
+    const { data } = await db.from("org_posts_public").select("kind,title,url,posted,homepage")
+      .eq("org", org).gte("posted", since).order("posted", { ascending: false }).limit(40);
+    return (data ?? []) as OrgPost[];
+  } catch {
+    return [];
+  }
+});
