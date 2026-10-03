@@ -137,9 +137,10 @@ export async function allowed(url: string): Promise<boolean> {
 const strip = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&nbsp;|&#160;/g, " ").replace(/&amp;/g, "&")
   .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/\s+/g, " ").trim();
 
-type Link = { href: string; text: string; at: number; end: number };
+type Link = { href: string; text: string; at: number; end: number; js?: boolean };
 
-export function links(html: string, base: string): Link[] {
+/** keepJs 면 javascript:·# 링크도 남긴다(href 는 지금 쪽 주소, js 표시). 게시판 글 링크를 스크립트로 여는 곳이 많다. */
+export function links(html: string, base: string, keepJs = false): Link[] {
   const out: Link[] = [];
   const re = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
   let m: RegExpExecArray | null;
@@ -147,7 +148,11 @@ export function links(html: string, base: string): Link[] {
     const attrs = m[1];
     const href = /href\s*=\s*["']([^"']*)["']/i.exec(attrs)?.[1]?.trim() ?? "";
     const text = strip(m[2]) || strip(/title\s*=\s*["']([^"']*)["']/i.exec(attrs)?.[1] ?? "");
-    if (!href || /^(javascript:|#|mailto:|tel:)/i.test(href)) continue;
+    if (/^(mailto:|tel:)/i.test(href)) continue;
+    if (!href || /^(javascript:|#)/i.test(href)) {
+      if (keepJs && (href || /onclick/i.test(attrs))) out.push({ href: base, text, at: m.index, end: m.index + m[0].length, js: true });
+      continue;
+    }
     try {
       out.push({ href: new URL(href.replace(/&amp;/g, "&"), base).toString(), text, at: m.index, end: m.index + m[0].length });
     } catch { /* 이상한 주소 */ }
@@ -203,6 +208,13 @@ export const noticeUseful = (t: string) => NOTICE_KEEP.test(t) && !NOTICE_DROP.t
 const SKIP_NOTICE_HOST = /(^|\.)koreapost\.go\.kr$/;
 const skipNotice = (u: string) => { try { return SKIP_NOTICE_HOST.test(new URL(u).hostname); } catch { return true; } };
 
+/** 짧은 표지(FNV-1a). 같은 게시판에서 같은 제목이면 같은 값. */
+function hash(t: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(36);
+}
+
 const DATE_RE = /(20\d{2})\s*[.\-\/년]\s*(\d{1,2})\s*[.\-\/월]\s*(\d{1,2})/;
 const NAV_WORD = /^(처음|이전|다음|마지막|더보기|목록|홈|home|top|로그인|회원가입|사이트맵|검색|닫기|열기|\d+)$/i;
 
@@ -211,7 +223,7 @@ const NAV_WORD = /^(처음|이전|다음|마지막|더보기|목록|홈|home|top
  * 날짜는 링크 뒤 400자 안(같은 줄의 칸)에서, 없으면 앞 200자 안에서 찾는다.
  */
 export function boardItems(html: string, base: string): { title: string; url: string; posted: string | null }[] {
-  const ls = links(html, base);
+  const ls = links(html, base, true);
   const out: { title: string; url: string; posted: string | null }[] = [];
   const seen = new Set<string>();
   const today = Date.now();
@@ -230,7 +242,8 @@ export function boardItems(html: string, base: string): { title: string; url: st
     if (!m) continue;
     const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
     if (Number.isNaN(+d) || +d > today + 7 * 864e5 || +d < today - 3 * 365 * 864e5) continue;
-    const key = l.href.replace(/#.*$/, "");
+    // 스크립트로 여는 글은 글 주소를 알 수 없다. 게시판 주소에 제목 표지를 붙여 고유하게 두고, 누르면 게시판으로 간다.
+    const key = l.js ? `${base.replace(/#.*$/, "")}#t=${hash(title)}` : l.href.replace(/#.*$/, "");
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({ title: title.slice(0, 200), url: key, posted: d.toISOString().slice(0, 10) });
