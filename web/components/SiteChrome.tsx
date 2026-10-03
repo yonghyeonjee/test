@@ -13,12 +13,13 @@ import { NAV, WRAP, current, hit } from "@/lib/nav";
 /** 첫 화면(복지·기업)에서는 큰 검색창이 바로 아래 있다. 머리말 검색창을 겹쳐 두지 않는다. */
 const isHome = (p: string | null) => p === "/" || p === "/business";
 /** 쪽 안에 큰 검색창이 있는 곳(첫 화면·검색 결과). 머리말 검색창을 겹쳐 두지 않는다. */
-const hasOwnSearch = (p: string | null) => isHome(p) || p === "/search" || p === "/business/search";
+// 검색 결과 화면은 본문 맨 위에 큰 검색창이 있어 머리말에는 두지 않는다. 첫 화면은 내려 읽다가도 찾게 머리말에도 둔다.
+const hasOwnSearch = (p: string | null) => p === "/search" || p === "/business/search";
 
 /**
  * 머리말. 화면 폭 전체의 흰 띠.
  *
- *  - 첫 줄: 로고 · (첫 화면이 아니면) 검색창 · 글자 크게.
+ *  - 첫 줄: 로고 · 검색창(검색 결과 화면만 뺀다) · 글자 크게.
  *  - 둘째 줄: 갈래 탭. 고른 갈래는 굵게, 아래 보라 줄(네이버의 판 탭처럼).
  *  - 갈래 안에 들어와 있으면 그 하위 메뉴가 머리말 밑에 한 줄 더(붙박이 아님).
  *
