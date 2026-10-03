@@ -83,6 +83,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   // 지역 고르기 세 칸(시·도 → 시·군·구 → 읍·면·동).
   const [pickSidoV, setPickSidoV] = useState("");
   const [pickSggV, setPickSggV] = useState("");
+  const [pickDongV, setPickDongV] = useState("");
   const [dongOpts, setDongOpts] = useState<DongRow[] | null>(null);
   const sggOpts = useMemo(() => (pickSidoV ? sggChoices(pickSidoV) : []), [pickSidoV]);
   const canvas = useRef<Handle>(null);
@@ -119,13 +120,18 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     const sp = new URLSearchParams(window.location.search);
     if (sp.get("kind") === "jobs") setKind("jobs");
     const lat = Number(sp.get("lat")), lng = Number(sp.get("lng"));
-    if (lat && lng && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) { setMe([lat, lng]); setMeLabel("고른 자리"); return; }
+    if (lat && lng && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+      setMe([lat, lng]); setMeLabel("고른 자리"); void learnWhere([lat, lng], false); return;
+    }
     try {
-      const s = JSON.parse(localStorage.getItem(GEO_KEY) ?? "null") as { pt?: LatLng; label?: string; home?: string } | null;
+      const s = JSON.parse(localStorage.getItem(GEO_KEY) ?? "null") as { pt?: LatLng; label?: string; home?: string; pick?: string[] } | null;
       if (s?.pt && s.pt.length === 2) {
         setMe(s.pt); setMeLabel(s.label ?? "내 위치");
         if (s.home) setHome(s.home);
-        void learnWhere(s.pt, !s.home);
+        // 지역 칸으로 고른 자리면 그 칸들을 그대로 되살리고, 아니면 좌표로 동을 알아내 채운다.
+        const pk = Array.isArray(s.pick) ? s.pick : null;
+        if (pk?.[0]) void syncPick(pk[0], pk[1] ?? "", pk[2] ?? "");
+        void learnWhere(s.pt, !s.home, !pk?.[0]);
       }
     } catch { /* 저장소가 막힌 브라우저 */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -224,21 +230,43 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kind, status, sortEff, region, me, radius, home]);
 
-  const remember = (pt: LatLng, label: string, homeKey: string | null = null) => {
-    try { localStorage.setItem(GEO_KEY, JSON.stringify({ pt, label, home: homeKey ?? undefined, at: Date.now() })); } catch { /* 저장 못 해도 화면은 된다 */ }
+  const remember = (pt: LatLng, label: string, homeKey: string | null = null, pick?: string[]) => {
+    try { localStorage.setItem(GEO_KEY, JSON.stringify({ pt, label, home: homeKey ?? undefined, pick, at: Date.now() })); } catch { /* 저장 못 해도 화면은 된다 */ }
   };
   /** 좁은 화면에서는 지도가 도구줄 아래로 반쯤 가려져 있다. 고르기가 끝나면 지도를 화면 가운데로. */
   const showMap = () => {
     if (window.matchMedia("(max-width: 1023px)").matches) mapBox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
   /** 이 자리가 어느 동 근처인지, 가장 가까운 행정복지센터는 어디인지. setHomeToo 면 내 시·군·구도 정한다. */
-  async function learnWhere(pt: LatLng, setHomeToo = true) {
+  async function learnWhere(pt: LatLng, setHomeToo = true, fillPick = true) {
     try {
       const r = await fetch(`/api/map/where?lat=${pt[0].toFixed(3)}&lng=${pt[1].toFixed(3)}`);
       const j = (await r.json()) as Where;
       setWhere(j);
       if (setHomeToo && j.dong) setHome(`${j.dong.sido}|${j.dong.sgg}`);
+      // 지역 칸도 지금 자리로 채워 둔다. 거기서 읍·면·동만 바꿔 고르면 된다.
+      if (fillPick && j.dong) void syncPick(j.dong.sido, j.dong.sgg, j.dong.dong);
     } catch { setWhere(null); }
+  }
+  /** 지역 칸 세 개를 이 값으로 맞춘다(지도는 옮기지 않는다). 시·군·구가 있으면 그 안의 읍·면·동 목록도 받는다. */
+  async function syncPick(sido: string, sgg: string, dongName = "") {
+    if (!SIDO_POINT[sido]) return;
+    setPickSidoV(sido);
+    const okSgg = sgg && sggChoices(sido).includes(sgg) ? sgg : "";
+    setPickSggV(okSgg); setPickDongV(""); setDongOpts(null);
+    if (!okSgg) return;
+    const rows = await loadDongs(sido, okSgg);
+    const hit = dongName ? rows.find((x) => x[4] === dongName || x[0] === dongName) : null;
+    if (hit) setPickDongV(hit[0]);
+  }
+  async function loadDongs(sido: string, sgg: string): Promise<DongRow[]> {
+    try {
+      const r = await fetch(`/api/map/dongs?sido=${encodeURIComponent(sido)}&sgg=${encodeURIComponent(sgg)}`);
+      const j = (await r.json()) as { rows?: DongRow[] };
+      const rows = Array.isArray(j.rows) ? j.rows.filter((x) => x[8] !== 1) : [];
+      setDongOpts(rows);
+      return rows;
+    } catch { setDongOpts([]); return []; }
   }
   const locateMe = () => {
     if (!("geolocation" in navigator)) { setGeoErr("이 브라우저는 위치를 지원하지 않습니다. 옆에서 지역을 골라 주세요."); return; }
@@ -262,37 +290,34 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     );
   };
   /** 고른 자리로 옮긴다. 반경은 넓은 곳일수록 크게 — 읍·면·동이면 3km 라 지도가 동네 단계까지 가까워진다. */
-  const goTo = (pt: LatLng, label: string, r: number, homeKey: string | null, how: string) => {
+  const goTo = (pt: LatLng, label: string, r: number, homeKey: string | null, how: string, pick?: string[]) => {
     setMe(pt); setMeLabel(label); setGeoErr(null); setRegion(null); setSort("near"); setRadius(r);
-    setHome(homeKey); setWhere(null); remember(pt, label, homeKey);
+    setHome(homeKey); setWhere(null); remember(pt, label, homeKey, pick);
     track("map_locate", { ok: true, how });
   };
   const pickSido = (s: string) => {
-    setPickSidoV(s); setPickSggV(""); setDongOpts(null);
+    setPickSidoV(s); setPickSggV(""); setPickDongV(""); setDongOpts(null);
     const pt = SIDO_POINT[s];
-    if (pt) goTo(pt, `${SIDO_SHORT[s]} 가운데`, 30, null, "sido");
+    if (pt) goTo(pt, `${SIDO_SHORT[s]} 가운데`, 30, null, "sido", [s]);
   };
   const pickSgg = async (g: string) => {
-    setPickSggV(g); setDongOpts(null);
+    setPickSggV(g); setPickDongV(""); setDongOpts(null);
     const at = locate(pickSidoV, g);
     if (!at || at.approx) return;
-    goTo([at.lat, at.lng], `${SIDO_SHORT[pickSidoV]} ${g}`, 10, `${pickSidoV}|${g}`, "sgg");
-    try {
-      const r = await fetch(`/api/map/dongs?sido=${encodeURIComponent(pickSidoV)}&sgg=${encodeURIComponent(g)}`);
-      const j = (await r.json()) as { rows?: DongRow[] };
-      setDongOpts(Array.isArray(j.rows) ? j.rows.filter((x) => x[8] !== 1) : []);
-    } catch { setDongOpts([]); }
+    goTo([at.lat, at.lng], `${SIDO_SHORT[pickSidoV]} ${g}`, 10, `${pickSidoV}|${g}`, "sgg", [pickSidoV, g]);
+    await loadDongs(pickSidoV, g);
   };
   const pickDong = (key: string) => {
     const d = dongOpts?.find((x) => x[0] === key);
     if (!d) return;
     const [, sido, sgg, gu, dong, lat, lng] = d;
-    goTo([lat, lng], `${sgg}${gu ? " " + gu : ""} ${dong}`, 3, `${sido}|${sgg}`, "dong");
+    setPickDongV(key);
+    goTo([lat, lng], `${sgg}${gu ? " " + gu : ""} ${dong}`, 3, `${sido}|${sgg}`, "dong", [sido, sgg, key]);
     showMap();
   };
   const clearMe = () => {
     setMe(null); setMeLabel(""); setRegion(null); setWhere(null); setHome(null);
-    setPickSidoV(""); setPickSggV(""); setDongOpts(null);
+    setPickSidoV(""); setPickSggV(""); setPickDongV(""); setDongOpts(null);
     try { localStorage.removeItem(GEO_KEY); } catch { /* */ }
   };
   /** 카드 → 지도에서 그 자리. (지도가 곧 onSelect 를 부르는데, 카드에서 온 것이면 목록을 거르지 않는다.) */
@@ -338,27 +363,26 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
           </button>
           {/* 지역 고르기: 시·도 → 시·군·구 → 읍·면·동. 고를수록 지도가 가까워진다. */}
           {/* 휴대폰은 세 칸 한 줄. 아직 시·도를 안 골랐으면 한 칸뿐이라 넓게 — 좁으면 "지역 고르기"가 잘렸다. */}
-          <div className={`grid w-full gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center ${pickSidoV ? "grid-cols-3" : "grid-cols-1"}`}
+          <div className="grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center"
                role="group" aria-label="지역 고르기">
             <select value={pickSidoV} onChange={(e) => e.target.value && pickSido(e.target.value)} aria-label="시·도"
                     className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
-              <option value="">지역 고르기</option>
+              <option value="">시·도</option>
               {Object.keys(SIDO_POINT).map((s) => <option key={s} value={s}>{SIDO_SHORT[s]}</option>)}
             </select>
-            {pickSidoV && sggOpts.length > 0 && (
-              <select value={pickSggV} onChange={(e) => e.target.value && void pickSgg(e.target.value)} aria-label="시·군·구"
-                      className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
-                <option value="">시·군·구</option>
-                {sggOpts.map((g) => <option key={g} value={g}>{g}</option>)}
-              </select>
-            )}
-            {pickSggV && dongOpts && dongOpts.length > 0 && (
-              <select value="" onChange={(e) => e.target.value && pickDong(e.target.value)} aria-label="읍·면·동"
-                      className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
-                <option value="">읍·면·동</option>
-                {dongOpts.map((d) => <option key={d[0]} value={d[0]}>{d[3] ? `${d[3]} ${d[4]}` : d[4]}</option>)}
-              </select>
-            )}
+            {/* 세 칸을 늘 보인다. 윗 칸을 고르기 전에는 잠가 두고, 무엇을 더 고를 수 있는지는 보이게. */}
+            <select value={pickSggV} onChange={(e) => e.target.value && void pickSgg(e.target.value)} aria-label="시·군·구"
+                    disabled={!pickSidoV || sggOpts.length === 0}
+                    className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand disabled:opacity-50">
+              <option value="">시·군·구</option>
+              {sggOpts.map((g) => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select value={pickDongV} onChange={(e) => e.target.value && pickDong(e.target.value)} aria-label="읍·면·동"
+                    disabled={!pickSggV || !dongOpts || dongOpts.length === 0}
+                    className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand disabled:opacity-50">
+              <option value="">{pickSggV && !dongOpts ? "불러오는 중…" : "읍·면·동"}</option>
+              {(dongOpts ?? []).map((d) => <option key={d[0]} value={d[0]}>{d[3] ? `${d[3]} ${d[4]}` : d[4]}</option>)}
+            </select>
           </div>
         </div>
         {me && (

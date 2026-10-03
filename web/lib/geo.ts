@@ -209,8 +209,22 @@ export function sggFromDept(sido: string | null, ...texts: (string | null | unde
 }
 
 /** 채용 공고의 자리. 기관명 → 제목 순으로 시·군·구를 찾고, 없으면 시·도 가운데. */
+/** 줄임 이름(대전청사관리소, 부산항만공사). 낱말 첫머리만 본다. 세종(세종문화회관)·광주(경기 광주시)는 헷갈려 뺀다. */
+const SHORT_SIDO: [RegExp, string][] = [
+  [/(?:^|[\s(·\[])서울/, "서울특별시"], [/(?:^|[\s(·\[])부산/, "부산광역시"], [/(?:^|[\s(·\[])대구/, "대구광역시"],
+  [/(?:^|[\s(·\[])인천/, "인천광역시"], [/(?:^|[\s(·\[])대전/, "대전광역시"], [/(?:^|[\s(·\[])울산/, "울산광역시"],
+  [/(?:^|[\s(·\[])경기(?![장력침])/, "경기도"], [/(?:^|[\s(·\[])강원/, "강원특별자치도"], [/(?:^|[\s(·\[])제주/, "제주특별자치도"],
+];
+
+export function shortSidoInText(text: string | null | undefined): string | null {
+  if (!text) return null;
+  for (const [re, name] of SHORT_SIDO) if (re.test(text)) return name;
+  return null;
+}
+
 export function locateJob(job: { org: string | null; title: string; region?: string | null }): Place | null {
-  const hint = normSido(job.region) ?? sidoInText(job.org) ?? sidoInText(job.title);
+  const hint = normSido(job.region) ?? sidoInText(job.org) ?? sidoInText(job.title)
+    ?? shortSidoInText(job.org) ?? shortSidoInText(job.title);
   const hit = findSgg(job.org, hint) ?? findSgg(job.title, hint);
   if (hit) return locate(hit.sido, hit.name);
   return hint ? locate(hint, null) : null;
