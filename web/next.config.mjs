@@ -3,7 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   // AWS Lightsail 배포는 GitHub Actions 에서 STANDALONE=1 로 빌드해 .next/standalone(서버 한 벌)만
   // 서버로 보낸다(deploy/lightsail). Vercel 빌드에는 영향이 없다.
-  ...(process.env.STANDALONE === "1" ? { output: "standalone" } : {}),
+  // 서버 메모리가 512MB 라 쪽 캐시를 메모리에 50MB(기본)씩 두지 않는다 — 디스크(.next/cache)에 둔다.
+  ...(process.env.STANDALONE === "1" ? { output: "standalone", cacheMaxMemorySize: 16 * 1024 * 1024 } : {}),
   // 한 쪽을 미리 그리는 데 허용하는 시간(기본 60초). 바깥 API 를 부르는 쪽은
   // force-dynamic 으로 빼 뒀지만, 남은 쪽이 잠깐 느려도 배포가 죽지는 않게
   // 여유를 준다. 호출 자체에는 OPENAPI_TIMEOUT_MS(기본 8초) 제한이 걸려 있다.

@@ -11,11 +11,13 @@ EnvironmentFile=/srv/jiwon/shared/.env
 Environment=NODE_ENV=production
 Environment=PORT=3000
 Environment=HOSTNAME=127.0.0.1
-# 1GB 서버: 힙을 600MB 로 묶고, 넘치면 systemd 가 다시 띄운다.
-ExecStart=/usr/bin/node --max-old-space-size=600 server.js
+# 512MB 서버($5): 힙을 256MB 로 묶는다. 실측(동시 20개 요청 300번)은 80MB 안팎이었다.
+# 380MB 를 넘으면 스왑으로 밀어내고, 450MB 에서 끊고 다시 띄운다.
+ExecStart=/usr/bin/node --max-old-space-size=256 server.js
 Restart=always
 RestartSec=3
-MemoryMax=850M
+MemoryHigh=380M
+MemoryMax=450M
 LimitNOFILE=65535
 
 [Install]
