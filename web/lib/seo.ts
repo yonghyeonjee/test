@@ -70,7 +70,8 @@ export function withOg(m: Metadata): Metadata {
   const path = typeof canon === "string" ? canon : canon && "url" in canon ? String(canon.url) : undefined;
   const url = path ? (path.startsWith("http") ? path : `${SITE_URL}${path}`) : undefined;
   // 첫 화면("/")은 사이트 그림 그대로. 나머지는 쪽 제목으로 그린 그림.
-  const img = path && path !== "/" ? ogImageFor(title, description, path) : OG_IMAGE;
+  const bare = (path ?? "").replace(/^https?:\/\/[^/]+/, "").replace(/[?#].*$/, "");
+  const img = bare && bare !== "/" ? ogImageFor(title, description, path) : OG_IMAGE;
   return {
     ...m,
     openGraph: {
