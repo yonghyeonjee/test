@@ -375,6 +375,43 @@ def check_ref(browser, url: str) -> None:
         ctx.close()
 
 
+def check_mini(browser, path: str) -> None:
+    """상세 쪽 작은 지도: 상자가 있는지, 엔진, 핀, 바탕 타일, 크기, 오류."""
+    for name, vp in (("휴대폰", MOBILE), ("PC", {"width": 1366, "height": 900})):
+        print(f"\n== 작은 지도 {path} ({name})")
+        ctx = browser.new_context(viewport=vp, locale="ko-KR")
+        page = ctx.new_page()
+        errs: list[str] = []
+        hook(page, errs)
+        r = page.goto(BASE + path, wait_until="networkidle")
+        print(f"   status {r.status if r else '-'}")
+        link = page.locator("a", has_text="주변 더 보기")
+        if not link.count():
+            print("   작은 지도 상자 없음(위치를 못 찾았거나 그리지 않음)")
+            print("   오류:", errs[:6] or "없음"); ctx.close(); continue
+        link.first.scroll_into_view_if_needed()
+        page.wait_for_timeout(9000)
+        info = page.evaluate("""() => {
+          const a = [...document.querySelectorAll('a')].find(x => x.textContent.includes('주변 더 보기'));
+          const card = a && a.closest('.card');
+          const app = card && card.querySelector('[role=application]');
+          const b = app ? app.getBoundingClientRect() : null;
+          return {
+            engine: card?.querySelector('.leaflet-container') ? 'leaflet' : (window.kakao && window.kakao.maps) ? 'kakao' : '?',
+            box: b ? [Math.round(b.width), Math.round(b.height)] : null,
+            pins: card ? card.querySelectorAll('.pm-pin').length : 0,
+            imgs: app ? app.querySelectorAll('img').length : 0,
+            imgsLoaded: app ? [...app.querySelectorAll('img')].filter(i => i.complete && i.naturalWidth > 0).length : 0,
+            children: app ? app.children.length : 0,
+            errText: card ? (card.querySelector('.text-alert')?.textContent || '') : '',
+            label: card ? card.querySelector('b')?.textContent : null,
+          };
+        }""")
+        print("   ", json.dumps(info, ensure_ascii=False))
+        print("   오류:", errs[:6] or "없음")
+        ctx.close()
+
+
 def main() -> None:
     args = [a.strip() for a in (sys.argv[1] if len(sys.argv) > 1 else "map,home").split(",") if a.strip()]
     setup()
@@ -394,6 +431,8 @@ def main() -> None:
                     check_home(browser, "/business")
                 elif a == "detail":
                     check_detail(browser, "/p/WLF00001769")
+                elif a.startswith("mini:"):
+                    check_mini(browser, a[5:])
                 elif a.startswith("ref:"):
                     check_ref(browser, a[4:])
                 elif a.startswith("/search") or a.startswith("/business/search"):
