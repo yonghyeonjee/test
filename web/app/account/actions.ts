@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { verifyCaptcha } from "@/lib/captcha";
 import { hash, verify, weak } from "@/lib/password";
 import { USER_COOKIE, currentDevice, sessionConfigured, userCookie } from "@/lib/session";
-import { svcDb as svc } from "@/lib/svcDb";
+import { svcConfigured, svcDb as svc } from "@/lib/svcDb";
 
 /** 계정 관련 쓰기는 전부 서버에서. 서비스 키는 브라우저로 내려가지 않는다. */
 
@@ -128,8 +128,13 @@ export type MyAccount = {
 /** 로그인돼 있으면 내 계정(비밀번호 해시 없음), 아니면 null. */
 export async function myAccount(): Promise<{ device: string; account: MyAccount | null } | null> {
   const device = currentDevice();
-  if (!device) return null;
-  const { data } = await svc().rpc("account_by_device", { p_device: device });
-  const row = ((data ?? []) as MyAccount[])[0] ?? null;
-  return { device, account: row };
+  if (!device || !svcConfigured()) return null;
+  try {
+    const { data } = await svc().rpc("account_by_device", { p_device: device });
+    const row = ((data ?? []) as MyAccount[])[0] ?? null;
+    return { device, account: row };
+  } catch {
+    // DB 가 잠깐 안 되면 로그인 전 화면을 보인다. 500 보다 낫다.
+    return null;
+  }
 }
