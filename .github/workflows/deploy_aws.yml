@@ -107,7 +107,8 @@ jobs:
         if: steps.gate.outputs.go == '1'
         env:
           KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          REL: ${{ github.sha }}
+          # 같은 커밋을 다시 올려도 새 폴더에 푼다. 돌고 있는 폴더를 지우지 않으려고.
+          REL: ${{ github.sha }}-${{ github.run_id }}
         run: |
           umask 077
           mkdir -p ~/.ssh
@@ -118,12 +119,12 @@ jobs:
           $S "cat > /srv/jiwon/shared/.env" < env.prod
           $S "set -e
             D=/srv/jiwon/releases/$REL
-            rm -rf \$D && mkdir -p \$D && tar -C \$D -xzf /tmp/bundle-$REL.tgz && rm /tmp/bundle-$REL.tgz
+            mkdir -p \$D && tar -C \$D -xzf /tmp/bundle-$REL.tgz && rm /tmp/bundle-$REL.tgz
             mkdir -p \$D/.next/cache && chmod -R g+rwX \$D
             ln -sfn \$D /srv/jiwon/current
             sudo /usr/bin/systemctl restart jiwon
-            # 지난 배포는 셋만 남긴다.
-            ls -1dt /srv/jiwon/releases/* | tail -n +4 | xargs -r rm -rf"
+            # 지난 배포는 셋만 남긴다. 서비스(jiwon)가 쓴 캐시 파일이 섞여 있어 sudo 로 지운다.
+            ls -1dt /srv/jiwon/releases/* | tail -n +4 | xargs -r sudo rm -rf"
           for i in $(seq 1 30); do
             code=$($S "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/" || true)
             echo "확인 $i: $code"
