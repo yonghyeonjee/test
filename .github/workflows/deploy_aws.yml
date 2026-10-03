@@ -68,6 +68,7 @@ jobs:
           cp -r .next/standalone/. ../bundle/
           cp -r .next/static ../bundle/.next/static
           cp -r public ../bundle/public
+          cp ../deploy/lightsail/jiwon.service ../bundle/jiwon.service
           tar -C ../bundle -czf ../bundle.tgz .
           ls -lh ../bundle.tgz
 
@@ -130,6 +131,10 @@ jobs:
             mkdir -p \$D && tar -C \$D -xzf /tmp/bundle-$REL.tgz && rm /tmp/bundle-$REL.tgz
             mkdir -p \$D/.next/cache && chmod -R g+rwX \$D
             ln -sfn \$D /srv/jiwon/current
+            # 서비스 정의(환경변수·메모리 한도)가 바뀌었으면 같이 갱신한다.
+            if ! cmp -s \$D/jiwon.service /etc/systemd/system/jiwon.service; then
+              sudo install -m 644 \$D/jiwon.service /etc/systemd/system/jiwon.service && sudo systemctl daemon-reload
+            fi
             sudo /usr/bin/systemctl restart jiwon
             # 지난 배포는 셋만 남긴다. 서비스(jiwon)가 쓴 캐시 파일이 섞여 있어 sudo 로 지운다.
             ls -1dt /srv/jiwon/releases/* | tail -n +4 | xargs -r sudo rm -rf"

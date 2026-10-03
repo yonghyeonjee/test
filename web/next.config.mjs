@@ -11,6 +11,20 @@ const nextConfig = {
   staticPageGenerationTimeout: 180,
   compress: true,
   poweredByHeader: false,
+  // 조건이 붙은 첫 화면 주소(/?sido=…, /business?field=…)는 /find 로 안에서 바꿔 그린다(주소창 그대로).
+  // 첫 화면 쪽(page.tsx)이 searchParams 를 읽지 않아야 ISR 캐시가 살기 때문이다.
+  // 미들웨어의 NextResponse.rewrite 로 했더니 프록시(Caddy) 뒤에서 Next 가 제 주소를
+  // 두 곳에서 다르게 알아(127.0.0.1 대 localhost) 바깥 주소로 보고 프록시하려다 500 을 냈다.
+  // 설정 rewrite 는 라우터가 안에서 처리해 그 문제가 없다.
+  async rewrites() {
+    const keys = ["sido", "sigungu", "age", "emp", "hh", "q", "target", "field", "years", "ind", "tab"];
+    return {
+      beforeFiles: keys.flatMap((key) => [
+        { source: "/", has: [{ type: "query", key }], destination: "/find" },
+        { source: "/business", has: [{ type: "query", key }], destination: "/find?tab=business" },
+      ]),
+    };
+  },
   async redirects() {
     return [
       // 블로그 메뉴를 따로 두면서 옮겼다. 이미 색인된 주소가 죽지 않게.
