@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
+import { cooperativeTouch } from "./touch";
 import { KOREA_BOX, OV_K, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfZoom, visiblePins, type Kind, type Pin, type Pos, type Tier, type View } from "./pins";
 
 type Leaflet = typeof import("leaflet");
@@ -69,6 +70,7 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
 
   useEffect(() => {
     let dead = false;
+    let untouch = () => {};
     (async () => {
       const lf = await loadLeaflet();
       if (dead || !el.current || map.current) return;
@@ -97,10 +99,11 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       m.on("popupclose", () => latest.current.onSelect(null));
       setTier(tierOfZoom(m.getZoom()));
       map.current = m;
+      if (interactive && el.current) untouch = cooperativeTouch(el.current, (on) => { if (on) m.dragging.enable(); else m.dragging.disable(); });
       setReady(true);
       tell();
     })();
-    return () => { dead = true; map.current?.remove(); map.current = null; };
+    return () => { dead = true; untouch(); map.current?.remove(); map.current = null; };
   }, [interactive]);
 
   const openCard = (p: Pin) => {

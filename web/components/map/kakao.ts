@@ -21,6 +21,7 @@ export type KMap = {
   panTo(p: KLatLng): void;
   relayout(): void;
   addControl(control: unknown, position: unknown): void;
+  setDraggable(on: boolean): void;
 };
 export type KOverlay = { setMap(m: KMap | null): void; setZIndex(z: number): void; getPosition(): KLatLng };
 export type KCircle = { setMap(m: KMap | null): void };

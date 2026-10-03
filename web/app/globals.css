@@ -268,6 +268,11 @@ main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) img { max-height: 100px
   main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) ins.adsbygoogle { height: 120px !important; max-height: 120px !important; }
   main .ad-slot:not(.ad-tall):not(.ad-strip):not(.ad-band) img { max-height: 120px; }
 }
+/* 휴대폰 지도: 한 손가락으로 끌면 "두 손가락으로" 안내(components/map/touch.ts). */
+.pm-hint { position: absolute; left: 50%; top: 50%; z-index: 1200; transform: translate(-50%, -50%); padding: 10px 16px;
+  border-radius: 999px; background: rgba(17, 20, 28, .82); color: #fff; font-size: 14px; font-weight: 700; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .2s; }
+.pm-hint.on { opacity: 1; }
 /* 채울 광고가 없으면 빈 상자를 남기지 않는다. */
 .ad-slot:has(ins.adsbygoogle[data-ad-status="unfilled"]) { display: none; }
 /* 홈 맨 위 롤링 띠 옆 광고(72px). "광고" 표시는 왼쪽 위 귀퉁이에. */

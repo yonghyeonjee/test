@@ -7,7 +7,20 @@
  * 바탕이 되며, 어떤 조건이 많이 저장되는지 볼 수 있기 때문이다.
  */
 
-import { rpc } from "./rest";
+/** 서버 API 를 부른다. 기기 열쇠는 머리글로. 실패는 조용히 null. */
+async function api<T = unknown>(path: string, init: { method?: string; body?: unknown; key?: string | null } = {}): Promise<T | null> {
+  try {
+    const r = await fetch(path, {
+      method: init.method ?? "GET",
+      headers: { "Content-Type": "application/json", ...(init.key ? { "X-Device-Key": init.key } : {}) },
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    });
+    if (!r.ok) return null;
+    return (await r.json()) as T;
+  } catch {
+    return null;
+  }
+}
 
 const KEY = "jiwon.device.v1";
 
@@ -54,8 +67,7 @@ export const keyOf = (query: string) =>
 export async function listSaved(): Promise<Saved[]> {
   const key = deviceKey();
   if (!key) return [];
-  const { data } = await rpc("saved_list", { p_key: key });
-  return (data ?? []) as Saved[];
+  return (await api<Saved[]>("/api/saved", { key })) ?? [];
 }
 
 export async function addSaved(
@@ -65,20 +77,14 @@ export async function addSaved(
 ) {
   const key = deviceKey();
   if (!key) return false;
-  const { error } = await rpc("saved_add", {
-    p_key: key,
-    p_cond: keyOf(query),
-    p_kind: kind,
-    p_query: query,
-    p_label: label,
-  });
-  return !error;
+  const r = await api<{ ok: boolean }>("/api/saved", { method: "POST", key, body: { action: "add", cond: keyOf(query), kind, query, label } });
+  return Boolean(r?.ok);
 }
 
 export async function removeSaved(condKey: string) {
   const key = deviceKey();
   if (!key) return;
-  await rpc("saved_remove", { p_key: key, p_cond: condKey });
+  await api("/api/saved", { method: "POST", key, body: { action: "remove", cond: condKey } });
 }
 
 // ── 복구 코드 ────────────────────────────────────────────
@@ -91,16 +97,16 @@ export async function removeSaved(condKey: string) {
 export async function getRecoveryCode(): Promise<string | null> {
   const key = deviceKey();
   if (!key) return null;
-  const { data } = await rpc("recovery_issue", { p_key: key });
-  return (data as string | null) ?? null;
+  const r = await api<{ code: string | null }>("/api/saved/recovery", { method: "POST", key, body: { action: "issue" } });
+  return r?.code ?? null;
 }
 
 /** 코드로 이 브라우저에 조건을 되살린다. */
 export async function claimRecoveryCode(code: string): Promise<boolean> {
   const clean = code.trim().toUpperCase().replace(/[^A-Z2-9]/g, "");
   if (clean.length !== 8) return false;
-  const { data } = await rpc("recovery_claim", { p_code: clean });
-  const key = data as string | null;
+  const r = await api<{ key: string | null }>("/api/saved/recovery", { method: "POST", body: { action: "claim", code: clean } });
+  const key = r?.key ?? null;
   if (!key) return false;
   try {
     window.localStorage.setItem(KEY, key);
@@ -114,5 +120,5 @@ export async function claimRecoveryCode(code: string): Promise<boolean> {
 export function markOpened(query: string) {
   const key = deviceKey();
   if (!key) return;
-  void rpc("saved_open", { p_key: key, p_cond: keyOf(query) }).then(() => {}, () => {});
+  void api("/api/saved", { method: "POST", key, body: { action: "open", cond: keyOf(query) } });
 }

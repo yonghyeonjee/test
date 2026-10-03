@@ -18,14 +18,29 @@ import { JOB_KEYS, JOBS_BASE, jobPath, jobPathAsGiven, parseJobPath } from "@/li
  *  3. 말이 안 되는 주소(/jobs/status/closed, /jobs/page/0) → 404
  */
 export const config = {
-  matcher: ["/jobs", "/jobs/:path*"],
+  matcher: ["/", "/business", "/jobs", "/jobs/:path*"],
 };
+
+/**
+ * 첫 화면 조건 검색의 물음표 열쇠. 하나라도 있으면 /find 로 바꿔 보낸다(주소창은 그대로).
+ * 첫 화면 쪽(page.tsx)이 searchParams 를 읽지 않아야 ISR 캐시가 살기 때문이다.
+ * utm_* 같은 광고 꼬리표만 붙은 요청은 캐시된 첫 화면을 그대로 받는다.
+ */
+const FIND_KEYS = ["sido", "sigungu", "age", "emp", "hh", "q", "target", "field", "years", "ind", "tab"];
 
 /** 쪽 이름이 아니라 그 자체로 뜻이 있는 경로. 손대지 않는다. */
 const PASS = new Set(["region", "org", "majors", "overseas", "search"]);
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
+
+  if (url.pathname === "/" || url.pathname === "/business") {
+    if (!FIND_KEYS.some((k) => url.searchParams.has(k))) return undefined;
+    const to = new URL("/find", req.url);
+    url.searchParams.forEach((v, k) => to.searchParams.append(k, v));
+    if (url.pathname === "/business") to.searchParams.set("tab", "business");
+    return NextResponse.rewrite(to);
+  }
   const rest = url.pathname.slice(JOBS_BASE.length).replace(/^\//, "");
   const segs = rest ? rest.split("/") : [];
 

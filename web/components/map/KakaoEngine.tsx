@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { LatLng } from "@/lib/geo";
 import type { MapItem } from "@/lib/mapData";
 import { KAKAO_KEY, loadKakao, type KCircle, type KMap, type KOverlay, type KakaoMaps } from "./kakao";
+import { cooperativeTouch } from "./touch";
 import { KOREA_BOX, OV_K, boundsAround, cardHtml, cardLift, drawnPins, pickLabels, pinHtml, tierOfLevel, visiblePins, type Kind, type Pin, type Pos, type Tier } from "./pins";
 import type { EngineProps, Handle } from "./LeafletEngine";
 
@@ -33,6 +34,7 @@ const KakaoEngine = forwardRef<Handle, EngineProps & { onFail?: () => void }>(fu
 
   useEffect(() => {
     let dead = false;
+    let untouch = () => {};
     loadKakao(KAKAO_KEY).then((k) => {
       if (dead || !el.current || map.current) return;
       K.current = k;
@@ -52,12 +54,13 @@ const KakaoEngine = forwardRef<Handle, EngineProps & { onFail?: () => void }>(fu
       k.event.addListener(m, "idle", () => { setView((v) => v + 1); tell(); });
       setTier(tierOfLevel(m.getLevel()));
       map.current = m;
+      if (interactive && el.current) untouch = cooperativeTouch(el.current, (on) => m.setDraggable(on));
       setReady(true);
     }).catch((e: Error) => {
       if (dead) return;
       if (onFail) onFail(); else setErr(e.message);
     });
-    return () => { dead = true; };
+    return () => { dead = true; untouch(); };
   }, [interactive]);
 
   const closeCard = () => { card.current?.setMap(null); card.current = null; latest.current.onSelect(null); };
