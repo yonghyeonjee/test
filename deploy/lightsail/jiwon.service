@@ -10,7 +10,9 @@ WorkingDirectory=/srv/jiwon/current
 EnvironmentFile=/srv/jiwon/shared/.env
 Environment=NODE_ENV=production
 Environment=PORT=3000
-Environment=HOSTNAME=127.0.0.1
+# localhost 로 둔다. 127.0.0.1 이면 Next 라우터는 127.0.0.1, 미들웨어는 localhost 로 제 주소를 알아
+# 미들웨어의 rewrite(없는 채용 주소 → 404 쪽)를 바깥 주소로 보고 프록시하려다 500 을 낸다.
+Environment=HOSTNAME=localhost
 # 512MB 서버($5): 힙을 256MB 로 묶는다. 실측(동시 20개 요청 300번)은 80MB 안팎이었다.
 # 380MB 를 넘으면 스왑으로 밀어내고, 450MB 에서 끊고 다시 띄운다.
 ExecStart=/usr/bin/node --max-old-space-size=256 server.js

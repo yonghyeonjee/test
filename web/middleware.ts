@@ -18,42 +18,27 @@ import { JOB_KEYS, JOBS_BASE, jobPath, jobPathAsGiven, parseJobPath } from "@/li
  *  3. 말이 안 되는 주소(/jobs/status/closed, /jobs/page/0) → 404
  */
 export const config = {
-  matcher: ["/", "/business", "/jobs", "/jobs/:path*"],
+  matcher: ["/jobs", "/jobs/:path*"],
 };
-
-/**
- * 첫 화면 조건 검색의 물음표 열쇠. 하나라도 있으면 /find 로 바꿔 보낸다(주소창은 그대로).
- * 첫 화면 쪽(page.tsx)이 searchParams 를 읽지 않아야 ISR 캐시가 살기 때문이다.
- * utm_* 같은 광고 꼬리표만 붙은 요청은 캐시된 첫 화면을 그대로 받는다.
- */
-const FIND_KEYS = ["sido", "sigungu", "age", "emp", "hh", "q", "target", "field", "years", "ind", "tab"];
 
 /** 쪽 이름이 아니라 그 자체로 뜻이 있는 경로. 손대지 않는다. */
 const PASS = new Set(["region", "org", "majors", "overseas", "search"]);
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
-
-  if (url.pathname === "/" || url.pathname === "/business") {
-    if (!FIND_KEYS.some((k) => url.searchParams.has(k))) return undefined;
-    const to = new URL("/find", req.url);
-    url.searchParams.forEach((v, k) => to.searchParams.append(k, v));
-    if (url.pathname === "/business") to.searchParams.set("tab", "business");
-    return NextResponse.rewrite(to);
-  }
   const rest = url.pathname.slice(JOBS_BASE.length).replace(/^\//, "");
   const segs = rest ? rest.split("/") : [];
 
   // /jobs/search?q=… — 폼이 보낸 것을 경로 주소로 바꿔 준다. GET 폼은
   // 물음표로만 보낼 수 있어서, 받는 즉시 여기서 넘긴다.
   if (segs.length === 1 && segs[0] === "search") {
-    return NextResponse.redirect(new URL(fromQuery(url.searchParams), req.url), 308);
+    return redirect308(req, fromQuery(url.searchParams));
   }
 
   // /jobs — 옛 주소로 들어온 것만 넘긴다.
   if (segs.length === 0) {
     const to = fromQuery(url.searchParams);
-    return to === JOBS_BASE ? undefined : NextResponse.redirect(new URL(to, req.url), 308);
+    return to === JOBS_BASE ? undefined : redirect308(req, to);
   }
 
   // /jobs/303444(상세) · /jobs/region(목차) · /jobs/majors … 는 그대로.
@@ -67,9 +52,21 @@ export function middleware(req: NextRequest) {
 
   const canonical = jobPath(route);
   if (jobPathAsGiven(segs) !== canonical) {
-    return NextResponse.redirect(new URL(canonical, req.url), 308);
+    return redirect308(req, canonical);
   }
   return undefined;
+}
+
+/**
+ * 308 은 브라우저가 따라갈 공개 주소로 보낸다. 프록시(Caddy) 뒤에서 req.url 은
+ * localhost:3000 이라 new URL(path, req.url) 로 만들면 브라우저를 localhost 로 보내 버린다.
+ * 상대 Location 은 NextResponse 가 "Invalid URL" 로 거부하므로, 프록시가 넘겨 준
+ * X-Forwarded-Host(없으면 Host)·X-Forwarded-Proto 로 절대 주소를 만든다.
+ */
+function redirect308(req: NextRequest, path: string) {
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? req.nextUrl.host;
+  const proto = req.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
+  return NextResponse.redirect(new URL(path, `${proto}://${host}`), 308);
 }
 
 const one = (v: string | null) => v?.trim() || undefined;
@@ -95,5 +92,6 @@ function fromQuery(q: URLSearchParams) {
  * 돌려주면 사람에게는 흰 화면만 남는다.
  */
 function notFound(req: NextRequest) {
-  return NextResponse.rewrite(new URL("/_jobs-not-found", req.url), { status: 404 });
+  const nf = req.nextUrl.clone(); nf.pathname = "/_jobs-not-found"; nf.search = "";
+  return NextResponse.rewrite(nf, { status: 404 });
 }
