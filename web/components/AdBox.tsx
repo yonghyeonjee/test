@@ -30,7 +30,7 @@ export default function AdBox({ cfg, className = "", tall = false, strip = false
                className={band ? "h-full w-full object-cover" : `mx-auto w-auto max-w-full ${tall ? "" : "max-h-[140px]"}`} loading="lazy" />
         </a>
       ) : (
-        <AdHtml html={cfg.html} minWidth={minWidth} />
+        <AdHtml html={cfg.html} minWidth={minWidth} small={!tall && !strip && !band} />
       )}
     </aside>
   );

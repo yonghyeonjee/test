@@ -44,10 +44,10 @@ const KakaoEngine = forwardRef<Handle, EngineProps & { onFail?: () => void }>(fu
       });
       if (interactive) m.addControl(new k.ZoomControl(), k.ControlPosition.RIGHT);
       k.event.addListener(m, "zoom_changed", () => setTier(tierOfLevel(m.getLevel())));
-      // 움직임이 멎을 때마다 이름표 자리를 다시 고르고, 보이는 범위를 알린다(zoom ≈ 19 − level).
+      // 움직임이 멎을 때마다 이름표 자리를 다시 고르고, 보이는 범위를 알린다(zoom ≈ 20 − level, tierOfLevel 과 맞춘다).
       const tell = () => {
         const b = m.getBounds(), sw = b.getSouthWest(), ne = b.getNorthEast();
-        latest.current.onView?.({ s: sw.getLat(), w: sw.getLng(), n: ne.getLat(), e: ne.getLng(), zoom: 19 - m.getLevel() });
+        latest.current.onView?.({ s: sw.getLat(), w: sw.getLng(), n: ne.getLat(), e: ne.getLng(), zoom: 20 - m.getLevel() });
       };
       k.event.addListener(m, "idle", () => { setView((v) => v + 1); tell(); });
       setTier(tierOfLevel(m.getLevel()));

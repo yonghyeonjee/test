@@ -52,8 +52,9 @@ export const KOREA_BOX: [[number, number], [number, number]] = [[33.15, 125.1], 
 /** Leaflet·네이버 zoom → 단계. 8 이하는 시·도 묶음, 12 이상은 동네(읍·면·동). */
 export const DONG_ZOOM = 12;
 export const tierOfZoom = (z: number): Tier => (z <= 8 ? "far" : z < DONG_ZOOM ? "near" : "dong");
-/** 카카오맵 level(작을수록 가까움, 대략 zoom ≈ 19 − level) → 단계. */
-export const tierOfLevel = (lv: number): Tier => (lv >= 11 ? "far" : lv >= 8 ? "near" : "dong");
+/** 카카오맵 level(작을수록 가까움, 대략 zoom ≈ 20 − level) → 단계.
+ *  실측: 5km 원(PC)·3km 원(휴대폰)을 담으면 level 8 에 선다. 거기서 동 핀이 보여야 Leaflet 과 같다. */
+export const tierOfLevel = (lv: number): Tier => (lv >= 11 ? "far" : lv >= 9 ? "near" : "dong");
 
 /** 이 단계에서 그릴 핀. 동네 단계에서는 시·군·구 핀 위에 동 핀(extra)을 더한다. */
 export function visiblePins(pins: Pin[], extra: Pin[], tier: Tier): Pin[] {
