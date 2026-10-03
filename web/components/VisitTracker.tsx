@@ -15,6 +15,8 @@ const ONCE_KEY = "jw.visit";
 export default function VisitTracker() {
   useEffect(() => {
     // 통계 한 줄은 우리 서버(/api/visit)로 보낸다. 브라우저가 DB 를 직접 부르지 않는다.
+    // 검색엔진 크롤러(자바스크립트를 돌린다)와 자동화 브라우저(점검)는 사람이 아니니 세지 않는다.
+    if (navigator.webdriver || /bot|crawl|spider|slurp|yeti|headless|lighthouse|probe/i.test(navigator.userAgent)) return;
     try {
       try {
         if (sessionStorage.getItem(ONCE_KEY)) return;
