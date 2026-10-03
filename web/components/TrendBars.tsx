@@ -1,7 +1,7 @@
 import type { MonthRow, YearRow } from "@/lib/jobTrend";
 
 /**
- * 연도별 막대. 모인 자료 사이의 빈 해(2015~2019년)는 0건이 아니라 "자료 없음"이라
+ * 연도별 막대. 모인 자료 사이의 빈 해(2015~2019년)는 0건이 아니라 "추가 중"이라
  * 빗금 칸으로 따로 그린다. 올해는 아직 끝나지 않아 옅게.
  */
 export function YearBars({ years, height = 96, unit = "건" }: { years: YearRow[]; height?: number; unit?: string }) {
@@ -27,8 +27,8 @@ export function YearBars({ years, height = 96, unit = "건" }: { years: YearRow[
       <div className="flex items-end gap-[3px] sm:gap-1" style={{ height: height + 34 }}>
         {packed.map((c) => "gap" in c ? (
           <div key={`g${c.gap[0]}`} className="flex flex-[1.4] flex-col items-center justify-end gap-1"
-               title={`${c.gap[0]}~${c.gap[1]}년 자료 없음`}>
-            <span className="text-[10px] leading-none text-faint">없음</span>
+               title={`${c.gap[0]}~${c.gap[1]}년 자료 추가 중`}>
+            <span className="text-[10px] leading-none text-faint">추가 중</span>
             <div className="w-full rounded-t border border-dashed border-line bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgba(0,0,0,.06)_4px_6px)]"
                  style={{ height: height * 0.5 }} />
             <span className="whitespace-nowrap text-[10.5px] text-faint">{String(c.gap[0]).slice(2)}~{String(c.gap[1]).slice(2)}</span>

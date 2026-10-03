@@ -82,7 +82,7 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
       {!all.ok ? (
         <div className="card mt-6 p-8 text-center">
           <p className="leading-relaxed text-muted">
-            지금은 해외취업 공고를 불러오지 못했습니다.
+            해외취업 공고를 새로 정리하는 중입니다.
             <br />잠시 뒤 다시 들어오시면 보입니다.
           </p>
           <a href="https://www.worldjob.or.kr" target="_blank" rel="noopener noreferrer" className="btn btn-ghost mt-5">
