@@ -28,3 +28,11 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
 `origin.jiwon.knowhow-it.com` A 레코드 → 고정 IP, CloudFront 원본을 그 주소(HTTPS)로, 인증서는 ACM(us-east-1)에서
 `jiwon.knowhow-it.com` DNS 검증, 캐시 정책은 원본 헤더 따르기(UseOriginCacheControlHeaders-QueryStrings),
 원본 요청 정책은 AllViewerExceptHostHeader. 그다음 `jiwon` 을 CloudFront 주소로 CNAME.
+
+## 백업
+
+Supabase 무료 요금제에는 백업이 없다. `.github/workflows/db_backup.yml` 이 매일 03:30 KST 에 `pg_dump` 로 전체를 떠서
+S3 버킷의 `db/` 에 올리고, 30일 지난 것은 지운다. 필요한 secret: `SUPABASE_DB_URL`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `BACKUP_BUCKET`. 하나라도 없으면 아무 일도 하지 않는다.
+
+복원: `pg_restore -d "$DB_URL" --clean --if-exists --no-owner --no-privileges jiwon-….dump`
