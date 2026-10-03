@@ -7,6 +7,8 @@ import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import PageBanner from "@/components/PageBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import { MonthTrend, YearBars } from "@/components/TrendBars";
+import { getBusyOrgs, getJobTrend, getRisingOrgs, pctChange, type OrgRecent } from "@/lib/jobTrend";
 import { dot, getJobOverview, getTopOrgs } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
 import { brandKeys, withOg } from "@/lib/seo";
@@ -30,7 +32,10 @@ export const metadata: Metadata = withOg({
 });
 
 export default async function JobOrgIndex() {
-  const [orgs, overview] = await Promise.all([getTopOrgs(300), getJobOverview()]);
+  const [orgs, overview, trend, busy, rising] = await Promise.all([
+    getTopOrgs(300), getJobOverview(), getJobTrend(), getBusyOrgs(10), getRisingOrgs(8),
+  ]);
+  const yoy = trend ? pctChange(trend.n12, trend.p12) : null;
 
   return (
     <div className="pb-4">
@@ -61,6 +66,41 @@ export default async function JobOrgIndex() {
         </div>
       ) : (
         <>
+          {trend && (
+            <section className="card mt-6 p-5" aria-labelledby="trend-h">
+              <h2 id="trend-h" className="text-[15px] font-bold">기간별 채용 추이</h2>
+              <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">
+                최근 12개월(지난달까지) 공고 <b className="num text-ink2">{trend.n12.toLocaleString("ko-KR")}건</b>
+                {yoy != null && <>, 그 전 12개월보다 <b className={`num ${yoy >= 0 ? "text-brand" : "text-ink2"}`}>{yoy >= 0 ? `${yoy}% 많습니다` : `${-yoy}% 적습니다`}</b></>}.
+              </p>
+              <div className="mt-4 grid gap-6 lg:grid-cols-2">
+                <div>
+                  <h3 className="text-[13px] font-bold text-ink2">달별 공고 수 · 최근 2년</h3>
+                  <MonthTrend months={trend.months} />
+                </div>
+                <div>
+                  <h3 className="text-[13px] font-bold text-ink2">연도별 공고 수</h3>
+                  <YearBars years={trend.years} height={80} />
+                </div>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-muted">
+                나라일터에 올라온 공고를 등록일로 센 것입니다. 2015~2019년 공고는 아직 받아 오지 못해 빗금으로 비워 두었습니다.
+                올해와 이번 달은 진행 중이라 옅게 그렸습니다. 막대에 손가락이나 마우스를 대면 건수가 보입니다.
+              </p>
+            </section>
+          )}
+
+          {(busy.length > 0 || rising.length > 0) && (
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              {busy.length > 0 && (
+                <OrgRank title="요즘 많이 뽑는 기관" sub="최근 12개월 공고 수" rows={busy} />
+              )}
+              {rising.length > 0 && (
+                <OrgRank title="지난해보다 늘어난 기관" sub="최근 12개월 ÷ 그 전 12개월" rows={rising} ratio />
+              )}
+            </div>
+          )}
+
           <p className="mt-6 text-[14px] leading-[1.8] text-ink2">
             공고를 여덟 건 이상 낸 기관만 추렸습니다. 한두 건만 낸 곳까지 넣으면 볼 것이 없는
             쪽이 수천 개 생깁니다. 숫자는 <b>지금까지 모인 공고</b> 기준이라, 나라일터에 올리지
@@ -132,5 +172,34 @@ export default async function JobOrgIndex() {
       <GuideBanner title="취업을 준비하신다면 이것도" />
       <RelatedLinks items={jobsRelated()} />
     </div>
+  );
+}
+
+/** 기관 순위 상자. 누르면 그 기관 쪽(연도별 공고·채용 지수). */
+function OrgRank({ title, sub, rows, ratio }: { title: string; sub: string; rows: OrgRecent[]; ratio?: boolean }) {
+  return (
+    <section className="card p-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-[15px] font-bold">{title}</h2>
+        <span className="text-[12px] text-faint">{sub}</span>
+      </div>
+      <ol className="mt-3 divide-y divide-line">
+        {rows.map((r, i) => {
+          const d = pctChange(r.n12, r.p12);
+          return (
+            <li key={r.org}>
+              <Link href={`/jobs/org/${encodeURIComponent(r.org)}`} className="flex items-center gap-3 py-2 text-[13.5px] hover:text-brand">
+                <span className="num w-5 shrink-0 text-center font-bold text-faint">{i + 1}</span>
+                <span className="min-w-0 flex-1 truncate font-semibold">{r.org}</span>
+                <span className="num shrink-0 text-ink2">{r.n12.toLocaleString("ko-KR")}건</span>
+                <span className={`num w-16 shrink-0 text-right text-[12px] ${d != null && d >= 0 ? "text-brand" : "text-muted"}`}>
+                  {ratio && r.p12 ? `${(r.n12 / r.p12).toFixed(1)}배` : d == null ? "새로" : `${d >= 0 ? "▲" : "▼"}${Math.abs(d)}%`}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

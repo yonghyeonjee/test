@@ -493,7 +493,7 @@ export async function getTopOrgs(limit = 300, minN = 8): Promise<OrgStat[]> {
 export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> {
   if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
   try {
-    const { data, count } = await db
+    const read = () => db
       .from("job_posts")
       .select(
         "source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
@@ -502,6 +502,11 @@ export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> 
       .eq("source", "gojobs").eq("org", org)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
+    // 한 번 늦으면(공고 수집이 도는 동안 가끔) 한 번 더 읽는다.
+    let res = await read();
+    if (res.error) res = await read();
+    if (res.error) throw res.error;
+    const { data, count } = res;
     const jobs = ((data ?? []) as Stored[]).map(toStoredJob);
     return {
       ok: jobs.length > 0,
