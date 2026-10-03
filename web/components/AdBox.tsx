@@ -13,8 +13,10 @@ import type { AdSlotCfg } from "@/lib/settings";
  * strip: 제목 아래 작은 가로 띠. 테두리·여백 없이 높이를 90~100px 로 묶고,
  * "광고" 표시는 왼쪽 위 귀퉁이에 작게.
  */
-export default function AdBox({ cfg, className = "", tall = false, strip = false, band = false, minWidth = 0 }: {
+export default function AdBox({ cfg, className = "", tall = false, strip = false, band = false, rail = false, minWidth = 0 }: {
   cfg: AdSlotCfg; className?: string; tall?: boolean; strip?: boolean;
+  /** 넓은 화면 오른쪽 세로 레일. 120×600 으로 고정해 부른다. */
+  rail?: boolean;
   /** 홈 맨 위 롤링 띠 옆 72px 띠. */
   band?: boolean;
   /** 이 폭보다 좁으면 광고 HTML 을 부르지 않는다. */
@@ -30,7 +32,7 @@ export default function AdBox({ cfg, className = "", tall = false, strip = false
                className={band ? "h-full w-full object-cover" : `mx-auto w-auto max-w-full ${tall ? "" : "max-h-[140px]"}`} loading="lazy" />
         </a>
       ) : (
-        <AdHtml html={cfg.html} minWidth={minWidth} small={!tall && !strip && !band} />
+        <AdHtml html={cfg.html} minWidth={minWidth} small={!tall && !band} fixed={rail ? [120, 600] : undefined} />
       )}
     </aside>
   );

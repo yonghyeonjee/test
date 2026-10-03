@@ -29,12 +29,15 @@ import { useEffect, useRef } from "react";
  * 다만 페이지 단위 광고를 켜는 push(enable_page_level_ads)는 코드에 들어
  * 있으면 그대로 실행되니, 그것만 걸러 낸다.
  */
-/** 자리 폭에 맞는 작은 가로 광고 크기(애드센스 표준 크기). */
-const smallSize = (w: number): [number, number] => (w >= 728 ? [728, 90] : w >= 468 ? [468, 60] : [320, 100]);
+/** 자리 폭에 맞는 작은 가로 광고 크기(애드센스 표준). 휴대폰은 320×50 으로 낮게. */
+const smallSize = (w: number): [number, number] => (w >= 728 ? [728, 90] : w >= 468 ? [468, 60] : [320, 50]);
 
-export default function AdHtml({ html, minWidth = 0, small = false }: {
+export default function AdHtml({ html, minWidth = 0, small = false, fixed }: {
   html: string; minWidth?: number;
-  /** 본문 안 키 작은 자리. 애드센스 반응형(auto)은 상자 CSS 를 무시하고 280px 로 키우니, 부르기 전에 고정 크기 단위로 바꾼다. */
+  /** 이 크기로 고정해 부른다(오른쪽 세로 레일 120×600). small 보다 먼저. */
+  fixed?: [number, number];
+  /** 본문 안 키 작은 자리·제목 아래 띠. 애드센스 반응형(auto)은 부모 상자 높이를 inline !important 로 풀어
+   *  280px 로 키우니(CSS max-height 가 진다), 부르기 전에 고정 크기 단위로 바꾼다. */
   small?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -45,8 +48,8 @@ export default function AdHtml({ html, minWidth = 0, small = false }: {
     // 넓은 화면 전용 지면(홈 맨 위)은 좁은 화면에서 감춰져 있다. 폭 0 인 자리에 광고를 부르면 오류만 난다.
     if (minWidth && !window.matchMedia(`(min-width: ${minWidth}px)`).matches) return;
     el.innerHTML = html;
-    if (small) {
-      const [w, h] = smallSize(el.clientWidth || 320);
+    if (small || fixed) {
+      const [w, h] = fixed ?? smallSize(el.clientWidth || 320);
       for (const ins of Array.from(el.querySelectorAll<HTMLElement>("ins.adsbygoogle"))) {
         ins.removeAttribute("data-ad-format");
         ins.removeAttribute("data-full-width-responsive");
@@ -70,7 +73,7 @@ export default function AdHtml({ html, minWidth = 0, small = false }: {
       old.replaceWith(s);
     }
     return () => { el.innerHTML = ""; };
-  }, [html, minWidth, small]);
+  }, [html, minWidth, small, fixed?.[0], fixed?.[1]]);
 
   return <div ref={ref} className={`ad-html ${small ? "text-center" : ""}`} />;
 }
