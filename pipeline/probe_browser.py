@@ -454,10 +454,10 @@ def check_org(browser, path: str) -> None:
     info = page.evaluate("""() => ({
       h2: [...document.querySelectorAll('main h2')].map(h => h.textContent.trim()).slice(0, 14),
       bars: document.querySelectorAll('figure [title]').length,
-      stats: [...document.querySelectorAll('.rounded-card.bg-ground')].map(d => d.innerText.replace(/\n/g, ' | ')).slice(0, 3),
-      ranks: [...document.querySelectorAll('ol li')].slice(0, 3).map(l => l.innerText.replace(/\n/g, ' ')),
-      chips: [...document.querySelectorAll('#org-mix-h ~ div a, #org-mix-h ~ ul li')].map(e => e.innerText.replace(/\n/g, ' ')).slice(0, 12),
-      out: [...document.querySelectorAll('a[target=_blank]')].map(a => a.innerText.replace(/\n/g, ' ') + ' ' + a.href).filter(t => /saramin|jobkorea/.test(t)).slice(0, 6),
+      stats: [...document.querySelectorAll('.rounded-card.bg-ground')].map(d => d.innerText.replace(/\\n/g, ' | ')).slice(0, 3),
+      ranks: [...document.querySelectorAll('ol li')].slice(0, 3).map(l => l.innerText.replace(/\\n/g, ' ')),
+      chips: [...document.querySelectorAll('#org-mix-h ~ div a, #org-mix-h ~ ul li')].map(e => e.innerText.replace(/\\n/g, ' ')).slice(0, 12),
+      out: [...document.querySelectorAll('a[target=_blank]')].map(a => a.innerText.replace(/\\n/g, ' ') + ' ' + a.href).filter(t => /saramin|jobkorea/.test(t)).slice(0, 6),
       listErr: /불러오지 못했습니다/.test(document.body.innerText),
       sw: document.documentElement.scrollWidth,
     })""")
