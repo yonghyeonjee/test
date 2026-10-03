@@ -206,8 +206,12 @@ async function searchJobs(words: string[], sido?: string, sigungu?: string) {
   const base = (expand: boolean) => {
     let sel = db.from("job_posts").select("source_id,title,org,region,hire,end_date", { count: "exact" })
       .eq("source", "gojobs");
-    for (const g of groups) sel = sel.or(orClause(expand ? g : g.slice(0, 1)));
-    if (region) sel = sel.or(region);
+    // 묶음마다 or 를 따로 붙이면 or= 이 여러 번 가서 PostgREST 가 500 을 낸다("수원 경비").
+    // 하나의 or=(and(or(…),or(…))) 로 묶는다.
+    const parts = groups.map((g) => orClause(expand ? g : g.slice(0, 1)));
+    if (region) parts.push(region);
+    if (parts.length === 1) sel = sel.or(parts[0]);
+    else if (parts.length > 1) sel = sel.or(`and(${parts.map((x) => `or(${x})`).join(",")})`);
     return sel;
   };
 

@@ -88,6 +88,19 @@ def check_map(browser) -> None:
     page.wait_for_timeout(3000)
     meline = page.locator("text=기준").first.inner_text() if page.locator("text=기준").count() else "(없음)"
     print("   내 위치 적용:", meline[:60])
+    page.wait_for_timeout(1500)
+    picks = page.evaluate("""() => [...document.querySelectorAll('[aria-label="지역 고르기"] select')].map(s => ({
+      label: s.getAttribute('aria-label'), value: s.selectedOptions[0]?.textContent, disabled: s.disabled, n: s.options.length }))""")
+    print("   지역 칸:", json.dumps(picks, ensure_ascii=False))
+    print("   기준 글:", page.evaluate("() => [...document.querySelectorAll('span')].filter(e => /기준$/.test(e.textContent.trim())).map(e => e.textContent.trim()).slice(0, 3)"))
+    print("   위치 오류 글:", page.evaluate("() => [...document.querySelectorAll('p,span')].map(e => e.textContent.trim()).filter(t => /위치 권한|위치를 읽지|지원하지 않습니다/.test(t)).slice(0, 2)"))
+    # 주소의 lat/lng(상세 쪽 "주변 더 보기")로 들어왔을 때 지역 칸이 채워지는지.
+    page.goto(BASE + "/map?kind=jobs&lat=37.3800&lng=126.8029", wait_until="domcontentloaded")
+    page.wait_for_timeout(4000)
+    print("   주소 lat/lng 지역 칸:", json.dumps(page.evaluate("""() => [...document.querySelectorAll('[aria-label="지역 고르기"] select')].map(s => s.selectedOptions[0]?.textContent + (s.disabled ? '(잠김)' : '') + '/' + s.options.length)"""), ensure_ascii=False))
+    page.goto(BASE + "/map", wait_until="domcontentloaded")
+    page.wait_for_selector(".pm-pin", timeout=20000)
+    print("   where:", page.evaluate("() => fetch('/api/map/where?lat=37.380&lng=126.803').then(r => r.text()).then(t => t.slice(0, 300))"))
     print("   내 위치 30km:", json.dumps(page.evaluate(OVERLAP_JS), ensure_ascii=False))
     head = page.locator('section[aria-label="공고 카드"] h2')
     print("   카드 목록:", head.first.inner_text() if head.count() else "(없음)")
@@ -412,6 +425,47 @@ def check_mini(browser, path: str) -> None:
         ctx.close()
 
 
+def check_search(browser, path: str) -> None:
+    """통합 검색: 갈래 순서(탭·본문)와 지도 링크."""
+    print(f"\n== 검색 {path}")
+    ctx = browser.new_context(viewport=MOBILE, locale="ko-KR")
+    page = ctx.new_page()
+    r = page.goto(BASE + path, wait_until="domcontentloaded")
+    print("   status", r.status)
+    info = page.evaluate("""() => ({
+      tabs: [...document.querySelectorAll('nav[aria-label="갈래"] a')].map(a => a.textContent.trim()),
+      sections: [...document.querySelectorAll('main section[id]')].map(s => s.id + ':' + (s.querySelector('h2')?.textContent || '').trim()),
+      map: [...document.querySelectorAll('a')].filter(a => /지도에서 보기/.test(a.textContent)).map(a => a.getAttribute('href')),
+      firstJobs: [...document.querySelectorAll('#jobs a')].slice(0, 3).map(a => a.textContent.trim().slice(0, 60)),
+    })""")
+    print("   ", json.dumps(info, ensure_ascii=False))
+    ctx.close()
+
+
+def check_org(browser, path: str) -> None:
+    """기관별 채용: 추이 막대·지수·준비 링크가 그려졌는지."""
+    print(f"\n== 기관 {path}")
+    ctx = browser.new_context(viewport=MOBILE, locale="ko-KR")
+    page = ctx.new_page()
+    errs: list[str] = []
+    hook(page, errs)
+    r = page.goto(BASE + path, wait_until="domcontentloaded")
+    print("   status", r.status)
+    info = page.evaluate("""() => ({
+      h2: [...document.querySelectorAll('main h2')].map(h => h.textContent.trim()).slice(0, 14),
+      bars: document.querySelectorAll('figure [title]').length,
+      stats: [...document.querySelectorAll('.rounded-card.bg-ground')].map(d => d.innerText.replace(/\n/g, ' | ')).slice(0, 3),
+      ranks: [...document.querySelectorAll('ol li')].slice(0, 3).map(l => l.innerText.replace(/\n/g, ' ')),
+      chips: [...document.querySelectorAll('#org-mix-h ~ div a, #org-mix-h ~ ul li')].map(e => e.innerText.replace(/\n/g, ' ')).slice(0, 12),
+      out: [...document.querySelectorAll('a[target=_blank]')].map(a => a.innerText.replace(/\n/g, ' ') + ' ' + a.href).filter(t => /saramin|jobkorea/.test(t)).slice(0, 6),
+      listErr: /불러오지 못했습니다/.test(document.body.innerText),
+      sw: document.documentElement.scrollWidth,
+    })""")
+    print("   ", json.dumps(info, ensure_ascii=False))
+    print("   오류:", errs[:6] or "없음")
+    ctx.close()
+
+
 def main() -> None:
     args = [a.strip() for a in (sys.argv[1] if len(sys.argv) > 1 else "map,home").split(",") if a.strip()]
     setup()
@@ -435,6 +489,10 @@ def main() -> None:
                     check_mini(browser, a[5:])
                 elif a.startswith("ref:"):
                     check_ref(browser, a[4:])
+                elif a.startswith("srch:"):
+                    check_search(browser, a[5:])
+                elif a.startswith("org:"):
+                    check_org(browser, a[4:])
                 elif a.startswith("/search") or a.startswith("/business/search"):
                     check_home(browser, a)
                 elif a.startswith("/"):

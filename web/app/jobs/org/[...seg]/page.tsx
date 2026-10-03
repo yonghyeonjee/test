@@ -11,6 +11,8 @@ import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import { YearBars } from "@/components/TrendBars";
+import { getOrgTrend, indexWord, pctChange, titleMix } from "@/lib/jobTrend";
 import { dot, getJobsByOrg, getOrgStat, peakMonths } from "@/lib/pubJobs";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
@@ -62,8 +64,23 @@ export default async function JobsByOrg({ params }: P) {
   const route = readJobRoute(["org"], params.seg);
   if (!route) notFound();
   const org = route.org!;
-  const [board, stat] = await Promise.all([getJobsByOrg(org), getOrgStat(org)]);
+  const [board, stat, trend] = await Promise.all([getJobsByOrg(org), getOrgStat(org), getOrgTrend(org)]);
   if (!stat && !board.jobs.length) notFound();
+  // 공고가 있는 기관인데 목록만 못 읽었으면 잠깐 DB 가 늦은 것이다. 이 그림을 세 시간 동안
+  // 캐시에 남기지 않게 던진다. 다시 그리는 중이면 Next 가 이전에 그린 쪽을 계속 보인다.
+  if (stat && stat.n > 0 && !board.ok) throw new Error(`기관 공고 목록을 읽지 못했습니다: ${org}`);
+
+  const mix = titleMix(board.jobs.map((j) => j.title), org);
+  const yoy = trend ? pctChange(trend.n12, trend.p12) : null;
+  // 밖에서 찾을 때는 기관 이름 앞쪽만. "부산광역시교육청 …학교채용지원팀" 을 통째로 넣으면 아무것도 안 걸린다.
+  const shortOrg = org.split(/\s+/)[0];
+  const enc = encodeURIComponent;
+  const outLinks: [string, string, string][] = [
+    ["잡코리아", `${shortOrg} 합격 자소서`, `https://www.jobkorea.co.kr/starter/passassay?schTxt=${enc(shortOrg)}`],
+    ["사람인", `${shortOrg} 자기소개서`, `https://www.saramin.co.kr/zf_user/search?searchword=${enc(`${shortOrg} 자기소개서`)}`],
+    ["사람인", `${shortOrg} 기업 정보·후기`, `https://www.saramin.co.kr/zf_user/search/company?searchword=${enc(shortOrg)}`],
+    ["잡코리아", `${shortOrg} 채용`, `https://www.jobkorea.co.kr/Search/?stext=${enc(shortOrg)}`],
+  ];
 
   const peak = stat ? peakMonths(stat.months) : null;
 
@@ -138,6 +155,61 @@ export default async function JobsByOrg({ params }: P) {
         </section>
       )}
 
+      {trend && trend.years.length > 0 && (
+        <section className="card mt-6 p-5" aria-labelledby="org-trend-h">
+          <h2 id="org-trend-h" className="text-[15px] font-bold">연도별 공고와 채용 지수</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <Stat label="최근 12개월 공고" value={`${trend.n12.toLocaleString("ko-KR")}건`}
+                  note={yoy == null ? (trend.n12 ? "그 전 해에는 공고가 없었습니다" : "최근 1년은 공고가 없었습니다") : `그 전 12개월보다 ${yoy >= 0 ? `${yoy}% 많음` : `${-yoy}% 적음`}`} />
+            <Stat label="채용 지수" value={trend.index != null ? String(trend.index) : "—"}
+                  note={trend.index != null && trend.base
+                    ? `${indexWord(trend.index)} · 평소 한 해 ${trend.base.avg}건(${trend.base.from}~${trend.base.to}년 평균) = 100`
+                    : "공고가 적거나 기간이 짧아 내지 않습니다"} />
+            <Stat label="최근 1년 공고 순위" value={trend.rank ? `${trend.rank.toLocaleString("ko-KR")}위` : "—"}
+                  note={trend.rank && trend.ranked ? `공고를 낸 ${trend.ranked.toLocaleString("ko-KR")}곳 가운데 상위 ${Math.max(1, Math.round((trend.rank / trend.ranked) * 100))}%` : "최근 1년 공고가 없습니다"} />
+          </div>
+          <h3 className="mt-5 text-[13px] font-bold text-ink2">연도별 공고 수</h3>
+          <YearBars years={trend.years} />
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            채용 지수는 최근 12개월 공고 수를 평소 한 해 공고 수로 나눈 값입니다. 100이면 평소만큼, 200이면 평소의 두 배를 뽑고
+            있다는 뜻입니다. 평소는 끊김 없이 모인 2020년부터 지난해까지의 평균으로 잡았습니다. 공고 건수라서 한 공고에 여러 명을
+            뽑는 것도 한 건이고, 합격자 발표 같은 안내 공고도 한 건으로 셉니다. 2015~2019년은 아직 받아 오지 못해 빗금으로 두었습니다.
+          </p>
+        </section>
+      )}
+
+      {mix.total >= 5 && (mix.kinds.length > 0 || mix.words.length > 0) && (
+        <section className="card mt-6 p-5" aria-labelledby="org-mix-h">
+          <h2 id="org-mix-h" className="text-[15px] font-bold">어떤 자리를 주로 뽑나</h2>
+          <p className="mt-1 text-[12.5px] text-muted">최근 공고 가운데 합격자 발표·면접 일정 같은 안내를 뺀 채용 공고 {mix.total.toLocaleString("ko-KR")}건의 제목에서 센 것입니다. 한 공고에 여러 형태가 섞이면 각각 셉니다.</p>
+          {mix.kinds.length > 0 && (
+            <ul className="mt-3 space-y-1.5">
+              {mix.kinds.slice(0, 5).map((k) => (
+                <li key={k.label} className="flex items-center gap-3 text-[13.5px]">
+                  <span className="w-28 shrink-0 text-ink2">{k.label}</span>
+                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-ground">
+                    <span className="block h-full rounded-full bg-brand/70" style={{ width: `${Math.round((k.n / mix.total) * 100)}%` }} />
+                  </span>
+                  <span className="num w-20 shrink-0 text-right text-muted">{k.n}건 · {Math.round((k.n / mix.total) * 100)}%</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {mix.words.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-[13px] font-bold text-ink2">제목에 자주 나온 말</h3>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {mix.words.map((w) => (
+                  <Link key={w.word} href={jobPath({ q: `${shortOrg} ${w.word}`, page: 1 })} className="chip !py-1 !text-[12.5px]">
+                    {w.word} <span className="num ml-1 text-faint">{w.n}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
       <JobList board={board} route={route} />
 
       <AdSlot name="page_bottom" />
@@ -163,9 +235,64 @@ export default async function JobsByOrg({ params }: P) {
         </div>
       </section>
 
+      <section className="mt-14" aria-labelledby="org-prep-h">
+        <h2 id="org-prep-h" className="sec-title text-[1.0625rem] font-extrabold">{org} 지원서 준비</h2>
+        <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
+          <p>
+            자기소개서와 이력서는 공고문의 <b>응시 자격, 우대 사항, 제출 서류</b> 칸에서 시작하면 됩니다. 같은 기관이라도 자리마다
+            묻는 항목이 다르고, 자기소개서 문항을 공고문에 붙여 두는 곳이 많습니다. 아래 목록에서 지난 공고를 몇 건 열어 문항과
+            요구 자격이 회차마다 어떻게 바뀌었는지 보시면, 다음 공고 전에 미리 써 둘 수 있습니다.
+          </p>
+          {mix.kinds.some((k) => k.label === "공무직" || k.label === "기간제" || k.label === "정규직·일반직") && (
+            <p>
+              공공기관 채용은 대개 블라인드 방식이라, 지원서에 출신 학교·나이·가족 같은 것을 적지 못하게 하는 경우가 많습니다.
+              대신 공고문에 붙은 <b>직무기술서</b>에 적힌 일과 필요한 능력을 기준으로, 비슷한 일을 해 본 경험을 구체적으로
+              적는 것이 핵심입니다. 무엇을 적으면 안 되는지는 공고문마다 따로 적혀 있으니 꼭 확인하세요.
+            </p>
+          )}
+          {mix.kinds.some((k) => k.label === "임기제" || k.label === "전문경력관") && (
+            <p>
+              임기제 공무원이나 전문경력관은 정해진 경력 요건을 채워야 응시할 수 있습니다. 경력증명서에 적힌 기간과 하던 일이
+              공고의 요건과 맞는지가 서류 심사의 중심이라, 경력을 기간·기관·맡은 일로 나눠 정리해 두면 좋습니다. 직무수행계획서를
+              함께 내라는 공고도 있습니다.
+            </p>
+          )}
+          <p>
+            이 기관 합격 후기나 자기소개서 예시를 더 보고 싶다면 취업 포털에서 기관 이름으로 찾아보세요. 남의 글은 참고만 하고,
+            문장은 내 경험으로 새로 쓰는 것이 좋습니다. 비슷한 글이 많으면 서류에서 오히려 눈에 띄지 않습니다.
+          </p>
+        </div>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {[
+            ...outLinks,
+            ...mix.words.slice(0, 2).map((w): [string, string, string] =>
+              ["잡코리아", `${w.word} 합격 자소서`, `https://www.jobkorea.co.kr/starter/passassay?schTxt=${enc(w.word)}`]),
+          ].map(([site, label, href]) => (
+            <li key={href}>
+              <a href={href} target="_blank" rel="noopener noreferrer nofollow"
+                 className="card card-link flex items-center justify-between gap-3 px-4 py-3 text-[14px]">
+                <span><span className="text-[12px] font-semibold text-brand">{site}</span> <b className="ml-1">{label}</b></span>
+                <span aria-hidden className="text-faint">↗</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-muted">바깥 사이트로 넘어갑니다. 나라지원과 관계없는 곳이고, 그쪽 글의 내용은 나라지원이 확인하지 않았습니다.</p>
+      </section>
+
       <GuideBanner title="취업을 준비하신다면 이것도" />
       <RelatedLinks items={jobsRelated()} />
       <PromoBanner placement="jobs-org" context="job" />
+    </div>
+  );
+}
+
+function Stat({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="rounded-card bg-ground px-4 py-3">
+      <span className="text-[12px] font-semibold text-muted">{label}</span>
+      <b className="num mt-0.5 block text-[1.35rem] leading-tight text-ink">{value}</b>
+      <span className="mt-1 block text-[12px] leading-snug text-muted">{note}</span>
     </div>
   );
 }
