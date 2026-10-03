@@ -145,7 +145,7 @@ function jobNode(job: Job) {
     // 지역이 비어도 근무지를 뺄 수 없다 — 구글이 공고 자체를 무효로 친다.
     jobLocation: jobLocation(job),
     url: `${SITE_URL}/jobs/${encodeURIComponent(job.id)}`,
-    identifier: { "@type": "PropertyValue", name: "나라일터", value: job.id },
+    identifier: { "@type": "PropertyValue", name: sourceName(job.id), value: job.id },
     ...(job.headcount && /^\d+$/.test(job.headcount)
       ? { totalJobOpenings: Number(job.headcount) }
       : {}),
@@ -388,7 +388,7 @@ export default async function JobDetail({ params }: P) {
           rel="noopener noreferrer"
           className="btn btn-primary px-5 py-2.5"
         >
-          {job.url ? "원문 공고 보기" : "나라일터에서 찾아보기"}
+          {job.url ? `원문 공고 보기(${sourceName(job.id)})` : "나라일터에서 찾아보기"}
         </a>
         {job.region && (
           <Link href={`/jobs/region/${encodeURIComponent(job.region)}`} className="btn btn-ghost px-5 py-2.5">
@@ -443,4 +443,9 @@ export default async function JobDetail({ params }: P) {
       <RelatedLinks items={jobsRelated()} />
     </article>
   );
+}
+
+/** 공고를 가져온 곳. 잡알리오 공고는 번호가 a 로 시작한다(lib/alioJobs). */
+function sourceName(id: string): string {
+  return id.startsWith("a") ? "잡알리오" : "나라일터";
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isLoggedIn } from "@/lib/auth";
+import { alioStep } from "@/lib/alioJobs";
 import { crawlStep, discoverStep, seedStep, tidyStep } from "@/lib/orgCrawl";
 
 /**
@@ -8,6 +9,7 @@ import { crawlStep, discoverStep, seedStep, tidyStep } from "@/lib/orgCrawl";
  * ?step=discover 홈페이지 메뉴에서 채용·공지 게시판 찾기
  * ?step=crawl    게시판 첫 쪽의 제목·링크·날짜
  * ?step=tidy     예전 판독이 남긴 지저분한 제목 지우기
+ * ?step=alio     잡알리오 새 공고(이미 있는 쪽을 만나면 멈춤) · alio_full 은 끝까지
  * 응답의 more 가 true 면 남은 것이 있다. 부르는 쪽(GitHub Actions)이 다시 부른다.
  */
 export const dynamic = "force-dynamic";
@@ -21,7 +23,8 @@ export async function GET(req: Request) {
   }
   const step = new URL(req.url).searchParams.get("step") ?? "crawl";
   try {
-    const r = step === "seed" ? await seedStep() : step === "discover" ? await discoverStep() : step === "crawl" ? await crawlStep() : step === "tidy" ? await tidyStep() : null;
+    const r = step === "seed" ? await seedStep() : step === "discover" ? await discoverStep() : step === "crawl" ? await crawlStep() : step === "tidy" ? await tidyStep()
+      : step === "alio" ? await alioStep("new") : step === "alio_full" ? await alioStep("full") : null;
     if (!r) return NextResponse.json({ error: `모르는 step: ${step}` }, { status: 400 });
     return NextResponse.json({ at: new Date().toISOString(), ...r });
   } catch (e) {
