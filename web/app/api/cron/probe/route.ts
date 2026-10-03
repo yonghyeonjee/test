@@ -1,0 +1,49 @@
+import { NextResponse } from "next/server";
+import { isLoggedIn } from "@/lib/auth";
+import { allowed, fetchText, links } from "@/lib/orgCrawl";
+
+/**
+ * 새 수집처를 서울 서버에서 살펴본다(정부 누리집 다수가 외국 IP 를 막아 GitHub Actions 에서는 안 열린다).
+ * ?url=… (쉼표로 여럿). 공공 누리집·공공데이터 API 만. 주소에 {KEY} 를 쓰면 서버의 공공데이터 키로 바꾸고,
+ * 응답에서는 다시 가린다. CRON_SECRET 또는 관리자만.
+ */
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+const OK_HOST = /(^|\.)(go\.kr|or\.kr|re\.kr|ac\.kr|data\.go\.kr)$/;
+const DATE = /(20\d{2})[.\-/](\d{1,2})[.\-/](\d{1,2})/;
+
+export async function GET(req: Request) {
+  const auth = req.headers.get("authorization") ?? "";
+  const secret = process.env.CRON_SECRET;
+  if (!(secret && auth === `Bearer ${secret}`) && !isLoggedIn()) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const key = process.env.DATA_GO_KR_KEY ?? "";
+  const raw = (new URL(req.url).searchParams.get("url") ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 6);
+  const out = [];
+  for (const u0 of raw) {
+    let host = "";
+    try { host = new URL(u0.replace("{KEY}", "x")).hostname; } catch { out.push({ url: u0, error: "bad url" }); continue; }
+    if (!OK_HOST.test(host)) { out.push({ url: u0, error: "허용하지 않는 호스트" }); continue; }
+    const u = u0.replace("{KEY}", encodeURIComponent(key));
+    const isApi = host === "apis.data.go.kr";
+    const robots = isApi ? null : await allowed(u);
+    const r = await fetchText(u, 20_000);
+    const mask = (s: string) => (key ? s.split(key).join("***").split(encodeURIComponent(key)).join("***") : s);
+    const text = r.text;
+    const title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(text)?.[1]?.trim().slice(0, 100) ?? null;
+    const ls = /<html|<body/i.test(text.slice(0, 3000)) ? links(text, r.url, true) : [];
+    const dated = ls.map((l, i) => {
+      const next = ls[i + 1]?.at ?? text.length;
+      const d = DATE.exec(text.slice(l.end, Math.min(next, l.end + 400)).replace(/<[^>]+>/g, " "));
+      return { t: l.text.slice(0, 70), h: l.js ? "(js)" : l.href.slice(0, 120), d: d?.[0] ?? null };
+    }).filter((x) => x.t.length >= 8);
+    out.push({
+      url: mask(u0), status: r.status, final: mask(r.url), len: text.length, robots, title,
+      links: ls.length, datedLinks: dated.filter((x) => x.d).length,
+      sample: (dated.filter((x) => x.d).length ? dated.filter((x) => x.d) : dated).slice(0, 12),
+      calls: Array.from(new Set(text.match(/["'](\/[\w/\-]+\.(?:do|json|jsp|ajax))/g) ?? [])).slice(0, 20),
+      head: ls.length ? undefined : mask(text.slice(0, 1500)),
+    });
+  }
+  return NextResponse.json({ at: new Date().toISOString(), out });
+}

@@ -27,6 +27,7 @@ export function generateMetadata({ searchParams }: { searchParams: SP }): Metada
     title: q ? `‘${q}’ 통합 검색` : "통합 검색",
     description: "복지·기업 지원사업, 공공기관 채용, 국가자격, 공공기관 사업, 안내 글을 한 번에 찾습니다. 연관어까지 같이 찾습니다.",
     robots: { index: false, follow: true },
+    alternates: { canonical: q ? `/search?q=${encodeURIComponent(q)}` : "/search" },
   });
 }
 

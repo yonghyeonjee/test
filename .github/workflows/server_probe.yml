@@ -1,0 +1,22 @@
+name: server-probe
+
+# 서울 서버(/api/cron/probe)에서 주소를 열어 본다. 외국 IP 를 막는 정부 누리집·공공데이터 API 살펴보기용.
+# 주소에 {KEY} 를 쓰면 서버의 공공데이터 키로 바뀐다(응답에서는 가려짐).
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "주소(쉼표, 최대 6개)"
+        required: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          URLS: ${{ inputs.urls }}
+        run: |
+          curl -sS --max-time 120 -G -H "Authorization: Bearer $CRON_SECRET" --data-urlencode "url=$URLS" "$SITE/api/cron/probe" | jq .
