@@ -92,6 +92,8 @@ def check_map(browser) -> None:
     picks = page.evaluate("""() => [...document.querySelectorAll('[aria-label="지역 고르기"] select')].map(s => ({
       label: s.getAttribute('aria-label'), value: s.selectedOptions[0]?.textContent, disabled: s.disabled, n: s.options.length }))""")
     print("   지역 칸:", json.dumps(picks, ensure_ascii=False))
+    print("   기준 글:", page.evaluate("() => [...document.querySelectorAll('span')].filter(e => /기준$/.test(e.textContent.trim())).map(e => e.textContent.trim()).slice(0, 3)"))
+    print("   where:", page.evaluate("() => fetch('/api/map/where?lat=37.380&lng=126.803').then(r => r.text()).then(t => t.slice(0, 300))"))
     print("   내 위치 30km:", json.dumps(page.evaluate(OVERLAP_JS), ensure_ascii=False))
     head = page.locator('section[aria-label="공고 카드"] h2')
     print("   카드 목록:", head.first.inner_text() if head.count() else "(없음)")
