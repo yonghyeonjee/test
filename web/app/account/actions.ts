@@ -1,8 +1,10 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { verifyCaptcha } from "@/lib/captcha";
 import { hash, verify, weak } from "@/lib/password";
-import { svcDb as svc } from "@/lib/svcDb";
+import { USER_COOKIE, currentDevice, sessionConfigured, userCookie } from "@/lib/session";
+import { svcConfigured, svcDb as svc } from "@/lib/svcDb";
 
 /** 계정 관련 쓰기는 전부 서버에서. 서비스 키는 브라우저로 내려가지 않는다. */
 
@@ -52,6 +54,7 @@ export async function createAccount(form: {
   if (error)
     return { ok: false, error: "만들지 못했습니다. 잠시 뒤 다시 시도해주세요." };
 
+  if (sessionConfigured()) cookies().set(userCookie(form.device));
   return { ok: true, device: form.device };
 }
 
@@ -80,6 +83,7 @@ export async function loginAccount(form: {
   const ok = await verify(form.password, row.hash);
   await db.rpc("account_mark", { p_username: form.username, p_ok: ok });
 
+  if (ok && sessionConfigured()) cookies().set(userCookie(row.device));
   return ok
     ? { ok: true, device: row.device }
     : { ok: false, error: "사용자명 또는 비밀번호가 다릅니다." };
@@ -92,16 +96,45 @@ export async function updateContact(form: {
   email?: string;
   consent: boolean;
 }): Promise<Result> {
+  // 세션이 있으면 세션의 기기만 고칠 수 있다. 남의 기기 열쇠를 넣어도 안 먹는다.
+  const mine = currentDevice();
+  if (mine && mine !== form.device.toLowerCase()) return { ok: false, error: "다시 로그인해주세요." };
   const gave = Boolean(form.phone || form.email);
   if (gave && !form.consent)
     return { ok: false, error: "연락처를 남기시려면 안내 수신에 동의해주세요." };
 
+  // 동의를 끄면 연락처도 같이 지운다(안내문과 같게).
   await svc().rpc("account_update_contact", {
     p_device: form.device,
-    p_name: form.name?.trim() || null,
-    p_phone: form.phone?.replace(/[^0-9]/g, "") || null,
-    p_email: form.email?.trim() || null,
+    p_name: form.consent ? form.name?.trim() || null : null,
+    p_phone: form.consent ? form.phone?.replace(/[^0-9]/g, "") || null : null,
+    p_email: form.consent ? form.email?.trim() || null : null,
     p_consent: form.consent && gave,
   });
   return { ok: true };
+}
+
+/** 로그아웃. 쿠키만 지운다 — 저장 조건은 서버에 그대로 남는다. */
+export async function logoutAccount(): Promise<Result> {
+  cookies().delete(USER_COOKIE);
+  return { ok: true };
+}
+
+export type MyAccount = {
+  username: string; display_name: string | null; email: string | null; phone_tail: string | null;
+  notify_consent: boolean; consent_at: string | null; created_at: string; last_login_at: string | null;
+};
+
+/** 로그인돼 있으면 내 계정(비밀번호 해시 없음), 아니면 null. */
+export async function myAccount(): Promise<{ device: string; account: MyAccount | null } | null> {
+  const device = currentDevice();
+  if (!device || !svcConfigured()) return null;
+  try {
+    const { data } = await svc().rpc("account_by_device", { p_device: device });
+    const row = ((data ?? []) as MyAccount[])[0] ?? null;
+    return { device, account: row };
+  } catch {
+    // DB 가 잠깐 안 되면 로그인 전 화면을 보인다. 500 보다 낫다.
+    return null;
+  }
 }
