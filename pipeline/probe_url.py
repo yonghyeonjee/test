@@ -11,6 +11,10 @@ for u in urls:
         print(f"\n== {u}\n   status {r.status_code}  {r.elapsed.total_seconds()*1000:.0f}ms  len {len(r.content)}")
         for k in ("cache-control", "content-type", "location", "via", "x-nextjs-cache", "x-middleware-rewrite"):
             if k in r.headers: print(f"   {k}: {r.headers[k]}")
+        import re as _re
+        for prop in ("og:title", "og:image", "twitter:image"):
+            m = _re.search(r'<meta[^>]+(?:property|name)="%s"[^>]+content="([^"]+)"' % prop, r.text)
+            if m: print(f"   {prop}: {m.group(1)}")
         print("   body:", r.text[:400].replace("\n", " "))
     except Exception as e:  # noqa: BLE001
         print(f"\n== {u}\n   실패: {e}")

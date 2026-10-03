@@ -69,35 +69,64 @@ async function fetchOnce(url: string, ms: number): Promise<{ ok: boolean; status
 
 // ── robots.txt ───────────────────────────────────────
 
-const robotsCache = new Map<string, string[]>();
+type Rule = { allow: boolean; path: string };
+const robotsCache = new Map<string, Rule[]>();
 
-/** User-agent: * (또는 우리 이름) 묶음의 Disallow 경로들. 못 읽으면 막힌 것이 없다고 본다. */
-async function disallows(origin: string): Promise<string[]> {
+/**
+ * robots.txt 를 표준(RFC 9309)대로 읽는다. 우리 이름(narajiwon)이 적힌 묶음이 있으면 그것, 없으면 * 묶음.
+ * 이전에는 Disallow 가 하나라도 맞으면 막힌 것으로 봤다. "전체 금지, 게시판은 허용" 처럼 Allow 로 일부를
+ * 여는 곳까지 막혔다고 본 셈이다. 못 읽으면(없음·오류) 막힌 것이 없다고 본다.
+ */
+export function parseRobots(text: string): Rule[] {
+  const groups: { agents: string[]; rules: Rule[] }[] = [];
+  let cur: { agents: string[]; rules: Rule[] } | null = null;
+  let lastWasAgent = false;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.replace(/#.*/, "").trim();
+    const m = /^([\w-]+)\s*:\s*(.*)$/.exec(line);
+    if (!m) continue;
+    const k = m[1].toLowerCase(), v = m[2].trim();
+    if (k === "user-agent") {
+      if (!cur || !lastWasAgent) { cur = { agents: [], rules: [] }; groups.push(cur); }
+      cur.agents.push(v.toLowerCase());
+      lastWasAgent = true;
+    } else if ((k === "allow" || k === "disallow") && cur) {
+      if (v) cur.rules.push({ allow: k === "allow", path: v });
+      lastWasAgent = false;
+    } else {
+      lastWasAgent = false;
+    }
+  }
+  const mine = groups.filter((g) => g.agents.some((a) => a !== "*" && "narajiwonbot".includes(a.replace(/\/.*$/, ""))));
+  const pick = mine.length ? mine : groups.filter((g) => g.agents.includes("*"));
+  return pick.flatMap((g) => g.rules);
+}
+
+const toRe = (p: string) => new RegExp("^" + p.replace(/[.+?^{}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*").replace(/\\\$$/, "$"));
+
+/** 가장 길게 맞는 규칙이 이긴다. 길이가 같으면 Allow. */
+export function robotsAllows(rules: Rule[], path: string): boolean {
+  let best: Rule | null = null;
+  for (const r of rules) {
+    if (!toRe(r.path).test(path)) continue;
+    if (!best || r.path.length > best.path.length || (r.path.length === best.path.length && r.allow)) best = r;
+  }
+  return !best || best.allow;
+}
+
+async function robotsOf(origin: string): Promise<Rule[]> {
   const hit = robotsCache.get(origin);
   if (hit) return hit;
   const r = await fetchText(`${origin}/robots.txt`, 6_000);
-  const out: string[] = [];
-  if (r.ok && !/<html/i.test(r.text.slice(0, 500))) {
-    let mine = false;
-    for (const raw of r.text.split(/\r?\n/)) {
-      const line = raw.replace(/#.*/, "").trim();
-      const m = /^([\w-]+)\s*:\s*(.*)$/.exec(line);
-      if (!m) continue;
-      const k = m[1].toLowerCase(), v = m[2].trim();
-      if (k === "user-agent") mine = v === "*" || /narajiwon/i.test(v);
-      else if (k === "disallow" && mine && v) out.push(v);
-    }
-  }
-  robotsCache.set(origin, out);
-  return out;
+  const rules = r.ok && !/<html/i.test(r.text.slice(0, 500)) ? parseRobots(r.text) : [];
+  robotsCache.set(origin, rules);
+  return rules;
 }
 
 export async function allowed(url: string): Promise<boolean> {
   try {
     const u = new URL(url);
-    const rules = await disallows(u.origin);
-    const path = u.pathname + u.search;
-    return !rules.some((p) => p === "/" || path.startsWith(p.replace(/\*.*$/, "")));
+    return robotsAllows(await robotsOf(u.origin), u.pathname + u.search);
   } catch {
     return false;
   }
