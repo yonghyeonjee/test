@@ -22,7 +22,7 @@ export default async function SideRailAd() {
   return (
     <WideOnly query="(min-width: 1536px) and (min-height: 880px)">
       <div className="side-rail">
-        <AdBox cfg={s} tall />
+        <AdBox cfg={s} tall rail />
       </div>
     </WideOnly>
   );
