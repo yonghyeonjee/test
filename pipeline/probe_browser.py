@@ -451,6 +451,11 @@ def check_org(browser, path: str) -> None:
     hook(page, errs)
     r = page.goto(BASE + path, wait_until="domcontentloaded")
     print("   status", r.status)
+    # 처음 그리는 쪽은 loading.tsx 가 먼저 오고 본문이 뒤따른다. 본문 제목이 설 때까지.
+    try:
+        page.wait_for_selector("main h2", timeout=20000)
+    except Exception:  # noqa: BLE001
+        print("   (20초 안에 본문 제목이 없음)")
     info = page.evaluate("""() => ({
       h2: [...document.querySelectorAll('main h2')].map(h => h.textContent.trim()).slice(0, 14),
       bars: document.querySelectorAll('figure [title]').length,
