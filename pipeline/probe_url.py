@@ -15,6 +15,8 @@ for u in urls:
         for prop in ("og:title", "og:image", "twitter:image"):
             m = _re.search(r'<meta[^>]+(?:property|name)="%s"[^>]+content="([^"]+)"' % prop, r.text)
             if m: print(f"   {prop}: {m.group(1)}")
+        for m in _re.finditer(r'"address":\{[^}]*\}', r.text):
+            print("   jobLocation.address:", m.group(0)[:200])
         print("   body:", r.text[:400].replace("\n", " "))
     except Exception as e:  # noqa: BLE001
         print(f"\n== {u}\n   실패: {e}")
