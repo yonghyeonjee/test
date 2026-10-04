@@ -1,4 +1,5 @@
 import type { Job } from "./pubJobs";
+import { locateJob } from "./geo";
 import { SIDO_WORDS } from "./parse";
 
 /**
@@ -12,8 +13,12 @@ import { SIDO_WORDS } from "./parse";
  */
 export function jobLocation(job: Job) {
   const address: Record<string, string> = { "@type": "PostalAddress", addressCountry: "KR" };
-  const region = job.region || sidoFromOrg(job.org);
+  // 지역 칸 → 기관 이름 → 공고 제목 → 시·군·구 사전(locateJob: "대전청사관리소" 같은 줄임 이름까지) 순으로.
+  // Search Console 이 addressRegion 이 빠졌다고 알렸다(권장 항목). 끝까지 모르면 비워 둔다 — 지어 넣지 않는다.
+  const place = locateJob({ org: job.org, title: job.title, region: job.region });
+  const region = job.region || sidoFromOrg(job.org) || sidoFromOrg(job.title) || place?.sido || null;
   if (region) address.addressRegion = region;
+  if (place?.sigungu && place.sido === region) address.addressLocality = place.sigungu;
   return { "@type": "Place", address };
 }
 
