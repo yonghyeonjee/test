@@ -1,0 +1,39 @@
+name: qnet-site
+
+# 큐넷 종목별 시험 일정·수험자 동향. 매주 일요일 04:10 KST. 서울 서버의 /api/cron/qnet 을 부른다.
+# 처음 한 번은 종목 613개 × 요청 7개라 회차가 많이 돈다(한 번에 40초, 최대 150회). 그 뒤로는 주마다 일정만 다시 읽는다.
+# 필요한 secret: CRON_SECRET
+
+on:
+  schedule:
+    - cron: "10 19 * * 6"   # UTC 토 19:10 = KST 일 04:10
+  workflow_dispatch:
+    inputs:
+      rounds:
+        description: "최대 호출 횟수"
+        required: false
+        default: "150"
+
+concurrency:
+  group: qnet-site
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: 수집
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ROUNDS: ${{ inputs.rounds || '150' }}
+        run: |
+          set -u
+          [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }
+          for round in $(seq 1 "$ROUNDS"); do
+            body=$(curl -sS --max-time 100 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/qnet") || { echo "요청 실패(회차 $round)"; sleep 10; continue; }
+            echo "$round: $(echo "$body" | head -c 400)"
+            [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || break
+            sleep 2
+          done

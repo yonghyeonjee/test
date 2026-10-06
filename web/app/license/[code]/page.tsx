@@ -10,15 +10,17 @@ import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import ExamInsight from "@/components/ExamInsight";
 import ExamRoundsFor from "@/components/ExamRoundsFor";
 import { licenseFaq, licenseIntro, seriesEligibility } from "@/lib/licenseText";
-import { getExamRounds, upcomingForSeries } from "@/lib/qnetExam";
+import { getExamSite } from "@/lib/examInsight";
+import { getExamRounds, gradeOfSeries, upcomingForSeries } from "@/lib/qnetExam";
 import { getLicenses, type License } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
 import { SITE_URL, withOg } from "@/lib/seo";
 
-/** 종목 목록은 일주일에 한 번이면 된다. 빌드 때 API 가 죽어 있으면 요청 때 만든다. */
-export const revalidate = 604800;
+/** 하루에 한 번. 큐넷 일정·통계가 주마다 들어오니 일주일 캐시는 길다. 빌드 때 API 가 죽어 있으면 요청 때 만든다. */
+export const revalidate = 86400;
 export const dynamicParams = true;
 
 /**
@@ -58,9 +60,12 @@ export default async function LicensePage({ params }: { params: { code: string }
   if (!r) notFound();
   const { l, same } = r;
   // 일정은 못 읽어도 화면은 살린다. 자격증 설명이 주된 내용이다.
-  const rounds = await getExamRounds()
-    .then((rs) => upcomingForSeries(rs, l.series))
-    .catch(() => []);
+  const [rounds, site] = await Promise.all([
+    getExamRounds().then((rs) => upcomingForSeries(rs, l.series)).catch(() => []),
+    getExamSite(l.code),
+  ]);
+  // 국가전문자격은 등급별 통합 회차가 없다. 큐넷 종목 안내에서 읽어 둔 올해 일정이 있으면 그것이 "시험 일정" 이다.
+  const siteOnly = !gradeOfSeries(l.series) && site.sched.length > 0;
 
   return (
     <div className="pb-4">
@@ -79,7 +84,8 @@ export default async function LicensePage({ params }: { params: { code: string }
 
       {/* 종목 API 에는 날짜가 없고 일정 API 에는 종목이 없다. 등급으로 이어
           "내가 볼 자격증의 다음 접수일" 을 여기서 보여 준다. */}
-      <ExamRoundsFor series={l.series} name={l.name} list={rounds} />
+      {!siteOnly && <ExamRoundsFor series={l.series} name={l.name} list={rounds} />}
+      <ExamInsight name={l.name} code={l.code} site={site} title={siteOnly ? "시험 일정과 난이도" : undefined} />
 
       <section className="mt-10 rounded-card border border-line bg-surface2 p-5">
         <h2 className="text-sm font-bold">응시 자격 (일반 기준)</h2>

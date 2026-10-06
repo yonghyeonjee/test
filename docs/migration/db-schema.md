@@ -12,7 +12,10 @@ Supabase 운영 DB 의 `public` 스키마를 읽어 정리했다. 행 수는 통
 | `job_posts` | 230,615 / 170MB | `id`, `source`(gojobs·worldjob…), `source_id`, `title`, `org`, `region`, `hire`, `recruit`, `sectors`, `headcount`, `start_date`, `end_date`, `reg_date`, `url`, `nation`, `lang`, `visa`, `career`, `industry`, `raw`(jsonb), `area_code`, `type01/02`, `first_seen_at`, `fetched_at` | 가장 큰 표. 2008년부터의 공고 |
 | `agency_items` | 1,991 / 4MB | `id`, `kind`(business·event·facility), `title`, `org`, `cate`, `target`, `descr`, `address`, `start/end_date`, `url`, `tags[]`, `sido`, `raw` | 알리오플러스 |
 | `license_items` | 613 | `code`, `name`, `kind`, `kind_name`, `series`, `field`, `sub_field` | 큐넷 종목 |
-| `exam_rounds` | 38 | `id`, `grade`, `round`, 필기·실기 접수/시험/발표 날짜들 | 큐넷 시험 일정 |
+| `exam_rounds` | 38 | `id`, `grade`, `round`, 필기·실기 접수/시험/발표 날짜들 | 큐넷 시험 일정(API, 등급별 올해) |
+| `exam_sched` | 종목×회차 | `code`, `year`, `label`, `stage`, 접수/시험/발표 날짜들 | 큐넷 누리집 종목별 일정. 해마다 쌓음(`sql/006`) |
+| `exam_stats` | 종목×해×단계 | `code`, `year`, `stage`, `applicants`, `takers`, `passers`, `pass_rate` | 큐넷 수험자 동향 3년. 숫자 전부 null = 집계 없음 확인 |
+| `exam_site_state` | 613 | `code`, `sched_at`, `stats_at`, `fails`, `last_error` | 위 둘의 수집 진행(서버만) |
 | `rate_rows` | 13 | `bank`, `ratio`, `base`, `extra`, `rate`, `ymd_from/to` | 전세대출 금리 |
 | `blog_posts` | 수십 | `slug`, `kind`, `subject`, `title`, `summary`, `keywords[]`, `body`(jsonb), `stats`, `published_at` | 자동 블로그 |
 | `site_settings` | 18 | `key`, `value`(jsonb), `updated_at` | 광고·SEO·공지·수집 커서·금리표 |
@@ -89,8 +92,8 @@ Aurora 로 옮길 때 그대로 만든다(`pg_trgm` 지원).
 
 ## 6. 행 단위 보안(RLS)
 
-모든 표에 RLS 가 켜져 있고, 공개 읽기 정책은 `agency_items`, `exam_rounds`, `job_posts`, `license_items`,
-`rate_rows` 다섯 표뿐이다. 나머지는 정책 없음(= 공개 키로 직접 못 읽음)이고 뷰·함수로만 연다.
+모든 표에 RLS 가 켜져 있고, 공개 읽기 정책은 `agency_items`, `exam_rounds`, `exam_sched`, `exam_stats`, `job_posts`, `license_items`,
+`rate_rows` 일곱 표뿐이다. 나머지는 정책 없음(= 공개 키로 직접 못 읽음)이고 뷰·함수로만 연다.
 Java 이전 뒤에는 RLS 대신 DB 계정을 나눈다: `app_read`(SELECT), `app_write`(정해진 표 쓰기),
 `batch`(수집·정규화), `admin`.
 
