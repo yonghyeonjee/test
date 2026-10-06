@@ -27,6 +27,16 @@ export function dbEnvError() {
   );
 }
 
+/**
+ * DB 요청마다 제한 시간을 건다. 2026-10-06 DB 가 멈췄을 때 요청이 답을 기다리며 서버(512MB)에 쌓여
+ * 메모리가 바닥나고 서버 전체가 멈췄다. 제때 못 받으면 끊고, 화면은 "못 읽음" 쪽으로 간다.
+ */
+const DB_TIMEOUT_MS = Number(process.env.DB_TIMEOUT_MS ?? 12_000);
+function withTimeout(init?: RequestInit): RequestInit {
+  const t = AbortSignal.timeout(DB_TIMEOUT_MS);
+  return { ...init, signal: init?.signal ? AbortSignal.any([init.signal, t]) : t };
+}
+
 // 읽기 전용. anon 키만 사용한다 — service_role 키는 절대 여기 넣지 않는다.
 //
 // 설정이 없을 때 createClient 는 "supabaseUrl is required" 만 던져서 어느 변수가
@@ -36,7 +46,7 @@ export function dbEnvError() {
 export const db = dbConfigured
   ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
       auth: { persistSession: false },
-      ...(buildWithoutDb ? { global: { fetch: emptyDbFetch } } : {}),
+      global: { fetch: buildWithoutDb ? emptyDbFetch : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, withTimeout(init)) },
     })
   : (new Proxy(
       {},
@@ -58,7 +68,7 @@ export const db = dbConfigured
 export const dbLive = dbConfigured
   ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
       auth: { persistSession: false },
-      global: { fetch: buildWithoutDb ? emptyDbFetch : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }) },
+      global: { fetch: buildWithoutDb ? emptyDbFetch : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...withTimeout(init), cache: "no-store" }) },
     })
   : db;
 
