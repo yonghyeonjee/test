@@ -1,4 +1,4 @@
-import { JOB_SOURCES } from "./pubJobs";
+import { SOURCE_OP, SOURCE_VAL } from "./pubJobs";
 import { unstable_cache } from "next/cache";
 import { db, dbConfigured } from "./db";
 import { haversineKm, locate, locateJob, sggFromDept, type Place } from "./geo";
@@ -141,7 +141,7 @@ async function loadJobs() {
   const { data, error } = await db
     .from("job_posts")
     .select("source_id,title,org,region,start_date,end_date")
-    .in("source", JOB_SOURCES)
+    .filter("source", SOURCE_OP, SOURCE_VAL)
     .gte("end_date", today)
     .order("end_date", { ascending: true })
     .limit(3000);
