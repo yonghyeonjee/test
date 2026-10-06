@@ -13,13 +13,19 @@ Environment=PORT=3000
 # localhost 로 둔다. 127.0.0.1 이면 Next 라우터는 127.0.0.1, 미들웨어는 localhost 로 제 주소를 알아
 # 미들웨어의 rewrite(없는 채용 주소 → 404 쪽)를 바깥 주소로 보고 프록시하려다 500 을 낸다.
 Environment=HOSTNAME=localhost
-# 512MB 서버($5): 힙을 256MB 로 묶는다. 실측(동시 20개 요청 300번)은 80MB 안팎이었다.
-# 380MB 를 넘으면 스왑으로 밀어내고, 450MB 에서 끊고 다시 띄운다.
-ExecStart=/usr/bin/node --max-old-space-size=256 server.js
+# "512MB" 서버($5)의 실제 메모리는 412MB 이고, 시스템이 쉬는 상태에서 190MB 를 쓴다.
+# 2026-10-06 두 번 멈춘 원인: 상한이 380/450MB 라 Node 가 커지면 기계 전체가 스왑으로 밀려 SSH 까지
+# 답을 못 했다(커널 OOM 기록 없음 = 죽이지 않고 기어감). 상한을 기계에 맞춘다. 힙 192MB, 240MB 에서
+# 되돌려 보내고 288MB 에서 끊고 3초 뒤 다시 띄운다. Node 하나가 죽는 쪽이 기계가 멈추는 것보다 낫다.
+# 커널이 메모리를 급히 비워야 할 때도 sshd 가 아니라 Node 를 먼저 고르게 한다.
+ExecStart=/usr/bin/node --max-old-space-size=192 server.js
 Restart=always
 RestartSec=3
-MemoryHigh=380M
-MemoryMax=450M
+TimeoutStopSec=20
+MemoryHigh=240M
+MemoryMax=288M
+MemorySwapMax=64M
+OOMScoreAdjust=800
 LimitNOFILE=65535
 
 [Install]
