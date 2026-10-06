@@ -154,10 +154,11 @@ const STATS_EVERY_MS = 300 * 86_400_000;
 export const statsYears = (today = new Date()) => [1, 2, 3].map((d) => today.getFullYear() - d);
 
 /**
- * 한 번 부르면 예산(기본 40초) 안에서 종목을 차례로 읽는다. 남으면 more=true.
+ * 한 번 부르면 예산(기본 30초) 안에서 종목을 차례로 읽는다. 남으면 more=true.
  * 처음 한 번은 종목 613개 × (일정 1 + 통계 6) 요청이라 여러 번 불러야 끝난다. 그 뒤로는 주마다 일정만.
+ * 예산을 넘긴 뒤에도 하던 종목의 통계 몇 개는 마저 받으니 실제로는 35초 안팎. Caddy 가 기다리는 90초 안.
  */
-export async function qnetSiteStep(budgetMs = 40_000): Promise<StepResult> {
+export async function qnetSiteStep(budgetMs = 30_000): Promise<StepResult> {
   const t0 = Date.now();
   const res: StepResult = { step: "qnet", done: 0, found: 0, errors: 0, more: false, notes: [] };
   const db = svcDb();
@@ -213,7 +214,7 @@ export async function qnetSiteStep(budgetMs = 40_000): Promise<StepResult> {
         const haveIds = new Set((got ?? []).map((g) => g.id as string));
         for (const y of years) for (const st of ["필기", "실기"] as const) {
           if (haveIds.has(`${s.code}|${y}|${st}`)) continue;
-          if (Date.now() - t0 > budgetMs + 10_000) break;
+          if (Date.now() - t0 > budgetMs + 5_000) break;
           const r = await fetchText(statsUrl(s.code, y, st), 15_000);
           await sleep(PAUSE_MS);
           if (!r.ok) throw new Error(`통계 ${y} ${st} ${r.status}`);

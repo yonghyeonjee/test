@@ -13,7 +13,9 @@
 	reverse_proxy 127.0.0.1:3000 {
 		transport http {
 			dial_timeout 3s
-			response_header_timeout 40s
+			# /api/cron/* 는 한 번에 최대 60초(maxDuration) 일한다. 40초로 두었을 때 큐넷 수집이 40초 만에 끊겨
+			# 점검 화면이 돌아갔다(2026-10-06). Node 가 60초에 스스로 끊으니 그보다 길게.
+			response_header_timeout 90s
 		}
 	}
 	handle_errors {
