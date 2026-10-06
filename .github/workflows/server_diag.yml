@@ -1,0 +1,43 @@
+name: server-diag
+
+# 서울 서버 안을 들여다본다(읽기만). 메모리·CPU 부하·프로세스·서비스 기록·커널 OOM 기록.
+# 2026-10-06 서버가 두 번 멈췄는데 SSH 가 같이 죽어 원인을 못 봤다. 재부팅 직후 이걸 돌려 흔적을 남긴다.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lines:
+        description: "서비스 기록 줄 수"
+        default: "120"
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HOST: ${{ secrets.LIGHTSAIL_HOST }}
+      KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+    steps:
+      - name: 들여다보기
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id
+          ssh-keyscan -T 20 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          S="ssh -o ConnectTimeout=20 -o StrictHostKeyChecking=no -i $HOME/.ssh/id ubuntu@$HOST"
+          $S 'set +e
+            echo "== 시각·가동 시간·부하"; date -u; uptime
+            echo; echo "== 메모리(MB)"; free -m
+            echo; echo "== 디스크"; df -h / | tail -1
+            echo; echo "== CPU 압박(PSI)"; cat /proc/pressure/cpu 2>/dev/null; echo "-- 메모리 압박"; cat /proc/pressure/memory 2>/dev/null
+            echo; echo "== CPU 도둑(steal) 포함 사용률 — 버스트 소진이면 st 가 큼"; top -bn1 | head -5
+            echo; echo "== 메모리 많이 쓰는 프로세스"; ps aux --sort=-rss | head -12
+            echo; echo "== CPU 많이 쓰는 프로세스"; ps aux --sort=-%cpu | head -8
+            echo; echo "== jiwon 서비스"; systemctl status jiwon --no-pager -l | head -15
+            echo; echo "== jiwon 서비스 메모리 한도·현재"; systemctl show jiwon -p MemoryCurrent -p MemoryMax -p MemoryHigh -p NRestarts
+            echo; echo "== 커널 OOM·kill 기록"; sudo dmesg -T 2>/dev/null | grep -i -E "out of memory|killed process|oom" | tail -20
+            echo; echo "== jiwon 서비스 기록(최근 ${{ inputs.lines }}줄)"; sudo journalctl -u jiwon -n ${{ inputs.lines }} --no-pager -o short-iso
+            echo; echo "== 시스템 기록에서 오류(최근 1시간)"; sudo journalctl -p err -S -1h --no-pager -o short-iso | tail -40
+            echo; echo "== Caddy"; systemctl is-active caddy; sudo journalctl -u caddy -n 20 --no-pager -o short-iso
+            echo; echo "== 3000 포트 응답"; curl -s -o /dev/null -m 15 -w "%{http_code} %{time_total}s\n" http://127.0.0.1:3000/ || echo "응답 없음"
+          '

@@ -69,8 +69,17 @@ jobs:
           cp -r .next/static ../bundle/.next/static
           cp -r public ../bundle/public
           cp ../deploy/lightsail/jiwon.service ../bundle/jiwon.service
+          cp ../deploy/lightsail/Caddyfile ../bundle/Caddyfile
+          cp ../deploy/lightsail/maintenance.html ../bundle/maintenance.html
           tar -C ../bundle -czf ../bundle.tgz .
           ls -lh ../bundle.tgz
+
+      - name: Caddy 설정 검사
+        if: steps.gate.outputs.go == '1'
+        run: |
+          curl -sSL --retry 3 "https://caddyserver.com/api/download?os=linux&arch=amd64" -o /tmp/caddy && chmod +x /tmp/caddy
+          /tmp/caddy version
+          /tmp/caddy validate --config deploy/lightsail/Caddyfile --adapter caddyfile
 
       - name: 서버 비밀값 파일
         if: steps.gate.outputs.go == '1'
@@ -134,6 +143,11 @@ jobs:
             # 서비스 정의(환경변수·메모리 한도)가 바뀌었으면 같이 갱신한다.
             if ! cmp -s \$D/jiwon.service /etc/systemd/system/jiwon.service; then
               sudo install -m 644 \$D/jiwon.service /etc/systemd/system/jiwon.service && sudo systemctl daemon-reload
+            fi
+            # 점검 화면과 Caddy 설정. 점검 화면은 배포 폴더 밖(static)에 둬 서비스가 죽어도 Caddy 가 찾는다.
+            sudo mkdir -p /srv/jiwon/static && sudo install -m 644 \$D/maintenance.html /srv/jiwon/static/maintenance.html
+            if ! cmp -s \$D/Caddyfile /etc/caddy/Caddyfile; then
+              sudo caddy validate --config \$D/Caddyfile --adapter caddyfile && sudo install -m 644 \$D/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
             fi
             sudo /usr/bin/systemctl restart jiwon
             # 지난 배포는 셋만 남긴다. 서비스(jiwon)가 쓴 캐시 파일이 섞여 있어 sudo 로 지운다.
