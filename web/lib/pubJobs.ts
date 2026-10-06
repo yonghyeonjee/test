@@ -9,6 +9,14 @@ import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
  */
 export const JOB_SOURCES = ["gojobs"];
 
+/**
+ * source 조건을 거는 법. 출처가 하나뿐일 때 in() 으로 물으면 SQL 이 source = ANY(...) 가 되고,
+ * 그러면 (source, reg_date) 인덱스의 정렬을 못 써 23만 건을 다 읽고 정렬한다(0.7초, 디스크가
+ * 느리면 익명 제한 3초를 넘김 — 2026-10-06 /jobs 장애의 직접 원인). 하나면 eq 로 묻는다(0.02초).
+ */
+export const SOURCE_OP = JOB_SOURCES.length === 1 ? "eq" : "in";
+export const SOURCE_VAL = JOB_SOURCES.length === 1 ? JOB_SOURCES[0] : `(${JOB_SOURCES.join(",")})`;
+
 export { filterJobs, jobTermsUsed, regionTokens, type JobFilter } from "./jobFilter";
 
 /**
@@ -143,7 +151,7 @@ async function fromStore(): Promise<JobBoard | null> {
     const { data, count } = await db
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "estimated" })
-      .in("source", JOB_SOURCES)
+      .filter("source", SOURCE_OP, SOURCE_VAL)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .order("end_date", { ascending: false, nullsFirst: false })
       .limit(LIST_MAX);
@@ -244,7 +252,7 @@ export const getJob = cache(async (sourceId: string): Promise<Job | null> => {
     const { data } = await db
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
-      .in("source", JOB_SOURCES)
+      .filter("source", SOURCE_OP, SOURCE_VAL)
       .eq("source_id", sourceId)
       .maybeSingle();
     if (!data) return null;
@@ -269,7 +277,7 @@ export const getJobAttach = cache(async (sourceId: string): Promise<JobAttach | 
   try {
     const { data } = await db
       .from("job_posts").select("korea:raw->korea")
-      .in("source", JOB_SOURCES).eq("source_id", sourceId).maybeSingle();
+      .filter("source", SOURCE_OP, SOURCE_VAL).eq("source_id", sourceId).maybeSingle();
     const k = (data as { korea?: Partial<JobAttach> | null } | null)?.korea;
     if (!k || !k.url || !Array.isArray(k.files)) return null;
     return { id: String(k.id ?? ""), url: k.url, org: k.org ?? null, reg: k.reg ?? null, end: k.end ?? null,
@@ -299,7 +307,7 @@ export async function getOpenJobs(limit = 10): Promise<Job[]> {
   const { data } = await db
     .from("job_posts")
     .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
-    .in("source", JOB_SOURCES)
+    .filter("source", SOURCE_OP, SOURCE_VAL)
     .gte("end_date", today)
     .order("end_date", { ascending: true })
     .limit(limit);
@@ -313,7 +321,7 @@ export async function getRelatedJobs(job: Job, limit = 6): Promise<Job[]> {
     const { data } = await db
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
-      .in("source", JOB_SOURCES).eq(col, v).neq("source_id", job.id)
+      .filter("source", SOURCE_OP, SOURCE_VAL).eq(col, v).neq("source_id", job.id)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
     return (data ?? []) as Stored[];
@@ -333,7 +341,7 @@ export async function getJobRegions(): Promise<{ sido: string; n: number }[]> {
   if (!dbConfigured) return [];
   try {
     const { data } = await db
-      .from("job_posts").select("region").in("source", JOB_SOURCES).not("region", "is", null)
+      .from("job_posts").select("region").filter("source", SOURCE_OP, SOURCE_VAL).not("region", "is", null)
       .limit(5000);
     const m = new Map<string, number>();
     for (const r of (data ?? []) as { region: string }[])
@@ -352,7 +360,7 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
               { count: "estimated" })
-      .in("source", JOB_SOURCES).eq("region", sido)
+      .filter("source", SOURCE_OP, SOURCE_VAL).eq("region", sido)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
     const jobs: Job[] = ((data ?? []) as Stored[]).map(toStoredJob);
@@ -378,7 +386,7 @@ export async function getTopJobIds(limit = 400): Promise<{ id: string; updated: 
   yearAgo.setDate(yearAgo.getDate() - 365);
   try {
     const { data } = await db
-      .from("job_posts").select("source_id,reg_date").in("source", JOB_SOURCES)
+      .from("job_posts").select("source_id,reg_date").filter("source", SOURCE_OP, SOURCE_VAL)
       .gte("reg_date", yearAgo.toISOString().slice(0, 10))
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
@@ -506,7 +514,7 @@ export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> 
         "source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
         { count: "estimated" },
       )
-      .in("source", JOB_SOURCES).eq("org", org)
+      .filter("source", SOURCE_OP, SOURCE_VAL).eq("org", org)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
     // 한 번 늦으면(공고 수집이 도는 동안 가끔) 한 번 더 읽는다.
@@ -564,7 +572,7 @@ export async function getJobHires(): Promise<{ hire: string; n: number }[]> {
   if (!dbConfigured) return [];
   try {
     const { data } = await db
-      .from("job_posts").select("hire").in("source", JOB_SOURCES)
+      .from("job_posts").select("hire").filter("source", SOURCE_OP, SOURCE_VAL)
       .not("hire", "is", null)
       .gte("reg_date", new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10))
       .limit(5000);
