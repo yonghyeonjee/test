@@ -16,7 +16,13 @@ export const missingDbEnv = (
   .filter(([, v]) => !v)
   .map(([k]) => k);
 
-export const dbConfigured = missingDbEnv.length === 0;
+/**
+ * BUILD_NO_DB=1 로 빌드하면 빌드 중에는 DB 를 읽지 않는다(미리 그리는 쪽은 빈 채로 나가고 운영에서 첫 갱신 때 채워진다).
+ * 2026-10-06 DB 가 IO 한도에 걸려 빌드가 시간 초과로 실패해, 장애를 고치는 배포조차 못 나갔을 때 쓴다. 운영 실행 때는 영향 없음.
+ */
+const buildWithoutDb = process.env.BUILD_NO_DB === "1" && process.env.NEXT_PHASE === "phase-production-build";
+
+export const dbConfigured = missingDbEnv.length === 0 && !buildWithoutDb;
 
 export function dbEnvError() {
   return new Error(
