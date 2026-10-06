@@ -1,16 +1,45 @@
-# Caddy: HTTPS 인증서를 스스로 받고 갱신한다. setup.sh 가 /etc/caddy/Caddyfile 로 깐다.
+# Caddy: HTTPS 인증서를 스스로 받고 갱신한다. setup.sh 가 처음 깔고, 그 뒤로는 deploy_aws.yml 이
+# 바뀐 파일을 /etc/caddy/Caddyfile 로 올리고 reload 한다.
 #
 # jiwon.knowhow-it.com 은 DNS 를 이 서버로 돌린 뒤에 인증서가 나온다(그 전에는 Caddy 가 조용히 다시 시도).
 # origin.jiwon.knowhow-it.com 은 나중에 CloudFront 를 앞에 둘 때 CloudFront 가 찾아오는 주소.
+#
+# 점검 화면: Node(3000)가 죽거나 답이 없으면 Caddy 가 /srv/jiwon/static/maintenance.html 을 503 으로 낸다.
+# 2026-10-06 서버가 멈췄을 때 맨 "502" 글자만 보였다. 503 + Retry-After 는 검색엔진에 "잠깐만" 이라는 뜻이라
+# 색인이 빠지지 않는다. 파일이 없으면(옛 서버) 그냥 짧은 글로 답한다.
+
+(app) {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000 {
+		transport http {
+			dial_timeout 3s
+			response_header_timeout 40s
+		}
+	}
+	handle_errors {
+		@down expression `{err.status_code} in [502, 503, 504]`
+		handle @down {
+			header Retry-After 120
+			header Cache-Control "no-store"
+			root * /srv/jiwon/static
+			@has file /maintenance.html
+			handle @has {
+				rewrite * /maintenance.html
+				file_server {
+					status 503
+				}
+			}
+			respond "잠시 서버를 점검하고 있습니다. 몇 분 뒤 다시 열어 주세요." 503
+		}
+	}
+}
 
 jiwon.knowhow-it.com, origin.jiwon.knowhow-it.com {
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:3000
+	import app
 }
 
 # 도메인을 돌리기 전 점검용: http://<서버 IP>/ 로 들어온 요청. 검색엔진에는 숨긴다.
 :80 {
 	header X-Robots-Tag "noindex, nofollow"
-	encode zstd gzip
-	reverse_proxy 127.0.0.1:3000
+	import app
 }
