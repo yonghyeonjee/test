@@ -60,8 +60,6 @@ jobs:
           NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_SITE_URL: https://jiwon.knowhow-it.com
-          # 장애 중(2026-10-06 DB IO 한도): 빌드가 DB 를 읽지 않게. DB 가 회복되면 지운다.
-          BUILD_NO_DB: "1"
         run: |
           npm ci
           npm run build
