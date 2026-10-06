@@ -473,6 +473,45 @@ def check_org(browser, path: str) -> None:
     ctx.close()
 
 
+def check_style(browser) -> None:
+    """첫 화면이 설계대로 그려졌나. 롤링 띠의 바탕(보라 그라데이션)·CSS 파일·조건 문장 select 를 글자로 찍는다."""
+    print("\n== style: /")
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900}, locale="ko-KR")
+    page = ctx.new_page()
+    errs: list[str] = []
+    hook(page, errs)
+    page.goto(BASE + "/", wait_until="networkidle")
+    info = page.evaluate("""async () => {
+      const css = [...document.querySelectorAll('link[rel=stylesheet]')].map((l) => l.href);
+      const cssStatus = [];
+      for (const h of css) { try { const r = await fetch(h); cssStatus.push([h.split('/').pop(), r.status, (await r.text()).length]); } catch (e) { cssStatus.push([h, 'ERR']); } }
+      const car = document.querySelector('section[aria-roledescription="carousel"]');
+      const slide = car && car.querySelector('[aria-hidden="false"]');
+      const rect = slide && slide.querySelector('svg rect');
+      const grad = slide && slide.querySelector('svg linearGradient');
+      const overlay = slide && slide.querySelector('span.absolute.inset-0');
+      const cs = (e, k) => e ? getComputedStyle(e)[k] : null;
+      const sel = document.querySelector('#find select');
+      return {
+        css: cssStatus,
+        htmlClass: document.documentElement.className, dark: matchMedia('(prefers-color-scheme: dark)').matches,
+        carousel: car ? { h: Math.round(car.getBoundingClientRect().height), bg: cs(car, 'backgroundColor') } : null,
+        rectFill: cs(rect, 'fill'), rectAttr: rect && rect.getAttribute('fill'),
+        gradId: grad && grad.id, gradStops: grad ? [...grad.querySelectorAll('stop')].map((x) => x.getAttribute('stop-color')) : null,
+        sameIdCount: grad ? document.querySelectorAll('#' + CSS.escape(grad.id)).length : 0,
+        overlayBg: cs(overlay, 'backgroundImage'),
+        slideHtml: slide ? slide.innerHTML.slice(0, 700) : null,
+        bodyBg: cs(document.body, 'backgroundColor'), bodyFont: cs(document.body, 'fontFamily'),
+        select: sel ? { n: sel.options.length, border: cs(sel, 'borderBottomStyle'), appearance: cs(sel, 'appearance') } : null,
+      };
+    }""")
+    for k, v in info.items():
+        print(f"   {k}: {json.dumps(v, ensure_ascii=False)[:900]}")
+    if errs:
+        print("   오류:", errs[:8])
+    ctx.close()
+
+
 def main() -> None:
     args = [a.strip() for a in (sys.argv[1] if len(sys.argv) > 1 else "map,home").split(",") if a.strip()]
     setup()
@@ -488,6 +527,8 @@ def main() -> None:
                     check_dong(browser)
                 elif a == "home":
                     check_home(browser, "/")
+                elif a == "style":
+                    check_style(browser)
                 elif a == "business":
                     check_home(browser, "/business")
                 elif a == "detail":
