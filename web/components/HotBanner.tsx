@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useId } from "react";
 import { dueLabel, type HotKind, type Slide } from "@/lib/hotShared";
 
 /**
@@ -33,19 +33,26 @@ const TONE: Record<HotKind, { from: string; to: string; tint: string }> = {
   biz: { from: "#A84300", to: "#F08C00", tint: "#FFE3A8" },
 };
 
-/** 갈래마다 다른 무늬. 사진 없이도 화면이 비어 보이지 않게. */
+/**
+ * 갈래마다 다른 무늬. 사진 없이도 화면이 비어 보이지 않게.
+ *
+ * 그라데이션 id 는 띠마다 달라야 한다. 같은 쪽에 휴대폰용·PC용 띠가 둘 있고 한쪽은 display:none 인데,
+ * id 가 같으면 크롬은 문서에서 먼저 나온(숨겨진) 정의를 가리켜 그리지 못하고 검정으로 칠한다.
+ * 2026-10-06 PC 첫 화면의 띠가 회색으로 보인 원인.
+ */
 function Art({ kind }: { kind: HotKind }) {
   const t = TONE[kind];
+  const gid = `g-${kind}-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
     <svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMid slice"
          className="absolute inset-0 h-full w-full" aria-hidden>
       <defs>
-        <linearGradient id={`g-${kind}`} x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor={t.from} />
           <stop offset="1" stopColor={t.to} />
         </linearGradient>
       </defs>
-      <rect width="400" height="200" fill={`url(#g-${kind})`} />
+      <rect width="400" height="200" fill={`url(#${gid})`} />
       <g fill="none" stroke={t.tint} strokeOpacity=".28" strokeWidth="1.4">
         {kind === "pin" && (
           <>
