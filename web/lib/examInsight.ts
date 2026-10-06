@@ -45,6 +45,8 @@ export function midMonth(start: string | null, end: string | null): number | nul
 
 export type ExamEvent = {
   year: number; label: string; stage: Stage;
+  /** 큐넷 표가 부르는 이름. 기술자격은 필기·실기, 전문자격은 1차·2차·면접 따위. */
+  stageName: string;
   examStart: string; examEnd: string | null;
   regStart: string | null; regEnd: string | null;
 };
@@ -54,10 +56,10 @@ export function events(rows: SchedRow[]): ExamEvent[] {
   const out: ExamEvent[] = [];
   for (const r of rows) {
     if (r.stage === null) {
-      if (r.exam_start) out.push({ year: r.year, label: r.label, stage: "필기", examStart: r.exam_start, examEnd: r.exam_end, regStart: r.reg_start, regEnd: r.reg_end });
-      if (r.prac_exam_start) out.push({ year: r.year, label: r.label, stage: "실기", examStart: r.prac_exam_start, examEnd: r.prac_exam_end, regStart: r.prac_reg_start, regEnd: r.prac_reg_end });
+      if (r.exam_start) out.push({ year: r.year, label: r.label, stage: "필기", stageName: "필기", examStart: r.exam_start, examEnd: r.exam_end, regStart: r.reg_start, regEnd: r.reg_end });
+      if (r.prac_exam_start) out.push({ year: r.year, label: r.label, stage: "실기", stageName: "실기", examStart: r.prac_exam_start, examEnd: r.prac_exam_end, regStart: r.prac_reg_start, regEnd: r.prac_reg_end });
     } else if (r.exam_start) {
-      out.push({ year: r.year, label: `${r.label} ${r.stage}`, stage: stageOf(r.stage), examStart: r.exam_start, examEnd: r.exam_end, regStart: r.reg_start, regEnd: r.reg_end });
+      out.push({ year: r.year, label: `${r.label} ${r.stage}`, stage: stageOf(r.stage), stageName: r.stage, examStart: r.exam_start, examEnd: r.exam_end, regStart: r.reg_start, regEnd: r.reg_end });
     }
   }
   return out.sort((a, b) => a.examStart.localeCompare(b.examStart));
@@ -74,6 +76,8 @@ export function upcomingEvents(rows: SchedRow[], today = new Date()): ExamEvent[
 export type MonthEstimate = {
   /** 단계별로 "보통 치르는 달". 쌓인 해의 절반 이상에 나온 달. */
   months: Record<Stage, number[]>;
+  /** 단계를 큐넷 표의 이름으로. 공인중개사는 필기·실기가 아니라 1차·2차다. */
+  names: Record<Stage, string>;
   /** 바탕이 된 해들(오름차순). */
   years: number[];
   /** 다음에 올 것으로 보는 시험. 올해 실제 일정이 남아 있으면 그쪽을 쓰고 이것은 그 뒤를 가리킨다. */
@@ -85,16 +89,21 @@ export function estimateMonths(rows: SchedRow[], today = new Date()): MonthEstim
   if (!ev.length) return null;
   const years = Array.from(new Set(ev.map((e) => e.year))).sort();
   const months: Record<Stage, number[]> = { 필기: [], 실기: [] };
+  const names: Record<Stage, string> = { 필기: "필기", 실기: "실기" };
   for (const st of ["필기", "실기"] as const) {
     const count = new Map<number, Set<number>>();
+    const nameCount = new Map<string, number>();
     for (const e of ev) {
       if (e.stage !== st) continue;
+      nameCount.set(e.stageName, (nameCount.get(e.stageName) ?? 0) + 1);
       const m = midMonth(e.examStart, e.examEnd);
       if (!m) continue;
       (count.get(m) ?? count.set(m, new Set()).get(m)!).add(e.year);
     }
     const need = Math.ceil(years.length / 2);
     months[st] = Array.from(count.entries()).filter(([, ys]) => ys.size >= need).map(([m]) => m).sort((a, b) => a - b);
+    const top = Array.from(nameCount.entries()).sort((a, b) => b[1] - a[1])[0];
+    if (top) names[st] = top[0];
   }
   // 다음 시험: 아직 안 지난 달 가운데 가장 가까운 것. 올해 것이 다 지났으면 내년 첫 달.
   const y = today.getFullYear(), m = today.getMonth() + 1;
@@ -105,7 +114,7 @@ export function estimateMonths(rows: SchedRow[], today = new Date()): MonthEstim
     if (cand && (!next || cand.year * 100 + cand.month < next.year * 100 + next.month)) next = cand;
   }
   if (!months.필기.length && !months.실기.length) return null;
-  return { months, years, next };
+  return { months, names, years, next };
 }
 
 // ── 난이도 ─────────────────────────────────────────────
