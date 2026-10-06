@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import { expandQuery } from "./keywords";
 import { createClient } from "@supabase/supabase-js";
 import { svcConfigured, svcDb } from "./svcDb";
+import { buildWithoutDb, emptyDbFetch } from "./buildNoDb";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -35,6 +36,7 @@ export function dbEnvError() {
 export const db = dbConfigured
   ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
       auth: { persistSession: false },
+      ...(buildWithoutDb ? { global: { fetch: emptyDbFetch } } : {}),
     })
   : (new Proxy(
       {},
@@ -56,7 +58,7 @@ export const db = dbConfigured
 export const dbLive = dbConfigured
   ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
       auth: { persistSession: false },
-      global: { fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }) },
+      global: { fetch: buildWithoutDb ? emptyDbFetch : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: "no-store" }) },
     })
   : db;
 

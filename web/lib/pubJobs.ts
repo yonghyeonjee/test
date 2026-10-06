@@ -2,8 +2,12 @@ import { cache } from "react";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
 
-/** 채용 목록이 읽는 출처. 나라일터(gojobs)와 잡알리오(alio, source_id 가 a 로 시작). */
-export const JOB_SOURCES = ["gojobs", "alio"];
+/**
+ * 채용 목록이 읽는 출처. 나라일터(gojobs)와 잡알리오(alio, source_id 가 a 로 시작).
+ * 잠시 나라일터만: 두 출처를 in() 으로 읽자 source='gojobs' 부분 인덱스를 못 타 22만 건을 정렬하다
+ * 시간 초과가 났다(2026-10-06 /jobs 목록 장애). 두 출처용 인덱스를 만든 뒤 alio 를 다시 넣는다.
+ */
+export const JOB_SOURCES = ["gojobs"];
 
 export { filterJobs, jobTermsUsed, regionTokens, type JobFilter } from "./jobFilter";
 
