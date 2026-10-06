@@ -26,10 +26,11 @@ Supabase 운영 DB 의 `public` 스키마를 읽어 정리했다. 행 수는 통
 | `saved_searches` | 0 | `name`, `phone`, `phone_tail`, `email`, `biz_no`, `consented_at`, `query` | 옛 저장 방식. 비어 있다 — 이전 때 버린다 |
 | `_setup_check` | — | — | 설치 점검용 |
 
-## 2. 물질화 뷰 (30분마다 `refresh_site_stats()`)
+## 2. 물질화 뷰 (3시간마다 `refresh_site_stats()`)
 
 `area_summary_mv`, `coverage_mv`, `job_org_stats_mv`(13,735행), `job_overview_mv`, `regions_available_mv`,
-`stat_age_mv`, `stat_employment_mv`, `stat_household_mv`. 모두 `programs` 또는 `job_posts` 의 집계다.
+`stat_age_mv`, `stat_employment_mv`, `stat_household_mv`, `housing_counts_mv`(2026-10-06). 모두 `programs` 또는 `job_posts` 의 집계다.
+첫 화면 묶음은 `home_bundle_cache`(한 줄, jsonb)에 미리 계산해 두고 `refresh_home_bundle()` 이 15분마다 갈아 끼운다(2026-10-06).
 공개 쪽은 같은 이름에서 `_mv` 를 뗀 **뷰**(`area_summary`, `coverage` …)로 읽는다.
 
 Java 이전 때: 같은 집계를 배치(EventBridge, 30분)로 돌려 표에 쓰거나, 서비스에서 계산해 Redis 에 둔다.
@@ -54,15 +55,16 @@ Java 이전 때: 같은 집계를 배치(EventBridge, 30분)로 돌려 표에 �
 | `match_business(p_sido, p_biz_target, p_biz_field[], p_biz_years, p_industry[], p_limit, p_min_conf, p_q[])` | `programs_public` 행들 | `BusinessSearchService` |
 | `count_business(...)` | 건수 | 같은 서비스 |
 | `feed_closing(p_kind, p_limit)`, `feed_new(...)`, `feed_ending(...)` | 마감 임박·새 공고 | `FeedService` |
-| `home_bundle()` | jsonb(건수·지역·지역 요약·통계·마감·신규·설정) | `HomeService` + 캐시 |
-| `housing_counts()` | (who, kind, sido, n) | `HousingService` |
+| `home_bundle()` | jsonb(건수·지역·지역 요약·통계·마감·신규·설정). `home_bundle_cache` 를 읽고, 2시간 넘게 묵었으면 `home_bundle_live()` 로 직접 계산 | `HomeService` + 캐시 |
+| `housing_counts()` | (who, kind, sido, n) — `housing_counts_mv` 를 읽는다 | `HousingService` |
 | `hot_term_rows(p_days)` | 검색어·첫 쪽·조건 묶음별 건수(2건 이상만) | `HotTermService` |
 | `log_search(...)`, `log_visit(...)` | 없음(기록) | `LogService`(비동기) |
 | `saved_add/list/open/remove`, `recovery_issue/claim`, `purge_stale_saved()` | 저장 조건 | `SavedConditionService` |
 | `account_create/probe/mark/taken/update_contact` | 계정 | `AccountService` |
 | `blog_*_stats(...)`, `blog_org_candidates(...)` | jsonb 통계 | 글쓰기 배치 |
 | `program_status(end, always)`, `tidy(text)`, `text_hits(text, q[])` | 보조 | 서비스 내부 유틸 |
-| `refresh_site_stats()` | 물질화 뷰 갱신 | 배치 |
+| `refresh_site_stats()` | 물질화 뷰 갱신 뒤 `refresh_home_bundle()` | 배치 |
+| `refresh_home_bundle()`, `home_bundle_live()` | 첫 화면 묶음 다시 계산 (anon 은 못 부름) | 배치 |
 | `schema_health(fns[], rels[])` | 점검 | 배포 후 점검 작업 |
 
 이전 때 바로잡을 것:
@@ -97,7 +99,8 @@ Java 이전 뒤에는 RLS 대신 DB 계정을 나눈다: `app_read`(SELECT), `ap
 ## 7. 확장·예약
 
 - 확장: `pg_trgm 1.6`, `pgcrypto 1.3`, `uuid-ossp 1.1`, `pg_cron 1.6.4`, `pg_stat_statements 1.11`, `supabase_vault 0.3.1`
-- pg_cron: `refresh-site-stats` — `*/30 * * * *` — `select public.refresh_site_stats()`
+- pg_cron: `refresh-site-stats` — `7 */3 * * *` — `select public.refresh_site_stats()` (2026-10-06 장애 뒤 30분→3시간)
+- pg_cron: `refresh-home-bundle` — `3,18,33,48 * * * *` — `select public.refresh_home_bundle()`
 - 트리거: `programs`, `raw_items` 의 `BEFORE UPDATE` → `touch_updated_at()`
 
 ## 다시 뽑는 SQL
