@@ -34,7 +34,9 @@
 	}
 }
 
-jiwon.knowhow-it.com, origin.jiwon.knowhow-it.com {
+# origin.jiwon.knowhow-it.com 은 CloudFront 를 둘 때 DNS 와 함께 다시 넣는다. DNS 없이 적어 두면
+# Caddy 가 2분마다 인증서를 받으려다 실패한 기록을 남긴다.
+jiwon.knowhow-it.com {
 	import app
 }
 
