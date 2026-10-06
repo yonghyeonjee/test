@@ -28,9 +28,11 @@ export default function ExamInsight({ name, code, site, title = "시험 시기�
   if (!up.length && !est && !diff) return null;
 
   const estText = est && (() => {
-    const parts: string[] = [];
-    if (est.months.필기.length) parts.push(`필기는 ${monthList(est.months.필기)}`);
-    if (est.months.실기.length) parts.push(`실기는 ${monthList(est.months.실기)}`);
+    const a = est.months.필기, b = est.months.실기;
+    // 공인중개사처럼 1차·2차를 같은 날 치르면 "1차는 10월, 2차는 10월" 이 아니라 한 번에 말한다.
+    const parts: string[] = a.length && b.length && a.join() === b.join()
+      ? [`${est.names.필기}·${est.names.실기} 모두 ${monthList(a)}`]
+      : [a.length ? `${est.names.필기}는 ${monthList(a)}` : "", b.length ? `${est.names.실기}는 ${monthList(b)}` : ""].filter(Boolean);
     const basis = est.years.length === 1 ? `${est.years[0]}년 일정` : `${est.years[0]}~${est.years.at(-1)}년 일정`;
     return `${parts.join(", ")}에 치르는 편입니다. ${basis}을 바탕으로 한 추정입니다.`;
   })();
@@ -59,7 +61,7 @@ export default function ExamInsight({ name, code, site, title = "시험 시기�
               <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
                 {estText}
                 {est?.next && !up.length && (
-                  <> 다음 {est.next.stage}는 <b className="text-ink2">{est.next.year}년 {est.next.month}월쯤</b>으로 예상합니다.</>
+                  <> 다음 {est.names[est.next.stage]}는 <b className="text-ink2">{est.next.year}년 {est.next.month}월쯤</b>으로 예상합니다.</>
                 )}
               </p>
             )}
