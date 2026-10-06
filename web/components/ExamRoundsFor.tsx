@@ -1,6 +1,6 @@
 import Link from "next/link";
 import CalendarAdd from "./CalendarAdd";
-import { korDate } from "@/lib/faq";
+import { josa, korDate } from "@/lib/faq";
 import { SITE_URL } from "@/lib/seo";
 import { gradeOfSeries, type Upcoming } from "@/lib/qnetExam";
 
@@ -30,12 +30,11 @@ export default function ExamRoundsFor({
       <section className="mt-10">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">시험 일정</h2>
         <div className="card mt-4 p-5">
+          {/* 국가전문자격은 큐넷이 아니라 종목마다 다른 기관이 시행한다. 큐넷 단추를 달아 두면 엉뚱한 곳으로 보낸다. */}
           <p className="text-[14.5px] leading-relaxed text-ink2">
-            {name}은 국가기술자격 통합 일정(기술사·기능장·기사·산업기사·기능사)에
-            들어가지 않습니다. 시행기관이 따로 공고하니 아래에서 확인하세요.
+            {josa(name, "은는")} 국가기술자격 통합 일정(기술사·기능장·기사·산업기사·기능사)에
+            들어가지 않습니다. 시험 일정은 시행기관이 따로 공고합니다.
           </p>
-          <a href="https://www.q-net.or.kr" target="_blank" rel="noopener noreferrer"
-             className="btn btn-ghost mt-4">큐넷에서 확인</a>
         </div>
       </section>
     );
@@ -44,7 +43,7 @@ export default function ExamRoundsFor({
     <section className="mt-10">
       <h2 className="sec-title text-[1.0625rem] font-extrabold">다음 시험 일정</h2>
       <p className="mt-3 text-[14px] leading-relaxed text-muted">
-        {name}은 <b className="text-ink2">{grade}</b> 회차로 치릅니다. 같은 등급 종목이
+        {josa(name, "은는")} <b className="text-ink2">{grade}</b> 회차로 치릅니다. 같은 등급 종목이
         같은 날 함께 봅니다.
       </p>
 
