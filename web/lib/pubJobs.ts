@@ -1,5 +1,7 @@
 import { cache } from "react";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
+import { SIDO_SHORT } from "./geo";
+import { gojobsFileUrl, type GojobsDetail } from "./gojobsDetail";
 import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
 
 /**
@@ -268,20 +270,37 @@ export const getJob = cache(async (sourceId: string): Promise<Job | null> => {
  * 어떤 소스에든 이 번호가 있는지. 상세 쪽이 gojobs 에서 못 찾았을 때
  * 해외채용(worldjob) 번호면 그쪽 목록으로 보내 주려고 본다.
  */
-/** 정책브리핑(korea.kr)에서 받아 둔 첨부파일. pipeline/korea_attach.py 가 raw.korea 에 적는다. */
-export type JobFile = { name: string; ext: string; dl: string; view: string };
-export type JobAttach = { id: string; url: string; org: string | null; reg: string | null; end: string | null; files: JobFile[] };
+/**
+ * 첨부파일. 두 곳에서 온다.
+ *  - 정책브리핑(korea.kr): pipeline/korea_attach.py 가 raw.korea 에 적는다. 바로보기 주소가 있다.
+ *  - 나라일터 상세: lib/gojobsDetail 이 raw.gojobs 에 적는다. 내려받기만 된다(view 는 null).
+ * 정책브리핑 것이 있으면 그것을, 없으면 나라일터 것을 준다.
+ */
+export type JobFile = { name: string; ext: string; dl: string; view: string | null };
+export type JobAttach = {
+  from: "korea" | "gojobs";
+  id: string; url: string; org: string | null; reg: string | null; end: string | null; files: JobFile[];
+  /** 나라일터 상세 표의 칸. 정책브리핑 것은 null. */
+  grade: string | null; workArea: string | null;
+};
 
 export const getJobAttach = cache(async (sourceId: string): Promise<JobAttach | null> => {
   if (!dbConfigured) return null;
   try {
     const { data } = await db
-      .from("job_posts").select("korea:raw->korea")
+      .from("job_posts").select("url,korea:raw->korea,gojobs:raw->gojobs")
       .filter("source", SOURCE_OP, SOURCE_VAL).eq("source_id", sourceId).maybeSingle();
-    const k = (data as { korea?: Partial<JobAttach> | null } | null)?.korea;
-    if (!k || !k.url || !Array.isArray(k.files)) return null;
-    return { id: String(k.id ?? ""), url: k.url, org: k.org ?? null, reg: k.reg ?? null, end: k.end ?? null,
-             files: k.files.filter((f) => f && f.name && f.dl) };
+    const row = data as { url: string | null; korea?: Partial<JobAttach> | null; gojobs?: GojobsDetail | null } | null;
+    const k = row?.korea;
+    if (k && k.url && Array.isArray(k.files))
+      return { from: "korea", id: String(k.id ?? ""), url: k.url, org: k.org ?? null, reg: k.reg ?? null, end: k.end ?? null,
+               files: k.files.filter((f) => f && f.name && f.dl), grade: null, workArea: null };
+    const g = row?.gojobs;
+    if (g && Array.isArray(g.files) && (g.files.length || g.grade || g.workArea))
+      return { from: "gojobs", id: sourceId, url: row?.url ?? "https://www.gojobs.go.kr", org: null, reg: null, end: null,
+               files: g.files.filter((f) => f && f.name && f.uuid).map((f) => ({ name: f.name, ext: f.ext, dl: gojobsFileUrl(f), view: null })),
+               grade: g.grade ?? null, workArea: g.workArea ?? null };
+    return null;
   } catch {
     return null;
   }
@@ -352,15 +371,24 @@ export async function getJobRegions(): Promise<{ sido: string; n: number }[]> {
   }
 }
 
-/** 한 시·도의 공고. */
+/**
+ * 한 시·도의 공고.
+ *
+ * region 칸만 보면 절반이 빠진다 — 나라일터 누리집에서 받은 공고는 region 이 비어 있고(2026-09 이후 전부),
+ * 기관명에 "인천남동우체국" 처럼 지역이 적혀 있다. 통합 검색·정책지도·목록 거르기(lib/jobFilter)와 같은
+ * 기준으로 제목·기관명의 시·도 이름("인천", "인천광역시")도 본다. 지도에서 넘어온 공고가 여기서 사라지던 일.
+ */
 export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoard> {
   if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
   try {
+    const safe = (w: string) => w.replace(/[,()%]/g, "").trim();
+    const names = Array.from(new Set([sido, ...(SIDO_SHORT[sido] ?? "").split("·")].map(safe).filter((t) => t.length >= 2)));
+    const clause = [`region.eq.${safe(sido)}`, ...names.flatMap((t) => [`org.ilike.%${t}%`, `title.ilike.%${t}%`])].join(",");
     const { data, count } = await db
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
               { count: "estimated" })
-      .filter("source", SOURCE_OP, SOURCE_VAL).eq("region", sido)
+      .filter("source", SOURCE_OP, SOURCE_VAL).or(clause)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit);
     const jobs: Job[] = ((data ?? []) as Stored[]).map(toStoredJob);
