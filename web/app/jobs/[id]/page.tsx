@@ -270,12 +270,20 @@ export default async function JobDetail({ params }: P) {
         </div>
       )}
 
-      {/* 정책브리핑에 올라온 첨부(공고문·양식). 사람이 제일 먼저 찾는 것이라 위에 둔다. */}
-      {attach && attach.files.length > 0 && (
+      {/* 첨부(공고문·양식). 정책브리핑 또는 나라일터 상세에서 읽어 둔 것. 사람이 제일 먼저 찾는 것이라 위에 둔다.
+          바깥으로 나가는 "원문 보기" 는 맨 아래 — 읽기 전에 나가지 않게. */}
+      {attach && (attach.files.length > 0 || attach.grade || attach.workArea) && (
         <section className="card mt-6 p-5" id="files">
           <h2 className="text-[15px] font-extrabold">
             첨부파일 <span className="num ml-1 text-[13px] font-semibold text-muted">{attach.files.length}개</span>
           </h2>
+          {(attach.grade || attach.workArea) && (
+            <p className="mt-2 text-[13.5px] text-ink2">
+              {attach.grade && <>채용직급 <b>{attach.grade}</b></>}
+              {attach.grade && attach.workArea && " · "}
+              {attach.workArea && <>근무지역 <b>{attach.workArea}</b></>}
+            </p>
+          )}
           <ol className="mt-3 divide-y divide-line">
             {attach.files.map((f, i) => (
               <li key={f.dl} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5">
@@ -287,15 +295,19 @@ export default async function JobDetail({ params }: P) {
                   <span className="num mr-1 text-muted">{i + 1}.</span>{f.name}
                 </span>
                 <span className="flex shrink-0 gap-1.5">
-                  <a href={f.view} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-ghost px-3 py-1.5 text-[13px]">바로보기</a>
+                  {f.view && <a href={f.view} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-ghost px-3 py-1.5 text-[13px]">바로보기</a>}
                   <a href={f.dl} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-primary px-3 py-1.5 text-[13px]">내려받기</a>
                 </span>
               </li>
             ))}
           </ol>
           <p className="mt-3 text-xs leading-relaxed text-faint">
-            파일은 <a href={attach.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-brand">대한민국 정책브리핑(korea.kr)</a>에
-            기관이 올린 원본으로 바로 이어집니다. HWP 는 한글 또는 한컴 뷰어로 엽니다.
+            {attach.from === "korea" ? (
+              <>파일은 <a href={attach.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-brand">대한민국 정책브리핑(korea.kr)</a>에 기관이 올린 원본으로 바로 이어집니다.</>
+            ) : (
+              <>파일은 <a href={attach.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-brand">나라일터 원문 공고</a>에 기관이 올린 원본으로 바로 이어집니다.</>
+            )}
+            {" "}HWP 는 한글 또는 한컴 뷰어로 엽니다.
           </p>
         </section>
       )}

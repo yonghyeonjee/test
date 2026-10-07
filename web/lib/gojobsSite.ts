@@ -340,6 +340,7 @@ export async function readViewFn(): Promise<string> {
 // ── 수집 ───────────────────────────────────────────────────
 
 import { createClient } from "@supabase/supabase-js";
+import { gojobsViewUrl } from "./gojobsDetail";
 
 function svc() {
   const key = process.env.SUPABASE_SERVICE_KEY;
@@ -536,7 +537,7 @@ export async function ingestSite(
         hire: j.cate,
         reg_date: j.regDate,
         end_date: j.endDate,
-        url: null,
+        url: gojobsViewUrl(j.sys, j.id),
         raw: { sys: j.sys, from: "site" },
         fetched_at: now,
       }));

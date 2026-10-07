@@ -28,6 +28,26 @@ jobs:
             sleep 2
           done
 
+  # 새로 들어온 나라일터 공고의 상세(첨부파일·근무지역). 접수 중인 것 가운데 아직 안 읽은 것만.
+  detail:
+    needs: latest
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 나라일터 상세
+        env:
+          SITE: https://jiwon.knowhow-it.com
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -u
+          for round in $(seq 1 30); do
+            body=$(curl -sS --max-time 100 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/orgsites?step=gojobs_detail") || { echo "요청 실패(회차 $round)"; exit 1; }
+            echo "회차 $round: $(echo "$body" | head -c 400)"
+            [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || exit 0
+            sleep 2
+          done
+
   notify:
     needs: latest
     if: always()
