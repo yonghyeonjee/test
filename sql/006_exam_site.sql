@@ -53,4 +53,7 @@ drop policy if exists exam_sched_read on public.exam_sched;
 create policy exam_sched_read on public.exam_sched for select to anon, authenticated using (true);
 drop policy if exists exam_stats_read on public.exam_stats;
 create policy exam_stats_read on public.exam_stats for select to anon, authenticated using (true);
--- exam_site_state 는 정책 없음 = service_role 만.
+-- exam_site_state 는 정책 없음 = service_role 만. 기본 권한(anon·authenticated 에 전부)도 거둔다 —
+-- 관리자 점검이 "anon 이 부를 수 있다" 고 알린다. save_account·saved_condition 도 같은 날 거뒀다.
+revoke all on table public.exam_site_state from anon, authenticated;
+revoke all on table public.save_account, public.saved_condition from anon, authenticated;
