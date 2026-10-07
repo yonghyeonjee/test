@@ -12,6 +12,10 @@ on:
         description: "이 낱말 앞뒤 HTML 도 보기(선택)"
         required: false
         default: ""
+      grep:
+        description: "정규식에 맞는 자리마다 앞뒤 글(최대 8곳) + 바깥 스크립트 목록(선택)"
+        required: false
+        default: ""
 
 jobs:
   probe:
@@ -23,5 +27,6 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           URLS: ${{ inputs.urls }}
           SNIP: ${{ inputs.snip }}
+          GREP: ${{ inputs.grep }}
         run: |
-          curl -sS --max-time 120 -G -H "Authorization: Bearer $CRON_SECRET" --data-urlencode "url=$URLS" --data-urlencode "snip=$SNIP" "$SITE/api/cron/probe" | jq .
+          curl -sS --max-time 120 -G -H "Authorization: Bearer $CRON_SECRET" --data-urlencode "url=$URLS" --data-urlencode "snip=$SNIP" --data-urlencode "grep=$GREP" "$SITE/api/cron/probe" | jq .

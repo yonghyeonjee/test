@@ -33,9 +33,18 @@ export const keyOf = (sido: string, sigungu: string | null) => `${sido}|${sigung
 export const labelOf = (sido: string, sigungu: string | null) =>
   sigungu ? `${SIDO_SHORT[sido] ?? sido} ${sigungu}` : (SIDO_SHORT[sido] ?? sido);
 
-/** 그 핀의 공고를 모두 보는 곳. */
+/**
+ * 그 핀의 공고를 모두 보는 곳.
+ *
+ * 채용은 시·도와 시·군·구를 같이 넘긴다. 시·군·구 이름만 검색어로 넘기면("남동구")
+ * 기관명에 "인천남동우체국" 처럼 줄기만 적힌 공고를 못 찾아 0건이 났다. 목록 쪽
+ * (lib/jobFilter)이 줄기와 시·도 이름까지 보니, 지도에 놓인 공고는 목록에도 남는다.
+ */
 export function moreOf(kind: MapKind, sido: string, sigungu: string | null): string {
-  if (kind === "jobs") return sigungu ? `/jobs/q/${encodeURIComponent(sigungu)}` : "/jobs";
+  if (kind === "jobs")
+    return sigungu
+      ? `/jobs/region/${encodeURIComponent(sido)}/q/${encodeURIComponent(sigungu)}`
+      : `/jobs/region/${encodeURIComponent(sido)}`;
   return sigungu
     ? `/?sido=${encodeURIComponent(sido)}&sigungu=${encodeURIComponent(sigungu)}&via=map`
     : `/area/${encodeURIComponent(sido)}`;

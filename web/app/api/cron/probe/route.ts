@@ -19,6 +19,10 @@ export async function GET(req: Request) {
   if (!(secret && auth === `Bearer ${secret}`) && !isLoggedIn()) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const key = process.env.DATA_GO_KR_KEY ?? "";
   const snipKey = new URL(req.url).searchParams.get("snip");
+  // ?grep=정규식: 맞는 자리마다 앞뒤 160자(최대 8곳). 스크립트 함수 정의처럼 "어디 있는지 모르는 것" 을 찾을 때.
+  const grepRaw = new URL(req.url).searchParams.get("grep");
+  let grep: RegExp | null = null;
+  try { grep = grepRaw ? new RegExp(grepRaw, "g") : null; } catch { grep = null; }
   const raw = (new URL(req.url).searchParams.get("url") ?? "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 6);
   const out = [];
   for (const u0 of raw) {
@@ -47,6 +51,12 @@ export async function GET(req: Request) {
       // ?snip=낱말: 그 낱말이 처음 나온 곳 앞뒤 HTML(목록 줄 구조를 볼 때).
       snip: snipKey && text.includes(snipKey)
         ? mask(text.slice(Math.max(0, text.indexOf(snipKey) - 1200), text.indexOf(snipKey) + 1800)) : undefined,
+      grep: grep
+        ? Array.from(text.matchAll(grep)).slice(0, 8).map((m) =>
+            mask(text.slice(Math.max(0, m.index! - 160), m.index! + 400).replace(/\s+/g, " ")))
+        : undefined,
+      // 바깥 스크립트 전부. 함수가 여기 들어 있으면 그 주소를 다시 살펴본다.
+      scripts: grep ? Array.from(text.matchAll(/<script[^>]+src=["']([^"']+)/gi)).map((m) => m[1]).slice(0, 30) : undefined,
     });
   }
   return NextResponse.json({ at: new Date().toISOString(), out });
