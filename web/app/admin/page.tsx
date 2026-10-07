@@ -219,6 +219,19 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
   const terms = tally(visitRows, "term", 20);
   const landings = tally(visitRows, "landing", 10);
+  /**
+   * 채널별로 무엇을 찾아 들어왔나. 검색어를 넘겨주는 곳(다음·카카오)은 검색어를, 지우고 보내는 곳
+   * (구글·네이버·직접)은 처음 열린 페이지를 — 어느 쪽이든 "그 채널 사람들이 무엇을 보러 왔나" 가 보인다.
+   */
+  const byChannel = (() => {
+    const m = new Map<string, Row[]>();
+    for (const r of visitRows) {
+      const c = r.channel ? String(r.channel) : "(없음)";
+      (m.get(c) ?? m.set(c, []).get(c)!).push(r);
+    }
+    return [...m.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 6)
+      .map(([channel, rows]) => ({ channel, n: rows.length, terms: tally(rows, "term", 8), landings: tally(rows, "landing", 6) }));
+  })();
 
   /** 서울 기준 날짜. 서버가 어디 있든 하루 경계가 같아야 한다. */
   const kst = (v: unknown) =>
@@ -443,6 +456,26 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           </Panel>
         </div>
       </div>
+
+      <Panel title="채널별로 무엇을 찾아왔나" note="최근 30일 · 검색어를 넘겨주는 채널은 검색어, 아니면 처음 열린 페이지">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {byChannel.map((c) => (
+            <div key={c.channel}>
+              <div className="flex items-baseline justify-between">
+                <b className="text-[13.5px] font-bold">{c.channel}</b>
+                <span className="num text-xs text-faint">{c.n.toLocaleString()}명{c.terms.length ? " · 검색어" : " · 처음 열린 페이지"}</span>
+              </div>
+              <div className="mt-1.5">
+                <Rank rows={c.terms.length ? c.terms : c.landings} keyName="label" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs leading-relaxed text-faint">
+          다음·카카오만 검색어를 리퍼러에 실어 보냅니다. 구글·네이버의 실제 검색어는 서치콘솔·서치어드바이저에서
+          보고, 여기서는 그 채널 사람들이 처음 연 페이지로 무엇을 찾아왔는지 가늠합니다.
+        </p>
+      </Panel>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
