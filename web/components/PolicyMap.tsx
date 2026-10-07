@@ -344,17 +344,18 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   return (
     <div>
       <div className="card mt-6 p-3 sm:p-4">
+        {/* 갈래는 탭처럼 맨 위 한 줄. 위치·지역 고르기와 섞여 있으면 "무엇을 보고 있는지" 가 묻힌다(2026-10-07). */}
+        <div role="tablist" aria-label="갈래" className="-mx-3 -mt-3 mb-3 flex border-b border-line px-3 sm:-mx-4 sm:-mt-4 sm:px-4">
+          {(["programs", "jobs"] as Kind[]).map((k) => (
+            <button key={k} role="tab" type="button" aria-selected={kind === k}
+                    onClick={() => { setKind(k); setSel(null); setRegion(null); }}
+                    className={`-mb-px border-b-2 px-4 py-3 text-[14.5px] font-bold transition-colors ${
+                      kind === k ? "border-brand text-brand" : "border-transparent text-muted hover:text-ink2"}`}>
+              {k === "programs" ? "지원사업" : "채용"} <span className="num ml-1 text-[13px] font-semibold opacity-80">{allN(k).toLocaleString("ko-KR")}</span>
+            </button>
+          ))}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div role="tablist" aria-label="갈래" className="flex rounded-pill bg-ground p-1">
-            {(["programs", "jobs"] as Kind[]).map((k) => (
-              <button key={k} role="tab" type="button" aria-selected={kind === k}
-                      onClick={() => { setKind(k); setSel(null); setRegion(null); }}
-                      className={`rounded-pill px-3.5 py-1.5 text-[13.5px] font-bold transition-colors ${
-                        kind === k ? "bg-brand text-white" : "text-muted hover:text-brand"}`}>
-                {k === "programs" ? "지원사업" : "채용"} <span className="num ml-0.5 opacity-80">{allN(k).toLocaleString("ko-KR")}</span>
-              </button>
-            ))}
-          </div>
           <button type="button" onClick={locateMe} disabled={busy} className="btn btn-primary px-3.5 py-1.5 text-[13.5px]">
             <svg viewBox="0 0 20 20" className="mr-1 h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <circle cx="10" cy="10" r="4" /><path d="M10 2v3M10 15v3M2 10h3M15 10h3" />
