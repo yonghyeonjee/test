@@ -27,6 +27,7 @@ const POST_CONTEXT: Record<string, PromoContext> = {
   "youth-benefits": "youth",
   "social-worker-license": "job",
   "vocational-training-card": "job",
+  "public-job-cover-letter": "job",
 };
 
 export function generateStaticParams() {

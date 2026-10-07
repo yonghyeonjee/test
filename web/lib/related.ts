@@ -212,7 +212,7 @@ const MAJORS: Related = {
 };
 
 export function jobsRelated(): Related[] {
-  return keep([post("national-employment-support"), MAJORS, LICENSE, HOME]);
+  return keep([post("public-job-cover-letter"), post("national-employment-support"), MAJORS, LICENSE, HOME]);
 }
 
 export function licenseRelated(): Related[] {
