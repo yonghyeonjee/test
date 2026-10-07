@@ -1,0 +1,100 @@
+name: db-migrate
+
+# Supabase 프로젝트를 다른 지역의 새 프로젝트로 옮긴다(도쿄 → 서울, 2026-10). 손으로만 돌린다.
+# Supabase 공식 안내(Migrating within Supabase)대로: 역할 → 스키마 → 자료 순으로 덤프해 새 DB 에 넣는다.
+#
+# 필요한 secret (연결 문자열에 DB 비밀번호가 들어가므로 GitHub Secrets 에만 둔다)
+#   SUPABASE_DB_URL_OLD   옛 프로젝트. Connect → Session pooler: postgresql://postgres.<ref>:<pw>@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres
+#   SUPABASE_DB_URL_NEW   새 프로젝트. 같은 방식(aws-0-ap-northeast-2…).
+#
+# step 입력
+#   dump_restore  덤프하고 새 DB 에 넣는다(새 DB 의 public 이 비어 있어야 한다)
+#   verify        표마다 줄 수를 옛/새 DB 에서 세어 나란히 보인다
+on:
+  workflow_dispatch:
+    inputs:
+      step:
+        description: "단계"
+        required: true
+        default: "verify"
+        type: choice
+        options: ["verify", "dump_restore"]
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      OLD: ${{ secrets.SUPABASE_DB_URL_OLD }}
+      NEW: ${{ secrets.SUPABASE_DB_URL_NEW }}
+    steps:
+      - name: 설정이 다 있나
+        run: |
+          [ -n "$OLD" ] && [ -n "$NEW" ] || { echo "::error::SUPABASE_DB_URL_OLD / SUPABASE_DB_URL_NEW 가 비어 있습니다."; exit 1; }
+
+      # Supabase 는 Postgres 17. psql 도 17 로 맞춘다(러너 기본은 16).
+      - name: psql 17 + Supabase CLI
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17 >/dev/null
+          echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
+          curl -fsSL -o supabase.deb https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.deb
+          sudo dpkg -i supabase.deb >/dev/null
+          supabase --version
+
+      - name: 덤프
+        if: inputs.step == 'dump_restore'
+        run: |
+          set -euo pipefail
+          # 새 DB 가 비어 있는지 먼저 본다. 표가 이미 있으면 두 번 넣는 셈이 되니 멈춘다.
+          n=$(psql "$NEW" -tAc "select count(*) from pg_tables where schemaname='public'")
+          [ "$n" = "0" ] || { echo "::error::새 DB public 에 표가 $n 개 있습니다. 비어 있어야 합니다."; exit 1; }
+          supabase db dump --db-url "$OLD" -f roles.sql --role-only
+          supabase db dump --db-url "$OLD" -f schema.sql
+          supabase db dump --db-url "$OLD" -f data.sql --use-copy --data-only
+          ls -lh roles.sql schema.sql data.sql
+
+      - name: 새 DB 에 넣기
+        if: inputs.step == 'dump_restore'
+        run: |
+          set -euo pipefail
+          # 확장은 스키마 덤프에 들어 있지만, 없으면 뒤가 다 깨지니 먼저 켠다(이미 있으면 그대로).
+          psql "$NEW" -v ON_ERROR_STOP=1 -c "create extension if not exists pg_trgm with schema public;" \
+            -c "create extension if not exists pgcrypto with schema extensions;" \
+            -c "create extension if not exists \"uuid-ossp\" with schema extensions;" \
+            -c "create extension if not exists pg_cron;"
+          # 역할 → 스키마 → 자료. 자료는 트리거·외래키를 끄고(replica) 넣는다. 공식 안내와 같다.
+          psql --single-transaction --variable ON_ERROR_STOP=1 \
+            --file roles.sql --file schema.sql \
+            --command 'SET session_replication_role = replica' --file data.sql \
+            --dbname "$NEW"
+          # 물질화 뷰는 자료 덤프에 들어가지 않는다. 전부 새로 채운다.
+          psql "$NEW" -v ON_ERROR_STOP=1 -c "do \$\$ declare r record; begin for r in select schemaname, matviewname from pg_matviews where schemaname='public' loop execute format('refresh materialized view %I.%I', r.schemaname, r.matviewname); end loop; end \$\$;"
+          rm -f roles.sql schema.sql data.sql
+
+      - name: 줄 수 비교
+        run: |
+          set -euo pipefail
+          q="select relname, n_live_tup from pg_stat_user_tables where schemaname='public' order by relname"
+          # 통계가 아니라 실제 count 로 센다(복원 직후에는 n_live_tup 이 0 일 수 있다).
+          tables=$(psql "$OLD" -tAc "select tablename from pg_tables where schemaname='public' order by 1")
+          printf '%-28s %12s %12s\n' 표 옛 새
+          bad=0
+          for t in $tables; do
+            a=$(psql "$OLD" -tAc "select count(*) from public.\"$t\"")
+            b=$(psql "$NEW" -tAc "select count(*) from public.\"$t\"" 2>/dev/null || echo "-")
+            mark=""; [ "$a" = "$b" ] || { mark="  <-- 다름"; bad=$((bad+1)); }
+            printf '%-28s %12s %12s%s\n' "$t" "$a" "$b" "$mark"
+          done
+          echo "함수/뷰/정책/물질화뷰(옛 → 새):"
+          for u in "$OLD" "$NEW"; do
+            psql "$u" -tAc "select (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public')||' / '||(select count(*) from pg_views where schemaname='public')||' / '||(select count(*) from pg_policies where schemaname='public')||' / '||(select count(*) from pg_matviews where schemaname='public')"
+          done
+          # search_log·visit_log 처럼 옮기는 동안에도 쓰이는 표는 몇 줄 다를 수 있다. 큰 표가 다르면 실패.
+          [ "$bad" -le 3 ] || { echo "::error::$bad 개 표의 줄 수가 다릅니다."; exit 1; }
