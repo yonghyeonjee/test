@@ -150,9 +150,7 @@ async function loadJobs() {
   for (const r of (data ?? []) as { source_id: string; title: string; org: string | null; region: string | null; start_date: string | null; end_date: string | null }[]) {
     const place = locateJob({ org: r.org, title: r.title, region: r.region });
     if (!place) { noPlace++; continue; }
-    const more = place.sigungu
-      ? `/jobs/q/${encodeURIComponent(place.sigungu)}`
-      : r.region ? `/jobs/region/${encodeURIComponent(r.region)}` : "/jobs";
+    const more = moreOf("jobs", place.sido, place.sigungu);
     const item: ItemRow = [r.source_id, cut(r.title, 52), orgShort(r.org), r.start_date, r.end_date, 0, "j"];
     add(points, place, item, more);
     addDong(dongs, place, item, r.org, r.title);
