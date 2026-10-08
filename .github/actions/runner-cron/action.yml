@@ -1,0 +1,39 @@
+name: runner-cron
+description: 수집·알림 단계를 GitHub 러너에서 직접 돌린다(web/scripts/cron.ts). 부르는 쪽이 먼저 checkout 하고, 비밀값은 env 로 넘긴다.
+
+inputs:
+  jobs:
+    description: "돌릴 작업 이름(띄어쓰기로 여럿, 차례로). 예: latest / gojobs_detail / notify / qnet / alio / source:worldjob"
+    required: true
+  minutes:
+    description: "작업 하나에 주는 최대 분"
+    required: false
+    default: "20"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+    - name: 의존성
+      shell: bash
+      working-directory: web
+      run: npm ci --no-audit --no-fund --loglevel=error
+    - name: 돌리기
+      shell: bash
+      working-directory: web
+      env:
+        JOBS: ${{ inputs.jobs }}
+        MINUTES: ${{ inputs.minutes }}
+      run: |
+        set -u
+        rc=0
+        for job in $JOBS; do
+          echo "::group::$job"
+          npx tsx scripts/cron.ts "$job" --minutes "$MINUTES" || rc=1
+          echo "::endgroup::"
+        done
+        exit $rc
