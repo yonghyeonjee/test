@@ -101,7 +101,7 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
       <section id="find" className="mt-12 scroll-mt-24">
         <h2 className="text-[1.0625rem] font-bold">학과 이름으로 찾기</h2>
         <form action="/jobs/majors#find" method="get" className="mt-3 flex gap-2">
-          <input name="q" defaultValue={q} placeholder="예: 경영, 간호, 컴퓨터"
+          <input name="q" defaultValue={q} placeholder="예: 경영, 간호, 컴퓨터, 심리"
                  className="field min-w-0 flex-1" aria-label="학과 이름" />
           <button type="submit" className="btn btn-primary shrink-0 px-5 py-2.5">찾기</button>
         </form>
@@ -131,7 +131,7 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
                 </tr>
               ))}
               {found.length === 0 && (
-                <tr><td colSpan={6} className="py-6 text-center text-muted">그 이름의 학과가 없습니다.</td></tr>
+                <tr><td colSpan={6} className="py-6 text-center text-muted">그 이름의 학과가 없습니다. 이름의 일부만 넣어 보세요. 예: 심리, 간호, 컴퓨터</td></tr>
               )}
             </tbody>
           </table>
