@@ -143,8 +143,6 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   // 수집 대상마다 건수·최신·마지막 수집 시각. 표가 없거나 비어 있어도 0 으로 보인다.
   const WHERE: Record<CollectKey, { table: string; filter?: [string, string]; dateCol?: string }> = {
     gojobs: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
-    // 과거 채록도 같은 표에 쌓인다. 타일은 같은 숫자를 보여 주되 단추만 따로다.
-    gojobs_archive: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
     worldjob: { table: "job_posts", filter: ["source", "worldjob"], dateCol: "start_date" },
     license: { table: "license_items" },
     exam: { table: "exam_rounds", dateCol: "doc_reg_end" },
@@ -183,19 +181,6 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   }));
   const lastRuns = await readLastRuns();
   // 과거 걷기가 어디까지 내려갔는지. 숫자만 보면 늘고 있는지 알 수 없다.
-  const siteCursor = await (async () => {
-    try {
-      const { data } = await db
-        .from("site_settings").select("value").eq("key", "gojobs_site_cursor").maybeSingle();
-      return (data?.value ?? null) as { at?: string | null; nextPage?: number } | null;
-    } catch {
-      return null;
-    }
-  })();
-  const statsWithDepth: SourceStat[] = jobStats.map((s) =>
-    s.key === "gojobs_archive" && siteCursor?.nextPage
-      ? { ...s, depth: { at: siteCursor.at ?? null, page: siteCursor.nextPage } }
-      : s);
   // 화면이 기대는 함수·표가 실제로 있는지. match_welfare 가 조용히 사라져
   // 지역 선택이 며칠 죽어 있던 일이 있어 맨 위에 둔다.
   const health = await checkSchema(db as never);
@@ -503,7 +488,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </div>
       </div>
 
-      <CollectPanel stats={statsWithDepth} lastRuns={lastRuns} />
+      <CollectPanel stats={jobStats} lastRuns={lastRuns} />
       <SeoPanel initial={parseSeo(st.get("seo"))} />
       <AdsPanel initial={parseAds(st.get("ads"))} initialOn={parseAdsOn(st.get("ads_on"))} />
 

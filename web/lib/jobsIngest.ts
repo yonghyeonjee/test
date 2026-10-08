@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { COLLECT_KEYS } from "./collectorMeta";
 import { parseItems } from "./openapi";
 
 /**
@@ -230,7 +231,8 @@ export async function readLastRuns(): Promise<LastRun[]> {
   try {
     const db = svc();
     const { data } = await db.from("site_settings").select("key,value").like("key", "last_run_%");
-    const runs = (data ?? []).map((r) => r.value as LastRun).filter((r) => r?.source);
+    // 코드에서 뺀 수집 키(gojobs_archive 등)의 행이 남아 있어도 화면에 올리지 않는다.
+    const runs = (data ?? []).map((r) => r.value as LastRun).filter((r) => r?.source && (COLLECT_KEYS as string[]).includes(r.source));
 
     // 죽은 채로 남은 기록은 읽을 때 정리한다. 다음에 볼 때 또 놀라지 않게
     // 화면만 고치는 게 아니라 DB 에도 적어 둔다.
