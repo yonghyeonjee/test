@@ -134,9 +134,12 @@ jobs:
           umask 077
           mkdir -p ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/id
-          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          S="ssh -i $HOME/.ssh/id ubuntu@$HOST"
-          scp -i ~/.ssh/id bundle.tgz "ubuntu@$HOST:/tmp/bundle-$REL.tgz"
+          # 서버가 느릴 때(메모리 부족으로 굳은 2026-10-08) keyscan 기본 5초에 걸려 배포가 첫 줄에서 죽었다.
+          # 호스트 키는 20초까지 기다리되 못 받아도 넘어가고, 접속은 StrictHostKeyChecking=no 로 한다.
+          ssh-keyscan -T 20 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          O="-o ConnectTimeout=25 -o StrictHostKeyChecking=no -o ServerAliveInterval=15"
+          S="ssh $O -i $HOME/.ssh/id ubuntu@$HOST"
+          scp $O -i ~/.ssh/id bundle.tgz "ubuntu@$HOST:/tmp/bundle-$REL.tgz"
           $S "cat > /srv/jiwon/shared/.env" < env.prod
           $S "set -e
             D=/srv/jiwon/releases/$REL
