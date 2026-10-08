@@ -36,9 +36,9 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
         <HeaderFx />
         <div className={WRAP}>
           <div className="flex h-14 items-center justify-between gap-3 sm:h-[60px]">
-            <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="나라지원 첫 화면">
+            <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="K나라지원 첫 화면">
               <BrandMark className="h-7 w-7" />
-              <span className="display text-[1.35rem] text-ink sm:text-[1.45rem]">나라지원</span>
+              <span className="display text-[1.35rem] text-ink sm:text-[1.45rem]"><span className="text-brand">K</span>나라지원</span>
               {home && (
                 <span className="ml-1 hidden border-l border-line pl-3 text-[13px] font-medium text-muted lg:inline">
                   정부지원금 · 채용 · 자격증 검색
@@ -113,7 +113,7 @@ export function SiteFooter() {
       <div className={`${WRAP} pb-8 pt-9 sm:pt-12`}>
         <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
-            <p className="flex items-center gap-2"><BrandMark className="h-6 w-6" /><span className="display text-[1.2rem] text-ink">나라지원</span></p>
+            <p className="flex items-center gap-2"><BrandMark className="h-6 w-6" /><span className="display text-[1.2rem] text-ink"><span className="text-brand">K</span>나라지원</span></p>
             <p className="mt-3 max-w-[22rem] leading-relaxed">
               모르고 지나칠 정부 지원 혜택을 찾는 검색 서비스입니다. 공공데이터포털 등에 공개된
               자료를 매일 새벽 색인합니다.
@@ -155,7 +155,7 @@ export function SiteFooter() {
             ))}
           </p>
         </details>
-        <p className="mt-3 text-[12px] text-faint">© 나라지원</p>
+        <p className="mt-3 text-[12px] text-faint">© K나라지원</p>
       </div>
     </footer>
   );

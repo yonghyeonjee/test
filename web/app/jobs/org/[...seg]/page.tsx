@@ -279,7 +279,7 @@ export default async function JobsByOrg({ params }: P) {
             </li>
           ))}
         </ul>
-        <p className="mt-2 text-xs text-muted">바깥 사이트로 넘어갑니다. 나라지원과 관계없는 곳이고, 그쪽 글의 내용은 나라지원이 확인하지 않았습니다.</p>
+        <p className="mt-2 text-xs text-muted">바깥 사이트로 넘어갑니다. K나라지원과 관계없는 곳이고, 그쪽 글의 내용은 K나라지원이 확인하지 않았습니다.</p>
       </section>
 
       <GuideBanner title="취업을 준비하신다면 이것도" />

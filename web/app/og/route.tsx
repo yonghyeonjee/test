@@ -33,14 +33,14 @@ const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trim
 export async function GET(req: Request) {
   const u = new URL(req.url);
   const kind = clip((u.searchParams.get("k") ?? "지원금").trim(), 12);
-  const title = clip((u.searchParams.get("t") ?? "나라지원").replace(/\s+/g, " ").trim(), 54);
+  const title = clip((u.searchParams.get("t") ?? "K나라지원").replace(/\s+/g, " ").trim(), 54);
   const sub = clip((u.searchParams.get("s") ?? "").replace(/\s+/g, " ").trim(), 46);
   const accent = ACCENT[kind] ?? "#C4B5FD";
   // 글자 수에 맞춰 크기를 줄인다. 세 줄을 넘지 않게.
   const size = title.length <= 14 ? 80 : title.length <= 26 ? 66 : title.length <= 40 ? 56 : 48;
   const FOOT = "회원가입 없이 바로 보는 공공 정보";
   // 보통 글꼴을 먼저 올려 기본으로 쓰고, 제목·딱지만 굵은 글꼴. 굵은 글꼴만 올리면 그 글자가 든 다른 줄까지 굵어졌다.
-  const [regular, bold] = await Promise.all([krFont(`나라지원${sub}${FOOT}jiwon.knowhow-it.com`, 400), krFont(`${title}${kind}`, 800)]);
+  const [regular, bold] = await Promise.all([krFont(`K나라지원${sub}${FOOT}jiwon.knowhow-it.com`, 400), krFont(`${title}${kind}`, 800)]);
 
   return new ImageResponse(
     (
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
         background: "linear-gradient(150deg,#062418 0%,#3B2FB5 55%,#5A4BE0 100%)",
       }}>
         <div style={{ display: "flex", alignItems: "center", fontSize: 28 }}>
-          <span style={{ letterSpacing: 6, color: "#C4B5FD", fontFamily: regular ? "KR" : undefined }}>나라지원</span>
+          <span style={{ letterSpacing: 6, color: "#C4B5FD", fontFamily: regular ? "KR" : undefined }}>K나라지원</span>
           <span style={{
             marginLeft: 22, padding: "6px 18px", borderRadius: 999, fontSize: 26, fontWeight: 700,
             color: "#0B1020", background: accent, fontFamily: bold ? "KR Bold" : undefined,

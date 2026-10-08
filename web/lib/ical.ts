@@ -62,10 +62,10 @@ function uid(e: CalEvent, i: number) {
   return `${h.toString(16)}-${i}@jiwon.knowhow-it.com`;
 }
 
-export function icsText(events: CalEvent[], calName = "나라지원 일정"): string {
+export function icsText(events: CalEvent[], calName = "K나라지원 일정"): string {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const lines = [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//나라지원//jiwon.knowhow-it.com//KO",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//K나라지원//jiwon.knowhow-it.com//KO",
     "CALSCALE:GREGORIAN", "METHOD:PUBLISH", `X-WR-CALNAME:${esc(calName)}`, "X-WR-TIMEZONE:Asia/Seoul",
   ];
   events.forEach((e, i) => {

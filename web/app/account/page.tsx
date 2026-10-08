@@ -11,7 +11,7 @@ import LogoutButton from "./LogoutButton";
  * 로그인 전에는 만들기·불러오기 상자. 계정은 선택이다 — 없어도 이 브라우저 열쇠로 저장은 된다.
  */
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "내 계정 — 나라지원", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "내 계정 — K나라지원", robots: { index: false, follow: false } };
 
 export default async function AccountPage() {
   const me = await myAccount();

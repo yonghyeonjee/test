@@ -1,4 +1,6 @@
-export const SITE_NAME = "나라지원";
+export const SITE_NAME = "K나라지원";
+/** 2026-10-08 까지 쓰던 이름. 검색어·alternateName 으로 남겨 옛 이름으로 찾는 사람도 걸리게 한다. */
+export const OLD_NAME = "나라지원";
 export const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 
@@ -15,7 +17,7 @@ export const YEAR = new Date().getFullYear();
 export const HOOK = "회원가입도 주민등록번호도 없이";
 
 /**
- * 사이트 이름과 갈래 이름을 조합한 검색어. "나라지원 채용", "나라지원 전세대출".
+ * 사이트 이름과 갈래 이름을 조합한 검색어. "K나라지원 채용", "K나라지원 전세대출".
  * 이름을 아는 사람이 갈래 이름을 붙여 찾을 때 그 쪽이 걸리게 한다.
  */
 export const brandKeys = (...words: string[]) =>
@@ -51,11 +53,11 @@ function kindOf(path: string | undefined): string {
 }
 
 /**
- * 쪽마다 다른 공유 그림(app/og). 제목에서 " | 나라지원" 을 떼고, " — " 뒤는 작은 줄로 내린다.
+ * 쪽마다 다른 공유 그림(app/og). 제목에서 " | K나라지원"(옛 " | 나라지원" 도) 을 떼고, " — " 뒤는 작은 줄로 내린다.
  * 작은 줄이 없으면 설명의 첫 마디.
  */
 export function ogImageFor(title: string | undefined, description: string | undefined, path: string | undefined): string {
-  const clean = (title ?? SITE_NAME).replace(/\s*\|\s*나라지원\s*$/, "").trim();
+  const clean = (title ?? SITE_NAME).replace(/\s*\|\s*K?나라지원\s*$/, "").trim();
   const [head, ...rest] = clean.split(/\s+—\s+/);
   const sub = rest.join(" — ") || (description ?? "").split(/(?<=[.다])\s/)[0] || "";
   const q = new URLSearchParams({ k: kindOf(path), t: head.slice(0, 60), s: sub.slice(0, 60) });
