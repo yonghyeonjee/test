@@ -1,22 +1,14 @@
 name: collect-past
 
-# 수집을 대신 돌린다 — 관리자 단추가 넘기거나 손으로. (하루 다섯 번 예약은 2026-10-07 에 뗐다.)
-#
-# 실제 받아오는 일은 Vercel(서울)이 한다. data.go.kr 이 해외 IP 를 막아서
-# 여기서 직접 부르면 연결조차 안 된다. 여기서는 우리 사이트의 수집 주소를
-# 두드리기만 한다. 서버 함수가 한 번에 45초까지만 돌기 때문에, 응답의
-# more 가 true 인 동안 같은 주소를 다시 부른다.
-#
-# Vercel 무료 요금제는 크론을 하루 한 번만 허용한다. 09:00 KST 의
-# "최신" 수집은 Vercel 크론이 하고, 나머지는 여기서 한다.
-#
-# 필요한 secret: CRON_SECRET (Vercel 환경변수와 같은 값)
+# 손으로만 돌린다. 과거 공고 채록(나라일터 과거는 2020년까지 모아 자동 수집을 끝냈다)과 "전부 최신" 재수집.
+# 2026-10-08 부터 러너가 web/scripts/cron.ts 로 직접 돈다(서버를 부르지 않는다).
+# 필요한 secret: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY, DATA_GO_KR_KEY(API 로 걷는 과거·해외취업), ALIOPLUS_*(공공기관)
 
 on:
   workflow_dispatch:
     inputs:
       source:
-        description: "무엇을 (all=전부 최신, 비우면 과거 채록 둘)"
+        description: "무엇을 (all=전부 최신, 비우면 과거 채록 둘: gojobs_archive, worldjob)"
         required: false
         default: ""
         type: choice
@@ -27,51 +19,37 @@ on:
           - gojobs_archive
           - worldjob
           - license
+          - exam
           - agency_business
           - agency_event
           - agency_facility
           - jeonse
-  # 예약은 뗐다(2026-10-07). 나라일터 과거는 2020-01-01 까지 20만 건이 모였고 그 아래 쪽(2005쪽~)은
-  # 응답이 오지 않는다. 더 받을 것이 없는데 하루 다섯 번 두드리며 실패만 적었다. 필요하면 손으로 돌린다.
+      minutes:
+        description: "작업 하나에 주는 최대 분"
+        required: false
+        default: "25"
 
 concurrency:
   group: collect-past
   cancel-in-progress: false
 
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+  DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+  ALIOPLUS_API_KEY: ${{ secrets.ALIOPLUS_API_KEY }}
+  ALIOPLUS_KEY_APBA: ${{ secrets.ALIOPLUS_KEY_APBA }}
+  ALIOPLUS_KEY_BUSINESS: ${{ secrets.ALIOPLUS_KEY_BUSINESS }}
+  ALIOPLUS_KEY_EVENT: ${{ secrets.ALIOPLUS_KEY_EVENT }}
+  ALIOPLUS_KEY_FACILITY: ${{ secrets.ALIOPLUS_KEY_FACILITY }}
+
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
-      - name: 받기
-        env:
-          SITE: https://jiwon.knowhow-it.com
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          WHAT: ${{ inputs.source }}
-        run: |
-          set -u
-          if [ -z "$CRON_SECRET" ]; then
-            echo "::error::CRON_SECRET secret 이 비어 있습니다. GitHub → Settings → Secrets → Actions 에 넣어 주세요."
-            exit 1
-          fi
-          call() { curl -sS --max-time 70 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/jobs$1"; }
-          # 한 소스를 more 가 false 가 될 때까지 (최대 20회).
-          drain() {
-            local src="$1"
-            for round in $(seq 1 20); do
-              body=$(call "?source=$src") || { echo "  $src 요청 실패(회차 $round)"; return 0; }
-              echo "  $src 회차 $round: $(echo "$body" | jq -c '.results[0] | {ok, saved, reason, more}' 2>/dev/null || echo "$body" | head -c 300)"
-              # more 가 false 면 이 소스는 끝. 'return' 만 쓰면 바로 앞 [ ] 의 실패(1)가 돌아가
-              # 마지막 소스에서 작업 전체가 실패로 찍혔다(받기는 다 됐는데). 0 으로 돌린다.
-              [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || return 0
-              sleep 2
-            done
-          }
-          case "${WHAT:-}" in
-            "")   for s in gojobs_archive worldjob; do drain "$s"; done ;;
-            all)  # 전부 나란히 한 번 돌리고, 아직 남았다는 것만 이어서.
-                  body=$(call "") || { echo "전체 요청 실패"; exit 1; }
-                  echo "전체: $(echo "$body" | jq -c '[.results[] | {key, ok, saved, more}]' 2>/dev/null || echo "$body" | head -c 400)"
-                  for s in $(echo "$body" | jq -r '.results[] | select(.ok and .more) | .key' 2>/dev/null); do drain "$s"; done ;;
-            *)    drain "$WHAT" ;;
-          esac
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: ${{ inputs.source == 'all' && 'latest' || inputs.source == '' && 'source:gojobs_archive source:worldjob' || format('source:{0}', inputs.source) }}
+          minutes: ${{ inputs.minutes || '25' }}

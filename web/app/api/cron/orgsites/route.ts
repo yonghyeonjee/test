@@ -5,7 +5,9 @@ import { gojobsDetailStep } from "@/lib/gojobsDetail";
 import { crawlStep, discoverStep, ingestItems, jsBoards, seedStep, tidyStep } from "@/lib/orgCrawl";
 
 /**
- * 기관 홈페이지 공고 수집(lib/orgCrawl). 서울 서버에서 돈다 — 외국 IP 를 막는 정부 누리집이 있다.
+ * 기관 홈페이지 공고 수집(lib/orgCrawl). seed·discover·crawl·tidy 는 서울 서버에서 돈다 — 외국 IP 를 막는 정부 누리집이 있다.
+ * alio 와 gojobs_detail 의 예약 실행은 2026-10-08 부터 GitHub 러너가 scripts/cron.ts 로 직접 돈다(서버 메모리를 안 쓰려고).
+ * 이 길에 남은 것은 관리자 수동 실행용이다.
  * ?step=seed     홈페이지 주소 채우기(위키데이터)
  * ?step=discover 홈페이지 메뉴에서 채용·공지 게시판 찾기
  * ?step=crawl    게시판 첫 쪽의 제목·링크·날짜

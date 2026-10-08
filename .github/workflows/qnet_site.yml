@@ -1,43 +1,35 @@
 name: qnet-site
 
-# 큐넷 종목별 시험 일정·수험자 동향. 매주 일요일 04:10 KST. 서울 서버의 /api/cron/qnet 을 부른다.
-# 처음 한 번은 종목 613개 × 요청 7개라 회차가 많이 돈다(한 번에 40초, 최대 150회). 그 뒤로는 주마다 일정만 다시 읽는다.
-# 필요한 secret: CRON_SECRET
+# 큐넷 종목별 시험 일정·수험자 동향. 매주 일요일 04:10 KST.
+# 2026-10-08 부터 러너가 web/scripts/cron.ts qnet 으로 직접 돈다(서버를 부르지 않는다). 러너에서 큐넷이 열리는 것을 확인했다.
+# 처음 한 번은 종목 613개 × 요청 7개라 오래 걸린다. 그 뒤로는 주마다 일정만 다시 읽는다(몇 분).
+# 필요한 secret: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY
 
 on:
   schedule:
     - cron: "10 19 * * 6"   # UTC 토 19:10 = KST 일 04:10
   workflow_dispatch:
     inputs:
-      rounds:
-        description: "최대 호출 횟수"
+      minutes:
+        description: "최대 분"
         required: false
-        default: "150"
+        default: "120"
 
 concurrency:
   group: qnet-site
   cancel-in-progress: false
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
 
 jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
-      - name: 수집
-        env:
-          SITE: https://jiwon.knowhow-it.com
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          ROUNDS: ${{ inputs.rounds || '150' }}
-        run: |
-          set -u
-          [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }
-          bad=0
-          for round in $(seq 1 "$ROUNDS"); do
-            body=$(curl -sS --max-time 100 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/qnet") || { echo "요청 실패(회차 $round)"; bad=$((bad+1)); [ $bad -ge 5 ] && exit 1; sleep 15; continue; }
-            # JSON 이 아니면(점검 화면 등) 서버가 늦거나 쉬는 중. 잠깐 쉬고 다시. 다섯 번 연달아 그러면 그만.
-            more=$(echo "$body" | jq -r '.more // false' 2>/dev/null) || { echo "$round: JSON 아님: $(echo "$body" | head -c 200)"; bad=$((bad+1)); [ $bad -ge 5 ] && exit 1; sleep 15; continue; }
-            bad=0
-            echo "$round: $(echo "$body" | head -c 400)"
-            [ "$more" = "true" ] || break
-            sleep 2
-          done
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: qnet
+          minutes: ${{ inputs.minutes || '120' }}

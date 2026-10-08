@@ -1,8 +1,10 @@
 name: org-sites
 
-# 기관 홈페이지 공고 수집. 매일 06:30 KST. 서울 서버의 /api/cron/orgsites 를 부른다.
-# alio(잡알리오 새 공고) → tidy(지저분한 제목 정리) → seed(새 기관 홈페이지) → discover(게시판 찾기, 한 달에 한 번) → crawl(게시판 첫 쪽, 하루 한 번).
-# 필요한 secret: CRON_SECRET
+# 기관 쪽 공고 수집. 매일 06:30 KST.
+# alio(잡알리오 새 공고)는 2026-10-08 부터 러너가 web/scripts/cron.ts 로 직접 돈다(러너에서 잡알리오가 열리는 것을 확인했다).
+# tidy(지저분한 제목 정리) → seed(새 기관 홈페이지) → discover(게시판 찾기, 한 달에 한 번) → crawl(게시판 첫 쪽, 하루 한 번)은
+# 기관 홈페이지 수백 곳을 도는 일이라 아직 서울 서버의 /api/cron/orgsites 를 부른다 — 외국 IP 를 막는 누리집이 섞여 있다.
+# 필요한 secret: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY(alio), CRON_SECRET(서버 단계)
 
 on:
   schedule:
@@ -10,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       steps:
-        description: "돌릴 단계(쉼표)"
+        description: "돌릴 단계(쉼표). alio 는 러너, 나머지는 서버"
         required: false
         default: "alio,tidy,seed,discover,crawl"
 
@@ -18,20 +20,39 @@ concurrency:
   group: org-sites
   cancel-in-progress: false
 
+env:
+  STEPS: ${{ inputs.steps || 'alio,tidy,seed,discover,crawl' }}
+
 jobs:
-  run:
+  alio:
+    if: ${{ contains(inputs.steps || 'alio,tidy,seed,discover,crawl', 'alio') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: ${{ contains(inputs.steps || '', 'alio_full') && 'alio_full' || 'alio' }}
+          minutes: "25"
+
+  server:
+    needs: alio
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
-      - name: 수집
+      - name: 서버 단계
         env:
           SITE: https://jiwon.knowhow-it.com
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          STEPS: ${{ inputs.steps || 'alio,tidy,seed,discover,crawl' }}
         run: |
           set -u
           [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }
           for step in ${STEPS//,/ }; do
+            case "$step" in alio|alio_full) continue;; esac
             # 단계마다 최대 40회(한 번에 40곳 안팎). more 가 false 면 다음 단계로.
             for round in $(seq 1 40); do
               body=$(curl -sS --max-time 90 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/orgsites?step=$step") || { echo "$step 요청 실패(회차 $round)"; break; }

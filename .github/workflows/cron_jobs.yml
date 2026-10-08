@@ -1,64 +1,84 @@
 name: cron-jobs
 
-# 매일 09:00 KST "최신" 수집. Vercel 크론(vercel.json)이 하던 일을 AWS 로 옮겨 여기서 한다.
-# 필요한 secret: CRON_SECRET
+# 매일 09:00 KST: 최신 수집 → 나라일터 상세(첨부파일·근무지역) → 저장 조건 알림 메일.
+# 2026-10-08 부터 서버를 부르지 않고 러너가 web/scripts/cron.ts 로 직접 돈다 — 서울 서버(1GB)의 메모리를 쓰지 않고,
+# 서버가 점검 중이어도 수집이 끊기지 않는다. 서버의 /api/cron 길은 관리자 수동 실행용으로 남아 있다.
+# 필요한 secret: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY. 있으면 쓰는 것: DATA_GO_KR_KEY(해외취업·과거 API),
+# ALIOPLUS_*(공공기관 사업·행사·시설), ADMIN_SECRET/SESSION_SECRET(수신 거부 링크 서명 — 서버와 같은 값),
+# AWS_REGION·AWS_ACCESS_KEY_ID·AWS_SECRET_ACCESS_KEY·MAIL_FROM(없으면 알림은 시험 모드).
 
 on:
   schedule:
     - cron: "0 0 * * *"   # UTC 00:00 = KST 09:00
   workflow_dispatch:
+    inputs:
+      job:
+        description: "하나만 돌리기(비우면 셋 다 차례로)"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - latest
+          - gojobs_detail
+          - notify_dry
+          - notify
+
+concurrency:
+  group: cron-jobs
+  cancel-in-progress: false
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+  NEXT_PUBLIC_SITE_URL: https://jiwon.knowhow-it.com
+  DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+  ALIOPLUS_API_KEY: ${{ secrets.ALIOPLUS_API_KEY }}
+  ALIOPLUS_KEY_APBA: ${{ secrets.ALIOPLUS_KEY_APBA }}
+  ALIOPLUS_KEY_BUSINESS: ${{ secrets.ALIOPLUS_KEY_BUSINESS }}
+  ALIOPLUS_KEY_EVENT: ${{ secrets.ALIOPLUS_KEY_EVENT }}
+  ALIOPLUS_KEY_FACILITY: ${{ secrets.ALIOPLUS_KEY_FACILITY }}
+  SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+  ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+  ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  MAIL_FROM: ${{ secrets.MAIL_FROM }}
 
 jobs:
   latest:
+    if: ${{ !inputs.job || inputs.job == 'latest' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
-      - name: 최신 수집
-        env:
-          SITE: https://jiwon.knowhow-it.com
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -u
-          [ -n "$CRON_SECRET" ] || { echo "::error::CRON_SECRET 이 비어 있습니다."; exit 1; }
-          # 한 번에 끝나지 않으면 응답의 more 가 true — 끝날 때까지 다시 부른다(최대 20회).
-          for round in $(seq 1 20); do
-            body=$(curl -sS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/jobs") || { echo "요청 실패(회차 $round)"; exit 1; }
-            echo "회차 $round: $(echo "$body" | head -c 400)"
-            [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || exit 0
-            sleep 2
-          done
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: latest
+          minutes: "30"
 
   # 새로 들어온 나라일터 공고의 상세(첨부파일·근무지역). 접수 중인 것 가운데 아직 안 읽은 것만.
   detail:
     needs: latest
-    if: always()
+    if: ${{ always() && (!inputs.job || inputs.job == 'gojobs_detail') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
-      - name: 나라일터 상세
-        env:
-          SITE: https://jiwon.knowhow-it.com
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -u
-          for round in $(seq 1 30); do
-            body=$(curl -sS --max-time 100 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/orgsites?step=gojobs_detail") || { echo "요청 실패(회차 $round)"; exit 1; }
-            echo "회차 $round: $(echo "$body" | head -c 400)"
-            [ "$(echo "$body" | jq -r '.more // false' 2>/dev/null)" = "true" ] || exit 0
-            sleep 2
-          done
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: gojobs_detail
+          minutes: "30"
 
   notify:
     needs: latest
-    if: always()
+    if: ${{ always() && (!inputs.job || startsWith(inputs.job, 'notify')) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: 저장 조건 알림 메일
-        env:
-          SITE: https://jiwon.knowhow-it.com
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -u
-          body=$(curl -sS --max-time 120 -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/cron/notify") || { echo "요청 실패"; exit 1; }
-          echo "$body" | head -c 600; echo
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: ${{ inputs.job == 'notify_dry' && 'notify_dry' || 'notify' }}
+          minutes: "10"
