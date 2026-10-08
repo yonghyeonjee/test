@@ -1,0 +1,8 @@
+# jiwon-watchdog.timer 가 1분마다 띄운다. 스스로는 안 돈다. 내용은 jiwon-watchdog.sh 에.
+[Unit]
+Description=narajiwon watchdog (3000 포트가 답하지 않으면 jiwon 재시작)
+After=jiwon.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/jiwon-watchdog.sh

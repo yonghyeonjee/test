@@ -1,0 +1,11 @@
+[Unit]
+Description=narajiwon watchdog, 1분마다
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+AccuracySec=10s
+Unit=jiwon-watchdog.service
+
+[Install]
+WantedBy=timers.target

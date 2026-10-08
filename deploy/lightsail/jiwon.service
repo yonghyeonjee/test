@@ -13,18 +13,21 @@ Environment=PORT=3000
 # localhost 로 둔다. 127.0.0.1 이면 Next 라우터는 127.0.0.1, 미들웨어는 localhost 로 제 주소를 알아
 # 미들웨어의 rewrite(없는 채용 주소 → 404 쪽)를 바깥 주소로 보고 프록시하려다 500 을 낸다.
 Environment=HOSTNAME=localhost
-# 1GB 서버($7, 실제 약 950MB). 시스템이 쉬는 상태에서 190MB 를 쓴다.
+# 1GB 서버($7, 실제 약 910MB). 시스템이 쉬는 상태에서 190MB 를 쓴다.
 # 2026-10-06 512MB 기계에서 상한(380/450MB)이 기계보다 커 Node 가 커지면 기계 전체가 스왑으로 밀려
 # SSH 까지 멈췄다(커널 OOM 기록 없음 = 죽이지 않고 기어감). 상한은 늘 기계보다 작게 둔다.
-# 힙 512MB, 640MB 에서 되돌려 보내고 720MB 에서 끊고 3초 뒤 다시 띄운다.
+# 2026-10-08 힙 512MB 로 두었더니 V8 이 상한까지 느긋하게 자라(RSS 625MB) 13시간 만에 MemoryHigh(640MB)
+# 에 걸렸다. MemoryHigh 는 죽이지 않고 되돌려 보내기만 해서 Node 는 살아 있는데 답이 없는 상태가 됐다.
+# 그래서 힙 상한을 MemoryHigh 보다 넉넉히 작게 둔다(RSS ≈ 힙 + 120MB 안팎). 힙이 모자라면 V8 이 스스로
+# 죽고 3초 뒤 다시 뜬다 — 기어가는 것보다 낫다. 답이 없는 상태는 jiwon-watchdog.timer 가 1분마다 보고 다시 띄운다.
 # 커널이 메모리를 급히 비워야 할 때도 sshd 가 아니라 Node 를 먼저 고르게 한다.
-ExecStart=/usr/bin/node --max-old-space-size=512 server.js
+ExecStart=/usr/bin/node --max-old-space-size=384 server.js
 Restart=always
 RestartSec=3
 TimeoutStopSec=20
 MemoryHigh=640M
 MemoryMax=720M
-MemorySwapMax=128M
+MemorySwapMax=64M
 OOMScoreAdjust=800
 LimitNOFILE=65535
 

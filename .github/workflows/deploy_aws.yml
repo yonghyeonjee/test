@@ -71,6 +71,7 @@ jobs:
           cp ../deploy/lightsail/jiwon.service ../bundle/jiwon.service
           cp ../deploy/lightsail/Caddyfile ../bundle/Caddyfile
           cp ../deploy/lightsail/maintenance.html ../bundle/maintenance.html
+          cp ../deploy/lightsail/jiwon-watchdog.sh ../deploy/lightsail/jiwon-watchdog.service ../deploy/lightsail/jiwon-watchdog.timer ../bundle/
           tar -C ../bundle -czf ../bundle.tgz .
           ls -lh ../bundle.tgz
 
@@ -126,7 +127,9 @@ jobs:
         env:
           KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           # 같은 커밋을 다시 올려도 새 폴더에 푼다. 돌고 있는 폴더를 지우지 않으려고.
-          REL: ${{ github.sha }}-${{ github.run_id }}
+          # run_attempt 까지 붙인다 — "다시 실행" 은 run_id 가 같아 돌고 있는 폴더에 풀려다
+          # 서비스가 만든 캐시 파일의 chmod 에서 멈췄다(2026-10-08, 서버가 굳은 날 되살리기가 늦어진 원인).
+          REL: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           umask 077
           mkdir -p ~/.ssh
@@ -148,6 +151,13 @@ jobs:
             sudo mkdir -p /srv/jiwon/static && sudo install -m 644 \$D/maintenance.html /srv/jiwon/static/maintenance.html
             if ! cmp -s \$D/Caddyfile /etc/caddy/Caddyfile; then
               sudo caddy validate --config \$D/Caddyfile --adapter caddyfile && sudo install -m 644 \$D/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+            fi
+            # 지킴이: 3000 이 답하지 않으면 다시 띄우는 타이머(1분). 파일이 바뀌었을 때만 갱신·재시동.
+            if ! cmp -s \$D/jiwon-watchdog.sh /usr/local/bin/jiwon-watchdog.sh || ! cmp -s \$D/jiwon-watchdog.timer /etc/systemd/system/jiwon-watchdog.timer || ! cmp -s \$D/jiwon-watchdog.service /etc/systemd/system/jiwon-watchdog.service; then
+              sudo install -m 755 \$D/jiwon-watchdog.sh /usr/local/bin/jiwon-watchdog.sh
+              sudo install -m 644 \$D/jiwon-watchdog.service /etc/systemd/system/jiwon-watchdog.service
+              sudo install -m 644 \$D/jiwon-watchdog.timer /etc/systemd/system/jiwon-watchdog.timer
+              sudo systemctl daemon-reload && sudo systemctl enable --now jiwon-watchdog.timer
             fi
             sudo /usr/bin/systemctl restart jiwon
             # 지난 배포는 셋만 남긴다. 서비스(jiwon)가 쓴 캐시 파일이 섞여 있어 sudo 로 지운다.
