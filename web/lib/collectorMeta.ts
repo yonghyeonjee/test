@@ -7,12 +7,11 @@
  */
 
 export type CollectKey =
-  | "gojobs" | "gojobs_archive" | "worldjob"
+  | "gojobs" | "worldjob"
   | "license" | "exam" | "agency_business" | "agency_event" | "agency_facility" | "jeonse";
 
 export const COLLECT_LABEL: Record<CollectKey, string> = {
   gojobs: "나라일터 채용 (최신)",
-  gojobs_archive: "나라일터 과거 공고 (2020년까지 모음, 자동 수집 끝)",
   worldjob: "해외취업",
   license: "국가자격 종목",
   exam: "자격시험 일정",

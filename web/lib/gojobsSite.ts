@@ -405,12 +405,6 @@ type SiteCursor = {
   at?: string | null;
 };
 
-export type SiteMode =
-  /** 늘 1쪽부터. 오늘 기준 최신을 챙긴다. 커서를 건드리지 않는다. */
-  | "recent"
-  /** 커서부터 이어서 더 깊이 = 최신에서 과거 쪽으로. 끝까지 모으는 용도다. */
-  | "past";
-
 async function readSiteCursor(db: ReturnType<typeof svc>): Promise<SiteCursor> {
   const { data } = await db.from("site_settings").select("value").eq("key", "gojobs_site_cursor").maybeSingle();
   const v = data?.value as SiteCursor | undefined;
@@ -418,9 +412,8 @@ async function readSiteCursor(db: ReturnType<typeof svc>): Promise<SiteCursor> {
 }
 
 export async function ingestSite(
-  opts: { mode?: SiteMode; pages?: number; budgetMs?: number } = {},
+  opts: { pages?: number; budgetMs?: number } = {},
 ): Promise<SiteRun> {
-  const mode: SiteMode = opts.mode ?? "recent";
   const budgetMs = opts.budgetMs ?? 40_000;
   const t0 = Date.now();
   const run: SiteRun = { ok: false, saved: 0, pages: [], paging: null, elapsedMs: 0 };
@@ -453,18 +446,13 @@ export async function ingestSite(
   const per = unit?.size ?? BASE_UNIT;
   // 한 쪽이 커지면 한 번에 도는 쪽 수는 줄인다 — 받는 양은 비슷하게 두고
   // 남의 사이트를 두드리는 횟수만 줄인다.
-  const pages = opts.pages ?? (mode === "recent"
-    ? Math.max(2, Math.ceil(250 / per))
-    : Math.max(4, Math.ceil(600 / per)));
+  const pages = opts.pages ?? Math.max(2, Math.ceil(250 / per));
 
-  // recent: 늘 1쪽부터. 오늘 기준 최신을 매일 챙긴다.
-  // past: 커서부터 이어 읽는다 = 최신 쪽에서 과거 쪽으로 한 걸음씩.
-  //       매번 1쪽부터 다시 읽으면 같은 것만 쌓인다.
-  //       끝까지 갔으면(done) 1쪽으로 되감아 전체를 다시 훑는다.
-  const start = mode === "past" && !cursor.done ? cursor.nextPage : 1;
+  // 늘 1쪽부터. 오늘 기준 최신을 매일 챙긴다.
+  // 커서부터 과거 쪽으로 파 내려가던 past 모드는 2020년까지 다 모은 뒤 2026-10-08 뺐다.
+  const start = 1;
   let page = start;
   let read = 0;
-  let ended = false;
   /** 이번에 읽은 것 가운데 가장 오래된 등록일. 어디까지 팠는지 보여 준다. */
   let oldest: string | null = null;
 
@@ -512,7 +500,6 @@ export async function ingestSite(
         run.pages.push({ page: pg, got: 0, saved: 0, reason: r.reason });
         // "목록 줄을 못 찾았습니다"는 대개 끝을 지난 것이다. 응답 자체가 안 온
         // 것과 구분해 둔다 — 끝이면 되감고, 아니면 다음에 같은 쪽을 다시 본다.
-        if (/목록 줄/.test(r.reason)) ended = true;
         stop = true;
         break;
       }
@@ -557,22 +544,20 @@ export async function ingestSite(
   run.oldest = oldest;
   run.per = per;
 
-  // 커서는 두 모드 모두 적는다. recent 로 돌 때도 쪽 크기를 재 봤다는 사실은
-  // 남겨야 다음번에 또 재지 않는다. 다만 쪽 번호는 past 일 때만 옮긴다.
-  const done = mode === "past" ? ended || run.paging === false : cursor.done;
+  // 커서는 쪽 크기를 재 봤다는 사실을 남기려고 적는다(다음번에 또 재지 않게). 쪽 번호는 건드리지 않는다.
   const next: SiteCursor = {
-    nextPage: mode === "past" ? (done ? 1 : page) : cursor.nextPage,
-    done,
+    nextPage: cursor.nextPage,
+    done: cursor.done,
     updated: now,
     unit,
     unitProbed: true,
-    at: mode === "past" ? oldest : (cursor.at ?? null),
+    at: cursor.at ?? null,
   };
   await db.from("site_settings").upsert(
     { key: "gojobs_site_cursor", value: next as never, updated_at: now },
     { onConflict: "key" },
   ).then(() => {}, () => {});
-  run.more = mode === "past" ? !done : false;
+  run.more = false;
   run.from = start;
   run.to = page - 1;
 

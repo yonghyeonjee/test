@@ -12,7 +12,7 @@
  */
 
 const REPO = "yonghyeonjee/test";
-const WORKFLOW = "collect_past.yml";
+const WORKFLOW = "collect_manual.yml";
 
 export const dispatchConfigured = Boolean(process.env.GH_DISPATCH_TOKEN?.trim());
 

@@ -8,8 +8,8 @@
  * 사용: npx tsx scripts/cron.ts <작업> [--minutes 20]
  *   latest              매일 바뀌는 것만 — 나라일터 최신, 해외취업. 하나씩 차례로(한꺼번에 돌지 않는다).
  *   weekly              드물게 바뀌는 것 — 국가자격 종목, 자격시험 일정, 전세대출 금리, 공공기관 사업·행사·시설. 주 1회, 하나씩 차례로.
- *                       (2026-10-08 까지는 여덟을 매일 한꺼번에 돌렸다.) 과거 채록(gojobs_archive)은 어디에도 안 들어간다.
- *   source:<key>        하나만 이어서(collectOne). 예: source:gojobs_archive, source:worldjob
+ *                       (2026-10-08 까지는 여덟을 매일 한꺼번에 돌렸다. 과거 채록은 같은 날 코드에서 뺐다.)
+ *   source:<key>        하나만 이어서(collectOne). 예: source:worldjob, source:license
  *   gojobs_detail       나라일터 접수 중 공고의 상세(첨부파일·근무지역)
  *   qnet                큐넷 종목별 시험 일정·수험자 동향
  *   alio | alio_full    잡알리오 새 공고(이미 있는 쪽을 만나면 멈춤) | 끝까지

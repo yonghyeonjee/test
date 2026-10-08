@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { COLLECT_KEYS, type CollectKey, type CollectResult } from "./collectorMeta";
 import { callAlio, toBusiness, toEvent, toFacility, type AlioItem } from "./alioplus";
 import { ingestArchive, writeRun, type LastRun } from "./jobsIngest";
-import { ingestSite, type SiteMode } from "./gojobsSite";
+import { ingestSite } from "./gojobsSite";
 import { getLicenses } from "./qnet";
 import { EXAM_GRADES, fetchGrade, toRow as toExamRow } from "./qnetExam";
 import { getRentRates } from "./rentRate";
@@ -134,10 +134,8 @@ async function stopRequested() {
  * 최신과 과거는 서로 다른 줄에 적는다. 한 줄을 같이 쓰면 나중에 돈 쪽이
  * 앞의 기록을 지운다.
  */
-async function siteRun(
-  key: "gojobs" | "gojobs_archive",
-  opts: { mode: SiteMode; budgetMs: number },
-) {
+async function siteRun(opts: { budgetMs: number }) {
+  const key = "gojobs";
   const db = svc();
   const startedAt = new Date().toISOString();
   await writeRun(db, { source: key, state: "running", startedAt, by: "admin" });
@@ -176,43 +174,12 @@ export async function collectOne(
     if (key === "gojobs") {
       // 1쪽부터 250건쯤. 한 쪽에 몇 건이 오는지는 ingestSite 가 재 두었다 —
       // 100건씩 오면 세 쪽, 열 건씩 오면 스물다섯 쪽을 돈다.
-      const r = await siteRun("gojobs", { mode: "recent", budgetMs: opts.budgetMs ?? 40_000 });
+      const r = await siteRun({ budgetMs: opts.budgetMs ?? 40_000 });
       if (!r.ok) throw new Error(r.reason ?? "받아온 것이 없습니다");
       return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: false,
                reason: [`${r.from}~${r.to}쪽(쪽당 ${r.per ?? 10}건)`, r.unitNote].filter(Boolean).join(" · ") };
     }
-    // 나라일터 과거: 오늘에서 과거 쪽으로 한 걸음씩 판다.
-    //
-    // 처음에는 API 를 1쪽부터 걸었다. API 는 오래된 것부터 주니 그건
-    // 2008년부터 앞으로 걷는 것이었고, 실제로 2008~2013년만 23,000건이
-    // 쌓였다. 정작 사람이 볼 만한 2014~2025년은 그 뒤라 언제 닿을지
-    // 모른다. 순서가 거꾸로였다.
-    //
-    // 사이트 목록은 최신이 1쪽이다. 쪽을 넘길수록 과거로 간다. 그래서
-    // 이쪽을 본줄기로 삼는다 — 가까운 날짜부터 채우고 과거로 내려간다.
-    // API 걷기는 사이트가 막혔을 때만 쓴다.
-    if (key === "gojobs_archive") {
-      const budget = opts.budgetMs ?? 40_000;
-      const r = await siteRun("gojobs_archive", { mode: "past", budgetMs: budget });
-      if (r.ok) {
-        const per = r.per ?? 10;
-        return { key, ok: true, saved: r.saved, elapsedMs: Date.now() - t0, more: r.more ?? false,
-                 reason: [`${r.from}~${r.to}쪽(쪽당 ${per}건)`,
-                          r.oldest && `${r.oldest}까지`,
-                          r.unitNote].filter(Boolean).join(" · ") };
-      }
-      // 사이트가 안 되면 API 로라도 과거를 모은다. 순서는 나쁘지만
-      // 아무것도 안 모으는 것보다 낫다.
-      const a = await ingestArchive("gojobs", { budgetMs: budget });
-      if (a.saved > 0) {
-        const first = a.pages[0], last = a.pages[a.pages.length - 1];
-        return { key, ok: true, saved: a.saved, elapsedMs: Date.now() - t0,
-                 more: Boolean(a.timeUp) || Boolean(a.stalled),
-                 reason: `사이트 실패(${r.reason}) → API ${first.page}~${last.page}쪽` +
-                         (first.oldest ? ` · ${first.oldest}부터` : "") };
-      }
-      throw new Error(r.reason ?? a.reason ?? "받아온 것이 없습니다");
-    }
+    // 나라일터 과거 채록(gojobs_archive)은 2020년까지 모은 뒤 2026-10-08 코드에서 뺐다. 과거 공고는 job_posts 에 그대로 남아 있다.
     // 월드잡은 최신순으로 준다(1쪽 표본이 2026-07, 마지막 쪽이 2015).
     // 1쪽을 늘 먼저 읽어 오늘 기준 최신 100건을 챙기고, 커서부터 이어 걷는다.
     // 43쪽뿐이라 며칠이면 전부 모이고, 그 뒤로는 한 바퀴씩 다시 돈다.

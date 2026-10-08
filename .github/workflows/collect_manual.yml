@@ -1,6 +1,6 @@
-name: collect-past
+name: collect-manual
 
-# 손으로만 돌린다. 과거 공고 채록(나라일터 과거는 2020년까지 모아 자동 수집을 끝냈다)과 "전부 최신" 재수집.
+# 손으로만 돌린다. 항목 하나 또는 전부를 지금 다시 받는다. (나라일터 과거 채록은 2020년까지 모은 뒤 2026-10-08 코드에서 뺐다.)
 # 2026-10-08 부터 러너가 web/scripts/cron.ts 로 직접 돈다(서버를 부르지 않는다).
 # 필요한 secret: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY, DATA_GO_KR_KEY(API 로 걷는 과거·해외취업), ALIOPLUS_*(공공기관)
 
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       source:
-        description: "무엇을 (all=전부 최신, 비우면 과거 채록 둘: gojobs_archive, worldjob)"
+        description: "무엇을 (all=매일 것 전부, 비우면 해외취업만)"
         required: false
         default: ""
         type: choice
@@ -16,7 +16,6 @@ on:
           - ""
           - all
           - gojobs
-          - gojobs_archive
           - worldjob
           - license
           - exam
@@ -30,7 +29,7 @@ on:
         default: "25"
 
 concurrency:
-  group: collect-past
+  group: collect-manual
   cancel-in-progress: false
 
 env:
@@ -51,5 +50,5 @@ jobs:
       - uses: actions/checkout@v5
       - uses: ./.github/actions/runner-cron
         with:
-          jobs: ${{ inputs.source == 'all' && 'latest' || inputs.source == '' && 'source:gojobs_archive source:worldjob' || format('source:{0}', inputs.source) }}
+          jobs: ${{ inputs.source == 'all' && 'latest' || inputs.source == '' && 'source:worldjob' || format('source:{0}', inputs.source) }}
           minutes: ${{ inputs.minutes || '25' }}

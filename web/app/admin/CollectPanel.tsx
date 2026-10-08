@@ -7,8 +7,6 @@ import { probeGojobsSite, probeJobsApi, probeOpenQuestions, probePagingLimits, r
 
 export type SourceStat = {
   key: CollectKey; n: number; newest: string | null; fetched: string | null;
-  /** 과거로 어디까지 팠나. 나라일터 과거 타일만 채운다. */
-  depth?: { at: string | null; page: number } | null;
 };
 
 const ago = (iso: string) => {
@@ -21,7 +19,6 @@ const secs = (ms: number) => `${(ms / 1000).toFixed(1)}초`;
 /** 마지막 채용 수집 기록. 함수가 죽어도 DB 에 남아 새로고침으로 보인다. */
 const RUN_LABEL: Record<string, string> = {
   gojobs: "나라일터 최신",
-  gojobs_archive: "나라일터 과거",
   worldjob: "해외취업",
 };
 
@@ -74,8 +71,8 @@ function TileResult({ r }: { r: CollectResult }) {
 /**
  * 공공 API 수집. 전체를 한 번에 돌리는 단추와 항목마다 따로 돌리는 단추.
  *
- * 매일 09:00 크론이 전체를 나란히 돌린다. 이 화면은 처음 채울 때, 한 항목만
- * 다시 받고 싶을 때, 그리고 무엇이 왜 실패했는지 볼 때 쓴다.
+ * 예약 수집은 GitHub 러너가 돌린다(web/scripts/cron.ts — 매일 09:00 나라일터 최신·해외취업, 월요일 드문 것들).
+ * 이 화면은 처음 채울 때, 한 항목만 다시 받고 싶을 때, 그리고 무엇이 왜 실패했는지 볼 때 쓴다.
  */
 export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[]; lastRuns: LastRunView[] }) {
   const router = useRouter();
@@ -100,7 +97,7 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
    * 남은 것이 없다고 할 때까지, 또는 중지를 누를 때까지 이어서 돌린다.
    *
    * 도는 동안 창을 열어 두어야 한다(브라우저가 다음 회차를 부른다).
-   * 자동 수집(매일 09:00)은 이것과 별개로 그대로 돈다.
+   * 예약 수집(러너)은 이것과 별개로 그대로 돈다.
    */
   const MAX_ROUNDS = 40;
 
@@ -226,7 +223,7 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
     <section className="card mt-6 p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-bold">공공 API 수집 <span className="ml-1 font-normal text-faint">v3</span></h2>
-        <span className="text-xs text-faint">최신 100건 매일 09:00 · 과거는 하루 5번 이어서</span>
+        <span className="text-xs text-faint">매일 09:00 나라일터 최신·해외취업 · 월요일 자격·시험·금리</span>
       </div>
       <p className="mt-1 text-xs text-faint">
         자동으로도 돌지만, 여기서 전체 또는 항목 하나만 지금 받아올 수 있습니다.
@@ -250,11 +247,6 @@ export default function CollectPanel({ stats, lastRuns }: { stats: SourceStat[];
                     {s.newest ? `최신 ${s.newest} · ` : ""}
                     {s.fetched ? `${ago(s.fetched)} 수집` : "수집 기록 없음"}
                   </span>
-                  {s.depth && (
-                    <span className="num mt-0.5 block text-xs text-muted">
-                      과거 {s.depth.at ?? "—"}까지 · {s.depth.page.toLocaleString()}쪽
-                    </span>
-                  )}
                 </div>
                 <button
                   type="button"
