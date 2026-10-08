@@ -1,0 +1,41 @@
+name: weekly-sources
+
+# 드물게 바뀌는 자료를 주 1회만 받는다 — 국가자격 종목(해마다), 자격시험 일정(해에 몇 번), 전세대출 금리(달마다),
+# 공공기관 사업·행사·시설(ALIOPLUS 키가 있을 때). 2026-10-08 까지는 매일 09:00 의 "최신 수집"에 끼어 여덟이 한꺼번에 돌았다.
+# 월요일 05:10 KST — 큐넷(일 04:10)·기관 홈페이지(매일 06:30)·최신 수집(매일 09:00)과 겹치지 않는 시각. 하나씩 차례로 돈다.
+# 필요한 secret: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY. 있으면 쓰는 것: DATA_GO_KR_KEY, ALIOPLUS_*
+
+on:
+  schedule:
+    - cron: "10 20 * * 0"   # UTC 일 20:10 = KST 월 05:10
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "작업 전체에 주는 최대 분"
+        required: false
+        default: "40"
+
+concurrency:
+  group: weekly-sources
+  cancel-in-progress: false
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+  DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+  ALIOPLUS_API_KEY: ${{ secrets.ALIOPLUS_API_KEY }}
+  ALIOPLUS_KEY_APBA: ${{ secrets.ALIOPLUS_KEY_APBA }}
+  ALIOPLUS_KEY_BUSINESS: ${{ secrets.ALIOPLUS_KEY_BUSINESS }}
+  ALIOPLUS_KEY_EVENT: ${{ secrets.ALIOPLUS_KEY_EVENT }}
+  ALIOPLUS_KEY_FACILITY: ${{ secrets.ALIOPLUS_KEY_FACILITY }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/runner-cron
+        with:
+          jobs: weekly
+          minutes: ${{ inputs.minutes || '40' }}

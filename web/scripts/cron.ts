@@ -6,8 +6,9 @@
  * 서버의 /api/cron 길은 관리자 화면의 수동 실행용으로 남는다.
  *
  * 사용: npx tsx scripts/cron.ts <작업> [--minutes 20]
- *   latest              전부 최신 수집(collectAll) — 나라일터 최신, 해외취업, 자격 종목, 시험 일정, 공공기관 사업·행사·시설, 전세 금리.
- *                       과거 채록(gojobs_archive)은 뺀다. 남았다고 한 것만 이어서 돈다.
+ *   latest              매일 바뀌는 것만 — 나라일터 최신, 해외취업. 하나씩 차례로(한꺼번에 돌지 않는다).
+ *   weekly              드물게 바뀌는 것 — 국가자격 종목, 자격시험 일정, 전세대출 금리, 공공기관 사업·행사·시설. 주 1회, 하나씩 차례로.
+ *                       (2026-10-08 까지는 여덟을 매일 한꺼번에 돌렸다.) 과거 채록(gojobs_archive)은 어디에도 안 들어간다.
  *   source:<key>        하나만 이어서(collectOne). 예: source:gojobs_archive, source:worldjob
  *   gojobs_detail       나라일터 접수 중 공고의 상세(첨부파일·근무지역)
  *   qnet                큐넷 종목별 시험 일정·수험자 동향
@@ -20,12 +21,17 @@
  * 비밀값은 찍지 않는다.
  */
 import { alioStep } from "../lib/alioJobs";
-import { collectAll, collectOne, COLLECT_KEYS, type CollectKey } from "../lib/collectors";
+import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "../lib/collectors";
 import { gojobsDetailStep } from "../lib/gojobsDetail";
 import { runNotify } from "../lib/notify";
 import { qnetSiteStep } from "../lib/qnetSite";
 
 type Round = { more: boolean } & Record<string, unknown>;
+
+/** 매일 새 글이 올라오는 것. */
+const DAILY_KEYS: CollectKey[] = ["gojobs", "worldjob"];
+/** 드물게 바뀌는 것 — 종목은 해마다, 시험 일정은 해에 몇 번, 금리는 달마다. 주 1회면 충분하다. */
+const WEEKLY_KEYS: CollectKey[] = ["license", "exam", "jeonse", "agency_business", "agency_event", "agency_facility"];
 
 /** 한 호출에 주는 예산. 라이브러리들은 예산 안에서 멈추고 more 로 남은 것을 알린다. */
 const PER_CALL_MS = 10 * 60_000;
@@ -39,7 +45,7 @@ function parseArgs(argv: string[]): { job: string; minutes: number } {
     else if (!job) job = argv[i];
   }
   if (!job || !Number.isFinite(minutes) || minutes <= 0) {
-    console.error("사용: npx tsx scripts/cron.ts <latest|source:<key>|gojobs_detail|qnet|alio|alio_full|notify|notify_dry> [--minutes 20]");
+    console.error("사용: npx tsx scripts/cron.ts <latest|weekly|source:<key>|gojobs_detail|qnet|alio|alio_full|notify|notify_dry> [--minutes 20]");
     process.exit(2);
   }
   return { job, minutes };
@@ -53,15 +59,18 @@ function log(o: unknown) {
 }
 
 function pickStep(job: string, budget: () => number): () => Promise<Round> {
-  if (job === "latest") {
-    // 과거 채록(gojobs_archive)은 2020년까지 모은 뒤 자동 수집을 끝냈다(2026-10-07). 매일 도는 "최신" 에서 뺀다.
-    const keys = COLLECT_KEYS.filter((k) => k !== "gojobs_archive");
-    // 첫 회차는 전부 나란히. 그 뒤로는 "남았다(more)"고 한 것만 이어서 — 서버 시절처럼 회차마다 전부 다시 돌지 않는다.
-    let pending: CollectKey[] | null = null;
+  if (job === "latest" || job === "weekly") {
+    // 첫 회차는 정해진 것을 하나씩 차례로(collectAll 을 키 하나씩 불러 중지 깃발·마감도 그대로 쓴다).
+    // 그 뒤로는 "남았다(more)"고 한 것만 이어서 — 회차마다 전부 다시 돌지 않는다.
+    let pending: CollectKey[] = job === "latest" ? [...DAILY_KEYS] : [...WEEKLY_KEYS];
+    let first = true;
     return async () => {
-      const results = pending === null
-        ? await collectAll(budget(), keys)
-        : await Promise.all(pending.map((k) => collectOne(k, { budgetMs: budget() })));
+      const results: CollectResult[] = [];
+      for (const k of pending) {
+        const [r] = first ? await collectAll(budget(), [k]) : [await collectOne(k, { budgetMs: budget() })];
+        results.push(r);
+      }
+      first = false;
       pending = results.filter((r) => r.ok && Boolean(r.more)).map((r) => r.key);
       return { results, more: pending.length > 0 };
     };

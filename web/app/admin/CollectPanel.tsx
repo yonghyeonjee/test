@@ -29,9 +29,9 @@ function LastRunLine({ run }: { run: LastRunView }) {
   const label = RUN_LABEL[run.source] ?? run.source;
   const who = run.by === "cron" ? "자동" : "수동";
   if (run.state === "running") {
-    // 한 번 도는 데 길어야 1분이다. 그보다 오래 "도는 중"이면 죽은 것이다.
+    // 러너(scripts/cron.ts)는 한 호출에 최대 10분을 준다. 그보다 오래 "도는 중"이면 죽은 것이다.
     // 다만 다음에 화면을 열 때 스스로 정리되니 겁줄 필요는 없다.
-    const stale = Date.now() - new Date(run.startedAt).getTime() > 90_000;
+    const stale = Date.now() - new Date(run.startedAt).getTime() > 11 * 60_000;
     return (
       <p className={`mt-3 rounded-ctl px-3 py-2 text-xs ${stale ? "bg-goldSoft text-gold" : "bg-brandSoft text-brand"}`}>
         {stale
