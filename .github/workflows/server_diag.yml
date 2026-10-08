@@ -34,7 +34,9 @@ jobs:
             echo; echo "== 메모리 많이 쓰는 프로세스"; ps aux --sort=-rss | head -12
             echo; echo "== CPU 많이 쓰는 프로세스"; ps aux --sort=-%cpu | head -8
             echo; echo "== jiwon 서비스"; systemctl status jiwon --no-pager -l | head -15
-            echo; echo "== jiwon 서비스 메모리 한도·현재"; systemctl show jiwon -p MemoryCurrent -p MemoryMax -p MemoryHigh -p NRestarts
+            echo; echo "== jiwon 서비스 메모리 한도·현재"; systemctl show jiwon -p MemoryCurrent -p MemoryMax -p MemoryHigh -p MemorySwapMax -p NRestarts
+            echo; echo "== 지킴이 타이머(1분마다 3000 포트 확인)"; systemctl list-timers jiwon-watchdog.timer --no-pager 2>/dev/null; systemctl is-active jiwon-watchdog.timer 2>/dev/null
+            echo "-- 지킴이가 다시 띄운 기록"; sudo journalctl -t jiwon-watchdog --no-pager -o short-iso 2>/dev/null | tail -10
             echo; echo "== 커널 OOM·kill 기록"; sudo dmesg -T 2>/dev/null | grep -i -E "out of memory|killed process|oom" | tail -20
             echo; echo "== jiwon 서비스 기록(최근 ${{ inputs.lines }}줄)"; sudo journalctl -u jiwon -n ${{ inputs.lines }} --no-pager -o short-iso
             echo; echo "== 시스템 기록에서 오류(최근 1시간)"; sudo journalctl -p err -S -1h --no-pager -o short-iso | tail -40
