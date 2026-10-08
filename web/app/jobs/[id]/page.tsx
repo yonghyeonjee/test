@@ -359,7 +359,9 @@ export default async function JobDetail({ params }: P) {
         </p>
       </section>
 
-      <AdSlot name="page_bottom" />
+      {/* 본문 중간 광고. 공고 요약·첨부·직무 설명을 읽은 다음, 읽는 길 가운데에 하나만 둔다.
+          예전엔 맨 아래 광고(detail_bottom) 바로 위에 있어, 켜면 둘이 붙었다(2026-10-08 옮김). */}
+      <MidAd name="detail_mid" seed={job.id} context="job" className="mt-12" />
 
       <section className="mt-12">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">이 공고, 이렇게 보세요</h2>
@@ -417,8 +419,6 @@ export default async function JobDetail({ params }: P) {
         접수 방법·제출 서류·자격 요건은 기관이 올린 원문에만 있습니다. 마감일이 바뀌는 일도
         있으니 신청 전에 원문에서 한 번 더 확인하세요.
       </p>
-
-      <MidAd name="detail_mid" seed={job.id} context="job" />
 
       <Faq items={jobFaq(job, role)} />
 
