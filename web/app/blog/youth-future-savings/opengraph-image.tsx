@@ -17,7 +17,7 @@ export default function OG() {
           color: "#fff",
         }}
       >
-        <div style={{ fontSize: 26, letterSpacing: 8, color: "#C4B5FD" }}>나라지원</div>
+        <div style={{ fontSize: 26, letterSpacing: 8, color: "#C4B5FD" }}>K나라지원</div>
         <div style={{ fontSize: 76, fontWeight: 800, lineHeight: 1.15, marginTop: 22 }}>
           청년미래적금 2차
         </div>

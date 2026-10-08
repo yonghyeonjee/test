@@ -8,9 +8,9 @@ import { aboutRelated } from "@/lib/related";
 import { SITE_NAME, t, withOg } from "@/lib/seo";
 
 export const metadata: Metadata = withOg({
-  title: "나라지원 소개 — 무엇을 하는 곳이고, 무엇을 받지 않는가",
+  title: "K나라지원 소개 — 무엇을 하는 곳이고, 무엇을 받지 않는가",
   description:
-    "나라지원은 흩어져 있는 정부·지자체 지원사업 중에서 내 조건에 해당되는 것만 골라 보여줍니다. 회원가입도 주민등록번호도 필요 없습니다.",
+    "K나라지원은 흩어져 있는 정부·지자체 지원사업 중에서 내 조건에 해당되는 것만 골라 보여줍니다. 회원가입도 주민등록번호도 필요 없습니다.",
   alternates: { canonical: "/about" },
 });
 
@@ -65,7 +65,7 @@ export default function About() {
         <div className="aspect-[6/5] max-h-64"><HowItWorksArt /></div>
       </section>
 
-      <div className="mt-8"><IntroVideo rel="video/intro.mp4" poster="/poster.jpg" title="나라지원 1분 안내" /></div>
+      <div className="mt-8"><IntroVideo rel="video/intro.mp4" poster="/poster.jpg" title="K나라지원 1분 안내" /></div>
 
       <section className="mt-12">
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">

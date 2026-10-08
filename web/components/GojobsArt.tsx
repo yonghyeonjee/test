@@ -3,7 +3,7 @@
  *
  * 사진 대신 구조와 숫자를 그린다. 나라일터에서 사람들이 막히는 지점은
  * "공고는 여기 있는데 접수는 딴 데서 한다", "마감이 짧다" 두 가지라서,
- * 그 두 가지가 보이면 안내가 절반은 끝난다. 숫자는 나라지원이 최근 1년
+ * 그 두 가지가 보이면 안내가 절반은 끝난다. 숫자는 K나라지원이 최근 1년
  * 동안 받아 둔 나라일터 공고에서 센 것이다(lib 가 아니라 글이 넘긴다).
  *
  * 막대는 한 계열이라 색 하나(브랜드), 범례 없음, 값은 막대 끝에 바로 적는다.
@@ -22,7 +22,7 @@ export function GojobsHero({ className = "" }: { className?: string }) {
   const orgs = ["중앙부처", "지자체", "교육청·학교", "공공기관"];
   return (
     <svg viewBox="0 0 340 160" className={`w-full ${className}`} role="img"
-         aria-label="중앙부처·지자체·교육청·공공기관의 채용 공고가 나라일터 한 곳에 모이고, 나라지원은 그 공고를 매일 받아 조건별로 보여 준다는 그림"
+         aria-label="중앙부처·지자체·교육청·공공기관의 채용 공고가 나라일터 한 곳에 모이고, K나라지원은 그 공고를 매일 받아 조건별로 보여 준다는 그림"
          fontFamily="inherit">
       <rect width="340" height="160" rx="14" fill="#2A2266" />
       <g transform="translate(18 18)">
@@ -47,7 +47,7 @@ export function GojobsHero({ className = "" }: { className?: string }) {
       <path d="M252 72 l6 5 -6 5" fill="none" stroke={dim} strokeWidth="1.5" />
       <g transform="translate(256 40)">
         <rect width="78" height="74" rx="10" fill="rgba(255,255,255,.1)" stroke={hi} />
-        <text x="7" y="22" fontSize="12" fill={ink} fontWeight="800">나라지원</text>
+        <text x="7" y="22" fontSize="12" fill={ink} fontWeight="800">K나라지원</text>
         <text x="7" y="38" fontSize="9.5" fill={dim}>매일 새로 받아</text>
         <text x="7" y="50" fontSize="9.5" fill={dim}>지역·기관·</text>
         <text x="7" y="62" fontSize="9.5" fill={dim}>직무로 골라 보기</text>

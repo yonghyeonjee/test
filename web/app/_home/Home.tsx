@@ -50,11 +50,11 @@ import {
 /** 기업 지원사업 첫 화면의 메타데이터. /business 가 쓴다. */
 export function businessMetadata(): Metadata {
   return withOg({
-    title: { absolute: "나라지원 — 중소기업·소상공인 지원사업 조회, 지역·업종·업력으로" },
+    title: { absolute: "K나라지원 — 중소기업·소상공인 지원사업 조회, 지역·업종·업력으로" },
     description:
       "지역과 사업체 형태만 고르면 신청할 수 있는 정부 지원사업 공고를 " +
       "찾아드립니다. 자금·기술·인력·수출·판로 분야를 마감일 순으로 정리했습니다.",
-    keywords: ["나라지원", "소상공인 지원사업", "중소기업 지원사업", "창업 지원사업", "정부 지원사업 조회"],
+    keywords: ["K나라지원", "나라지원", "소상공인 지원사업", "중소기업 지원사업", "창업 지원사업", "정부 지원사업 조회"],
     // 물음표 주소(/?tab=business)는 Next 가 정본 주소에서 물음표 뒤를 떼어 버려
     // 첫 화면과 같은 쪽으로 보였다. 그래서 /business 라는 제 길을 줬다.
     alternates: { canonical: "/business" },
@@ -66,17 +66,18 @@ export async function homeMetadata({ searchParams }: { searchParams: SP }):
   const biz = (Array.isArray(searchParams.tab) ? searchParams.tab[0] : searchParams.tab)
     === "business";
   if (biz) return businessMetadata();
-  // 사이트 이름이 제목에 없으면 "나라지원"으로 검색해도 첫 화면이 안 걸린다.
+  // 사이트 이름이 제목에 없으면 "K나라지원"으로 검색해도 첫 화면이 안 걸린다.
   // 이름을 맨 앞에 두고, 설명문도 이름으로 시작한다.
   return withOg({
-    title: { absolute: "나라지원 — 정부지원금·청년지원금 조회, 사는 곳과 나이만 넣으면 됩니다" },
+    title: { absolute: "K나라지원 — 정부지원금·청년지원금 조회, 사는 곳과 나이만 넣으면 됩니다" },
     description:
-      "나라지원은 전국 지자체와 중앙부처의 정부지원금·복지서비스를 한자리에 모은 곳입니다. " +
+      "K나라지원은 전국 지자체와 중앙부처의 정부지원금·복지서비스를 한자리에 모은 곳입니다. " +
       "사는 곳과 나이를 넣으면 해당될 만한 것만 남습니다. " +
       "회원가입도 주민등록번호도 필요 없습니다.",
     keywords: [
+      "K나라지원",
       "나라지원",
-      "나라지원 사이트",
+      "K나라지원 사이트",
       "정부지원금 조회",
       "청년지원금",
       "복지서비스",
@@ -213,7 +214,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
       <>
         <PortalTop
           index={bundle.sggIndex} hot={hotTerms.business} scope="business" findHref="/business#find"
-          h1="기업·소상공인 지원사업, 내 사업에 맞는 것만 — 나라지원 사업자 검색"
+          h1="기업·소상공인 지원사업, 내 사업에 맞는 것만 — K나라지원 사업자 검색"
           tagline={<>중소기업·소상공인 지원사업 <b className="num text-ink">{coverage.business.toLocaleString("ko-KR")}</b>건을 지역·업종·업력으로</>}
           placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
           placeholderNarrow="수출, 스마트공장, 폐업, 특허…"
@@ -326,7 +327,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
       </div>
       <PortalTop
         index={sggIndex} hot={hotTerms.welfare}
-        h1="나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
+        h1="K나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
         tagline={<>정부지원금 · 채용 · 자격증 · 공공기관 사업을 <b className="text-ink">검색 한 번</b>으로</>}
       />
       <PortalColumns

@@ -163,10 +163,10 @@ export function MapCard({ className = "" }: { className?: string }) {
   );
 }
 
-/** 나라지원 소개 한 상자. 첫 화면 아래의 긴 소개 덩어리를 대신한다. */
+/** K나라지원 소개 한 상자. 첫 화면 아래의 긴 소개 덩어리를 대신한다. */
 export function AboutBox({ total, closing, className = "" }: { total: number; closing: number; className?: string }) {
   return (
-    <Box title="나라지원은" more="/about" moreLabel="소개" className={className}>
+    <Box title="K나라지원은" more="/about" moreLabel="소개" className={className}>
       <p className="num text-[13.5px] leading-relaxed text-ink2">
         공공데이터 <b className="font-extrabold text-ink">{total.toLocaleString("ko-KR")}</b>건을 매일 새벽 모읍니다.
         {closing > 0 && <> 2주 안에 마감되는 것이 <b className="font-extrabold text-accent">{closing.toLocaleString("ko-KR")}</b>건입니다.</>}

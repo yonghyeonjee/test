@@ -101,7 +101,7 @@ const REGIONS = [
 const STEPS = [
   {
     h: "1. 공고를 찾는다",
-    p: "나라일터 「일반채용 > 모집공고」에서 기관·지역·채용 유형으로 거릅니다. 비회원도 공고는 다 볼 수 있습니다. 나라지원에서는 같은 공고를 지역별·기관별·직무별로 묶어 두었고, 접수 중인 것만 볼 수도 있습니다.",
+    p: "나라일터 「일반채용 > 모집공고」에서 기관·지역·채용 유형으로 거릅니다. 비회원도 공고는 다 볼 수 있습니다. K나라지원에서는 같은 공고를 지역별·기관별·직무별로 묶어 두었고, 접수 중인 것만 볼 수도 있습니다.",
   },
   {
     h: "2. 첨부파일을 연다",
@@ -144,7 +144,7 @@ const FAQ = [
   },
   {
     q: "모바일로도 볼 수 있나요?",
-    a: "인사혁신처가 나라일터를 모바일 체계로 개편해, 휴대폰으로 공고를 보고 개방형 직위 이력서 작성과 원서 접수까지 할 수 있습니다. 나라지원도 휴대폰 화면에 맞춰져 있어 접수 중인 공고를 바로 볼 수 있습니다.",
+    a: "인사혁신처가 나라일터를 모바일 체계로 개편해, 휴대폰으로 공고를 보고 개방형 직위 이력서 작성과 원서 접수까지 할 수 있습니다. K나라지원도 휴대폰 화면에 맞춰져 있어 접수 중인 공고를 바로 볼 수 있습니다.",
   },
 ];
 
@@ -194,7 +194,7 @@ export default function GojobsGuidePage() {
         <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
           <a href="https://www.gojobs.go.kr" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-brand/40 hover:text-brand"><strong>나라일터</strong>(gojobs.go.kr)</a>는
           인사혁신처가 운영하는 공직 채용 공고 사이트입니다. 중앙부처와 지자체, 교육청과 학교,
-          공공기관이 뽑는 <strong>공무직·기간제·임기제</strong> 자리가 여기 올라옵니다. 나라지원은 이 공고를
+          공공기관이 뽑는 <strong>공무직·기간제·임기제</strong> 자리가 여기 올라옵니다. K나라지원은 이 공고를
           매일 새로 받아{" "}
           <Link href="/jobs/region" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">지역</Link>·
           <Link href="/jobs/org" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">기관</Link>·직무로
@@ -240,7 +240,7 @@ export default function GojobsGuidePage() {
           <p className="text-[13.5px] leading-relaxed text-ink2">
             목록에는 「서류전형 합격자 및 면접 일정」 같은 <b>안내 공고</b>도 섞여 있습니다. 최근 1년에
             1,380건이었습니다. 제목에 &lsquo;합격자&rsquo;·&lsquo;면접&rsquo;이 있으면 지원할 수 있는 공고가
-            아닙니다. 나라지원은 이런 공고를 열면 맨 위에 그 사실부터 알려 줍니다.
+            아닙니다. K나라지원은 이런 공고를 열면 맨 위에 그 사실부터 알려 줍니다.
           </p>
         </div>
       </section>
@@ -300,7 +300,7 @@ export default function GojobsGuidePage() {
         <p className="mt-2 text-[15px] leading-[1.85] text-ink2">
           공고의 절반 남짓은 근무지를 따로 적지 않습니다(중앙부처처럼 전국 단위이거나, 공고문
           안에만 적은 경우). 근무지가 적힌 공고 가운데는 서울·인천·경기가 절반을 넘습니다.
-          지역별로 보려면 나라지원의 <Link href="/jobs/region" className="underline underline-offset-4 hover:text-brand">지역별 채용</Link> 화면이 빠릅니다.
+          지역별로 보려면 K나라지원의 <Link href="/jobs/region" className="underline underline-offset-4 hover:text-brand">지역별 채용</Link> 화면이 빠릅니다.
         </p>
         <div className="card mt-4 p-4">
           <HBars bars={REGIONS} ariaLabel="근무지가 적힌 공고의 지역별 건수. 서울 4,056건, 인천 2,513건, 경기 1,963건, 부산 1,168건, 충남 673건, 경북 583건, 강원 549건, 경남 470건" />
@@ -315,7 +315,7 @@ export default function GojobsGuidePage() {
             ["접수처가 기관마다 다르다", "같은 '공무직 채용'이어도 어떤 곳은 이메일, 어떤 곳은 등기우편만 받습니다. 접수 방법과 마감 시각은 공고문의 '접수 방법' 항목이 기준입니다."],
             ["합격자 발표가 목록에 섞인다", "「합격자 발표」「면접 일정」 공고는 지원할 수 있는 공고가 아닙니다. 제목을 먼저 보세요."],
             ["마감이 짧다", "절반이 일주일 안에 닫힙니다. 이력서·경력증명서·자격증 사본은 미리 파일로 만들어 두면 하루면 냅니다."],
-            ["기관명이 길고 낯설다", "'○○교육청 학교행정지원본부 학교채용지원팀' 처럼 부서까지 붙습니다. 나라지원은 기관별 화면에서 그 기관이 그동안 낸 공고와 접수 기간을 함께 보여 줍니다."],
+            ["기관명이 길고 낯설다", "'○○교육청 학교행정지원본부 학교채용지원팀' 처럼 부서까지 붙습니다. K나라지원은 기관별 화면에서 그 기관이 그동안 낸 공고와 접수 기간을 함께 보여 줍니다."],
           ].map(([h, p]) => (
             <li key={h} className="rounded-card bg-ground px-4 py-3">
               <b className="block text-[14.5px] font-extrabold">{h}</b>
@@ -356,7 +356,7 @@ export default function GojobsGuidePage() {
           ))}
         </ul>
         <p className="mt-3 text-xs leading-relaxed text-muted">
-          건수와 비율은 나라지원이 {UPDATED} 기준 최근 1년 동안 받아 둔 나라일터 공고에서 센 것입니다.
+          건수와 비율은 K나라지원이 {UPDATED} 기준 최근 1년 동안 받아 둔 나라일터 공고에서 센 것입니다.
           공고 제목으로 직무를 가른 것이라 오차가 있습니다. 지원 자격과 접수 방법은 반드시 각 공고문에서
           확인하세요.
         </p>

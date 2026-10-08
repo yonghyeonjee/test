@@ -57,7 +57,7 @@ ${groups.map((g) => `<h3 style="font-size:15px;margin:22px 0 8px;color:#5A4BE0">
 <span style="color:#6b7280;font-size:12.5px"> · ${esc([p.org_name, p.sigungu || p.sido].filter(Boolean).join(" · "))}${p.apply_end ? ` · ${p.apply_end}까지` : p.is_always_on ? " · 상시" : ""}</span></li>`).join("")}</ul>
 <p style="margin:8px 0 0"><a href="${SITE}/?${esc(g.query)}" style="font-size:13px;color:#5A4BE0">이 조건 전부 보기 →</a></p>`).join("")}
 <hr style="border:0;border-top:1px solid #e5e8ec;margin:28px 0 14px">
-<p style="font-size:12px;color:#6b7280">나라지원이 보냅니다. 공고의 자격은 원문에서 확인하세요.<br>
+<p style="font-size:12px;color:#6b7280">K나라지원이 보냅니다. 공고의 자격은 원문에서 확인하세요.<br>
 그만 받으려면 <a href="${unsub}" style="color:#6b7280">여기</a>를 누르거나 <a href="${SITE}/account" style="color:#6b7280">내 계정</a>에서 알림을 끄세요.</p></div>`;
   const text = `${hello}저장하신 조건에 새 공고 ${total}건이 올라왔습니다.\n\n` +
     groups.map((g) => `[${g.label.join(" · ")}]\n` + g.items.map((p) => `- ${p.title} (${[p.org_name, p.sigungu || p.sido].filter(Boolean).join(" · ")}) ${SITE}/p/${encodeURIComponent(p.source_id)}`).join("\n")).join("\n\n") +
@@ -120,7 +120,7 @@ export async function runNotify(opts: { dry?: boolean; limit?: number } = {}): P
     if (dry) { report.mailed += 1; continue; }
 
     const { html, text } = render(a.display_name, groups, `${SITE}/account/notify-off?t=${encodeURIComponent(unsubToken(a.device_key))}`);
-    const r = await sendMail({ to: a.email, subject: `[나라지원] 저장한 조건에 새 공고 ${n}건`, html, text });
+    const r = await sendMail({ to: a.email, subject: `[K나라지원] 저장한 조건에 새 공고 ${n}건`, html, text });
     await db.from("notify_log").insert({ device_key: a.device_key, channel: "email", n_items: n, ok: r.ok, error: r.error ?? null });
     if (r.ok) {
       report.mailed += 1;

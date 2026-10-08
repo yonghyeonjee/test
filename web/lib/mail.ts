@@ -4,7 +4,7 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
  * 메일 보내기(AWS SES). 개인 계정으로도 쓸 수 있고 1,000통에 $0.10.
  *
  * 필요한 환경변수: AWS_REGION(보통 ap-northeast-2), AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
- * MAIL_FROM(SES 에서 확인한 보내는 주소, 예: 나라지원 <noreply@jiwon.knowhow-it.com>).
+ * MAIL_FROM(SES 에서 확인한 보내는 주소, 예: K나라지원 <noreply@jiwon.knowhow-it.com>).
  * 하나라도 없으면 보내지 않고 "시험 모드"로 내용만 돌려준다 — 코드는 돌되 아무도 받지 않는다.
  */
 export const mailConfigured = () =>

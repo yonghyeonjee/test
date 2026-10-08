@@ -43,7 +43,7 @@ export default function LoginForm() {
         )}
         <div className="relative">
           <p className="text-[11px] font-bold tracking-[.3em] text-[#C4B5FD]">
-            나라지원
+            K나라지원
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default function LoginForm() {
           </p>
           <h1 className="mt-2 text-2xl font-extrabold">관리자</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            나라지원 운영 화면입니다. 내부용이며 검색엔진에 노출되지 않습니다.
+            K나라지원 운영 화면입니다. 내부용이며 검색엔진에 노출되지 않습니다.
           </p>
 
           <label className="mt-7 block text-xs font-bold text-muted">아이디</label>

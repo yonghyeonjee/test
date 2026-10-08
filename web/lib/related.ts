@@ -84,7 +84,7 @@ export function blogIndexRelated(): Related[] {
       title: "중소기업·소상공인 지원사업 찾기",
       desc: "지역과 업종, 업력으로 좁혀 기업 지원사업만 따로 볼 수 있습니다.",
     },
-    { href: "/about", title: "나라지원 소개", desc: "무엇이 좋아지는지, 무엇을 받지 않는지 적어 두었습니다." },
+    { href: "/about", title: "K나라지원 소개", desc: "무엇이 좋아지는지, 무엇을 받지 않는지 적어 두었습니다." },
   ]);
 }
 

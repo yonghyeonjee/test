@@ -11,19 +11,19 @@ import { unstable_cache } from "next/cache";
 import { getSigunguIndex } from "@/lib/db";
 import { getSiteConfig } from "@/lib/settings";
 import "./globals.css";
-import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { OG_IMAGE, OLD_NAME, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const BASE: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "나라지원 — 정부지원금·청년지원금 조회, 로그인 없이 내 조건으로",
+    default: `${SITE_NAME} — 정부지원금·청년지원금 조회, 로그인 없이 내 조건으로`,
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "나라지원은 사는 지역과 나이만 넣으면 받을 수 있는 정부지원금·복지서비스를 찾아 주는 곳입니다. " +
+    `${SITE_NAME}은 사는 지역과 나이만 넣으면 받을 수 있는 정부지원금·복지서비스를 찾아 주는 곳입니다. ` +
     "회원가입도 주민등록번호도 필요 없습니다. 전국 지자체·중앙부처 공고를 매일 모읍니다.",
   keywords: [
-    "나라지원", "정부지원금", "청년지원금", "복지서비스", "국민취업지원제도", "청년정책",
+    SITE_NAME, OLD_NAME, "정부지원금", "청년지원금", "복지서비스", "국민취업지원제도", "청년정책",
     "정부지원금 조회", "지원금 찾기", "지자체 지원금", "소상공인 지원사업",
   ],
   applicationName: SITE_NAME,
@@ -36,9 +36,9 @@ const BASE: Metadata = {
     siteName: SITE_NAME,
     locale: "ko_KR",
     url: SITE_URL,
-    title: "나라지원 — 내가 받을 수 있는 정부지원금, 로그인 없이 확인하세요",
+    title: `${SITE_NAME} — 내가 받을 수 있는 정부지원금, 로그인 없이 확인하세요`,
     description:
-      "나라지원에서 지역·나이·상황만 고르면 해당될 수 있는 지원금과 복지서비스를 찾아드립니다.",
+      `${SITE_NAME}에서 지역·나이·상황만 고르면 해당될 수 있는 지원금과 복지서비스를 찾아드립니다.`,
     // 메타데이터를 따로 주지 않은 쪽도 그림 없는 카드가 되지 않게. 쪽마다 그림은 withOg 가 단다.
     images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
   },
@@ -55,7 +55,7 @@ const SITE_JSONLD = {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
-      alternateName: ["나라지원 정부지원금", "정부지원금 조회"],
+      alternateName: [OLD_NAME, `${SITE_NAME} 정부지원금`, "정부지원금 조회"],
       inLanguage: "ko-KR",
       description:
         "전국 지자체와 중앙부처의 정부지원금·복지서비스를 사는 곳과 나이로 찾아 주는 곳.",
@@ -133,9 +133,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         {/*
-          검색엔진에 "이 사이트의 이름은 나라지원"이라고 알려 준다.
-          이름이 흔한 말이라(나라 + 지원) 이게 없으면 정부24 같은 데에
-          묻힌다. 검색창 표시(SearchAction)도 같이 신청해 둔다.
+          검색엔진에 "이 사이트의 이름은 K나라지원"이라고 알려 준다.
+          옛 이름(나라지원)이 흔한 말이라(나라 + 지원) 정부24 같은 데에
+          묻혔고, 그래서 K 를 붙였다(2026-10-08). 옛 이름은 alternateName 으로 남긴다. 검색창 표시(SearchAction)도 같이 신청해 둔다.
         */}
         <script
           type="application/ld+json"
