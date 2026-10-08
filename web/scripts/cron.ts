@@ -6,7 +6,8 @@
  * 서버의 /api/cron 길은 관리자 화면의 수동 실행용으로 남는다.
  *
  * 사용: npx tsx scripts/cron.ts <작업> [--minutes 20]
- *   latest              전부 최신 수집(collectAll) — 나라일터 최신, 해외취업, 자격 종목, 시험 일정, 공공기관 사업·행사·시설, 전세 금리
+ *   latest              전부 최신 수집(collectAll) — 나라일터 최신, 해외취업, 자격 종목, 시험 일정, 공공기관 사업·행사·시설, 전세 금리.
+ *                       과거 채록(gojobs_archive)은 뺀다. 남았다고 한 것만 이어서 돈다.
  *   source:<key>        하나만 이어서(collectOne). 예: source:gojobs_archive, source:worldjob
  *   gojobs_detail       나라일터 접수 중 공고의 상세(첨부파일·근무지역)
  *   qnet                큐넷 종목별 시험 일정·수험자 동향
@@ -53,9 +54,16 @@ function log(o: unknown) {
 
 function pickStep(job: string, budget: () => number): () => Promise<Round> {
   if (job === "latest") {
+    // 과거 채록(gojobs_archive)은 2020년까지 모은 뒤 자동 수집을 끝냈다(2026-10-07). 매일 도는 "최신" 에서 뺀다.
+    const keys = COLLECT_KEYS.filter((k) => k !== "gojobs_archive");
+    // 첫 회차는 전부 나란히. 그 뒤로는 "남았다(more)"고 한 것만 이어서 — 서버 시절처럼 회차마다 전부 다시 돌지 않는다.
+    let pending: CollectKey[] | null = null;
     return async () => {
-      const results = await collectAll(budget());
-      return { results, more: results.some((r) => r.ok && Boolean(r.more)) };
+      const results = pending === null
+        ? await collectAll(budget(), keys)
+        : await Promise.all(pending.map((k) => collectOne(k, { budgetMs: budget() })));
+      pending = results.filter((r) => r.ok && Boolean(r.more)).map((r) => r.key);
+      return { results, more: pending.length > 0 };
     };
   }
   if (job.startsWith("source:")) {
