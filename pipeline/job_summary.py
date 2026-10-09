@@ -112,6 +112,16 @@ def clean(s: dict) -> dict:
     return out if filled >= 2 else {}
 
 
+def fix_period(s: dict, row: dict) -> dict:
+    """모델이 마감을 '14:00' 처럼 시각만 적으면 공고의 마감 날짜를 앞에 붙인다."""
+    import re
+    end = (s.get("period") or {}).get("end") or ""
+    if end and not re.search(r"\d{4}|\d{1,2}\s*[./월]\s*\d{1,2}", end) and row.get("end_date"):
+        y, m, d = row["end_date"][:10].split("-")
+        s["period"]["end"] = f"{y}.{int(m)}.{int(d)}. {end}"
+    return s
+
+
 def summarize(client, row: dict) -> tuple[dict, list[str], int]:
     from google.genai import types
     files = pick_files(((row.get("raw") or {}).get("gojobs") or {}).get("files") or [])
@@ -124,7 +134,8 @@ def summarize(client, row: dict) -> tuple[dict, list[str], int]:
         raw = json.loads(r.text or "{}")
     except json.JSONDecodeError:
         raw = {}
-    return clean(raw), names, len(text)
+    s = clean(raw)
+    return (fix_period(s, row) if s else s), names, len(text)
 
 
 def targets(sb, days: int, limit: int, only_id: str | None) -> list[dict]:
