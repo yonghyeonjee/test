@@ -50,7 +50,8 @@ STATS = {"org": "한국농어촌공사", "n3y": 214, "open_n": 1, "win_med": 15,
          "open_list": [{"id": "304682", "title": "2026년도 직무중심 신입사원(5급, 6급) 채용 공고", "end": "2026-10-19"}]}
 post = g.compose("한국농어촌공사", STATS, posts, facts, SOURCES)
 text = json.dumps(post, ensure_ascii=False)
-ok(post["slug"] == "한국농어촌공사" and "자기소개서·직무수행계획서 작성법" in post["title"], post["title"])
+ok(post["slug"] == "한국농어촌공사" and "작성법 — 인재상, 문항, 전형 절차, 유의사항 (2026년 채용 기준)" in post["title"], post["title"])
+ok(post["summary"].startswith("한국농어촌공사가 ") and "문항 1개 포함" in post["summary"], post["summary"])
 ok("**214건**" in text and "**15일**" in text, "공고 수·접수 기간")
 ok("소통하는 전문가 (ekr.or.kr)" in text and "신뢰 (ekr.or.kr)" in text, "인재상·가치와 출처")
 ok("서류 → 필기(NCS) → 면접" in text and "블라인드 채용으로 진행" in text, "전형 절차")
@@ -66,6 +67,7 @@ empty = g.clean_facts({}, [])
 post2 = g.compose("어느기관", {"n3y": 30, "open_n": 0, "win_med": None, "win_n": 0, "win_le7": 0, "open_list": []}, g.shape_posts([]), empty, [])
 text2 = json.dumps(post2, ensure_ascii=False)
 ok("확인하지 못해" in text2 and "확인하지 못했습니다" in text2, "못 찾았다고 적는다")
+ok("공고문으로 확인하는 법과 작성 틀" in post2["title"], post2["title"])
 ok("**지원 동기** —" in text2 and "임기제·전문경력관·개방형 자리가 보이지 않습니다" in text2, "일반 틀·자리 없음")
 ok("None" not in text2, "빈 값 없음 2")
 
