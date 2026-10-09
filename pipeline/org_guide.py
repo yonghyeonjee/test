@@ -595,7 +595,7 @@ def compose(org: str, s: dict, posts: dict, facts: dict, sources: list[dict]) ->
     if facts.get("ideal") or facts.get("values"):
         found.append("인재상·핵심가치")
     if facts.get("essay_questions"):
-        found.append(f"공식 공고의 자기소개서 문항 {len(facts['essay_questions'])}개")
+        found.append(f"자기소개서 문항 {len(facts['essay_questions'])}개")
     if facts.get("process"):
         found.append("전형 절차")
     if facts.get("rules"):
