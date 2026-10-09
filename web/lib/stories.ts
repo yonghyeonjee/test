@@ -18,7 +18,7 @@ export type Block =
 
 export type Story = {
   slug: string;
-  kind: "topic" | "org" | "role" | "region" | string;
+  kind: "topic" | "org" | "role" | "region" | "license" | "sigungu" | string;
   subject: string;
   title: string;
   summary: string;
@@ -30,6 +30,7 @@ export type Story = {
 
 export const KIND_LABEL: Record<string, string> = {
   topic: "지원 주제", org: "기관별 채용", role: "직무별 채용", region: "지역 현황",
+  license: "자격증 시험", sigungu: "시·군·구 현황",
 };
 
 const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated_at";
