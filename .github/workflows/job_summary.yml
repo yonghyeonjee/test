@@ -1,0 +1,55 @@
+name: job-summary
+
+# 공고 요약. 최근 3일 등록되고 접수 중이며 첨부(pdf·hwp·hwpx)가 있는 공고의 공고문을 읽어 모집·자격·접수·서류·전형·근무 조건을 뽑는다.
+# 공고마다 Gemini 한 번(일반 호출). 나라일터 상세(cron_jobs 00:00 UTC) 뒤에 돈다.
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "며칠 전 등록까지"
+        default: "3"
+        type: string
+      limit:
+        description: "한 번에 몇 건까지"
+        default: "300"
+        type: string
+      id:
+        description: "공고 번호 하나만"
+        required: false
+        type: string
+      dry:
+        description: "DB 에 쓰지 않고 결과만"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "40 1 * * *"    # UTC 01:40 = KST 10:40
+
+concurrency:
+  group: job-summary
+  cancel-in-progress: false
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python pipeline/test_job_summary.py
+      - name: 요약 쓰기
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GEMINI_API_KEY:       ${{ secrets.GEMINI_API_KEY }}
+          DAYS: ${{ inputs.days || '3' }}
+          LIMIT: ${{ inputs.limit || '300' }}
+          ID: ${{ inputs.id }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          args="--days $DAYS --limit $LIMIT"
+          [ -n "$ID" ] && args="$args --id $ID"
+          [ "$DRY" = "true" ] && args="$args --dry"
+          python -u pipeline/job_summary.py $args

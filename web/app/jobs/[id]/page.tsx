@@ -19,6 +19,7 @@ import { jobEvents } from "@/lib/calEvents";
 import { locateJob } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/db";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
+import { getJobSummary } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
@@ -88,8 +89,8 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const rawDetail = detailOf(job.title);
   const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
   const stage = stageOf(job.title);
-  const attach = await getJobAttach(job.id);
-  // 설명문은 검색 결과에 160자쯤만 보인다. 파일 이름이 길면 앞의 것만.
+  const [attach, sum] = await Promise.all([getJobAttach(job.id), getJobSummary(job.id)]);
+  // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
     ? ` 첨부 ${attach.files.length}개: ${names.join(", ").slice(0, 90)}${attach.files.length > 3 || names.join(", ").length > 90 ? " 등" : ""}.`
@@ -98,7 +99,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     ...(stale ? { robots: { index: false, follow: true } } : {}),
     title: seoJobTitle(job, role, detail, stage),
     // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
-    description: `${job.title}. ${role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}${fileNote}`,
+    description: `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}${fileNote}`,
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
@@ -165,11 +166,12 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     return <JobGone />;
   }
-  const [related, stat, attach, guide] = await Promise.all([
+  const [related, stat, attach, guide, sum] = await Promise.all([
     getRelatedJobs(job),
     job.org ? getOrgStat(job.org) : Promise.resolve(null),
     getJobAttach(job.id),
     getGuideByOrg(job.org),
+    getJobSummary(job.id),
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
@@ -310,6 +312,57 @@ export default async function JobDetail({ params }: P) {
               <>파일은 <a href={attach.url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-brand">나라일터 원문 공고</a>에 기관이 올린 원본으로 바로 이어집니다.</>
             )}
             {" "}HWP 는 한글 또는 한컴 뷰어로 엽니다.
+          </p>
+        </section>
+      )}
+
+      {/* 공고 요약. 첨부 공고문을 읽어 뽑은 이 공고의 사실. 원문을 옮기지 않고 항목으로만 적고, 원문이 기준이라고 매번 적는다. */}
+      {sum && (
+        <section className="mt-10" aria-labelledby="job-sum-h">
+          <h2 id="job-sum-h" className="sec-title text-[1.0625rem] font-extrabold">공고 요약</h2>
+          {sum.summary.one_line && <p className="mt-3 text-[15.5px] font-semibold leading-relaxed text-ink">{sum.summary.one_line}</p>}
+          {sum.summary.positions.length > 0 && (
+            <div className="mt-4 overflow-x-auto rounded-card border border-line">
+              <table className="w-full text-[14px]">
+                <thead><tr className="bg-surface2 text-left text-[13px] text-muted">
+                  <th className="px-3 py-2 font-semibold">모집 분야</th><th className="px-3 py-2 font-semibold">인원</th><th className="px-3 py-2 font-semibold">직급·형태</th>
+                </tr></thead>
+                <tbody>
+                  {sum.summary.positions.map((p, i) => (
+                    <tr key={i} className="border-t border-line">
+                      <td className="px-3 py-2">{p.name}</td>
+                      <td className="num px-3 py-2">{p.headcount || "—"}</td>
+                      <td className="px-3 py-2 text-muted">{[p.grade, p.type].filter(Boolean).join(" · ") || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <dl className="mt-4 grid gap-x-6 gap-y-3 text-[14.5px] leading-relaxed sm:grid-cols-2">
+            {(sum.summary.period.end || sum.summary.period.start) && (
+              <div><dt className="text-[12.5px] font-bold text-muted">접수 기간</dt><dd className="num mt-0.5">{[sum.summary.period.start, sum.summary.period.end].filter(Boolean).join(" ~ ")}</dd></div>
+            )}
+            {sum.summary.period.how && <div><dt className="text-[12.5px] font-bold text-muted">접수 방법</dt><dd className="mt-0.5">{sum.summary.period.how}</dd></div>}
+            {sum.summary.work.place && <div><dt className="text-[12.5px] font-bold text-muted">근무지</dt><dd className="mt-0.5">{sum.summary.work.place}</dd></div>}
+            {sum.summary.work.hours && <div><dt className="text-[12.5px] font-bold text-muted">근무 시간</dt><dd className="mt-0.5">{sum.summary.work.hours}</dd></div>}
+            {sum.summary.work.pay && <div><dt className="text-[12.5px] font-bold text-muted">보수</dt><dd className="mt-0.5">{sum.summary.work.pay}</dd></div>}
+            {sum.summary.work.term && <div><dt className="text-[12.5px] font-bold text-muted">근무 기간</dt><dd className="mt-0.5">{sum.summary.work.term}</dd></div>}
+            {sum.summary.contact && <div><dt className="text-[12.5px] font-bold text-muted">문의</dt><dd className="mt-0.5">{sum.summary.contact}</dd></div>}
+          </dl>
+          {([["응시 자격", sum.summary.requirements], ["우대 사항", sum.summary.preferred], ["제출 서류", sum.summary.documents], ["전형 절차", sum.summary.process], ["유의사항", sum.summary.notes]] as [string, string[]][])
+            .filter(([, xs]) => xs.length > 0).map(([h, xs]) => (
+            <div key={h} className="mt-4">
+              <h3 className="text-[14px] font-bold">{h}</h3>
+              <ul className="mt-1.5 space-y-1 text-[14.5px] leading-relaxed text-ink2">
+                {xs.map((x) => (
+                  <li key={x} className="flex gap-2.5"><span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden /><span>{x}</span></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            첨부 공고문{sum.files.length ? `(${sum.files.map((f) => f.replace(/\.[a-z0-9]+$/i, "")).join(", ")})` : ""}에서 추린 요약입니다. 빠진 조건이 있을 수 있으니 접수 전에 원문으로 확인하세요.
           </p>
         </section>
       )}
