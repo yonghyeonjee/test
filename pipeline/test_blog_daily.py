@@ -124,6 +124,10 @@ ok(b.kinds_today(1, 4) == ["license"] and len(b.kinds_today(9, 0)) == 6, "갈래
 ok(b.BRAND == "K나라지원", "이름")
 
 ok(b.josa("공단", "은는") == "공단은" and b.josa("공사", "이가") == "공사가", "조사")
+p = b.write_license({**LICENSE, "name": "지게차운전기능사", "code": "7875", "rounds": []})
+text = json.dumps(p, ensure_ascii=False)
+ok("고비는 실기" in p["title"] and "남은 시험" not in p["title"], "일정 없는 종목의 제목: " + p["title"])
+ok("상시 시험" in text and "시험 일정은 어디서 보나" in text, "정기표에 없는 종목 안내")
 ok(b.josa_k("미용사(일반)", "은는") == "미용사(일반)은" and b.josa_k("정보처리기사", "이가") == "정보처리기사가", "괄호 뒤 조사")
 ok(b.short_sido("전북특별자치도") == "전북" and b.short_sido("경기도") == "경기도", "시·도 짧게")
 print("blog_daily: " + (f"{bad}개 틀림" if bad else "모두 통과"))
