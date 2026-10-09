@@ -109,6 +109,12 @@ def josa(word: str, pair: str) -> str:
     return word + (a if has else b)
 
 
+def josa_k(word: str, pair: str) -> str:
+    """끝의 괄호·따옴표를 무시하고 마지막 한글 글자로 조사를 고른다. '미용사(일반)' → '미용사(일반)은'."""
+    core = re.sub(r"[^가-힣]+$", "", word)
+    return word + josa(core, pair)[len(core):] if core else josa(word, pair)
+
+
 def n(x) -> str:
     try:
         return f"{int(round(float(x))):,}"
@@ -572,10 +578,7 @@ def write_license(s: dict) -> dict:
     t = today()
     by_year = s.get("by_year") or []
     years = sorted({int(r["y"]) for r in by_year})
-    stages = []
-    for r in by_year:
-        if r["stage"] not in stages:
-            stages.append(r["stage"])
+    stages = sorted({r["stage"] for r in by_year}, key=lambda x: (x != "필기", x != "1차", x))  # 필기(1차)가 먼저
     # 단계별 3년 합계
     agg = {}
     for st in stages:
@@ -589,7 +592,7 @@ def write_license(s: dict) -> dict:
     blocks, toc = [], []
 
     yr_txt = f"{years[0]}~{years[-1]}년" if len(years) >= 2 else (f"{years[0]}년" if years else "최근")
-    lead = f"**{name}**{'은' if josa(name, '은는').endswith('은') else '는'} {yr_txt} 응시자 **{n(takers)}명**, 합격자 {n(passers)}명인 {s.get('kind_name') or '국가자격'}"
+    lead = f"**{name}**{josa_k(name, '은는')[len(name):]} {yr_txt} 응시자 **{n(takers)}명**, 합격자 {n(passers)}명인 {s.get('kind_name') or '국가자격'}"
     lead += f" {series} 등급입니다. " if series else "입니다. "
     peers_n, rank_peers = int(s.get("peers_n") or 0), int(s.get("rank_peers") or 0)
     if peers_n >= 2 and rank_peers:
@@ -627,7 +630,7 @@ def write_license(s: dict) -> dict:
     if agg:
         toc.append(("rate", "합격률 — 어느 단계가 고비인가"))
         blocks.append(H2("합격률 — 어느 단계가 고비인가", "rate"))
-        if stages == ["실기", "필기"] or stages == ["필기", "실기"]:
+        if stages == ["필기", "실기"]:
             rows = []
             for y in years:
                 w = next((r for r in by_year if int(r["y"]) == y and r["stage"] == "필기"), {})
@@ -671,11 +674,11 @@ def write_license(s: dict) -> dict:
     blocks.append(H2("이 자격을 적은 공공기관 채용", "jobs"))
     jobs_3y = int(s.get("jobs_3y") or 0)
     if jobs_3y:
-        blocks.append(P(f"최근 3년 나라일터 공고 제목에 '{name}'이 그대로 적힌 공고는 **{n(jobs_3y)}건**입니다."))
+        blocks.append(P(f"최근 3년 나라일터 공고 제목에 {josa_k(name, '이가').replace(name, chr(39) + name + chr(39), 1)} 그대로 적힌 공고는 **{n(jobs_3y)}건**입니다."))
         if s.get("jobs_open_list"):
             blocks.append(LINKS([{"href": f"/jobs/{r['id']}", "label": f"{r['title']} — {r.get('org') or ''} · {kdate(r['end'])} 마감"} for r in s["jobs_open_list"]]))
     else:
-        blocks.append(P(f"최근 3년 나라일터 공고 제목에 '{name}'이 그대로 적힌 공고는 없습니다. 자격증은 보통 '관련 자격 소지자'로 묶어 적으니, [공공기관 채용](/jobs)에서 분야 이름으로 찾고 공고 본문의 응시 자격을 확인하세요."))
+        blocks.append(P(f"최근 3년 나라일터 공고 제목에 {josa_k(name, '이가').replace(name, chr(39) + name + chr(39), 1)} 그대로 적힌 공고는 없습니다. 자격증은 보통 '관련 자격 소지자'로 묶어 적으니, [공공기관 채용](/jobs)에서 분야 이름으로 찾고 공고 본문의 응시 자격을 확인하세요."))
 
     toc.append(("howto", "이렇게 준비하세요"))
     blocks.append(H2("이렇게 준비하세요", "howto"))
