@@ -81,8 +81,26 @@ cleaned = g.clean_facts(merged, [])
 ok(len(cleaned["essay_questions"]) == 1 and cleaned["process"]["source"].startswith("https://jiwon"), "우리 공고 쪽 주소는 출처로 인정")
 ok(g.source_label("https://jiwon.knowhow-it.com/jobs/1") == "공고문", "출처 이름: 공고문")
 docs = g.pick_docs(ROWS)
-ok(len(docs) == 1 and docs[0]["id"] == "304682" and docs[0]["files"][0]["name"].endswith("공고문.pdf"), "PDF 붙은 공고 고르기 " + str([d["id"] for d in docs]))
+ok(len(docs) == 2 and docs[0]["id"] == "304682" and docs[0]["files"][0]["name"].endswith("공고문.pdf") and docs[1]["files"][0]["name"] == "공고문.hwp", "문서 붙은 공고 고르기 " + str([d["id"] for d in docs]))
 ok("[출처 주소] https://jiwon.knowhow-it.com/jobs/304682" in g.doc_prompt("한국농어촌공사", [{**docs[0], "text": "본문"}]), "문서 프롬프트에 출처 주소")
+
+# HWP 문단 레코드: 머리(태그 67, 크기) + UTF-16LE 글 + 넓은 조절 문자(8글자) + 줄바꿈
+def rec(tag, body):
+    return (tag | (len(body) << 20)).to_bytes(4, "little") + body
+para = "자기소개서 문항".encode("utf-16-le") + (11).to_bytes(2, "little") + b"\0" * 14 + "500자".encode("utf-16-le") + (13).to_bytes(2, "little")
+sec = rec(0x10 + 50, b"\0" * 8) + rec(67, para) + rec(67, "둘째 문단".encode("utf-16-le"))
+t = g.hwp_para_text(sec)
+ok(t.replace("\n", "|") == "자기소개서 문항500자||둘째 문단", "HWP 문단 글자: " + repr(t))
+import io, zipfile
+buf = io.BytesIO()
+with zipfile.ZipFile(buf, "w") as z:
+    z.writestr("Contents/section0.xml", '<hs:sec><hp:p><hp:run><hp:t>전형 절차: 서류 &amp; 면접</hp:t></hp:run></hp:p><hp:p><hp:run><hp:t>자기소개서</hp:t><hp:tab/><hp:t>700자</hp:t></hp:run></hp:p></hs:sec>')
+    z.writestr("Contents/header.xml", "<x/>")
+hx = g.hwpx_text(buf.getvalue())
+ok(hx == "전형 절차: 서류 & 면접\n자기소개서 700자", "HWPX 글자: " + repr(hx))
+ok(g.doc_text("a.hwpx", buf.getvalue()) == hx and g.doc_text("a.zip", b"PK\x03\x04junk") == "" and g.doc_text("x.bin", b"abc") == "", "형식 가르기")
+docs2 = g.pick_docs([{"source_id": "1", "title": "t", "reg_date": "2026-10-01", "raw": {"gojobs": {"files": [{"name": "공고.hwp", "ext": "hwp"}, {"name": "지원서.hwpx", "ext": "hwpx"}, {"name": "사진.jpg", "ext": "jpg"}]}}}])
+ok(len(docs2) == 1 and [f["name"] for f in docs2[0]["files"]] == ["공고.hwp", "지원서.hwpx"], "hwp·hwpx 도 고른다")
 
 ok(g.decode_org("/jobs/org/%ED%95%9C%EA%B5%AD%EB%86%8D%EC%96%B4%EC%B4%8C%EA%B3%B5%EC%82%AC") == "한국농어촌공사", "방문 주소 풀기")
 ok(g.decode_org("/jobs/org/%EB%B2%95%EB%AC%B4%EB%B6%80/hire/%EA%B5%AD%EA%B0%80") == "법무부" and g.decode_org("/jobs/303583") is None, "방문 주소 풀기 2")

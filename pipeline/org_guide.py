@@ -305,6 +305,101 @@ def file_url(f: dict) -> str:
     return f"{GOJOBS}/downFile.do?filenm={quote(f.get('name', ''))}&uuid={quote(f.get('uuid', ''))}&saveGbn={quote(f.get('path', ''))}"
 
 
+# ── 문서 글자 뽑기(PDF·HWP·HWPX) ──────────────────────────
+# 나라일터 첨부는 pdf·hwp·hwpx 가 셋 다 비슷한 수다(최근 180일 598·551·518건). 셋 다 읽어야 기관 절반 이상을 다룬다.
+HWP_TAG_PARA_TEXT = 0x10 + 51
+# 글자 코드 32 미만은 조절 문자. 이 코드들은 자기 포함 8 글자(16바이트)를 차지한다. 나머지(0·10·13·24~31)는 한 글자.
+HWP_WIDE_CTRL = {1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
+
+
+def hwp_para_text(section: bytes) -> str:
+    """압축을 푼 BodyText 섹션에서 글 문단만 뽑는다. 레코드 머리 4바이트: 태그 10비트 · 수준 10비트 · 크기 12비트(0xFFF 면 다음 4바이트)."""
+    out, i, n_ = [], 0, len(section)
+    while i + 4 <= n_:
+        h = int.from_bytes(section[i:i + 4], "little")
+        tag, size = h & 0x3FF, (h >> 20) & 0xFFF
+        i += 4
+        if size == 0xFFF:
+            if i + 4 > n_:
+                break
+            size = int.from_bytes(section[i:i + 4], "little")
+            i += 4
+        body = section[i:i + size]
+        i += size
+        if tag != HWP_TAG_PARA_TEXT:
+            continue
+        chars, j = [], 0
+        while j + 2 <= len(body):
+            c = int.from_bytes(body[j:j + 2], "little")
+            if c >= 32:
+                chars.append(chr(c))
+                j += 2
+            elif c in HWP_WIDE_CTRL:
+                j += 16
+            else:
+                if c in (10, 13):
+                    chars.append("\n")
+                j += 2
+        out.append("".join(chars))
+    return "\n".join(out)
+
+
+def hwp_text(data: bytes) -> str:
+    """HWP 5.0(OLE). 암호·배포용 문서는 못 읽는다."""
+    import zlib
+    from io import BytesIO
+    import olefile
+    ole = olefile.OleFileIO(BytesIO(data))
+    try:
+        head = ole.openstream("FileHeader").read()
+        flags = int.from_bytes(head[36:40], "little")
+        if flags & 0b110:
+            return ""
+        compressed = bool(flags & 1)
+        parts = []
+        for entry in sorted(ole.listdir(), key=lambda e: e):
+            if len(entry) == 2 and entry[0] == "BodyText" and entry[1].startswith("Section"):
+                raw = ole.openstream(entry).read()
+                try:
+                    sec = zlib.decompress(raw, -15) if compressed else raw
+                except zlib.error:
+                    continue
+                parts.append(hwp_para_text(sec))
+        return re.sub(r"[ \t]+", " ", "\n".join(parts)).strip()
+    finally:
+        ole.close()
+
+
+def hwpx_text(data: bytes) -> str:
+    """HWPX(zip 안의 XML). Contents/section*.xml 의 <hp:t> 글만 모은다."""
+    import html as html_
+    import zipfile
+    from io import BytesIO
+    out = []
+    with zipfile.ZipFile(BytesIO(data)) as z:
+        names = sorted(n_ for n_ in z.namelist() if re.match(r"Contents/section\d+\.xml$", n_))
+        for name in names:
+            xml = z.read(name).decode("utf-8", "ignore")
+            xml = re.sub(r"</hp:p>", "\n", xml)
+            xml = re.sub(r"<hp:tab[^>]*/>", "<hp:t> </hp:t>", xml)
+            text = "".join(a or b for a, b in re.findall(r"<hp:t[^>]*>(.*?)</hp:t>|(\n)", xml, flags=re.S))
+            out.append(html_.unescape(re.sub(r"<[^>]+>", "", text)))
+    return re.sub(r"[ \t]+", " ", "\n".join(out)).strip()
+
+
+def doc_text(name: str, data: bytes) -> str:
+    if data.startswith(b"%PDF"):
+        return pdf_text(data)
+    if data.startswith(b"PK"):
+        try:
+            return hwpx_text(data)
+        except Exception:  # noqa: BLE001 — zip 이지만 hwpx 가 아니면(zip 첨부) 건너뜀
+            return ""
+    if data.startswith(b"\xd0\xcf\x11\xe0"):
+        return hwp_text(data)
+    return ""
+
+
 def pdf_text(data: bytes) -> str:
     from io import BytesIO
     from pypdf import PdfReader
@@ -318,38 +413,63 @@ def pdf_text(data: bytes) -> str:
     return re.sub(r"[ \t]+", " ", "\n".join(out)).strip()
 
 
+DOC_EXT = ("pdf", "hwp", "hwpx")
+
+
+def file_ext(f: dict) -> str:
+    e = (f.get("ext") or "").lower().strip(".")
+    return e or (f.get("name") or "").rsplit(".", 1)[-1].lower()
+
+
 def pick_docs(rows: list[dict], limit: int = 3) -> list[dict]:
-    """최근 공고 가운데 PDF 공고문(또는 지원서·직무기술서 PDF)이 붙은 것. 한 공고에서 PDF 둘까지."""
+    """최근 공고 가운데 읽을 수 있는 문서(pdf·hwp·hwpx)가 붙은 것. 공고문·지원서를 앞세워 한 공고에서 둘까지."""
     docs = []
     for r in rows:
         files = (((r.get("raw") or {}).get("gojobs") or {}).get("files")) or []
-        pdfs = [f for f in files if (f.get("ext") or "").lower() == "pdf" or (f.get("name") or "").lower().endswith(".pdf")]
-        pdfs.sort(key=lambda f: (classify_file(f.get("name", "")) not in ("공고문", "입사지원서·응시원서", "자기소개서", "직무수행계획서"), f.get("name", "")))
-        if pdfs:
-            docs.append({"id": r["source_id"], "title": r.get("title") or "", "reg": r.get("reg_date"), "files": pdfs[:2]})
+        ok_files = [f for f in files if file_ext(f) in DOC_EXT]
+        ok_files.sort(key=lambda f: (classify_file(f.get("name", "")) not in ("공고문", "입사지원서·응시원서", "자기소개서", "직무수행계획서"), f.get("name", "")))
+        if ok_files:
+            docs.append({"id": r["source_id"], "title": r.get("title") or "", "reg": r.get("reg_date"), "files": ok_files[:2]})
         if len(docs) >= limit:
             break
     return docs
 
 
-def fetch_docs(docs: list[dict]) -> list[dict]:
+def download(url: str, tries: int = 3) -> bytes | None:
+    """나라일터 파일 내려받기. 가끔 연결이 늦어 세 번까지."""
     import requests
+    for i in range(tries):
+        try:
+            r = requests.get(url, timeout=(25, 60), stream=True,
+                             headers={"User-Agent": "Mozilla/5.0 (compatible; NarajiwonBot/1.0; +https://jiwon.knowhow-it.com/about)"})
+            if r.status_code != 200 or int(r.headers.get("content-length") or 0) > PDF_MAX_BYTES:
+                return None
+            data = r.raw.read(PDF_MAX_BYTES + 1, decode_content=True)
+            return None if len(data) > PDF_MAX_BYTES else data
+        except Exception as e:  # noqa: BLE001
+            if i == tries - 1:
+                print(f"  내려받기 실패: {type(e).__name__}", file=sys.stderr)
+                return None
+            time.sleep(10 * (i + 1))
+    return None
+
+
+def fetch_docs(docs: list[dict]) -> list[dict]:
     out = []
     for d in docs:
         texts = []
         for f in d["files"]:
             try:
-                r = requests.get(file_url(f), timeout=40, headers={"User-Agent": "Mozilla/5.0 (compatible; NarajiwonBot/1.0; +https://jiwon.knowhow-it.com/about)"}, stream=True)
-                if r.status_code != 200 or int(r.headers.get("content-length") or 0) > PDF_MAX_BYTES:
+                data = download(file_url(f))
+                if not data:
                     continue
-                data = r.raw.read(PDF_MAX_BYTES + 1, decode_content=True)
-                if len(data) > PDF_MAX_BYTES or not data.startswith(b"%PDF"):
-                    continue
-                t = pdf_text(data)
+                t = doc_text(f.get("name", ""), data)
                 if len(t) >= 200:
                     texts.append(f"[{f.get('name')}]\n{t}")
+                else:
+                    print(f"  첨부에서 글자를 못 뽑음 {f.get('name')} ({len(data)}바이트)", file=sys.stderr)
             except Exception as e:  # noqa: BLE001
-                print(f"  첨부 못 읽음 {f.get('name')}: {type(e).__name__}", file=sys.stderr)
+                print(f"  첨부 못 읽음 {f.get('name')}: {type(e).__name__}: {str(e)[:120]}", file=sys.stderr)
         if texts:
             out.append({**d, "text": "\n\n".join(texts)[:DOC_CHARS]})
     return out
@@ -475,7 +595,7 @@ def compose(org: str, s: dict, posts: dict, facts: dict, sources: list[dict]) ->
     if facts.get("ideal") or facts.get("values"):
         found.append("인재상·핵심가치")
     if facts.get("essay_questions"):
-        found.append(f"공식 공고의 자기소개서 문항 {len(facts['essay_questions'])}개")
+        found.append(f"자기소개서 문항 {len(facts['essay_questions'])}개")
     if facts.get("process"):
         found.append("전형 절차")
     if facts.get("rules"):
