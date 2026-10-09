@@ -33,6 +33,14 @@ const BLOCKED = [
   "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot", "DataForSeoBot", "BLEXBot", "serpstatbot", "Barkrowler", "ZoominfoBot",
 ];
 
+/**
+ * AI 검색·답변 봇. 쪽은 읽게 두되, 공유 그림(/og)은 막는다.
+ * 2026-10-09 PerplexityBot 이 쪽마다 /og 그림을 그려 가 Next 프로세스 CPU 가 평소 7배, 메모리가 553MB 까지 올랐다.
+ * 그림 그리기(글꼴 내려받기·렌더링)는 힙 밖 메모리를 써서 힙 상한(384MB)으로 묶이지 않는다.
+ * robots.txt 는 같은 봇에 맞는 무리 하나만 따르므로 공통 숨김 경로도 같이 적는다.
+ */
+const ANSWER_BOTS = ["PerplexityBot", "OAI-SearchBot", "ChatGPT-User", "Google-Extended", "Claude-SearchBot", "Claude-User", "Claude-Web"];
+
 export async function GET() {
   // DB 를 못 읽어도 확인 줄은 나가야 한다. 사라지면 소유 확인이 풀린다.
   const { seo } = await getSiteConfig().catch(() => ({ seo: DEFAULT_SEO }));
@@ -44,6 +52,7 @@ export async function GET() {
     "User-agent: *",
     ...(seo.index ? ["Allow: /", ...HIDDEN.map((p) => `Disallow: ${p}`)] : ["Disallow: /"]),
     "",
+    ...(seo.index ? ANSWER_BOTS.flatMap((ua) => [`User-agent: ${ua}`, "Allow: /", ...[...HIDDEN, "/og"].map((p) => `Disallow: ${p}`), ""]) : []),
     // 글을 긁어 가기만 하고 손님을 보내지 않는 봇. 학습용 수집기와 SEO 업체 크롤러. AI 검색·답변 봇은 연다.
     ...BLOCKED.flatMap((ua) => [`User-agent: ${ua}`, "Disallow: /", ""]),
     `Sitemap: ${SITE}/sitemap.xml`,
