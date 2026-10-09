@@ -30,7 +30,9 @@ from urllib.parse import unquote, urlparse
 
 SITE = "https://jiwon.knowhow-it.com"
 BRAND = "K나라지원"
-MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
+# 검색 접지 할당량이 모델마다 다르다. 앞 모델이 429(할당량 소진)면 다음 모델로 넘어간다. 실제로 쓴 모델을 글에 적는다.
+MODELS = [m.strip() for m in os.environ.get("GEMINI_MODELS", "gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemini-2.5-flash").split(",") if m.strip()]
+MODEL = MODELS[0]
 REFRESH_DAYS = 120
 
 # 출처로 인정하지 않는 곳. 취업 포털·커뮤니티 글은 남의 글이고, 우리가 확인할 수 없다.
@@ -209,24 +211,46 @@ def gemini_client():
     return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
+def is_quota(e: Exception) -> bool:
+    return "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)
+
+
 def with_retry(fn, tries: int = 3, what: str = ""):
+    """일시 오류는 세 번까지. 할당량 소진(429)은 기다려도 안 풀리니 바로 올린다."""
     for i in range(tries):
         try:
             return fn()
         except Exception as e:  # noqa: BLE001
-            if i == tries - 1:
+            if i == tries - 1 or is_quota(e):
                 raise
-            print(f"  {what} 다시 시도 {i + 1}: {type(e).__name__}: {str(e)[:120]}", file=sys.stderr)
+            print(f"  {what} 다시 시도 {i + 1}: {type(e).__name__}: {str(e)[:200]}", file=sys.stderr)
             time.sleep(20 * (i + 1))
+
+
+def generate(client, what: str, **kw):
+    """모델을 차례로 시도한다. 429 면 다음 모델. 성공한 모델 이름을 MODEL 에 남긴다."""
+    global MODEL
+    last: Exception | None = None
+    start = MODELS.index(MODEL) if MODEL in MODELS else 0
+    for m in MODELS[start:] + MODELS[:start]:
+        try:
+            r = with_retry(lambda: client.models.generate_content(model=m, **kw), what=f"{what}({m})")
+            MODEL = m
+            return r
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if is_quota(e):
+                print(f"  {what}: {m} 할당량 소진 → 다음 모델. {str(e)[:600]}", file=sys.stderr)
+                continue
+            raise
+    raise last or RuntimeError("모델 없음")
 
 
 def search_facts(client, org: str) -> tuple[dict, list[dict], str]:
     """(facts, sources, memo). 1) 검색 접지로 메모를 얻고 2) 그 메모만 JSON 으로 옮긴다(접지와 JSON 출력은 한 호출에 못 섞는다)."""
     from google.genai import types
-    r = with_retry(lambda: client.models.generate_content(
-        model=MODEL, contents=search_prompt(org),
-        config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())], temperature=0.1)),
-        what="검색")
+    r = generate(client, "검색", contents=search_prompt(org),
+                 config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())], temperature=0.1))
     memo = r.text or ""
     sources: list[dict] = []
     try:
@@ -239,13 +263,11 @@ def search_facts(client, org: str) -> tuple[dict, list[dict], str]:
         pass
     if not memo.strip():
         return {}, sources, memo
-    r2 = with_retry(lambda: client.models.generate_content(
-        model=MODEL,
-        contents=("다음은 '" + org + "' 채용 정보를 웹에서 조사한 메모다. 메모에 적힌 것만 JSON 으로 옮겨라. "
-                  "메모에 없거나 '확인 안 됨'인 항목은 빈 문자열·빈 배열로 둔다. 각 항목의 source 에는 메모에 적힌 출처 URL 을 그대로 넣고, "
-                  "출처가 없는 항목은 넣지 마라.\n\n메모:\n" + memo),
-        config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=FACT_SCHEMA, temperature=0)),
-        what="정리")
+    r2 = generate(client, "정리",
+                  contents=("다음은 '" + org + "' 채용 정보를 웹에서 조사한 메모다. 메모에 적힌 것만 JSON 으로 옮겨라. "
+                            "메모에 없거나 '확인 안 됨'인 항목은 빈 문자열·빈 배열로 둔다. 각 항목의 source 에는 메모에 적힌 출처 URL 을 그대로 넣고, "
+                            "출처가 없는 항목은 넣지 마라.\n\n메모:\n" + memo),
+                  config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=FACT_SCHEMA, temperature=0))
     try:
         facts = json.loads(r2.text or "{}")
     except json.JSONDecodeError:
@@ -585,7 +607,7 @@ def main():
             build(sb, client, org, a.dry, org in done)
             written += 1
         except Exception as e:  # noqa: BLE001 — 한 기관이 실패해도 다음 기관은 쓴다
-            print(f"[{org}] 실패: {type(e).__name__}: {str(e)[:300]}", file=sys.stderr)
+            print(f"[{org}] 실패: {type(e).__name__}: {str(e)[:900]}", file=sys.stderr)
     if not written:
         sys.exit(1)
 
