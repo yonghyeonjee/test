@@ -164,7 +164,12 @@ jobs:
             fi
             sudo /usr/bin/systemctl restart jiwon
             # 지난 배포는 셋만 남긴다. 서비스(jiwon)가 쓴 캐시 파일이 섞여 있어 sudo 로 지운다.
-            ls -1dt /srv/jiwon/releases/* | tail -n +4 | xargs -r sudo rm -rf"
+            # 수정 시각(-t)으로 고르면 안 된다. 돌던 배포는 쪽 캐시를 계속 써서 늘 \"최신\"으로 보여, 3.3GB 짜리 옛 폴더가
+            # 살아남고 그보다 새 폴더가 지워졌다(2026-10-09). 폴더 이름의 실행 번호(run_id)로 줄 세우고, current 는 절대 안 지운다.
+            CUR=\$(readlink -f /srv/jiwon/current)
+            for d in \$(ls -1d /srv/jiwon/releases/* | awk -F- '{print \$(NF-1), \$0}' | sort -n | head -n -3 | cut -d' ' -f2); do
+              [ \"\$d\" = \"\$CUR\" ] || sudo rm -rf \"\$d\"
+            done"
           for i in $(seq 1 30); do
             code=$($S "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/" || true)
             echo "확인 $i: $code"
