@@ -1,11 +1,13 @@
 """
 blog_daily.py — 모아 둔 자료에서 매일 한 편씩 블로그 글을 만든다.
 
-글감은 네 갈래를 돌아가며 고른다.
-  topic  : 월세·전세·출산 같은 지원 주제 — 지금 신청할 수 있는 사업이 몇 건, 어디에, 누구에게
-  org    : 기관 하나 — 언제 뽑고, 접수 기간은 얼마나 되고, 지금 접수 중인 것
-  role   : 직무 하나 — 어느 기관이 자주 뽑고, 어느 지역에 많고, 언제 올라오나
-  region : 시·도 하나 — 복지 사업과 채용을 한 번에
+글감은 여섯 갈래를 돌아가며 고른다. 하루에 둘(--count 2)이면 세 갈래 건너 짝이 된다.
+  topic   : 월세·전세·출산 같은 지원 주제 — 지금 신청할 수 있는 사업이 몇 건, 어디에, 누구에게
+  org     : 기관 하나 — 언제 뽑고, 접수 기간은 얼마나 되고, 지금 접수 중인 것
+  role    : 직무 하나 — 어느 기관이 자주 뽑고, 어느 지역에 많고, 언제 올라오나
+  region  : 시·도 하나 — 복지 사업과 채용을 한 번에
+  license : 자격증 종목 하나 — 해·단계별 합격률, 올해 남은 시험, 같은 분야 종목
+  sigungu : 시·군·구 하나 — 그 동네 사업과 도 단위 사업, 그 지자체 채용
 
 숫자는 전부 DB 함수(blog_*_stats)가 센다. 여기서는 그 숫자를 문장으로 옮기고,
 기준(문턱)을 넘을 때만 시사점을 적는다. 숫자가 말하지 않는 것은 쓰지 않는다.
@@ -13,6 +15,7 @@ blog_daily.py — 모아 둔 자료에서 매일 한 편씩 블로그 글을 만
   python pipeline/blog_daily.py                 # 오늘 차례의 갈래에서 아직 안 쓴 글감 하나
   python pipeline/blog_daily.py --kind org      # 갈래 지정
   python pipeline/blog_daily.py --kind org --subject 한국농어촌공사
+  python pipeline/blog_daily.py --count 2       # 오늘 차례 두 갈래(매일 돌리는 워크플로가 쓴다)
   python pipeline/blog_daily.py --dry           # DB 에 쓰지 않고 JSON 만 출력
 """
 
@@ -24,10 +27,11 @@ import json
 import os
 import re
 import sys
+import time
 
-KINDS = ["topic", "org", "role", "region"]
+KINDS = ["topic", "org", "role", "region", "license", "sigungu"]
 SITE = "https://jiwon.knowhow-it.com"
-BRAND = "나라지원"
+BRAND = "K나라지원"
 
 # ── 글감 목록 ────────────────────────────────────────────
 TOPICS = [
@@ -521,29 +525,335 @@ def write_region(s: dict) -> dict:
             "keywords": kw, "body": blocks, "toc": toc}
 
 
+# ── 자격증 ────────────────────────────────────────────────
+def exam_events(rounds: list[dict]) -> list[dict]:
+    """큐넷 일정 줄을 단계별 시험 하나하나로 푼다. 기술자격은 한 줄에 필기·실기가 함께 있고,
+    전문자격은 줄마다 단계(1차·2차·면접)가 적혀 있다. web/lib/examInsight.ts 의 events() 와 같은 규칙."""
+    out = []
+    for r in rounds:
+        if r.get("stage") is None:
+            if r.get("exam_start"):
+                out.append({"label": r["label"], "stage": "필기", "reg_start": r.get("reg_start"), "reg_end": r.get("reg_end"),
+                            "exam_start": r["exam_start"], "exam_end": r.get("exam_end"), "pass": r.get("pass_date")})
+            if r.get("prac_exam_start"):
+                out.append({"label": r["label"], "stage": "실기", "reg_start": r.get("prac_reg_start"), "reg_end": r.get("prac_reg_end"),
+                            "exam_start": r["prac_exam_start"], "exam_end": r.get("prac_exam_end"), "pass": r.get("final_pass")})
+        elif r.get("exam_start"):
+            out.append({"label": r["label"], "stage": r["stage"], "reg_start": r.get("reg_start"), "reg_end": r.get("reg_end"),
+                        "exam_start": r["exam_start"], "exam_end": r.get("exam_end"), "pass": r.get("pass_date")})
+    return sorted(out, key=lambda e: e["exam_start"])
+
+
+def krange(a: str | None, b: str | None) -> str:
+    if not a:
+        return ""
+    return kdate(a) if (not b or b == a) else f"{kdate(a)}~{kdate(b)}"
+
+
+def reg_state(e: dict, t: dt.date) -> str:
+    rs, re_ = e.get("reg_start"), e.get("reg_end")
+    if not rs:
+        return "접수일 미정"
+    if rs <= t.isoformat() <= (re_ or rs):
+        return "**접수 중**"
+    if rs > t.isoformat():
+        return f"접수 {krange(rs, re_)}"
+    return "접수 마감"
+
+
+def level_word(rate: int) -> str:
+    return "어려운 편" if rate < 30 else ("보통" if rate < 60 else "수월한 편")
+
+
+def write_license(s: dict) -> dict:
+    name, series, field = s["name"], s.get("series") or "", s.get("field") or ""
+    code = s["code"]
+    lic_url = f"/license/{code}"
+    t = today()
+    by_year = s.get("by_year") or []
+    years = sorted({int(r["y"]) for r in by_year})
+    stages = []
+    for r in by_year:
+        if r["stage"] not in stages:
+            stages.append(r["stage"])
+    # 단계별 3년 합계
+    agg = {}
+    for st in stages:
+        rows = [r for r in by_year if r["stage"] == st]
+        tk, ps = sum(int(r.get("takers") or 0) for r in rows), sum(int(r.get("passers") or 0) for r in rows)
+        agg[st] = (tk, ps, pct(ps, tk))
+    takers, passers = int(s.get("takers_3y") or 0), int(s.get("passers_3y") or 0)
+    bottleneck = min(agg.items(), key=lambda kv: kv[1][2]) if agg else None
+    events = exam_events(s.get("rounds") or [])
+    upcoming = [e for e in events if (e.get("exam_end") or e["exam_start"]) >= t.isoformat()]
+    blocks, toc = [], []
+
+    yr_txt = f"{years[0]}~{years[-1]}년" if len(years) >= 2 else (f"{years[0]}년" if years else "최근")
+    lead = f"**{name}**{'은' if josa(name, '은는').endswith('은') else '는'} {yr_txt} 응시자 **{n(takers)}명**, 합격자 {n(passers)}명인 {s.get('kind_name') or '국가자격'}"
+    lead += f" {series} 등급입니다. " if series else "입니다. "
+    peers_n, rank_peers = int(s.get("peers_n") or 0), int(s.get("rank_peers") or 0)
+    if peers_n >= 2 and rank_peers:
+        lead += f"같은 분야({field}) {series} {n(peers_n)}종 가운데 응시자 수 **{rank_peers}위**, "
+    lead += f"큐넷 전체 {n(s.get('all_n'))}종 가운데 **{n(s.get('rank_all'))}위**입니다. "
+    if len(agg) >= 2:
+        lead += " · ".join(f"{st} 합격률 **{v[2]}%**" for st, v in agg.items()) + "."
+    elif agg:
+        st, v = next(iter(agg.items()))
+        lead += f"{st} 합격률은 **{v[2]}%**입니다."
+    blocks.append(P(lead.strip()))
+    blocks.append(P(f"응시 자격·시험 과목과 전체 일정은 [{name} 종목 페이지]({lic_url})에, 다른 종목은 [자격증 전체](/license)에 있습니다."))
+
+    toc.append(("sched", f"{t.year}년 남은 시험 일정"))
+    blocks.append(H2(f"{t.year}년 남은 시험 일정", "sched"))
+    if upcoming:
+        blocks.append(TABLE(["회차", "단계", "접수", "시험", "발표"],
+                            [[e["label"], e["stage"], reg_state(e, t), krange(e["exam_start"], e.get("exam_end")), kdate(e.get("pass")) or "—"] for e in upcoming[:8]]))
+        nxt = upcoming[0]
+        txt = f"가장 가까운 시험은 **{nxt['label']} {nxt['stage']}**, {krange(nxt['exam_start'], nxt.get('exam_end'))}입니다."
+        if nxt.get("reg_start") and nxt["reg_start"] > t.isoformat():
+            txt += f" 접수는 {kdate(nxt['reg_start'])}에 열립니다."
+        elif nxt.get("reg_end") and nxt.get("reg_start") and nxt["reg_start"] <= t.isoformat() <= nxt["reg_end"]:
+            txt += f" **지금 접수 중**이고 {kdate(nxt['reg_end'])}에 닫힙니다."
+        blocks.append(P(txt))
+    else:
+        blocks.append(P(f"오늘 기준 올해 남은 시험은 없습니다. 내년 일정은 큐넷이 올리는 대로 [{name} 종목 페이지]({lic_url})에 반영됩니다."))
+    reg_days = sorted((dt.date.fromisoformat(e["reg_end"]) - dt.date.fromisoformat(e["reg_start"])).days + 1
+                      for e in events if e.get("reg_start") and e.get("reg_end"))
+    if reg_days:
+        med_reg = reg_days[(len(reg_days) - 1) // 2]
+        if med_reg <= 7:
+            blocks.append(P(f"접수 기간은 회차마다 **{med_reg}일** 안팎으로 짧습니다. 큐넷 회원가입과 사진 등록을 미리 해 두고, 접수 첫날 오전에 신청하는 편이 안전합니다. 인기 시험장은 첫날 마감됩니다."))
+
+    if agg:
+        toc.append(("rate", "합격률 — 어느 단계가 고비인가"))
+        blocks.append(H2("합격률 — 어느 단계가 고비인가", "rate"))
+        if stages == ["실기", "필기"] or stages == ["필기", "실기"]:
+            rows = []
+            for y in years:
+                w = next((r for r in by_year if int(r["y"]) == y and r["stage"] == "필기"), {})
+                p_ = next((r for r in by_year if int(r["y"]) == y and r["stage"] == "실기"), {})
+                rows.append([f"{y}년", n(w.get("takers")) + "명", f"{pct(w.get('passers'), w.get('takers'))}%", n(p_.get("takers")) + "명", f"{pct(p_.get('passers'), p_.get('takers'))}%"])
+            blocks.append(TABLE(["연도", "필기 응시", "필기 합격률", "실기 응시", "실기 합격률"], rows))
+        else:
+            blocks.append(TABLE(["연도", "단계", "응시", "합격", "합격률"],
+                                [[f"{r['y']}년", r["stage"], n(r.get("takers")) + "명", n(r.get("passers")) + "명", f"{pct(r.get('passers'), r.get('takers'))}%"] for r in by_year]))
+        st, (tk, ps, rt) = bottleneck
+        txt = f"{yr_txt} 합계로 보면 " + ", ".join(f"**{k} {v[2]}%**" for k, v in agg.items()) + f". 고비는 **{st}**입니다({level_word(rt)})."
+        if len(agg) >= 2:
+            hi = max(agg.items(), key=lambda kv: kv[1][2])
+            if hi[1][2] >= 55 and rt < 35:
+                txt += f" {hi[0]}는 둘 중 하나 넘게 붙지만 {st}에서 셋 중 둘이 떨어집니다. 공부 시간은 {st}에 더 두어야 합니다."
+            elif rt >= 55:
+                txt += " 두 단계 모두 절반 넘게 붙는, 준비한 만큼 결과가 나오는 시험입니다."
+        blocks.append(P(txt))
+        first_stage = stages[0] if "필기" not in stages else "필기"
+        a0 = next((r for r in by_year if int(r["y"]) == years[0] and r["stage"] == first_stage), None)
+        a1 = next((r for r in by_year if int(r["y"]) == years[-1] and r["stage"] == first_stage), None)
+        if a0 and a1 and len(years) >= 2 and int(a0.get("takers") or 0) >= 100:
+            d = pct(int(a1.get("takers") or 0) - int(a0.get("takers") or 0), int(a0.get("takers") or 0))
+            if d >= 15:
+                blocks.append(P(f"{first_stage} 응시자가 {years[0]}년 {n(a0['takers'])}명에서 {years[-1]}년 {n(a1['takers'])}명으로 **{d}% 늘었습니다**. 찾는 사람이 빠르게 느는 종목입니다."))
+            elif d <= -15:
+                blocks.append(P(f"{first_stage} 응시자가 {years[0]}년 {n(a0['takers'])}명에서 {years[-1]}년 {n(a1['takers'])}명으로 **{-d}% 줄었습니다**."))
+
+    peers = [p_ for p_ in (s.get("peers") or []) if p_.get("code") != code]
+    if peers:
+        toc.append(("peers", f"같은 분야 {series} 종목과 견주면"))
+        blocks.append(H2(f"같은 분야 {series} 종목과 견주면", "peers"))
+        rows = [[f"**{name}**", n(takers) + "명", f"{pct(passers, takers)}%"]]
+        rows += [[f"[{p_['name']}](/license/{p_['code']})", n(p_["takers"]) + "명", f"{pct(p_.get('passers'), p_.get('takers'))}%"] for p_ in peers[:6]]
+        blocks.append(TABLE(["종목", f"{yr_txt} 응시자", "합격률"], rows))
+        easier = [p_ for p_ in peers if pct(p_.get("passers"), p_.get("takers")) >= pct(passers, takers) + 10 and int(p_.get("takers") or 0) >= 1000]
+        if easier:
+            blocks.append(P(f"같은 분야에서 합격률이 눈에 띄게 높은 종목은 [{easier[0]['name']}](/license/{easier[0]['code']})입니다. 분야가 같다고 쓰임이 같지는 않으니, 채용 공고가 어느 종목을 적는지 먼저 봅니다."))
+
+    toc.append(("jobs", "이 자격을 적은 공공기관 채용"))
+    blocks.append(H2("이 자격을 적은 공공기관 채용", "jobs"))
+    jobs_3y = int(s.get("jobs_3y") or 0)
+    if jobs_3y:
+        blocks.append(P(f"최근 3년 나라일터 공고 제목에 '{name}'이 그대로 적힌 공고는 **{n(jobs_3y)}건**입니다."))
+        if s.get("jobs_open_list"):
+            blocks.append(LINKS([{"href": f"/jobs/{r['id']}", "label": f"{r['title']} — {r.get('org') or ''} · {kdate(r['end'])} 마감"} for r in s["jobs_open_list"]]))
+    else:
+        blocks.append(P(f"최근 3년 나라일터 공고 제목에 '{name}'이 그대로 적힌 공고는 없습니다. 자격증은 보통 '관련 자격 소지자'로 묶어 적으니, [공공기관 채용](/jobs)에서 분야 이름으로 찾고 공고 본문의 응시 자격을 확인하세요."))
+
+    toc.append(("howto", "이렇게 준비하세요"))
+    blocks.append(H2("이렇게 준비하세요", "howto"))
+    tips = []
+    if upcoming:
+        nxt = upcoming[0]
+        tips.append(f"가장 가까운 **{nxt['label']} {nxt['stage']}**({krange(nxt['exam_start'], nxt.get('exam_end'))})에 맞춰 역산합니다. 접수일({krange(nxt.get('reg_start'), nxt.get('reg_end')) or '미정'})을 달력에 적어 둡니다.")
+    if bottleneck:
+        tips.append(f"고비인 **{bottleneck[0]}**({bottleneck[1][2]}%)에 공부 시간을 더 둡니다. 기출을 단계별로 따로 풉니다.")
+    if s.get("kind") == "T" and "필기" in agg and "실기" in agg:
+        tips.append("국가기술자격은 필기에 붙으면 2년 동안 필기를 다시 보지 않습니다. 실기는 그 안에 여러 회차에 다시 볼 수 있습니다.")
+    tips.append(f"응시 자격(학력·경력)은 [{name} 종목 페이지]({lic_url})에 등급별 기준을 적어 두었습니다. 종목별 예외는 큐넷 원문을 봅니다.")
+    blocks.append(LIST(tips))
+    blocks.append(NOTE(f"{t.isoformat()} 기준, 큐넷(q-net.or.kr) 종목별 일정과 수험자 동향을 {BRAND}이 모아 센 숫자입니다. 합격률은 응시자 대비 합격자이고 접수자 기준이 아닙니다. 일정은 큐넷 공고가 기준입니다."))
+
+    if "필기" in agg and "실기" in agg:
+        title = f"{name} 합격률 필기 {agg['필기'][2]}%·실기 {agg['실기'][2]}% — {t.year}년 남은 시험 일정과 준비 순서"
+    else:
+        title = f"{name} 합격률 {pct(passers, takers)}% — {t.year}년 남은 시험 일정과 준비 순서"
+    summary = (f"큐넷 수험자 동향으로 {name}의 {yr_txt} 응시자 {n(takers)}명과 단계별 합격률을 세고, "
+               + (f"{t.year}년 남은 시험 {len(upcoming)}회 일정을 표로 정리했습니다." if upcoming else "올해 일정과 같은 분야 종목을 함께 봅니다."))
+    kw = [BRAND, name, f"{name} 합격률", f"{name} 시험일정", f"{name} 접수", f"{name} 난이도", f"{series} 합격률" if series else "자격증 합격률"]
+    return {"slug": "license-" + slugify(name), "kind": "license", "subject": code, "title": title, "summary": summary,
+            "keywords": kw, "body": blocks, "toc": toc}
+
+
+# ── 시·군·구 ──────────────────────────────────────────────
+def write_sigungu(s: dict) -> dict:
+    sido, sg = s["sido"], s["sigungu"]
+    sh = short_sido(sido) or sido
+    full = f"{sh} {sg}"
+    open_n, always_n, closing30 = int(s.get("open_n") or 0), int(s.get("always_n") or 0), int(s.get("closing30") or 0)
+    sido_open = int(s.get("sido_open_n") or 0)
+    jobs_3y, jobs_open = int(s.get("jobs_3y") or 0), int(s.get("jobs_open") or 0)
+    search_url = f"/?sido={sido}&sigungu={sg}&via=story"
+    area_url = f"/area/{sido}"
+    blocks, toc = [], []
+
+    topics = s.get("topics") or []
+    lead = f"**{sido} {sg}**에서 지금 신청할 수 있는 복지·지원 사업은 **{n(open_n)}건**입니다. "
+    if sido_open:
+        lead += f"여기에 {sh} 주민이면 어디서나 되는 도 단위 사업 **{n(sido_open)}건**이 더 있습니다. "
+    if topics:
+        lead += f"가장 많은 분야는 **{topics[0]['k']}**({n(topics[0]['n'])}건)이고, "
+    lead += f"접수 중인 {sg} 채용 공고는 **{n(jobs_open)}건**입니다." if jobs_open else f"오늘 기준 접수 중인 {sg} 채용 공고는 없습니다."
+    blocks.append(P(lead.strip()))
+    blocks.append(P(f"나이와 가구 조건을 넣어 걸러 보려면 [{full} 내 조건으로 찾기]({search_url}), {sh} 전체는 [{sh} 지원금 모아보기]({area_url})로 가세요."))
+
+    if topics:
+        toc.append(("topics", "어떤 분야가 많나"))
+        blocks.append(H2("어떤 분야가 많나", "topics"))
+        blocks.append(BARS([{"label": r["k"], "n": int(r["n"])} for r in topics]))
+        share = pct(topics[0]["n"], open_n)
+        txt = f"**{topics[0]['k']}**이 전체의 {share}%입니다."
+        if share >= 50:
+            txt += f" 한 분야에 크게 쏠려 있어, 다른 분야는 건수가 적더라도 [{sh} 지원금 모아보기]({area_url})에서 도 단위 사업과 함께 봐야 빠짐이 없습니다."
+        else:
+            txt += " 분야가 고르게 퍼져 있으니 내 상황에 맞는 분야부터 엽니다."
+        blocks.append(P(txt))
+
+    hh = s.get("household") or []
+    youth_n, senior_n = int(s.get("youth_n") or 0), int(s.get("senior_n") or 0)
+    if open_n and (hh or youth_n or senior_n):
+        toc.append(("who", "누구에게 주나"))
+        blocks.append(H2("누구에게 주나", "who"))
+        if hh:
+            blocks.append(BARS([{"label": r["k"], "n": int(r["n"])} for r in hh]))
+        txt = ""
+        if hh:
+            txt += f"가구 조건이 적힌 사업 중에는 **{hh[0]['k']}** 대상이 {n(hh[0]['n'])}건으로 가장 많습니다. "
+        if youth_n:
+            txt += f"나이 상한이 45세 이하인 청년 대상은 {n(youth_n)}건({pct(youth_n, open_n)}%), "
+        if senior_n:
+            txt += f"60세 이상 어르신 대상은 {n(senior_n)}건({pct(senior_n, open_n)}%)입니다. "
+        txt += "조건이 적히지 않은 사업은 가구 구분 없이 신청할 수 있습니다."
+        blocks.append(P(txt.strip()))
+
+    sup = s.get("support") or []
+    if sup and open_n:
+        toc.append(("how", "어떤 방식으로 주나"))
+        blocks.append(H2("어떤 방식으로 주나", "how"))
+        blocks.append(P(", ".join(f"**{r['k']}** {n(r['n'])}건" for r in sup) + "."))
+
+    toc.append(("closing", "마감은 언제인가"))
+    blocks.append(H2("마감은 언제인가", "closing"))
+    soon = [r for r in (s.get("closing_list") or []) if r.get("end") and r["end"] <= (today() + dt.timedelta(days=365)).isoformat()]
+    if closing30 and soon:
+        blocks.append(P(f"**30일 안에 마감되는 사업이 {n(closing30)}건**입니다. 날짜가 적힌 것부터 봅니다."))
+        blocks.append(LINKS([{"href": f"/p/{r['id']}", "label": f"{r['title']} — {kdate(r['end'])} 마감"} for r in soon]))
+    elif soon:
+        blocks.append(P("30일 안에 마감되는 사업은 없습니다. 날짜가 적힌 것 가운데 가까운 순입니다."))
+        blocks.append(LINKS([{"href": f"/p/{r['id']}", "label": f"{r['title']} — {kdate(r['end'])} 마감"} for r in soon]))
+    else:
+        blocks.append(P(f"{sg} 사업 {n(open_n)}건 가운데 {n(always_n)}건({pct(always_n, open_n)}%)은 **마감일 없이 상시 접수**합니다. 다만 예산이 소진되면 그해 접수를 닫는 사업이 많으니, 조건이 되면 미루지 말고 신청합니다."))
+
+    if s.get("sample"):
+        toc.append(("sample", "지금 신청할 수 있는 사업 예"))
+        blocks.append(H2("지금 신청할 수 있는 사업 예", "sample"))
+        blocks.append(LINKS([{"href": f"/p/{r['id']}", "label": r["title"] + (f" · {kdate(r['end'])} 마감" if r.get("end") and not r.get("always") else " · 상시")} for r in s["sample"]]))
+
+    if s.get("sido_sample"):
+        toc.append(("sido", f"{sh} 도 단위 사업도 함께"))
+        blocks.append(H2(f"{sh} 도 단위 사업도 함께", "sido"))
+        blocks.append(P(f"{sg}에 살면 {sh}가 하는 사업 {n(sido_open)}건도 신청할 수 있습니다. 몇 가지만 들면 이렇습니다."))
+        blocks.append(LINKS([{"href": f"/p/{r['id']}", "label": r["title"] + (f" · {kdate(r['end'])} 마감" if r.get("end") and not r.get("always") else " · 상시")} for r in s["sido_sample"]]))
+
+    toc.append(("jobs", f"{sg} 채용 공고"))
+    blocks.append(H2(f"{sg} 채용 공고", "jobs"))
+    orgs = s.get("jobs_orgs") or []
+    if jobs_3y:
+        txt = f"최근 3년 나라일터에 올라온 {sg} 쪽 채용 공고는 **{n(jobs_3y)}건**입니다. "
+        txt += "기관별로는 " + ", ".join(f"[{o['org']}](/jobs/org/{o['org']}) {n(o['n'])}건" for o in orgs[:4]) + "."
+        blocks.append(P(txt))
+        bm = s.get("jobs_by_month") or []
+        peaks = peak_months(bm)
+        if jobs_3y >= 24 and peaks:
+            blocks.append(BARS(month_bars(bm)))
+            top3 = sum(c for _, c in peaks)
+            blocks.append(P(f"**{'·'.join(MONTHS[m - 1] for m, _ in peaks)}**에 {n(top3)}건, 전체의 {pct(top3, jobs_3y)}%가 올라왔습니다. 이 달들 앞뒤로 [{orgs[0]['org']} 채용 이력](/jobs/org/{orgs[0]['org']})을 확인해 두면 놓치지 않습니다." if orgs else ""))
+        if s.get("jobs_open_list"):
+            blocks.append(LINKS([{"href": f"/jobs/{r['id']}", "label": f"{r['title']} — {r.get('org') or ''} · {kdate(r['end'])} 마감"} for r in s["jobs_open_list"]]))
+        else:
+            blocks.append(P(f"오늘은 접수 중인 공고가 없습니다. [{sh} 채용 공고](/jobs/region/{sido})에서 가까운 지역을 함께 봅니다."))
+    else:
+        blocks.append(P(f"최근 3년 나라일터에 {sg} 이름이 적힌 기관의 공고는 없습니다. {sh} 전체 공고는 [{sh} 채용 공고](/jobs/region/{sido})에서 봅니다."))
+
+    toc.append(("howto", "이렇게 찾으세요"))
+    blocks.append(H2("이렇게 찾으세요", "howto"))
+    blocks.append(LIST([
+        f"[{full} 내 조건으로 찾기]({search_url})에 나이와 가구 상황을 넣습니다. {sg} 사업과 {sh} 사업이 함께 나옵니다.",
+        "시·군·구 사업은 그 지역에 주소를 둔 사람만 됩니다. 이사 계획이 있으면 전입 뒤 다시 확인합니다.",
+        f"사업 쪽을 열어 **지원대상·선정기준** 원문을 확인합니다. 같은 이름이라도 지자체마다 금액과 조건이 다릅니다.",
+    ]))
+    blocks.append(NOTE(f"{today().isoformat()} 기준, 복지로·지자체 공고와 나라일터 공고를 {BRAND}이 매일 모아 센 숫자입니다. 중앙부처의 전국 사업은 이 집계에서 빠져 있고, 채용은 기관 이름에 '{sg}'가 든 공고만 센 것입니다."))
+
+    title = f"{sido} {sg} 지원금 {n(open_n)}건 — 분야·대상별 현황과 {sg} 채용 {n(jobs_open)}건"
+    summary = (f"{sido} {sg}에서 지금 신청할 수 있는 복지·지원 사업 {n(open_n)}건을 분야·대상·지원 방식으로 세고, "
+               f"{sh} 도 단위 사업 {n(sido_open)}건과 {sg} 채용 공고를 함께 정리했습니다.")
+    kw = [BRAND, f"{sg} 지원금", f"{sido} {sg} 복지", f"{sg} 청년 지원", f"{sg} 채용", f"{sg} 보조금", f"{BRAND} {sg}", "지자체 지원금"]
+    return {"slug": f"sigungu-{slugify(sh)}-{slugify(sg)}", "kind": "sigungu", "subject": f"{sido} {sg}", "title": title, "summary": summary,
+            "keywords": kw, "body": blocks, "toc": toc}
+
+
 # ── 글감 고르기 ──────────────────────────────────────────
+def rpc(sb, name: str, params: dict, tries: int = 3):
+    """DB 함수 호출. 읽기 시간 초과(httpx.ReadTimeout)가 가끔 나서 세 번까지 다시 부른다."""
+    for i in range(tries):
+        try:
+            return sb.rpc(name, params).execute().data
+        except Exception as e:  # noqa: BLE001
+            if i == tries - 1:
+                raise
+            print(f"  {name} 다시 시도 {i + 1}/{tries - 1}: {type(e).__name__}", file=sys.stderr)
+            time.sleep(15 * (i + 1))
+
+
 def pick(kind: str, done: set[tuple[str, str]], sb, subject: str | None = None) -> tuple[str, dict]:
     """(subject, stats)"""
     if kind == "topic":
         cands = [t for t in TOPICS if subject in (None, t["slug"], t["label"])]
         fresh = [t for t in cands if ("topic", t["slug"]) not in done] or cands
         for t in fresh:
-            s = sb.rpc("blog_topic_stats", {"p_q": t["q"], "p_who": t["who"]}).execute().data
+            s = rpc(sb, "blog_topic_stats", {"p_q": t["q"], "p_who": t["who"]})
             if int(s.get("open_n") or 0) >= 5:
                 return t["slug"], {"topic": t, "stats": s}
         raise SystemExit("주제 글감 없음(열린 사업 5건 미만)")
     if kind == "org":
         if subject:
-            return subject, {"stats": sb.rpc("blog_org_stats", {"p_org": subject}).execute().data}
-        cands = sb.rpc("blog_org_candidates", {"p_min": 40, "p_limit": 300}).execute().data or []
+            return subject, {"stats": rpc(sb, "blog_org_stats", {"p_org": subject})}
+        cands = rpc(sb, "blog_org_candidates", {"p_min": 40, "p_limit": 300}) or []
         fresh = [c for c in cands if ("org", c["org"]) not in done] or cands
         org = fresh[0]["org"]
-        return org, {"stats": sb.rpc("blog_org_stats", {"p_org": org}).execute().data}
+        return org, {"stats": rpc(sb, "blog_org_stats", {"p_org": org})}
     if kind == "role":
         cands = [r for r in ROLES if subject in (None, r["key"], r["name"])]
         fresh = [r for r in cands if ("role", r["key"]) not in done] or cands
         for r in fresh:
-            s = sb.rpc("blog_role_stats", {"p_terms": r["terms"]}).execute().data
+            s = rpc(sb, "blog_role_stats", {"p_terms": r["terms"]})
             if int(s.get("n3y") or 0) >= 20:
                 return r["key"], {"role": r, "stats": s}
         raise SystemExit("직무 글감 없음(3년 공고 20건 미만)")
@@ -553,7 +863,24 @@ def pick(kind: str, done: set[tuple[str, str]], sb, subject: str | None = None) 
         cands = [s for s in sidos if subject in (None, s, short_sido(s))]
         fresh = [s for s in cands if ("region", s) not in done] or cands
         sido = fresh[0]
-        return sido, {"stats": sb.rpc("blog_region_stats", {"p_sido": sido}).execute().data}
+        return sido, {"stats": rpc(sb, "blog_region_stats", {"p_sido": sido})}
+    if kind == "license":
+        cands = rpc(sb, "blog_license_candidates", {"p_min_takers": 3000, "p_limit": 300}) or []
+        cands = [c for c in cands if subject in (None, c["code"], c["name"])]
+        fresh = [c for c in cands if ("license", c["code"]) not in done] or cands
+        for c in fresh:
+            s = rpc(sb, "blog_license_stats", {"p_code": c["code"]})
+            if s.get("name") and int(s.get("takers_3y") or 0) >= 1000 and s.get("by_year"):
+                return c["code"], {"stats": s}
+        raise SystemExit("자격증 글감 없음(수험자 동향 없음)")
+    if kind == "sigungu":
+        cands = rpc(sb, "blog_sigungu_candidates", {"p_min": 15, "p_limit": 300}) or []
+        cands = [c for c in cands if subject in (None, c["sigungu"], f"{c['sido']} {c['sigungu']}", f"{short_sido(c['sido'])} {c['sigungu']}")]
+        fresh = [c for c in cands if ("sigungu", f"{c['sido']} {c['sigungu']}") not in done] or cands
+        if not fresh:
+            raise SystemExit("시·군·구 글감 없음(열린 사업 15건 미만)")
+        c = fresh[0]
+        return f"{c['sido']} {c['sigungu']}", {"stats": rpc(sb, "blog_sigungu_stats", {"p_sido": c["sido"], "p_sigungu": c["sigungu"]})}
     raise SystemExit(f"모르는 갈래: {kind}")
 
 
@@ -561,38 +888,68 @@ def compose(kind: str, picked: dict) -> dict:
     if kind == "topic": return write_topic(picked["topic"], picked["stats"])
     if kind == "org": return write_org(picked["stats"])
     if kind == "role": return write_role(picked["role"], picked["stats"])
-    return write_region(picked["stats"])
+    if kind == "region": return write_region(picked["stats"])
+    if kind == "license": return write_license(picked["stats"])
+    return write_sigungu(picked["stats"])
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--kind", choices=KINDS)
-    ap.add_argument("--subject")
-    ap.add_argument("--dry", action="store_true")
-    a = ap.parse_args()
+def kinds_today(count: int, day: int | None = None) -> list[str]:
+    """오늘 차례의 갈래. 둘이면 세 갈래 건너 짝(주제+지역, 기관+자격증, 직무+시군구)이 된다."""
+    d = today().timetuple().tm_yday if day is None else day
+    return [KINDS[(d + i * (len(KINDS) // 2)) % len(KINDS)] for i in range(max(1, min(count, len(KINDS))))]
 
-    from supabase import create_client
-    sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
 
-    rows = sb.table("blog_posts").select("kind,subject").execute().data or []
-    done = {(r["kind"], r["subject"]) for r in rows}
-    kind = a.kind or KINDS[today().timetuple().tm_yday % len(KINDS)]
-    subject, picked = pick(kind, done, sb, a.subject)
+def write_one(sb, kind: str, subject: str | None, done: set[tuple[str, str]], dry: bool) -> str:
+    subject, picked = pick(kind, done, sb, subject)
     post = compose(kind, picked)
     post["stats"] = picked["stats"]
     toc = post.pop("toc")
     post["body"] = [{"type": "toc", "items": [{"id": i, "label": l} for i, l in toc]}] + post["body"]
 
     print(f"[{kind}] {subject} → {post['slug']}: {post['title']}")
-    if a.dry:
+    if dry:
         print(json.dumps(post, ensure_ascii=False, indent=1)[:4000])
-        return
+        return post["slug"]
     row = {k: post[k] for k in ("slug", "kind", "subject", "title", "summary", "keywords", "body", "stats")}
     row["updated_at"] = "now()"
     if (kind, subject) not in done:
         row["published_at"] = today().isoformat()
     sb.table("blog_posts").upsert(row, on_conflict="slug").execute()
+    done.add((kind, subject))
     print(f"저장: {SITE}/story/{post['slug']}")
+    return post["slug"]
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--kind", choices=KINDS)
+    ap.add_argument("--subject")
+    ap.add_argument("--count", type=int, default=1, help="오늘 차례에서 몇 갈래를 쓸지(갈래를 지정하면 무시)")
+    ap.add_argument("--dry", action="store_true")
+    a = ap.parse_args()
+
+    from supabase import create_client
+    url, key = os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"]
+    try:
+        from supabase import ClientOptions
+        sb = create_client(url, key, options=ClientOptions(postgrest_client_timeout=120))
+    except Exception:  # noqa: BLE001 — 옛 버전은 옵션 이름이 다르다
+        sb = create_client(url, key)
+
+    rows = sb.table("blog_posts").select("kind,subject").execute().data or []
+    done = {(r["kind"], r["subject"]) for r in rows}
+    kinds = [a.kind] if a.kind else kinds_today(a.count)
+    written = 0
+    for kind in kinds:
+        try:
+            write_one(sb, kind, a.subject if a.kind else None, done, a.dry)
+            written += 1
+        except SystemExit as e:
+            print(f"[{kind}] 건너뜀: {e}", file=sys.stderr)
+        except Exception as e:  # noqa: BLE001 — 한 갈래가 실패해도 다음 갈래는 쓴다
+            print(f"[{kind}] 실패: {type(e).__name__}: {e}", file=sys.stderr)
+    if not written:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 name: blog-daily
 
-# 모아 둔 자료로 매일 블로그 글 한 편. 수집·정규화가 끝난 아침에 돈다.
+# 모아 둔 자료로 매일 블로그 글 두 편(여섯 갈래를 세 갈래 건너 짝지어 돈다). 수집·정규화가 끝난 아침에 돈다.
+# 갈래: topic 지원 주제 / org 기관 / role 직무 / region 시·도 / license 자격증 / sigungu 시·군·구
 on:
   workflow_dispatch:
     inputs:
@@ -8,11 +9,19 @@ on:
         description: "갈래 (비우면 오늘 차례)"
         required: false
         type: choice
-        options: ["", "topic", "org", "role", "region"]
+        options: ["", "topic", "org", "role", "region", "license", "sigungu"]
       subject:
-        description: "글감 (기관 이름, 직무 key, 주제 slug, 시·도)"
+        description: "글감 (기관 이름, 직무 key, 주제 slug, 시·도, 종목 코드·이름, 시·군·구)"
         required: false
         type: string
+      count:
+        description: "갈래를 비웠을 때 오늘 차례에서 몇 편 쓸지"
+        default: "2"
+        type: string
+      dry:
+        description: "DB 에 쓰지 않고 글만 찍어 본다"
+        default: false
+        type: boolean
   schedule:
     - cron: "30 0 * * *"    # UTC 00:30 = KST 09:30
 
@@ -37,8 +46,11 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           KIND: ${{ inputs.kind }}
           SUBJECT: ${{ inputs.subject }}
+          COUNT: ${{ inputs.count || '2' }}
+          DRY: ${{ inputs.dry }}
         run: |
-          args=""
+          args="--count $COUNT"
           [ -n "$KIND" ] && args="$args --kind $KIND"
           [ -n "$SUBJECT" ] && args="$args --subject \"$SUBJECT\""
+          [ "$DRY" = "true" ] && args="$args --dry"
           eval python -u pipeline/blog_daily.py $args

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
-import { ArtJeonse, ArtJobs, ArtPolicy } from "@/components/Art";
+import { ArtJeonse, ArtJobs, ArtLicense, ArtPolicy } from "@/components/Art";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   });
 }
 
-const ART: Record<string, (p: { className?: string }) => JSX.Element> = { org: ArtJobs, role: ArtJobs, region: ArtPolicy, topic: ArtJeonse };
+const ART: Record<string, (p: { className?: string }) => JSX.Element> = { org: ArtJobs, role: ArtJobs, region: ArtPolicy, topic: ArtJeonse, license: ArtLicense, sigungu: ArtPolicy };
 
 export default async function StoryPage({ params }: P) {
   const slug = decodeURIComponent(params.slug);

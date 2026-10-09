@@ -1,7 +1,7 @@
 import Glyph from "./Glyph";
 
 /**
- * 블로그 글의 머리 그림. 글마다 사진을 구할 수 없으니 갈래(주제·기관·직무·지역)에
+ * 블로그 글의 머리 그림. 글마다 사진을 구할 수 없으니 갈래(주제·기관·직무·지역·자격증·시군구)에
  * 따라 색과 표식을 달리한 띠를 쓴다. 목록이 잡지처럼 보이게 하는 것이 목적이다.
  */
 const KIND: Record<string, { from: string; to: string; glyph: string; label: string }> = {
@@ -9,6 +9,8 @@ const KIND: Record<string, { from: string; to: string; glyph: string; label: str
   org:    { from: "#0F766E", to: "#2DD4BF", glyph: "pin",      label: "기관 톺아보기" },
   role:   { from: "#B45309", to: "#F59E0B", glyph: "user",     label: "직무별 채용 시기" },
   region: { from: "#BE123C", to: "#FB7185", glyph: "chart",    label: "지역별 지원" },
+  license:{ from: "#1D4ED8", to: "#60A5FA", glyph: "calendar", label: "자격증 합격률·일정" },
+  sigungu:{ from: "#047857", to: "#34D399", glyph: "lowincome",label: "우리 동네 지원" },
   story:  { from: "#1E1B4B", to: "#3B2FB5", glyph: "book",     label: "사례" },
 };
 
