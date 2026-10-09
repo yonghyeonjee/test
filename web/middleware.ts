@@ -22,7 +22,7 @@ export const config = {
 };
 
 /** 쪽 이름이 아니라 그 자체로 뜻이 있는 경로. 손대지 않는다. */
-const PASS = new Set(["region", "org", "majors", "overseas", "search"]);
+const PASS = new Set(["region", "org", "majors", "overseas", "search", "guide"]);
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
