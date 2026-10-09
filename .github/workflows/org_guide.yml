@@ -1,0 +1,50 @@
+name: org-guide
+
+# 기관별 자기소개서·직무수행계획서 작성 가이드. 하루 세 곳씩, 찾는 사람 많고 접수 중인 공고 많은 기관부터.
+# 한 기관에 Gemini 두 번(검색 접지 1회 + JSON 정리 1회). 글은 120일에 한 번만 다시 쓴다.
+on:
+  workflow_dispatch:
+    inputs:
+      org:
+        description: "기관 이름 (비우면 오늘 차례)"
+        required: false
+        type: string
+      count:
+        description: "기관을 비웠을 때 몇 곳"
+        default: "3"
+        type: string
+      dry:
+        description: "DB 에 쓰지 않고 결과만 찍어 본다"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "10 1 * * *"    # UTC 01:10 = KST 10:10. 블로그(00:30) 다음
+
+concurrency:
+  group: org-guide
+  cancel-in-progress: false
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python pipeline/test_org_guide.py
+      - name: 가이드 쓰기
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GEMINI_API_KEY:       ${{ secrets.GEMINI_API_KEY }}
+          ORG: ${{ inputs.org }}
+          COUNT: ${{ inputs.count || '3' }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          args="--count $COUNT"
+          [ -n "$ORG" ] && args="$args --org \"$ORG\""
+          [ "$DRY" = "true" ] && args="$args --dry"
+          eval python -u pipeline/org_guide.py $args

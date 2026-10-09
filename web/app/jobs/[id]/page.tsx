@@ -18,6 +18,7 @@ import MiniMap from "@/components/MiniMap";
 import { jobEvents } from "@/lib/calEvents";
 import { locateJob } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/db";
+import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
@@ -164,10 +165,11 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     return <JobGone />;
   }
-  const [related, stat, attach] = await Promise.all([
+  const [related, stat, attach, guide] = await Promise.all([
     getRelatedJobs(job),
     job.org ? getOrgStat(job.org) : Promise.resolve(null),
     getJobAttach(job.id),
+    getGuideByOrg(job.org),
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
@@ -368,6 +370,15 @@ export default async function JobDetail({ params }: P) {
         <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
           {jobIntro(job).map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
         </div>
+        {guide && (
+          <Link href={guidePath(guide.slug)} className="card card-link mt-4 flex items-center justify-between gap-3 border-brand/30 bg-brandSoft/40 px-5 py-4">
+            <span>
+              <span className="text-[12px] font-bold text-brand">작성 가이드</span>
+              <b className="mt-0.5 block text-[15px] leading-snug">{guide.org} 자기소개서·직무수행계획서 작성법</b>
+            </span>
+            <span aria-hidden className="text-faint">›</span>
+          </Link>
+        )}
       </section>
 
       {/* 이 기관이 언제·얼마나 뽑는지. 공고 원문을 그대로 실은 사이트에는 없는
