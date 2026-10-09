@@ -41,10 +41,10 @@ export default async function StoryIndex() {
       <div className="flex items-start justify-between gap-6">
         <div>
           <p className="eyebrow">블로그</p>
-          <h1 className="display mt-2 text-[1.9rem] leading-tight">자료가 말해 주는 것, 매일 한 편</h1>
+          <h1 className="display mt-2 text-[1.9rem] leading-tight">자료가 말해 주는 것, 매일 두 편</h1>
           <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
-            제도 설명은 지원금 안내에 있습니다. 여기서는 모아 둔 자료를 세어 나온 것을 매일 한 편씩
-            적습니다 — 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지. 사례 글은
+            제도 설명은 지원금 안내에 있습니다. 여기서는 모아 둔 자료를 세어 나온 것을 매일 두 편씩
+            적습니다 — 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지, 자격증 합격률은 어떤지. 사례 글은
             여러 경우를 섞어 각색합니다.
           </p>
         </div>

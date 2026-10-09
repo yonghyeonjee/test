@@ -606,9 +606,12 @@ def write_license(s: dict) -> dict:
     blocks.append(P(lead.strip()))
     blocks.append(P(f"응시 자격·시험 과목과 전체 일정은 [{name} 종목 페이지]({lic_url})에, 다른 종목은 [자격증 전체](/license)에 있습니다."))
 
-    toc.append(("sched", f"{t.year}년 남은 시험 일정"))
-    blocks.append(H2(f"{t.year}년 남은 시험 일정", "sched"))
-    if upcoming:
+    sched_h = f"{t.year}년 남은 시험 일정" if events else "시험 일정은 어디서 보나"
+    toc.append(("sched", sched_h))
+    blocks.append(H2(sched_h, "sched"))
+    if not events:
+        blocks.append(P(f"큐넷 정기 시험 표에 이 종목의 올해 일정이 없습니다. 지게차·굴착기처럼 **상시 시험**으로 치르는 기능사 종목은 정기표가 아니라 큐넷의 상시시험 접수 화면에서 날짜를 고릅니다. [{name} 종목 페이지]({lic_url})의 큐넷 링크로 들어가 '상시' 일정을 봅니다."))
+    elif upcoming:
         blocks.append(TABLE(["회차", "단계", "접수", "시험", "발표"],
                             [[e["label"], e["stage"], reg_state(e, t), krange(e["exam_start"], e.get("exam_end")), kdate(e.get("pass")) or "—"] for e in upcoming[:8]]))
         nxt = upcoming[0]
@@ -694,10 +697,13 @@ def write_license(s: dict) -> dict:
     blocks.append(LIST(tips))
     blocks.append(NOTE(f"{t.isoformat()} 기준, 큐넷(q-net.or.kr) 종목별 일정과 수험자 동향을 {BRAND}이 모아 센 숫자입니다. 합격률은 응시자 대비 합격자이고 접수자 기준이 아닙니다. 일정은 큐넷 공고가 기준입니다."))
 
-    if "필기" in agg and "실기" in agg:
-        title = f"{name} 합격률 필기 {agg['필기'][2]}%·실기 {agg['실기'][2]}% — {t.year}년 남은 시험 일정과 준비 순서"
+    rate_txt = f"필기 {agg['필기'][2]}%·실기 {agg['실기'][2]}%" if ("필기" in agg and "실기" in agg) else f"{pct(passers, takers)}%"
+    if upcoming:
+        title = f"{name} 합격률 {rate_txt} — {t.year}년 남은 시험 일정과 준비 순서"
+    elif bottleneck:
+        title = f"{name} 합격률 {rate_txt} — {yr_txt} 응시자 {n(takers)}명, 고비는 {bottleneck[0]}"
     else:
-        title = f"{name} 합격률 {pct(passers, takers)}% — {t.year}년 남은 시험 일정과 준비 순서"
+        title = f"{name} 합격률 {rate_txt} — {yr_txt} 응시자 {n(takers)}명"
     summary = (f"큐넷 수험자 동향으로 {name}의 {yr_txt} 응시자 {n(takers)}명과 단계별 합격률을 세고, "
                + (f"{t.year}년 남은 시험 {len(upcoming)}회 일정을 표로 정리했습니다." if upcoming else "올해 일정과 같은 분야 종목을 함께 봅니다."))
     kw = [BRAND, name, f"{name} 합격률", f"{name} 시험일정", f"{name} 접수", f"{name} 난이도", f"{series} 합격률" if series else "자격증 합격률"]

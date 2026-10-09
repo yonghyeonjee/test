@@ -3,7 +3,7 @@ import { db, dbConfigured } from "./db";
 /**
  * 블로그 글. 두 가지가 있다.
  *  - 코드에 적힌 글(/story/jeonse-extension 같은 것): 사례를 따라가는 안내문.
- *  - 자료에서 매일 한 편씩 만드는 글(blog_posts): 파이프라인이 숫자를 세어
+ *  - 자료에서 매일 두 편씩 만드는 글(blog_posts): 파이프라인이 숫자를 세어
  *    문장으로 옮겨 둔 것. 여기서는 그 블록을 읽어 그린다.
  */
 export type Block =
