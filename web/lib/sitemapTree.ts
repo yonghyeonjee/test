@@ -18,6 +18,7 @@ import { POSTS } from "./posts";
 import { getJobHires, getJobRegions, getTopJobIds, getTopOrgs } from "./pubJobs";
 import { getLicenses } from "./qnet";
 import { getStories } from "./stories";
+import { getGuides, guidePath } from "./guides";
 import { TOPICS } from "./topics";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
@@ -80,10 +81,12 @@ async function programs(): Promise<Entry[]> {
   ];
 }
 
-/** 채용: 구분(넷뿐이라 전부)·지역·기관(공고 여덟 건 이상, 300곳) 목차와 최근 400건. */
+/** 채용: 구분(넷뿐이라 전부)·지역·기관(공고 여덟 건 이상, 300곳) 목차와 최근 400건, 기관별 작성 가이드. */
 async function jobs(): Promise<Entry[]> {
-  const [hires, regions, orgs, ids] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(400)]);
+  const [hires, regions, orgs, ids, guides] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(400), getGuides(300)]);
   return [
+    e("/jobs/guide", "daily", 0.8),
+    ...guides.map((g) => e(guidePath(g.slug), "monthly", 0.7, day(g.updated_at))),
     ...hires.map((h) => e(`/jobs/hire/${encodeURIComponent(h.hire)}`, "daily", 0.7)),
     ...regions.map((r) => e(`/jobs/region/${encodeURIComponent(r.sido)}`, "daily", 0.7)),
     ...orgs.map((o) => e(`/jobs/org/${encodeURIComponent(o.org)}`, "weekly", 0.6)),

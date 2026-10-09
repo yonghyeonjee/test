@@ -12,6 +12,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { YearBars } from "@/components/TrendBars";
+import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getOrgPosts, getOrgTrend, indexWord, pctChange, titleMix, type OrgPost } from "@/lib/jobTrend";
 import { dot, getJobsByOrg, getOrgStat, peakMonths } from "@/lib/pubJobs";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
@@ -64,7 +65,7 @@ export default async function JobsByOrg({ params }: P) {
   const route = readJobRoute(["org"], params.seg);
   if (!route) notFound();
   const org = route.org!;
-  const [board, stat, trend, own] = await Promise.all([getJobsByOrg(org), getOrgStat(org), getOrgTrend(org), getOrgPosts(org)]);
+  const [board, stat, trend, own, guide] = await Promise.all([getJobsByOrg(org), getOrgStat(org), getOrgTrend(org), getOrgPosts(org), getGuideByOrg(org)]);
   if (!stat && !board.jobs.length) notFound();
   // 공고가 있는 기관인데 목록만 못 읽었으면 잠깐 DB 가 늦은 것이다. 이 그림을 세 시간 동안
   // 캐시에 남기지 않게 던진다. 다시 그리는 중이면 Next 가 이전에 그린 쪽을 계속 보인다.
@@ -239,6 +240,15 @@ export default async function JobsByOrg({ params }: P) {
 
       <section className="mt-14" aria-labelledby="org-prep-h">
         <h2 id="org-prep-h" className="sec-title text-[1.0625rem] font-extrabold">{org} 지원서 준비</h2>
+        {guide && (
+          <Link href={guidePath(guide.slug)} className="card card-link mt-4 block border-brand/30 bg-brandSoft/40 p-5">
+            <span className="text-[12px] font-bold text-brand">작성 가이드</span>
+            <b className="mt-1 block text-[15.5px] leading-snug">{org} 자기소개서·직무수행계획서 작성법</b>
+            <span className="mt-1.5 block text-[13.5px] leading-relaxed text-muted">
+              공식 누리집·공고에서 찾은 인재상과 문항, 전형 절차, 접수 기간에 맞춘 쓰는 순서.
+            </span>
+          </Link>
+        )}
         <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
           <p>
             자기소개서와 이력서는 공고문의 <b>응시 자격, 우대 사항, 제출 서류</b> 칸에서 시작하면 됩니다. 같은 기관이라도 자리마다
