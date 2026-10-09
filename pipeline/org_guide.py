@@ -31,7 +31,7 @@ from urllib.parse import unquote, urlparse
 SITE = "https://jiwon.knowhow-it.com"
 BRAND = "K나라지원"
 # 검색 접지 할당량이 모델마다 다르다. 앞 모델이 429(할당량 소진)면 다음 모델로 넘어간다. 실제로 쓴 모델을 글에 적는다.
-MODELS = [m.strip() for m in os.environ.get("GEMINI_MODELS", "gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemini-2.5-flash").split(",") if m.strip()]
+MODELS = [m.strip() for m in (os.environ.get("GEMINI_MODELS") or "gemini-3.5-flash-lite,gemini-3.5-flash,gemini-3.1-flash-lite").split(",") if m.strip()]
 MODEL = MODELS[0]
 REFRESH_DAYS = 120
 
@@ -212,7 +212,9 @@ def gemini_client():
 
 
 def is_quota(e: Exception) -> bool:
-    return "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)
+    """할당량 소진(429)이거나 모델이 없어진 것(404). 둘 다 기다려도 안 풀리니 다음 모델로 간다."""
+    t = str(e)
+    return "429" in t or "RESOURCE_EXHAUSTED" in t or "404" in t or "NOT_FOUND" in t
 
 
 def with_retry(fn, tries: int = 3, what: str = ""):
@@ -240,9 +242,18 @@ def generate(client, what: str, **kw):
         except Exception as e:  # noqa: BLE001
             last = e
             if is_quota(e):
-                print(f"  {what}: {m} 할당량 소진 → 다음 모델. {str(e)[:600]}", file=sys.stderr)
+                print(f"  {what}: {m} 못 씀 → 다음 모델. {str(e)[:400]}", file=sys.stderr)
                 continue
             raise
+    # 전부 막혔다. 검색 접지만 막힌 것인지(결제 필요) 모델 자체가 막힌 것인지 한 번 가려 본다.
+    if kw.get("config") is not None and getattr(kw["config"], "tools", None):
+        for m in MODELS:
+            try:
+                client.models.generate_content(model=m, contents="답: 1")
+                print(f"  진단: {m} 은 일반 호출은 되지만 검색 접지(google_search)는 할당량이 없다. Google AI Studio 프로젝트에 결제를 켜야 한다.", file=sys.stderr)
+                break
+            except Exception as e2:  # noqa: BLE001
+                print(f"  진단: {m} 일반 호출도 막힘. {str(e2)[:200]}", file=sys.stderr)
     raise last or RuntimeError("모델 없음")
 
 
