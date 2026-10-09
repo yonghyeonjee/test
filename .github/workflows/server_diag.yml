@@ -31,6 +31,10 @@ jobs:
             echo; echo "== 디스크"; df -h / | tail -1
             echo "-- 많이 쓰는 곳"; sudo du -sh /srv/jiwon/releases/* /var/log/journal /var/lib/caddy /tmp 2>/dev/null | sort -h | tail -8
             echo "-- 지금 배포의 Next 캐시"; sudo du -sh /srv/jiwon/current/.next/cache /srv/jiwon/current/.next/server 2>/dev/null
+            echo "-- 페이지 캐시가 쌓이는 경로(상위 12)"; sudo du -s /srv/jiwon/current/.next/server/app/* /srv/jiwon/current/.next/server/app/*/* 2>/dev/null | sort -n | tail -12
+            echo "-- 경로별 파일 수"; for d in /srv/jiwon/current/.next/server/app/*/; do printf "%s %s\n" "$(sudo find "$d" -type f | wc -l)" "$d"; done | sort -n | tail -8
+            echo; echo "== 최근 6시간 요청이 몰린 경로(앞 두 마디)"; sudo journalctl -u caddy -S -6h --no-pager -o cat 2>/dev/null | grep -o "\"uri\":\"[^\"]*" | cut -d\" -f4 | cut -d/ -f1-3 | cut -d? -f1 | sort | uniq -c | sort -n | tail -12
+            echo "-- 최근 6시간 많이 온 봇"; sudo journalctl -u caddy -S -6h --no-pager -o cat 2>/dev/null | grep -o -i -E "[a-z-]*bot[a-z-]*/[0-9.]+" | sort | uniq -c | sort -n | tail -10
             echo; echo "== CPU 압박(PSI)"; cat /proc/pressure/cpu 2>/dev/null; echo "-- 메모리 압박"; cat /proc/pressure/memory 2>/dev/null
             echo; echo "== CPU 도둑(steal) 포함 사용률 — 버스트 소진이면 st 가 큼"; top -bn1 | head -5
             echo; echo "== 메모리 많이 쓰는 프로세스"; ps aux --sort=-rss | head -12
