@@ -4,10 +4,12 @@ org_guide.py — 기관별 "자기소개서·직무수행계획서 작성 가이
 취업 준비하는 사람이 검색창에 치는 말은 "OO공사 자소서", "OO 직무수행계획서" 다. 그 답을 기관마다
 한 쪽씩 만들어 둔다. 사이트는 저장된 글만 읽으니 빠르고, 글은 120일에 한 번만 다시 쓰니 싸다.
 
-재료는 둘이다.
+재료는 셋이다.
   1. 우리 자료(job_posts·blog_org_stats): 공고 수, 접수 기간, 임기제·공무직 같은 자리 구성, 첨부 파일(공고문·지원서·직무기술서)
-  2. 웹 검색(Gemini 검색 접지, 한 기관에 두 번 호출): 기관이 밝힌 인재상·핵심가치, 전형 절차, 공식 공고에 실린 자소서 문항,
-     직무수행계획서 요구. 공식 출처(누리집·알리오·나라일터)만 쓰고, 출처 없는 항목은 버린다.
+  2. 기관이 나라일터에 붙인 공고문 PDF(최근 세 건): 전형 절차, 제출 서류, 자소서 문항, 직무수행계획서 분량을 모델이 문서에서만 뽑는다.
+     1차 자료라 가장 믿을 만하고, 일반 호출이라 무료 할당량으로 돈다. 출처는 우리 공고 쪽(/jobs/<id>).
+  3. 웹 검색(Gemini 검색 접지): 기관이 밝힌 인재상·핵심가치·공식 누리집. 접지 할당량이 없으면(결제 꺼짐) 건너뛴다.
+     공식 출처(누리집·알리오·나라일터)만 쓰고, 출처 없는 항목은 버린다.
 
 지어내지 않는다. 검색으로 확인되지 않은 것은 "확인하지 못했다"고 적고 공고문으로 보낸다.
 작성 틀(문항 유형별 구조, 직무수행계획서 뼈대)은 우리가 쓴 일반 안내다.
@@ -260,8 +262,14 @@ def generate(client, what: str, **kw):
 def search_facts(client, org: str) -> tuple[dict, list[dict], str]:
     """(facts, sources, memo). 1) 검색 접지로 메모를 얻고 2) 그 메모만 JSON 으로 옮긴다(접지와 JSON 출력은 한 호출에 못 섞는다)."""
     from google.genai import types
-    r = generate(client, "검색", contents=search_prompt(org),
-                 config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())], temperature=0.1))
+    try:
+        r = generate(client, "검색", contents=search_prompt(org),
+                     config=types.GenerateContentConfig(tools=[types.Tool(google_search=types.GoogleSearch())], temperature=0.1))
+    except Exception as e:  # noqa: BLE001
+        if is_quota(e):
+            print("  검색 접지 할당량 없음(Google AI 결제 꺼짐) → 공고문만으로 씁니다.", file=sys.stderr)
+            return {}, [], ""
+        raise
     memo = r.text or ""
     sources: list[dict] = []
     try:
@@ -286,9 +294,108 @@ def search_facts(client, org: str) -> tuple[dict, list[dict], str]:
     return facts, sources, memo
 
 
+PDF_MAX_BYTES = 15 * 1024 * 1024
+PDF_MAX_PAGES = 15
+DOC_CHARS = 14000
+GOJOBS = "https://www.gojobs.go.kr"
+
+
+def file_url(f: dict) -> str:
+    from urllib.parse import quote
+    return f"{GOJOBS}/downFile.do?filenm={quote(f.get('name', ''))}&uuid={quote(f.get('uuid', ''))}&saveGbn={quote(f.get('path', ''))}"
+
+
+def pdf_text(data: bytes) -> str:
+    from io import BytesIO
+    from pypdf import PdfReader
+    out = []
+    reader = PdfReader(BytesIO(data))
+    for page in reader.pages[:PDF_MAX_PAGES]:
+        try:
+            out.append(page.extract_text() or "")
+        except Exception:  # noqa: BLE001 — 글자 못 뽑는 쪽은 건너뜀
+            continue
+    return re.sub(r"[ \t]+", " ", "\n".join(out)).strip()
+
+
+def pick_docs(rows: list[dict], limit: int = 3) -> list[dict]:
+    """최근 공고 가운데 PDF 공고문(또는 지원서·직무기술서 PDF)이 붙은 것. 한 공고에서 PDF 둘까지."""
+    docs = []
+    for r in rows:
+        files = (((r.get("raw") or {}).get("gojobs") or {}).get("files")) or []
+        pdfs = [f for f in files if (f.get("ext") or "").lower() == "pdf" or (f.get("name") or "").lower().endswith(".pdf")]
+        pdfs.sort(key=lambda f: (classify_file(f.get("name", "")) not in ("공고문", "입사지원서·응시원서", "자기소개서", "직무수행계획서"), f.get("name", "")))
+        if pdfs:
+            docs.append({"id": r["source_id"], "title": r.get("title") or "", "reg": r.get("reg_date"), "files": pdfs[:2]})
+        if len(docs) >= limit:
+            break
+    return docs
+
+
+def fetch_docs(docs: list[dict]) -> list[dict]:
+    import requests
+    out = []
+    for d in docs:
+        texts = []
+        for f in d["files"]:
+            try:
+                r = requests.get(file_url(f), timeout=40, headers={"User-Agent": "Mozilla/5.0 (compatible; NarajiwonBot/1.0; +https://jiwon.knowhow-it.com/about)"}, stream=True)
+                if r.status_code != 200 or int(r.headers.get("content-length") or 0) > PDF_MAX_BYTES:
+                    continue
+                data = r.raw.read(PDF_MAX_BYTES + 1, decode_content=True)
+                if len(data) > PDF_MAX_BYTES or not data.startswith(b"%PDF"):
+                    continue
+                t = pdf_text(data)
+                if len(t) >= 200:
+                    texts.append(f"[{f.get('name')}]\n{t}")
+            except Exception as e:  # noqa: BLE001
+                print(f"  첨부 못 읽음 {f.get('name')}: {type(e).__name__}", file=sys.stderr)
+        if texts:
+            out.append({**d, "text": "\n\n".join(texts)[:DOC_CHARS]})
+    return out
+
+
+def doc_prompt(org: str, docs: list[dict]) -> str:
+    head = (f"다음은 '{org}'가 나라일터에 올린 채용 공고문(첨부 PDF)에서 뽑은 글이다. 문서에 적힌 것만 JSON 으로 정리해라. "
+            "문서에 없는 것은 빈 문자열·빈 배열로 둔다. 추측하거나 흔한 예를 만들어 넣지 마라.\n"
+            "- process.steps: 전형 절차를 순서대로(예: 서류전형, 필기시험, 면접). blind: 블라인드(무기명·학력 미기재) 채용이라고 적혀 있으면 yes.\n"
+            "- essay_questions: 자기소개서 문항이 문서에 '문항 원문'으로 있을 때만. limit 에 글자 수. position 에 어느 자리 공고인지.\n"
+            "- plan: 직무수행계획서(직무계획서·업무수행계획서)를 제출 서류로 요구하면 required=yes, 분량·양식을 format 에.\n"
+            "- rules: 기재 금지, 가점·우대, 제출 서류 유의사항 가운데 지원서 작성에 영향 주는 것.\n"
+            "- 각 항목의 source 에는 그 내용이 나온 문서의 [출처 주소]를 그대로 넣어라. mission·vision·values·ideal·official_site·recruit_page 는 공고문에 명시된 경우만.\n\n")
+    body = "\n\n".join(f"=== 문서 {i + 1}: {d['title']} ({kdate(d.get('reg'))} 등록) [출처 주소] {SITE}/jobs/{d['id']}\n{d['text']}" for i, d in enumerate(docs))
+    return head + body
+
+
+def doc_facts(client, org: str, docs: list[dict]) -> dict:
+    """공고문 PDF 에서 사실을 뽑는다. 일반 호출(접지 없음)이라 무료 할당량으로 돈다."""
+    if not docs:
+        return {}
+    from google.genai import types
+    r = generate(client, "공고문", contents=doc_prompt(org, docs),
+                 config=types.GenerateContentConfig(response_mime_type="application/json", response_schema=FACT_SCHEMA, temperature=0))
+    try:
+        return json.loads(r.text or "{}")
+    except json.JSONDecodeError:
+        return {}
+
+
+def merge_facts(doc: dict, web: dict) -> dict:
+    """공고문(1차 자료)이 우선. 인재상·누리집처럼 공고문에 없는 것은 웹 검색으로 채운다."""
+    out = dict(web)
+    for k in ("essay_questions", "rules", "values", "ideal"):
+        seen = {x["text"] for x in doc.get(k) or []}
+        out[k] = (doc.get(k) or []) + [x for x in (web.get(k) or []) if x["text"] not in seen]
+    out["process"] = doc.get("process") or web.get("process")
+    out["plan"] = doc.get("plan") or web.get("plan")
+    for k in ("official_site", "recruit_page", "mission", "vision"):
+        out[k] = doc.get(k) or web.get(k) or ""
+    return out
+
+
 def clean_facts(facts: dict, sources: list[dict]) -> dict:
     """출처 없는 것, 포털·커뮤니티 출처인 것을 버린다. 접지가 읽은 도메인 목록(제목이 도메인으로 온다)을 허용 목록에 더한다."""
-    allowed = {s["domain"] for s in sources if s.get("domain")}
+    allowed = {s["domain"] for s in sources if s.get("domain")} | {domain(SITE)}
     out: dict = {"official_site": "", "recruit_page": "", "mission": "", "vision": "", "values": [], "ideal": [], "process": None, "essay_questions": [], "plan": None, "rules": []}
     for k in ("official_site", "recruit_page"):
         v = (facts.get(k) or "").strip()
@@ -326,7 +433,7 @@ def clean_facts(facts: dict, sources: list[dict]) -> dict:
 
 def source_label(url: str) -> str:
     d = domain(url)
-    names = {"alio.go.kr": "알리오", "job.alio.go.kr": "잡알리오", "gojobs.go.kr": "나라일터", "work24.go.kr": "고용24"}
+    names = {"alio.go.kr": "알리오", "job.alio.go.kr": "잡알리오", "gojobs.go.kr": "나라일터", "work24.go.kr": "고용24", domain(SITE): "공고문"}
     return names.get(d, d)
 
 
@@ -578,11 +685,15 @@ def build(sb, client, org: str, dry: bool, exists: bool) -> dict:
     rows = sb.table("job_posts").select("source_id,title,reg_date,end_date,raw").eq("source", "gojobs").eq("org", org) \
         .order("reg_date", desc=True).limit(80).execute().data or []
     posts = shape_posts(rows)
-    raw_facts, sources, memo = search_facts(client, org)
-    facts = clean_facts(raw_facts, sources)
+    docs = fetch_docs(pick_docs(rows))
+    print(f"[{org}] 공고문 PDF {len(docs)}건 읽음" + (": " + ", ".join(d["title"][:30] for d in docs) if docs else ""))
+    facts_doc = doc_facts(client, org, docs)
+    raw_web, sources, memo = search_facts(client, org)
+    facts = clean_facts(merge_facts(facts_doc, raw_web), sources)
+    sources = sources + [{"title": d["title"], "uri": f"{SITE}/jobs/{d['id']}", "domain": domain(SITE)} for d in docs]
     post = compose(org, s, posts, facts, sources)
     kept = sum(len(facts[k]) for k in ("ideal", "values", "rules", "essay_questions")) + bool(facts["process"]) + bool(facts["plan"])
-    print(f"[{org}] 검색 출처 {len(sources)}곳, 살린 사실 {kept}개, 문항 {len(facts['essay_questions'])}개 → /jobs/guide/{post['slug']}")
+    print(f"[{org}] 출처 {len(sources)}곳, 살린 사실 {kept}개, 문항 {len(facts['essay_questions'])}개 → /jobs/guide/{post['slug']}")
     if dry:
         print(json.dumps({"facts": facts, "sources": sources[:8], "title": post["title"], "summary": post["summary"], "body": post["body"][:6], "faq": post["faq"]}, ensure_ascii=False, indent=1)[:6000])
         return post
