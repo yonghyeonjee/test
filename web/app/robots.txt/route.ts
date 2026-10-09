@@ -13,8 +13,12 @@ export const revalidate = 3600;
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 
-/** 색인할 쪽이 아닌 경로. 검색 결과·지도 조회는 조합이 무한해 긁게 두면 서버만 먹는다. */
-const HIDDEN = ["/admin", "/account", "/api/", "/search", "/find"];
+/**
+ * 색인할 쪽이 아닌 경로. 검색 결과·지도 조회는 조합이 무한해 긁게 두면 서버만 먹는다.
+ * 채용 목록의 검색어 조합(/jobs/…/q/…)은 원래 noindex 인데도 봇이 긁어, 쪽마다 서버 디스크에 저장돼
+ * 배포 폴더가 12시간 만에 3.3GB 가 됐다(2026-10-09). 긁는 것 자체를 막는다. 별표(*)는 구글·빙·퍼플렉시티가 따른다.
+ */
+const HIDDEN = ["/admin", "/account", "/api/", "/search", "/find", "/jobs/q/", "/jobs/*/q/"];
 
 /**
  * 통째로 막는 봇. 손님을 보내지 않으면서 쪽을 긁어 가는 것들 —
