@@ -756,9 +756,9 @@ def compose(org: str, s: dict, posts: dict, facts: dict, sources: list[dict]) ->
     got = [x for x, ok_ in (("인재상", facts.get("ideal") or facts.get("values")), ("문항", qs), ("전형 절차", pr), ("유의사항", facts.get("rules"))) if ok_]
     tail = ", ".join(got) if got else "공고문으로 확인하는 법과 작성 틀"
     title = f"{org} 자기소개서·직무수행계획서 작성법 — {tail} ({year}년 채용 기준)"
-    summary = (f"{josa(org, '이가')} 공식 누리집과 공고에서 밝힌 " + ("·".join(got) if got else "자료")
-               + (f"(자기소개서 문항 {len(qs)}개 포함)" if qs else "")
-               + f"를 모으고, 최근 3년 공고 {n(n3y)}건의 자리 구성과 접수 기간에 맞춰 자기소개서와 직무수행계획서 쓰는 순서를 정리했습니다.")
+    what = ("·".join(got) if got else "자료") + (f"(자기소개서 문항 {len(qs)}개 포함)" if qs else "")
+    summary = (f"{josa(org, '이가')} 공식 누리집과 공고에서 밝힌 {josa(what, '을를')} 모으고, "
+               f"최근 3년 공고 {n(n3y)}건의 자리 구성과 접수 기간에 맞춰 자기소개서와 직무수행계획서 쓰는 순서를 정리했습니다.")
     kw = [f"{org} 자소서", f"{org} 자기소개서", f"{org} 자기소개서 문항", f"{org} 직무수행계획서", f"{org} 인재상", f"{org} 채용 전형", f"{org} 채용",
           "공공기관 자기소개서 작성법", "직무수행계획서 작성법", BRAND]
     return {"org": org, "slug": slugify(org), "title": title, "summary": summary, "keywords": kw,

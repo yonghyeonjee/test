@@ -51,7 +51,7 @@ STATS = {"org": "한국농어촌공사", "n3y": 214, "open_n": 1, "win_med": 15,
 post = g.compose("한국농어촌공사", STATS, posts, facts, SOURCES)
 text = json.dumps(post, ensure_ascii=False)
 ok(post["slug"] == "한국농어촌공사" and "작성법 — 인재상, 문항, 전형 절차, 유의사항 (2026년 채용 기준)" in post["title"], post["title"])
-ok(post["summary"].startswith("한국농어촌공사가 ") and "문항 1개 포함" in post["summary"], post["summary"])
+ok(post["summary"].startswith("한국농어촌공사가 ") and "문항 1개 포함)을 모으고" in post["summary"], post["summary"])
 ok("**214건**" in text and "**15일**" in text, "공고 수·접수 기간")
 ok("소통하는 전문가 (ekr.or.kr)" in text and "신뢰 (ekr.or.kr)" in text, "인재상·가치와 출처")
 ok("서류 → 필기(NCS) → 면접" in text and "블라인드 채용으로 진행" in text, "전형 절차")
