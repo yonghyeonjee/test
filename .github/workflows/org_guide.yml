@@ -17,6 +17,10 @@ on:
         description: "DB 에 쓰지 않고 결과만 찍어 본다"
         default: false
         type: boolean
+      models:
+        description: "시도할 Gemini 모델(쉼표). 비우면 코드 기본값"
+        required: false
+        type: string
   schedule:
     - cron: "10 1 * * *"    # UTC 01:10 = KST 10:10. 블로그(00:30) 다음
 
@@ -40,6 +44,7 @@ jobs:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GEMINI_API_KEY:       ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODELS:        ${{ inputs.models }}
           ORG: ${{ inputs.org }}
           COUNT: ${{ inputs.count || '3' }}
           DRY: ${{ inputs.dry }}

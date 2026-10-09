@@ -50,7 +50,8 @@ STATS = {"org": "한국농어촌공사", "n3y": 214, "open_n": 1, "win_med": 15,
          "open_list": [{"id": "304682", "title": "2026년도 직무중심 신입사원(5급, 6급) 채용 공고", "end": "2026-10-19"}]}
 post = g.compose("한국농어촌공사", STATS, posts, facts, SOURCES)
 text = json.dumps(post, ensure_ascii=False)
-ok(post["slug"] == "한국농어촌공사" and "자기소개서·직무수행계획서 작성법" in post["title"], post["title"])
+ok(post["slug"] == "한국농어촌공사" and "작성법 — 인재상, 문항, 전형 절차, 유의사항 (2026년 채용 기준)" in post["title"], post["title"])
+ok(post["summary"].startswith("한국농어촌공사가 ") and "문항 1개 포함" in post["summary"], post["summary"])
 ok("**214건**" in text and "**15일**" in text, "공고 수·접수 기간")
 ok("소통하는 전문가 (ekr.or.kr)" in text and "신뢰 (ekr.or.kr)" in text, "인재상·가치와 출처")
 ok("서류 → 필기(NCS) → 면접" in text and "블라인드 채용으로 진행" in text, "전형 절차")
@@ -66,8 +67,22 @@ empty = g.clean_facts({}, [])
 post2 = g.compose("어느기관", {"n3y": 30, "open_n": 0, "win_med": None, "win_n": 0, "win_le7": 0, "open_list": []}, g.shape_posts([]), empty, [])
 text2 = json.dumps(post2, ensure_ascii=False)
 ok("확인하지 못해" in text2 and "확인하지 못했습니다" in text2, "못 찾았다고 적는다")
+ok("공고문으로 확인하는 법과 작성 틀" in post2["title"], post2["title"])
 ok("**지원 동기** —" in text2 and "임기제·전문경력관·개방형 자리가 보이지 않습니다" in text2, "일반 틀·자리 없음")
 ok("None" not in text2, "빈 값 없음 2")
+
+merged = g.merge_facts({"essay_questions": [{"text": "공고문 문항입니다 길게 적습니다", "limit": "500자", "year": "2026", "position": "6급", "source": "https://jiwon.knowhow-it.com/jobs/1"}],
+                        "process": {"steps": ["서류", "면접"], "blind": "yes", "source": "https://jiwon.knowhow-it.com/jobs/1"}, "plan": None, "rules": [], "values": [], "ideal": []},
+                       {"essay_questions": [{"text": "공고문 문항입니다 길게 적습니다", "limit": "", "year": "", "position": "", "source": "https://www.alio.go.kr/x"}],
+                        "process": {"steps": ["서류", "필기", "면접"], "blind": "unknown", "source": "https://www.alio.go.kr/x"}, "ideal": [{"text": "소통", "source": "https://www.ekr.or.kr"}], "official_site": "https://www.ekr.or.kr"})
+ok(len(merged["essay_questions"]) == 1 and merged["essay_questions"][0]["limit"] == "500자" and merged["process"]["steps"] == ["서류", "면접"], "공고문이 우선, 중복 문항 합침")
+ok(merged["ideal"][0]["text"] == "소통" and merged["official_site"] == "https://www.ekr.or.kr", "웹 검색으로 채움")
+cleaned = g.clean_facts(merged, [])
+ok(len(cleaned["essay_questions"]) == 1 and cleaned["process"]["source"].startswith("https://jiwon"), "우리 공고 쪽 주소는 출처로 인정")
+ok(g.source_label("https://jiwon.knowhow-it.com/jobs/1") == "공고문", "출처 이름: 공고문")
+docs = g.pick_docs(ROWS)
+ok(len(docs) == 1 and docs[0]["id"] == "304682" and docs[0]["files"][0]["name"].endswith("공고문.pdf"), "PDF 붙은 공고 고르기 " + str([d["id"] for d in docs]))
+ok("[출처 주소] https://jiwon.knowhow-it.com/jobs/304682" in g.doc_prompt("한국농어촌공사", [{**docs[0], "text": "본문"}]), "문서 프롬프트에 출처 주소")
 
 ok(g.decode_org("/jobs/org/%ED%95%9C%EA%B5%AD%EB%86%8D%EC%96%B4%EC%B4%8C%EA%B3%B5%EC%82%AC") == "한국농어촌공사", "방문 주소 풀기")
 ok(g.decode_org("/jobs/org/%EB%B2%95%EB%AC%B4%EB%B6%80/hire/%EA%B5%AD%EA%B0%80") == "법무부" and g.decode_org("/jobs/303583") is None, "방문 주소 풀기 2")
