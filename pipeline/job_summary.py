@@ -144,13 +144,18 @@ def targets(sb, days: int, limit: int, only_id: str | None) -> list[dict]:
         q = q.eq("source_id", only_id)
     else:
         today = dt.date.today()
+        # 요약 유무는 다른 표에 있어 DB 에서 걸러 올 수 없다. 기간 안의 공고를 다 읽고 여기서 거른다.
+        # 2026-10-09 limit*2 만 읽어 오다가, 앞쪽이 전부 요약된 뒤 뒤쪽 20건이 영영 안 잡혔다.
         q = (q.gte("reg_date", (today - dt.timedelta(days=days)).isoformat()).gte("end_date", today.isoformat())
-             .order("reg_date", desc=True).limit(limit * 2))
+             .order("reg_date", desc=True).limit(3000))
     rows = q.execute().data or []
     rows = [r for r in rows if pick_files(((r.get("raw") or {}).get("gojobs") or {}).get("files") or [])]
     if only_id:
         return rows
-    done = {d["source_id"] for d in (sb.table("job_summaries").select("source_id").in_("source_id", [r["source_id"] for r in rows]).execute().data or [])} if rows else set()
+    done: set[str] = set()
+    ids = [r["source_id"] for r in rows]
+    for i in range(0, len(ids), 200):  # in_ 은 주소 길이 한도가 있어 200개씩
+        done |= {d["source_id"] for d in (sb.table("job_summaries").select("source_id").in_("source_id", ids[i:i + 200]).execute().data or [])}
     return [r for r in rows if r["source_id"] not in done][:limit]
 
 
