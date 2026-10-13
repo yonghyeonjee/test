@@ -27,6 +27,24 @@ const hasOwnSearch = (p: string | null) => p === "/search" || p === "/business/s
  */
 export function SiteHeader({ index = {} }: { index?: Record<string, { sido: string; full: string }> }) {
   const path = usePathname();
+  const [sheet, setSheet] = useState(false);
+  useEffect(() => { setSheet(false); }, [path]);
+  useEffect(() => {
+    if (!sheet) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && setSheet(false);
+    window.addEventListener("keydown", k);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", k); document.body.style.overflow = prev; };
+  }, [sheet]);
+  // 휴대폰 갈래 탭은 가로로 넘친다. 고른 갈래가 보이게 그 줄만 옆으로 민다(쪽은 안 움직인다).
+  useEffect(() => {
+    const band = document.querySelector<HTMLElement>("nav.menu-band");
+    const on = band?.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (!band || !on) return;
+    const want = on.offsetLeft - (band.clientWidth - on.offsetWidth) / 2;
+    band.scrollTo({ left: Math.max(0, want) });
+  }, [path]);
   if (path?.startsWith("/admin")) return null;
   const { open, leaf } = current(path);
   const home = isHome(path);
@@ -45,26 +63,32 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
                 </span>
               )}
             </Link>
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
               {!hasOwnSearch(path) && <TopSearch index={index} />}
-              <BigText />
+              <div className="hidden sm:block"><BigText /></div>
+              {/* 휴대폰: 전체 메뉴. 글자 크기 단추는 그 안에 있다. 아래 탭 막대는 광고 띠에 가려 치웠다(2026-10-13). */}
+              <button type="button" onClick={() => setSheet(true)} aria-expanded={sheet} aria-label="전체 메뉴"
+                      className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-ink2 hover:bg-ground sm:hidden">
+                <PortalIcon name="menu" className="h-6 w-6" strokeWidth={2.1} />
+              </button>
             </div>
           </div>
 
-          {/* 휴대폰에서는 아래 탭 막대(홈·검색·정책지도·채용·전체)가 같은 일을 해서 위 메뉴 줄을 접는다. */}
+          {/* 갈래 탭. 휴대폰에서도 머리말이 위에 붙어 따라오니 이 줄이 늘 손 닿는 곳에 있다. */}
           <nav aria-label="주 메뉴"
-               className="menu-band -mx-5 hidden overflow-x-auto px-2 text-[15px] [scrollbar-width:none] sm:flex
-                          sm:mx-0 sm:-ml-3 sm:px-0 [&::-webkit-scrollbar]:hidden">
+               className="menu-band -mx-5 flex overflow-x-auto px-2 text-[14.5px] [scrollbar-width:none]
+                          sm:mx-0 sm:-ml-3 sm:px-0 sm:text-[15px] [&::-webkit-scrollbar]:hidden">
             {NAV.map((n) => (
               <Link key={n.href} href={n.href}
                     aria-current={open ? (open.href === n.href ? "page" : undefined) : hit(path, n) ? "page" : undefined}
-                    className="shrink-0 px-3 py-2.5 font-semibold transition-colors">
+                    className="shrink-0 whitespace-nowrap px-2.5 py-2 font-semibold transition-colors sm:px-3 sm:py-2.5">
                 {n.label}
               </Link>
             ))}
           </nav>
         </div>
       </header>
+      {sheet && <MenuSheet onClose={() => setSheet(false)} />}
 
       {/* 첫 화면에서는 하위 메뉴 줄을 두지 않는다 — 검색창이 바로 머리말 밑에 와야 한다. */}
       {open?.sub && !home && (
@@ -158,79 +182,6 @@ export function SiteFooter() {
         <p className="mt-3 text-[12px] text-faint">© K나라지원</p>
       </div>
     </footer>
-  );
-}
-
-/** 아래 탭 막대의 칸. sheet 는 전체 메뉴를 연다. */
-const TABS: { href?: string; label: string; icon: string; on?: (p: string) => boolean; sheet?: true; search?: true }[] = [
-  { href: "/", label: "홈", icon: "home", on: (p) => p === "/" || p === "/business" },
-  { href: "/search", label: "검색", icon: "search", search: true, on: (p) => p === "/search" || p === "/business/search" },
-  { href: "/map", label: "정책지도", icon: "map", on: (p) => p === "/map" },
-  { href: "/jobs", label: "채용", icon: "jobs", on: (p) => p === "/jobs" || p.startsWith("/jobs/") },
-  { label: "전체", icon: "menu", sheet: true },
-];
-
-/**
- * 휴대폰 아래 탭 막대. 엄지가 닿는 자리에 홈·검색·정책지도·채용·전체.
- *
- * 머리말은 휴대폰에서 붙박이가 아니라 스크롤하면 사라진다. 긴 화면을 읽다가
- * 다른 곳으로 가려면 맨 위까지 올라가야 했다 — 이 막대가 그 일을 한다.
- * "검색"은 화면에 큰 검색창이 있으면 거기로 초점을 옮기고(자판이 바로 뜬다),
- * 없으면 검색 화면으로 간다.
- */
-export function BottomBar() {
-  const path = usePathname() ?? "/";
-  const [sheet, setSheet] = useState(false);
-  useEffect(() => { setSheet(false); }, [path]);
-  useEffect(() => {
-    if (!sheet) return;
-    const k = (e: KeyboardEvent) => e.key === "Escape" && setSheet(false);
-    window.addEventListener("keydown", k);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", k); document.body.style.overflow = prev; };
-  }, [sheet]);
-  if (path.startsWith("/admin")) return null;
-
-  const focusSearch = (e: React.MouseEvent) => {
-    const input = document.querySelector<HTMLInputElement>("input[data-portal-search]");
-    if (!input) return;
-    e.preventDefault();
-    input.scrollIntoView({ block: "center" });
-    input.focus();
-  };
-
-  return (
-    <>
-      {/* 막대 높이만큼 문서 끝을 띄운다. 꼬리말 마지막 줄이 가리지 않게. */}
-      <div aria-hidden className="h-[calc(60px+env(safe-area-inset-bottom))] sm:hidden" />
-      <nav aria-label="빠른 이동"
-           className="bottom-bar fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur sm:hidden">
-        <ul className="grid h-[60px] grid-cols-5">
-          {TABS.map((t) => {
-            const on = t.on?.(path) ?? false;
-            const cls = `flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-semibold ${
-              on || (t.sheet && sheet) ? "text-ink" : "text-faint"}`;
-            const ic = <PortalIcon name={t.icon} className="h-[22px] w-[22px]" strokeWidth={on ? 2.3 : 1.9} />;
-            return (
-              <li key={t.label}>
-                {t.sheet ? (
-                  <button type="button" onClick={() => setSheet(true)} aria-expanded={sheet} className={`${cls} w-full`}>
-                    {ic}{t.label}
-                  </button>
-                ) : (
-                  <Link href={t.href!} onClick={t.search ? focusSearch : undefined}
-                        aria-current={on ? "page" : undefined} className={cls}>
-                    {ic}{t.label}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-      {sheet && <MenuSheet onClose={() => setSheet(false)} />}
-    </>
   );
 }
 

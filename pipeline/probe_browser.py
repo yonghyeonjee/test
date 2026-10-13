@@ -512,6 +512,44 @@ def check_style(browser) -> None:
     ctx.close()
 
 
+WIDE_JS = """() => {
+  const vw = document.documentElement.clientWidth;
+  const bad = [];
+  for (const e of document.querySelectorAll('body *')) {
+    const r = e.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    const cs = getComputedStyle(e);
+    if (cs.position === 'fixed') continue;
+    if (r.right > vw + 1 || r.left < -1) {
+      const inScroller = e.closest('[class*="overflow-x-auto"], .menu-band');
+      if (inScroller && inScroller !== e) continue;
+      const who = e.id || e.getAttribute('data-ad-status') || (e.closest('.ad-slot') ? '광고 안' : e.closest('[role="application"]') ? '지도 안' : '');
+      bad.push(`${e.tagName.toLowerCase()}.${String(e.className).split(' ').slice(0, 3).join('.')} ${Math.round(r.left)}~${Math.round(r.right)} (${Math.round(r.width)}px) ${who}`);
+    }
+    if (bad.length >= 12) break;
+  }
+  return { vw, scrollW: document.documentElement.scrollWidth, bodyScrollW: document.body.scrollWidth, scrollX: window.scrollX, bad };
+}"""
+
+
+def check_wide(browser, path: str) -> None:
+    """휴대폰 폭에서 가로로 넘치는 것이 있는지. 보통 모드와 '글자 크게' 모드 둘 다."""
+    print(f"\n== 가로 넘침 {path}")
+    for w in (360, 390):
+        ctx = browser.new_context(viewport={"width": w, "height": 780}, device_scale_factor=2, is_mobile=True, has_touch=True, locale="ko-KR")
+        page = ctx.new_page()
+        page.goto(path if path.startswith("http") else BASE + path, wait_until="domcontentloaded")
+        page.wait_for_timeout(2500)
+        for big in (False, True):
+            page.evaluate(f"() => document.documentElement.classList.toggle('big', {str(big).lower()})")
+            page.wait_for_timeout(600)
+            r = page.evaluate(WIDE_JS)
+            print(f"   {w}px {'크게' if big else '보통'}: 화면 {r['vw']} 문서 {r['scrollW']} body {r['bodyScrollW']} scrollX {r['scrollX']}")
+            for b in r["bad"]:
+                print("      넘침:", b)
+        ctx.close()
+
+
 def main() -> None:
     args = [a.strip() for a in (sys.argv[1] if len(sys.argv) > 1 else "map,home").split(",") if a.strip()]
     setup()
@@ -541,6 +579,8 @@ def main() -> None:
                     check_search(browser, a[5:])
                 elif a.startswith("org:"):
                     check_org(browser, a[4:])
+                elif a.startswith("wide:"):
+                    check_wide(browser, a[5:])
                 elif a.startswith("/search") or a.startswith("/business/search"):
                     check_home(browser, a)
                 elif a.startswith("/"):
