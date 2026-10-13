@@ -1,4 +1,5 @@
 import AdBox, { adReady } from "./AdBox";
+import SideRailDock from "./SideRailDock";
 import WideOnly from "./WideOnly";
 import { getSiteConfig } from "@/lib/settings";
 
@@ -11,6 +12,9 @@ import { getSiteConfig } from "@/lib/settings";
  * 들어갈 만큼 남는 1536px 이상에서만 보이고, 화면이 낮으면 감춘다 —
  * 오른쪽 아래 떠 있는 메뉴와 겹치면 안 된다.
  *
+ * 자리: 본문 오른쪽 끝에서 1rem 띄워 붙이고, 위쪽은 본문 시작선에 맞춘다(SideRailDock).
+ * 상자는 광고 높이만큼만 — 아래까지 늘려 빈 상자가 남지 않게(2026-10-13).
+ *
  * 화면 안 이동 때도 그대로 두려고 레이아웃에 둔다. 페이지마다 그리면
  * 옮길 때마다 광고가 새로 불린다.
  */
@@ -21,9 +25,9 @@ export default async function SideRailAd() {
   // css 와 같은 조건일 때만 붙인다 — 감춘 자리에 광고를 부르면 애드센스가 TagError 를 던진다.
   return (
     <WideOnly query="(min-width: 1536px) and (min-height: 880px)">
-      <div className="side-rail">
+      <SideRailDock>
         <AdBox cfg={s} tall rail />
-      </div>
+      </SideRailDock>
     </WideOnly>
   );
 }
