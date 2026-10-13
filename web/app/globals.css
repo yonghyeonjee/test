@@ -12,10 +12,18 @@
    */
   /* PC 에서는 살짝 크게. 넓은 화면에서 글자가 잘게 보인다는 말이 맞았다. */
   @media (min-width: 1280px) { body { zoom: 1.08; } }
-  html.big body { zoom: 1.25; }
+  /*
+   * "글자 크게"는 PC 에서만 zoom 으로. 휴대폰에서 body 를 zoom 하면 화면 폭이 288px 로 줄어드는데,
+   * 애드센스는 화면 px 로 폭을 재서 광고를 400px 로 그려 넣고 320px 고정 광고도 그대로라
+   * 쪽이 옆으로 넘쳐 왼쪽이 잘렸다(2026-10-13 휴대폰 화면). 휴대폰에서는 rem 만 키운다.
+   */
+  @media (min-width: 1024px) { html.big body { zoom: 1.25; } }
+  @media (max-width: 1023.98px) { html.big { font-size: 18px; } html.big body { font-size: 18px; } }
   @supports not (zoom: 1) {
     html.big { font-size: 20px; }
   }
+  /* 무엇이 넘쳐도 쪽이 옆으로 밀리지는 않게. */
+  html { overflow-x: clip; }
   /*
    * 바탕은 색기 없는 옅은 회색 한 장. 흰 카드가 그 위에 얹혀 덩어리가 갈린다
    * (네이버 모바일 첫 화면이 #EDF0F4 바탕에 흰 카드다). 보라 빛 번짐은 걷었다.

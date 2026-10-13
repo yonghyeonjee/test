@@ -523,7 +523,8 @@ WIDE_JS = """() => {
     if (r.right > vw + 1 || r.left < -1) {
       const inScroller = e.closest('[class*="overflow-x-auto"], .menu-band');
       if (inScroller && inScroller !== e) continue;
-      bad.push(`${e.tagName.toLowerCase()}.${String(e.className).split(' ').slice(0, 3).join('.')} ${Math.round(r.left)}~${Math.round(r.right)} (${Math.round(r.width)}px)`);
+      const who = e.id || e.getAttribute('data-ad-status') || (e.closest('.ad-slot') ? '광고 안' : e.closest('[role="application"]') ? '지도 안' : '');
+      bad.push(`${e.tagName.toLowerCase()}.${String(e.className).split(' ').slice(0, 3).join('.')} ${Math.round(r.left)}~${Math.round(r.right)} (${Math.round(r.width)}px) ${who}`);
     }
     if (bad.length >= 12) break;
   }
@@ -537,7 +538,7 @@ def check_wide(browser, path: str) -> None:
     for w in (360, 390):
         ctx = browser.new_context(viewport={"width": w, "height": 780}, device_scale_factor=2, is_mobile=True, has_touch=True, locale="ko-KR")
         page = ctx.new_page()
-        page.goto(BASE + path, wait_until="domcontentloaded")
+        page.goto(path if path.startswith("http") else BASE + path, wait_until="domcontentloaded")
         page.wait_for_timeout(2500)
         for big in (False, True):
             page.evaluate(f"() => document.documentElement.classList.toggle('big', {str(big).lower()})")
