@@ -26,18 +26,28 @@ function svc() {
 
 type Row = Record<string, unknown>;
 
-function Panel({ title, note, children }: {
-  title: string; note?: string; children: React.ReactNode;
+const JUMPS: [string, string][] = [
+  ["#a-health", "점검"], ["#a-visit", "유입"], ["#a-saved", "저장 조건"], ["#a-search", "검색"],
+  ["#a-collect", "수집"], ["#a-seo", "SEO"], ["#a-ads", "광고"], ["#a-settings", "설정"],
+];
+
+function Panel({ title, note, children, id }: {
+  title: string; note?: string; children: React.ReactNode; id?: string;
 }) {
   return (
-    <section className="card mt-4 p-5">
-      <div className="flex items-baseline justify-between">
+    <section id={id} className="card mt-4 scroll-mt-14 p-5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-sm font-bold">{title}</h2>
         {note && <span className="text-xs text-faint">{note}</span>}
       </div>
       <div className="mt-3">{children}</div>
     </section>
   );
+}
+
+/** 기록에 남은 주소는 %EC%84%9C 꼴이라 읽을 수 없다. 한글로 풀고, 못 풀면 그대로. */
+function pretty(v: string) {
+  try { return /%[0-9A-Fa-f]{2}/.test(v) ? decodeURIComponent(v) : v; } catch { return v; }
 }
 
 function Rank({ rows, keyName }: { rows: Row[]; keyName: string }) {
@@ -49,7 +59,7 @@ function Rank({ rows, keyName }: { rows: Row[]; keyName: string }) {
       {rows.map((r, i) => (
         <li key={i} className="flex items-center px-1 py-1.5 text-sm">
           <span className="num w-5 shrink-0 text-xs text-faint">{i + 1}</span>
-          <span className="truncate">{String(r[keyName] ?? "(없음)")}</span>
+          <span className="min-w-0 flex-1 break-all sm:flex-none sm:truncate">{pretty(String(r[keyName] ?? "(없음)"))}</span>
           <span className="ml-3 hidden h-1.5 flex-1 rounded-pill bg-line sm:block">
             <span className="block h-full rounded-pill bg-brand2/50"
                   style={{ width: `${(Number(r.n) / max) * 100}%` }} />
@@ -130,60 +140,33 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     db.from("visit_log").select("*").gte("at", since).order("at", { ascending: false }).limit(SAMPLE),
   ]);
 
-  const [nSearch30, nSearchToday, nZero30, nSaved, nVisit30, nVisitToday, nVisit7] =
-    await Promise.all([
-      num(head("search_log").gte("at", since)),
-      num(head("search_log").gte("at", todayStart)),
-      num(head("search_log").gte("at", since).eq("n_results", 0)),
-      num(head("saved_condition")),
-      num(head("visit_log").gte("at", since)),
-      num(head("visit_log").gte("at", todayStart)),
-      num(head("visit_log").gte("at", since7Iso)),
+  // 건수 7개와 수집 대상 8개의 집계는 DB 함수 하나씩으로 묶어 한 번에 받는다(sql/010).
+  // 전에는 질의 31개를 다섯 차례로 나눠 보내 왕복만 1초가 넘었고, "마지막 수집 시각"은
+  // 24만 건을 통째로 훑어 질의 하나에 300ms 가 걸렸다(fetched_at 색인도 같이 만들었다).
+  const [countsR, sourcesR, lastRuns, health] = await Promise.all([
+    db.rpc("admin_counts", { p_since: since, p_today: todayStart, p_since7: since7Iso }),
+    db.rpc("admin_source_stats"),
+    readLastRuns(),
+    checkSchema(db as never),
+  ]);
+  const cnt = (countsR.data ?? {}) as Record<string, number | null>;
+  const n0 = (k: string) => Number(cnt[k] ?? 0);
+  let [nSearch30, nSearchToday, nZero30, nSaved, nVisit30, nVisitToday, nVisit7] =
+    [n0("search30"), n0("search_today"), n0("zero30"), n0("saved"), n0("visit30"), n0("visit_today"), n0("visit7")];
+  if (countsR.error) {
+    // 함수가 없으면(마이그레이션 전) 예전처럼 하나씩 센다. 느리지만 틀리지는 않는다.
+    [nSearch30, nSearchToday, nZero30, nSaved, nVisit30, nVisitToday, nVisit7] = await Promise.all([
+      num(head("search_log").gte("at", since)), num(head("search_log").gte("at", todayStart)),
+      num(head("search_log").gte("at", since).eq("n_results", 0)), num(head("saved_condition")),
+      num(head("visit_log").gte("at", since)), num(head("visit_log").gte("at", todayStart)), num(head("visit_log").gte("at", since7Iso)),
     ]);
-  // 수집 대상마다 건수·최신·마지막 수집 시각. 표가 없거나 비어 있어도 0 으로 보인다.
-  const WHERE: Record<CollectKey, { table: string; filter?: [string, string]; dateCol?: string }> = {
-    gojobs: { table: "job_posts", filter: ["source", "gojobs"], dateCol: "reg_date" },
-    worldjob: { table: "job_posts", filter: ["source", "worldjob"], dateCol: "start_date" },
-    license: { table: "license_items" },
-    exam: { table: "exam_rounds", dateCol: "doc_reg_end" },
-    agency_business: { table: "agency_items", filter: ["kind", "business"], dateCol: "start_date" },
-    agency_event: { table: "agency_items", filter: ["kind", "event"], dateCol: "start_date" },
-    agency_facility: { table: "agency_items", filter: ["kind", "facility"] },
-    jeonse: { table: "rate_rows" },
-  };
-  const jobStats: SourceStat[] = await Promise.all(COLLECT_KEYS.map(async (key) => {
-    const w = WHERE[key];
-    try {
-      let c = db.from(w.table).select("*", { count: "exact", head: true });
-      if (w.filter) c = c.eq(w.filter[0], w.filter[1]);
-      const { count } = await c;
-      // "마지막 수집 시각" 과 "가장 새 자료" 는 다른 줄에서 나온다.
-      // 예전에는 fetched_at 이 제일 늦은 줄 하나를 읽고 그 줄의 날짜를
-      // 최신이라고 적었다. 과거분을 뒤에서부터 채워 넣는 중이라 방금 넣은
-      // 줄이 2011년 공고인 일이 흔했고, 그래서 13,850건을 모아 놓고도
-      // "최신 2011-08-26" 이라고 나왔다. 각각 따로 묻는다.
-      let f = db.from(w.table).select("fetched_at").order("fetched_at", { ascending: false }).limit(1);
-      if (w.filter) f = f.eq(w.filter[0], w.filter[1]);
-      const newestQ = async () => {
-        if (!w.dateCol) return null;
-        let q = db.from(w.table).select(w.dateCol)
-          .order(w.dateCol, { ascending: false, nullsFirst: false }).limit(1);
-        if (w.filter) q = q.eq(w.filter[0], w.filter[1]);
-        const { data } = await q.maybeSingle();
-        return ((data ?? {}) as Record<string, string | null>)[w.dateCol] ?? null;
-      };
-      const [fetchedRow, newest] = await Promise.all([f.maybeSingle(), newestQ()]);
-      const row = (fetchedRow.data ?? {}) as Record<string, string | null>;
-      return { key, n: count ?? 0, newest, fetched: row.fetched_at ?? null };
-    } catch {
-      return { key, n: 0, newest: null, fetched: null };
-    }
-  }));
-  const lastRuns = await readLastRuns();
-  // 과거 걷기가 어디까지 내려갔는지. 숫자만 보면 늘고 있는지 알 수 없다.
-  // 화면이 기대는 함수·표가 실제로 있는지. match_welfare 가 조용히 사라져
-  // 지역 선택이 며칠 죽어 있던 일이 있어 맨 위에 둔다.
-  const health = await checkSchema(db as never);
+  }
+  // 수집 대상마다 건수·최신·마지막 수집 시각. 함수가 없으면 0 으로 보인다.
+  const srcRows = (Array.isArray(sourcesR.data) ? sourcesR.data : []) as { key: string; n: number; newest: string | null; fetched: string | null }[];
+  const jobStats: SourceStat[] = COLLECT_KEYS.map((key) => {
+    const r = srcRows.find((x) => x.key === key);
+    return { key, n: Number(r?.n ?? 0), newest: r?.newest ?? null, fetched: r?.fetched ?? null };
+  });
   const broken = health.rows.filter((r) => r.problem);
 
   const visitRows = (visits.data ?? []) as Row[];
@@ -272,6 +255,13 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
   return (
     <div>
+      {/* 바로가기. 한 쪽에 전부 있어 휴대폰에서는 한참 내려야 한다. 위에 붙여 둔다. */}
+      <nav aria-label="관리자 바로가기"
+           className="sticky top-0 z-20 -mx-5 mb-2 flex gap-1 overflow-x-auto border-b border-line bg-white/95 px-5 py-2 text-[13px] backdrop-blur sm:mx-0 sm:rounded-card sm:border sm:px-3">
+        {JUMPS.map(([h, t]) => (
+          <a key={h} href={h} className="shrink-0 rounded-pill px-3 py-1 font-semibold text-ink2 hover:bg-brandSoft hover:text-brand">{t}</a>
+        ))}
+      </nav>
       <div className="flex items-baseline justify-between">
         <h1 className="text-xl font-extrabold">관리자</h1>
         <form action={async () => { "use server";
@@ -281,7 +271,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       </div>
 
       {/* 스키마 점검. 멀쩡하면 한 줄, 문제가 있으면 무엇이 문제인지 펼친다. */}
-      <div className={`mt-4 rounded-card border p-4 ${
+      <div id="a-health" className={`mt-4 scroll-mt-14 rounded-card border p-4 ${
         health.error || broken.length
           ? "border-red-300 bg-red-50"
           : "border-line bg-ground/40"}`}>
@@ -350,7 +340,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           ` 아래 순위와 그래프는 최근 ${SAMPLE.toLocaleString()}건을 표본으로 합니다.`}
       </p>
 
-      <Panel title="일별 유입자" note="최근 30일 · 탭당 한 번, 사이트 안 이동은 세지 않음">
+      <Panel id="a-visit" title="일별 유입자" note="최근 30일 · 탭당 한 번, 사이트 안 이동은 세지 않음">
         <div className="flex h-28 items-end gap-[3px]">
           {daily.map((x) => (
             <div key={x.d} className="group relative flex-1">
@@ -387,6 +377,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
       </Panel>
 
       <Panel
+        id="a-saved"
         title="저장한 조건"
         note={savedRows.length >= 200 ? "최근 200건" : `${savedRows.length}건`}
       >
@@ -464,7 +455,7 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Panel title="많이 찾는 지역" note="최근 30일">
+          <Panel id="a-search" title="많이 찾는 지역" note="최근 30일">
             <Rank rows={count("sido")} keyName="label" />
           </Panel>
           <Panel title="많이 찾는 나이대">
@@ -488,15 +479,17 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         </div>
       </div>
 
-      <CollectPanel stats={jobStats} lastRuns={lastRuns} />
-      <SeoPanel initial={parseSeo(st.get("seo"))} />
-      <AdsPanel initial={parseAds(st.get("ads"))} initialOn={parseAdsOn(st.get("ads_on"))} />
+      <div id="a-collect" className="scroll-mt-14"><CollectPanel stats={jobStats} lastRuns={lastRuns} /></div>
+      <div id="a-seo" className="scroll-mt-14"><SeoPanel initial={parseSeo(st.get("seo"))} /></div>
+      <div id="a-ads" className="scroll-mt-14"><AdsPanel initial={parseAds(st.get("ads"))} initialOn={parseAdsOn(st.get("ads_on"))} /></div>
 
-      <SettingsPanel
-        closingDays={String(st.get("closing_days") ?? 14)}
-        newDays={String(st.get("new_days") ?? 7)}
-        notice={String(st.get("notice") ?? "").replace(/^"|"$/g, "")}
-      />
+      <div id="a-settings" className="scroll-mt-14">
+        <SettingsPanel
+          closingDays={String(st.get("closing_days") ?? 14)}
+          newDays={String(st.get("new_days") ?? 7)}
+          notice={String(st.get("notice") ?? "").replace(/^"|"$/g, "")}
+        />
+      </div>
 
       <p className="mt-8 text-xs leading-relaxed text-muted">
         위쪽 <b className="font-bold text-ink2">저장한 조건</b> 은 이용자가
