@@ -45,7 +45,7 @@ export default function FloatingMenu() {
     // 차지한다. 배경이 없어도 상자는 상자라, 그 위를 누르면 뒤에 있는 카드가
     // 아니라 이 상자가 받아 버린다 — 오른쪽 아래가 통째로 안 눌렸다.
     // 상자는 누름을 통과시키고, 실제로 누를 것들만 다시 받게 한다.
-    // 휴대폰에서는 아래 탭 막대(BottomBar)가 이 일을 한다. 넓은 화면에서만.
+    // 휴대폰에서는 머리말이 붙어 따라오며 갈래 탭을 보인다. 넓은 화면에서만.
     <div className="pointer-events-none fixed bottom-5 right-5 z-40 hidden flex-col items-end gap-2 sm:flex">
       {/* 펼쳐진 갈래 */}
       <ul

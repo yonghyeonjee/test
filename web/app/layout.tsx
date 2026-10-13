@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { GtmNoScript, GtmScript, RouteChange } from "@/components/Gtm";
 import SideRailAd from "@/components/SideRailAd";
-import { BottomBar, SiteFooter, SiteHeader } from "@/components/SiteChrome";
+import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { WRAP } from "@/lib/nav";
 import VisitTracker from "@/components/VisitTracker";
 import { HotkeyFocus } from "@/components/Motion";
@@ -156,7 +156,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         <SiteFooter />
         <FloatingMenu />
-        <BottomBar />
         <HotkeyFocus />
         <SideRailAd />
       </body>

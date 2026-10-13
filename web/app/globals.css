@@ -216,21 +216,16 @@
 .page-enter { animation: page-in .24s ease-out both; }
 
 /*
- * 머리말: 화면 폭 전체의 흰 띠(아래 가는 선). 넓은 화면에서는 위에 붙어 따라오고,
- * 스크롤하면 그림자가 생긴다. 휴대폰에서는 붙박이를 푼다 — 대신 아래 탭 막대가
- * 늘 손 닿는 곳에 있다.
+ * 머리말: 화면 폭 전체의 흰 띠(아래 가는 선). 위에 붙어 따라오고, 스크롤하면 그림자가 생긴다.
+ * 휴대폰도 같다 — 예전의 아래 탭 막대는 광고 띠(앵커)에 가려 보이지 않아 2026-10-13 치우고,
+ * 갈래 탭을 머리말 둘째 줄에 두었다.
  */
 [data-site-header] { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,.97); border-bottom: 1px solid #E5E8EC; transition: box-shadow .2s; }
 @supports (backdrop-filter: blur(8px)) {
   [data-site-header] { background: rgba(255,255,255,.9); backdrop-filter: saturate(1.6) blur(10px); -webkit-backdrop-filter: saturate(1.6) blur(10px); }
 }
-@media (max-width: 639px) {
-  [data-site-header] { position: static; }
-}
 [data-site-header].scrolled { box-shadow: 0 6px 20px -14px rgba(17,24,39,.35); }
 
-/* 휴대폰 아래 탭 막대(BottomBar). 아이폰 홈 막대 자리만큼 아래를 띄운다. */
-.bottom-bar { padding-bottom: env(safe-area-inset-bottom); }
 
 /* 누르는 느낌 */
 .chip:active, .btn:active, .tile:active { transform: scale(.97); }
