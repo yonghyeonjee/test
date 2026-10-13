@@ -14,6 +14,7 @@
  *   qnet                큐넷 종목별 시험 일정·수험자 동향
  *   alio | alio_full    잡알리오 새 공고(이미 있는 쪽을 만나면 멈춤) | 끝까지
  *   notify | notify_dry 저장 조건 알림 메일 | 보내지 않고 몇 명에게 몇 건이 갈지만
+ *   mail_test        MAIL_TEST_TO 주소 하나에 시험 메일(최근 공고 5건)
  *
  * 환경변수: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_KEY(필수). 단계별로 DATA_GO_KR_KEY(과거·해외취업 API),
  * ALIOPLUS_*(공공기관 사업·행사·시설), 알림은 수신 거부 서명용 SESSION_SECRET/ADMIN_SECRET/ADMIN_PASSWORD(서버와 같은 값이어야
@@ -23,7 +24,7 @@
 import { alioStep } from "../lib/alioJobs";
 import { collectAll, collectOne, COLLECT_KEYS, type CollectKey, type CollectResult } from "../lib/collectors";
 import { gojobsDetailStep } from "../lib/gojobsDetail";
-import { runNotify } from "../lib/notify";
+import { runNotify, sendTestMail } from "../lib/notify";
 import { qnetSiteStep } from "../lib/qnetSite";
 
 type Round = { more: boolean } & Record<string, unknown>;
@@ -45,7 +46,7 @@ function parseArgs(argv: string[]): { job: string; minutes: number } {
     else if (!job) job = argv[i];
   }
   if (!job || !Number.isFinite(minutes) || minutes <= 0) {
-    console.error("사용: npx tsx scripts/cron.ts <latest|weekly|source:<key>|gojobs_detail|qnet|alio|alio_full|notify|notify_dry> [--minutes 20]");
+    console.error("사용: npx tsx scripts/cron.ts <latest|weekly|source:<key>|gojobs_detail|qnet|alio|alio_full|notify|notify_dry|mail_test> [--minutes 20]");
     process.exit(2);
   }
   return { job, minutes };
@@ -92,6 +93,15 @@ function pickStep(job: string, budget: () => number): () => Promise<Round> {
   if (job === "alio_full") return () => alioStep("full");
   if (job === "notify" || job === "notify_dry") {
     return async () => ({ ...(await runNotify({ dry: job === "notify_dry" })), more: false });
+  }
+  if (job === "mail_test") {
+    const to = (process.env.MAIL_TEST_TO || "").trim();
+    if (!to) { console.error("MAIL_TEST_TO(받는 주소)가 비어 있습니다."); process.exit(2); }
+    return async () => {
+      const r = await sendTestMail(to);
+      if (!r.ok) throw new Error(r.error || "시험 발송 실패");
+      return { ...r, to: to.replace(/^(.).*(@.*)$/, "$1***$2"), more: false };
+    };
   }
   console.error(`모르는 작업: ${job}`);
   process.exit(2);
