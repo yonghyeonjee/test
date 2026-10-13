@@ -58,10 +58,35 @@ export async function createAccount(form: {
   return { ok: true, device: form.device };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * 로그인 전에 이 브라우저 열쇠로 저장해 둔 공고·조건을 계정 열쇠로 옮긴다.
+ * 옮기는 쪽이 이미 어느 계정의 열쇠면(다른 계정으로 갈아타는 중) 건드리지 않는다. 실패해도 로그인은 된다.
+ */
+async function mergeDevice(from: string, to: string) {
+  const db = svc();
+  if (!UUID.test(from) || from.toLowerCase() === to.toLowerCase()) return;
+  const { data: owned } = await db.rpc("account_by_device", { p_device: from });
+  if ((owned ?? []).length) return;
+  const { data: items } = await db.from("saved_item").select("kind,item_id,title,sub,end_date,created_at").eq("device_key", from);
+  if (items?.length) {
+    await db.from("saved_item").upsert(items.map((r) => ({ ...r, device_key: to })), { onConflict: "device_key,kind,item_id", ignoreDuplicates: true });
+    await db.from("saved_item").delete().eq("device_key", from);
+  }
+  const { data: conds } = await db.from("saved_condition").select("cond_key,kind,query,label,created_at").eq("device_key", from);
+  if (conds?.length) {
+    await db.from("saved_condition").upsert(conds.map((r) => ({ ...r, device_key: to })), { onConflict: "device_key,cond_key", ignoreDuplicates: true });
+    await db.from("saved_condition").delete().eq("device_key", from);
+  }
+}
+
 export async function loginAccount(form: {
   username: string;
   password: string;
   captcha?: string | null;
+  /** 로그인 전 이 브라우저의 열쇠. 저장해 둔 것을 계정으로 옮기려고. */
+  device?: string | null;
 }): Promise<Result> {
   if (!(await verifyCaptcha(form.captcha ?? null)))
     return { ok: false, error: "사람인지 확인에 실패했습니다. 다시 시도해주세요." };
@@ -83,6 +108,7 @@ export async function loginAccount(form: {
   const ok = await verify(form.password, row.hash);
   await db.rpc("account_mark", { p_username: form.username, p_ok: ok });
 
+  if (ok && form.device) { try { await mergeDevice(form.device, row.device); } catch { /* 옮기기 실패는 로그인을 막지 않는다 */ } }
   if (ok && sessionConfigured()) cookies().set(userCookie(row.device));
   return ok
     ? { ok: true, device: row.device }

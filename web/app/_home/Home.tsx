@@ -27,6 +27,7 @@ import HomeTopAd from "@/components/HomeTopAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
+import SavedItems from "@/components/SavedItems";
 import SavedList from "@/components/SavedList";
 import {
   AboutBox, DeadlineList, HotRank, MapCard, PortalColumns, PortalTop, ProgramLine,
@@ -345,6 +346,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
             </Suspense>
             <LastConditions />
           </div>
+          <SavedItems variant="strip" max={8} />
           <RecentStrip />
           {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
           <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />

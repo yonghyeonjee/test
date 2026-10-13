@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { allow, ipOf } from "@/lib/rateLimit";
-import { deviceFromCookieHeader } from "@/lib/session";
+import { deviceFromRequest } from "@/lib/session";
 import { svcConfigured, svcDb } from "@/lib/svcDb";
 
 export const dynamic = "force-dynamic";
@@ -11,18 +11,11 @@ export const dynamic = "force-dynamic";
  *   GET            목록
  *   POST {action}  add(cond, kind, query, label) · open(cond) · remove(cond)
  */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const COND = /^[\x20-\x7e가-힣]{0,600}$/;
 
 const bad = (msg: string, status = 400) => NextResponse.json({ error: msg }, { status });
 
-/** 로그인 세션(쿠키)이 있으면 그 기기 열쇠, 아니면 브라우저가 보낸 머리글. */
-function keyOf(req: Request) {
-  const s = deviceFromCookieHeader(req.headers.get("cookie"));
-  if (s) return s;
-  const k = req.headers.get("x-device-key") ?? "";
-  return UUID.test(k) ? k.toLowerCase() : null;
-}
+const keyOf = deviceFromRequest;
 
 export async function GET(req: Request) {
   if (!svcConfigured()) return bad("설정이 없습니다.", 503);

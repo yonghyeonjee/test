@@ -10,6 +10,8 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import RecentTracker from "@/components/RecentTracker";
+import SaveItemButton from "@/components/SaveItemButton";
+import ShareButton from "@/components/ShareButton";
 import OrgMark from "@/components/OrgMark";
 import Glyph, { fileGlyph } from "@/components/Glyph";
 import CalendarAdd from "@/components/CalendarAdd";
@@ -224,6 +226,11 @@ export default async function JobDetail({ params }: P) {
           </div>
           <h1 className="display mt-3 text-[1.5rem] leading-tight">{job.title}</h1>
           <p className="mt-2 text-[14.5px] leading-relaxed text-muted">{jobSummary(job)}</p>
+          {/* 저장(즐겨찾기)과 공유. 다시 찾아올 사람이 많다 — 접수 기간이 긴 공고는 특히. */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <SaveItemButton kind="job" id={job.id} title={job.title} sub={orgShort(job.org) || job.region || null} endDate={job.end} />
+            <ShareButton title={job.title} text={`${orgShort(job.org) || ""} ${job.title}`.trim()} />
+          </div>
         </div>
       </header>
 

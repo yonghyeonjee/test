@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AccountBox from "@/components/AccountBox";
+import SavedItems from "@/components/SavedItems";
 import SavedList from "@/components/SavedList";
 import { myAccount } from "./actions";
 import ContactForm from "./ContactForm";
@@ -21,7 +22,7 @@ export default async function AccountPage() {
       {!me || !me.account ? (
         <>
           <p className="mt-2 text-[14px] leading-relaxed text-muted">
-            사용자명과 비밀번호를 정해두면 어느 기기에서든 같은 저장 목록을 불러오고, 새 공고 알림을 받을 수 있습니다.
+            사용자명과 비밀번호를 정해두면 저장한 공고·사업과 조건을 어느 기기에서든 같은 목록으로 불러오고, 새 공고 알림을 받을 수 있습니다.
             이름이나 주민등록번호는 받지 않습니다.
           </p>
           <div className="card mt-4 p-4 sm:p-5">
@@ -36,6 +37,11 @@ export default async function AccountPage() {
           <p className="mt-2 text-[14px] text-muted">
             <b className="text-ink">{me.account.username}</b> 님으로 로그인돼 있습니다.
           </p>
+          <section className="card mt-4 p-4 sm:p-5">
+            <h2 className="text-[15px] font-extrabold tracking-[-.02em]">저장한 공고·사업</h2>
+            <p className="mt-1 text-[12.5px] text-muted">공고나 사업 쪽에서 저장을 누른 것. 어느 기기에서 로그인해도 같습니다.</p>
+            <div className="mt-2"><SavedItems variant="list" /></div>
+          </section>
           <section className="card mt-4 p-4 sm:p-5">
             <h2 className="text-[15px] font-extrabold tracking-[-.02em]">저장한 조건</h2>
             <p className="mt-1 text-[12.5px] text-muted">첫 화면에서 조건을 고르고 저장을 누르면 여기 쌓입니다.</p>

@@ -40,6 +40,17 @@ export function deviceFromCookieHeader(header: string | null): string | null {
   return verifyToken(m ? decodeURIComponent(m[1]) : null);
 }
 
+/**
+ * 라우트 핸들러용. 로그인 세션(쿠키)이 있으면 그 기기 열쇠, 아니면 브라우저가 보낸
+ * X-Device-Key 머리글(주소창·기록에 남지 않게 머리글로만). 둘 다 없으면 null.
+ */
+export function deviceFromRequest(req: Request): string | null {
+  const s = deviceFromCookieHeader(req.headers.get("cookie"));
+  if (s) return s;
+  const k = req.headers.get("x-device-key") ?? "";
+  return UUID.test(k) ? k.toLowerCase() : null;
+}
+
 /** 서버 컴포넌트·서버 액션용. */
 export function currentDevice(): string | null {
   return verifyToken(cookies().get(COOKIE)?.value);
