@@ -30,7 +30,7 @@ const SERVER_ONLY = new Set<string>([
   "account_by_device", "account_create", "account_mark", "account_probe", "account_taken",
   "account_update_contact", "log_search", "log_visit", "recovery_claim", "recovery_issue",
   "saved_add", "saved_list", "saved_open", "saved_remove",
-  "notify_sent", "notify_log", "visit_log", "save_account", "saved_condition", "exam_site_state",
+  "notify_sent", "notify_log", "visit_log", "save_account", "saved_condition", "saved_item", "exam_site_state",
 ]);
 
 /** db.from("…") 으로 읽는 표와 뷰. */
@@ -38,7 +38,7 @@ export const EXPECTED_RELATIONS = [
   "agency_items", "area_summary", "coverage", "exam_rounds", "exam_sched", "exam_site_state", "exam_stats",
   "job_org_stats", "job_overview", "job_posts",
   "program_detail", "programs", "programs_public", "rate_rows",
-  "regions_available", "save_account", "saved_condition", "saved_popular",
+  "regions_available", "save_account", "saved_condition", "saved_item", "saved_popular",
   "search_log", "settings_public", "site_settings",
   "stat_age", "stat_employment", "stat_household", "visit_log",
   "notify_sent", "notify_log",

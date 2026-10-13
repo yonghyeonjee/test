@@ -25,6 +25,7 @@ const PATH: Record<string, string> = {
   check: "M5 12l5 5 9-10",
   chevron: "M9 6l6 6-6 6",
   user: "M12 12a4 4 0 100-8 4 4 0 000 8z M5 21a7 7 0 0114 0",
+  bookmark: "M6 4h12v17l-6-4.5L6 21z",
 };
 
 export default function PortalIcon({ name, className = "h-5 w-5", strokeWidth = 1.9 }: {

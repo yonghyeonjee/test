@@ -65,6 +65,12 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
             </Link>
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
               {!hasOwnSearch(path) && <TopSearch index={index} />}
+              {/* 저장한 공고·사업. 공고 쪽 "저장"을 누른 사람이 다시 찾는 입구 — 머리말에 늘 보인다. */}
+              <Link href="/saved" aria-label="저장한 공고·사업" aria-current={path === "/saved" ? "page" : undefined}
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-ground sm:h-10 sm:w-10 ${
+                      path === "/saved" ? "text-brand" : "text-ink2"}`}>
+                <PortalIcon name="bookmark" className="h-6 w-6 sm:h-[22px] sm:w-[22px]" strokeWidth={2} />
+              </Link>
               <div className="hidden sm:block"><BigText /></div>
               {/* 휴대폰: 전체 메뉴. 글자 크기 단추는 그 안에 있다. 아래 탭 막대는 광고 띠에 가려 치웠다(2026-10-13). */}
               <button type="button" onClick={() => setSheet(true)} aria-expanded={sheet} aria-label="전체 메뉴"
@@ -127,7 +133,7 @@ export function SiteFooter() {
   const path = usePathname();
   if (path?.startsWith("/admin")) return null;
   const cols: { h: string; items: [string, string][] }[] = [
-    { h: "찾기", items: [["통합 검색", "/search"], ["정책지도", "/map"], ["내 조건으로 찾기", "/"], ["기업·창업 지원", "/business"], ["분야별", "/topic"], ["지역별", "/#areas"], ["정책 전체", "/policies"]] },
+    { h: "찾기", items: [["통합 검색", "/search"], ["정책지도", "/map"], ["내 조건으로 찾기", "/"], ["기업·창업 지원", "/business"], ["분야별", "/topic"], ["지역별", "/#areas"], ["정책 전체", "/policies"], ["저장한 공고·사업", "/saved"]] },
     { h: "정보", items: [["공공기관 채용", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["자격증·시험 일정", "/license"], ["생활금융 금리", "/money"], ["주거 지원", "/housing"], ["공공기관 사업", "/agency"]] },
     { h: "읽을거리", items: [["지원금 안내 글", "/blog"], ["블로그", "/story"], ["소득 기준 계산기", "/blog/income"], ["무료 서비스", "/free"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];
@@ -207,6 +213,14 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
               className="flex items-center gap-2 rounded-card bg-brand px-4 py-3 text-[14.5px] font-bold text-white">
           <PortalIcon name="fire" className="h-5 w-5" /> HOT 정부지원 — 청년미래적금 안내
         </Link>
+        <div className="grid grid-cols-2 gap-2">
+          <Link href="/saved" onClick={onClose} className="flex items-center gap-2 rounded-card bg-white px-4 py-3 text-[14.5px] font-bold">
+            <PortalIcon name="bookmark" className="h-5 w-5 text-brand" /> 저장한 공고
+          </Link>
+          <Link href="/account" onClick={onClose} className="flex items-center gap-2 rounded-card bg-white px-4 py-3 text-[14.5px] font-bold">
+            <PortalIcon name="user" className="h-5 w-5 text-brand" /> 내 계정
+          </Link>
+        </div>
         {NAV.map((n) => (
           <section key={n.href} className="rounded-card bg-white px-4 py-3">
             <Link href={n.href} onClick={onClose} className="flex items-center justify-between py-1 text-[15.5px] font-extrabold">

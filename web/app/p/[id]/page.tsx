@@ -15,6 +15,7 @@ import { ORG_ID, pageGraph } from "@/lib/schema";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import SaveItemButton from "@/components/SaveItemButton";
 import MyFit from "@/components/MyFit";
 import RecentTracker from "@/components/RecentTracker";
 import TopicIcon from "@/components/TopicIcon";
@@ -196,6 +197,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <StatusBadge apply_start={p.apply_start} apply_end={p.apply_end} is_always_on={p.is_always_on} />
+        <SaveItemButton kind="p" id={p.source_id} title={p.title} sub={where} endDate={p.is_always_on ? null : p.apply_end} />
         <ShareButton title={p.title} text={`${where} · ${p.title}`} />
         <RecentTracker kind="p" id={p.source_id} title={p.title} sub={where} />
       </div>

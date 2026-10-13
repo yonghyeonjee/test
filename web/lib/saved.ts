@@ -8,7 +8,7 @@
  */
 
 /** 서버 API 를 부른다. 기기 열쇠는 머리글로. 실패는 조용히 null. */
-async function api<T = unknown>(path: string, init: { method?: string; body?: unknown; key?: string | null } = {}): Promise<T | null> {
+export async function api<T = unknown>(path: string, init: { method?: string; body?: unknown; key?: string | null } = {}): Promise<T | null> {
   try {
     const r = await fetch(path, {
       method: init.method ?? "GET",

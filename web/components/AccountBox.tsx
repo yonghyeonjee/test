@@ -76,7 +76,7 @@ export default function AccountBox({ onDone }: { onDone?: () => void }) {
               device: deviceKey() ?? crypto.randomUUID(),
               name, phone, email, consent, captcha: token,
             })
-          : await loginAccount({ username, password, captcha: token });
+          : await loginAccount({ username, password, captcha: token, device: deviceKey() });
 
       if (!r.ok) {
         setMsg(r.error ?? "실패했습니다.");
