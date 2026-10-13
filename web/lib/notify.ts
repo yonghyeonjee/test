@@ -130,3 +130,21 @@ export async function runNotify(opts: { dry?: boolean; limit?: number } = {}): P
   }
   return report;
 }
+
+/**
+ * 시험 발송. 주소 하나에 최근 복지 공고 다섯 건을 실제 알림 메일과 같은 모양으로 보낸다.
+ * 메일 설정(AWS_REGION·AWS_ACCESS_KEY_ID·AWS_SECRET_ACCESS_KEY·MAIL_FROM)이 없으면 보내지 않고 그 사실만 돌려준다.
+ * SES 가 샌드박스면 받는 주소도 SES 에서 확인한 주소여야 한다.
+ */
+export async function sendTestMail(to: string): Promise<{ ok: boolean; dry: boolean; configured: boolean; items: number; error?: string }> {
+  const configured = mailConfigured();
+  const { data, error } = await svcDb().from("programs_public")
+    .select("id,source_id,title,org_name,sido,sigungu,apply_end,is_always_on")
+    .eq("kind", "welfare").order("first_seen_at", { ascending: false }).limit(5);
+  if (error) return { ok: false, dry: !configured, configured, items: 0, error: `공고 읽기: ${error.message}` };
+  const items = (data ?? []) as Program[];
+  if (!configured) return { ok: true, dry: true, configured, items: items.length, error: "메일 설정 없음(AWS_REGION·AWS_ACCESS_KEY_ID·AWS_SECRET_ACCESS_KEY·MAIL_FROM)" };
+  const { html, text } = render("시험 발송", [{ label: ["시험 발송", "최근 복지 공고"], query: "sido=&q=", items }], `${SITE}/account`);
+  const r = await sendMail({ to, subject: `[K나라지원] 시험 발송 — 새 공고 ${items.length}건`, html, text });
+  return { ok: r.ok, dry: false, configured, items: items.length, error: r.error };
+}
