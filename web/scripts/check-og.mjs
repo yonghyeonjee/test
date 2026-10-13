@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const HELPERS = ["withOg(", "jobsIndexMetadata(", "businessMetadata(", "homeMetadata("];
-const SKIP = [/^app\/admin\//, /^app\/account\//, /^app\/api\//, /^app\/jobs\/search\/page\.tsx$/];
+const SKIP = [/^app\/admin\//, /^app\/account\//, /^app\/saved\//, /^app\/api\//, /^app\/jobs\/search\/page\.tsx$/];
 
 const walk = (d) => readdirSync(d).flatMap((n) => {
   const p = join(d, n);
