@@ -106,7 +106,10 @@ export default async function JobsByOrg({ params }: P) {
         data={pageGraph({
           path: jobPath(route),
           name: `${org} 채용 공고`,
+          description: `${org}이(가) 나라일터에 낸 채용 공고${stat ? ` ${stat.n.toLocaleString()}건` : ""}. 접수 중인 공고, 연도별 공고 수, 주로 뽑는 자리, 지원서 준비.`,
+          dateModified: stat?.lastReg ?? null,
           collection: true,
+          items: board.jobs.slice(0, 20).map((j) => ({ name: j.title, path: `/jobs/${encodeURIComponent(j.id)}` })),
           crumbs: [
             { name: "채용", path: "/jobs" },
             { name: "기관별", path: "/jobs/org" },

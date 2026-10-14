@@ -25,7 +25,8 @@ import { getJobSummary } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
-import { employmentFromTitle, jobLocation } from "@/lib/jobSchema";
+import { employmentFromTitle, jobLocation, salaryFromPay } from "@/lib/jobSchema";
+import type { JobSummary } from "@/lib/jobSummary";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg } from "@/lib/seo";
@@ -112,7 +113,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   });
 }
 
-const Row = ({ k, v }: { k: string; v: string | null }) =>
+const Row = ({ k, v }: { k: string; v: React.ReactNode }) =>
   v ? (
     <div className="flex gap-3 border-b border-line py-2.5 last:border-b-0">
       <dt className="w-[5.5rem] shrink-0 text-[13px] text-muted">{k}</dt>
@@ -129,18 +130,50 @@ const Row = ({ k, v }: { k: string; v: string | null }) =>
  * 갖출 때만 내보낸다. 빈 껍데기를 400건씩 내보내면 얻는 것보다 잃는 것이
  * 크다.
  */
-function jobNode(job: Job) {
+/** 날짜는 기계가 읽는 꼴(<time datetime>)로. 화면에는 2026.10.15 처럼. */
+const When = ({ iso }: { iso: string | null }) => (iso ? <time dateTime={iso.slice(0, 10)}>{dot(iso)}</time> : <>—</>);
+
+/**
+ * 공고 요약(첨부 공고문에서 뽑아 화면 "공고 요약"에 그린 것)을 구글이 읽는 설명 HTML 로.
+ * 구글은 description 에 공고 전문을 원한다. 화면에 있는 것만 옮긴다.
+ */
+function summaryHtml(s: JobSummary, lead: string): string {
+  const esc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const list = (h: string, xs: string[]) => (xs.length ? `<p><b>${h}</b></p><ul>${xs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "");
+  const pos = s.positions.map((p) => [p.name, p.grade, p.type, p.headcount].filter(Boolean).join(" · "));
+  const work = [["근무지", s.work.place], ["근무 시간", s.work.hours], ["보수", s.work.pay], ["근무 기간", s.work.term]]
+    .filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`);
+  const period = [s.period.start && `시작 ${s.period.start}`, s.period.end && `마감 ${s.period.end}`, s.period.how && `방법 ${s.period.how}`].filter(Boolean) as string[];
+  return [
+    `<p>${esc(s.one_line || lead)}</p>`,
+    list("모집 분야", pos), list("자격 요건", s.requirements), list("우대 사항", s.preferred),
+    list("근무 조건", work), list("접수", period), list("제출 서류", s.documents), list("전형 절차", s.process),
+    s.contact ? `<p>문의: ${esc(s.contact)}</p>` : "",
+    s.one_line ? `<p>${esc(lead)}</p>` : "",
+  ].join("");
+}
+
+function jobNode(job: Job, sum?: JobSummary | null) {
   if (!job.reg || !job.org) return null;
   if (!job.region && !job.hire && !job.headcount) return null;
   // 합격자 발표·면접 안내는 채용 공고가 아니다. 구글에 구인으로 내보내지 않는다.
   if (stageOf(job.title) === "final" || stageOf(job.title) === "interview") return null;
   const role = detectRole(job.title, job.org);
-  const employment = role?.employment ?? employmentFromTitle(job.title);
+  const employment = role?.employment ?? employmentFromTitle(job.title)
+    ?? (sum ? employmentFromTitle(sum.positions.map((p) => p.type).join(" ")) : null);
+  const lead = role ? `${role.name} 자리입니다. ${role.does} ${jobSummary(job)}` : jobSummary(job);
+  // 공고 요약이 있으면 급여·자격·근무 시간까지. 구글이 권하는 칸(baseSalary 등)이 여기서 찬다.
+  const salary = sum ? salaryFromPay(sum.work.pay) : null;
+  const openings = job.headcount && /^\d+$/.test(job.headcount) ? Number(job.headcount)
+    : sum ? sum.positions.reduce((n, p) => n + (Number((p.headcount.match(/\d+/) ?? ["0"])[0]) || 0), 0) || null : null;
   return {
     "@type": "JobPosting",
     "@id": `${SITE_URL}/jobs/${encodeURIComponent(job.id)}#posting`,
     title: job.title,
-    description: role ? `${role.name} 자리입니다. ${role.does} ${jobSummary(job)}` : jobSummary(job),
+    description: sum ? summaryHtml(sum, lead) : lead,
+    ...(sum?.requirements.length ? { qualifications: sum.requirements.join("\n") } : {}),
+    ...(sum?.work.hours ? { workHours: sum.work.hours } : {}),
+    ...(salary ? { baseSalary: salary } : {}),
     ...(role ? { occupationalCategory: role.name } : {}),
     ...(employment ? { employmentType: employment } : {}),
     datePosted: job.reg,
@@ -150,9 +183,7 @@ function jobNode(job: Job) {
     jobLocation: jobLocation(job),
     url: `${SITE_URL}/jobs/${encodeURIComponent(job.id)}`,
     identifier: { "@type": "PropertyValue", name: sourceName(job.id), value: job.id },
-    ...(job.headcount && /^\d+$/.test(job.headcount)
-      ? { totalJobOpenings: Number(job.headcount) }
-      : {}),
+    ...(openings ? { totalJobOpenings: openings } : {}),
     // 우리 쪽에서 바로 지원할 수 없다. 원문으로 가야 한다.
     directApply: false,
   };
@@ -196,7 +227,7 @@ export default async function JobDetail({ params }: P) {
         : []),
       { name: job.title },
     ],
-    about: jobNode(job),
+    about: jobNode(job, sum?.summary),
   });
 
   return (
@@ -243,8 +274,8 @@ export default async function JobDetail({ params }: P) {
         <Row k="채용 구분" v={job.recruit} />
         <Row k="분야" v={job.sectors} />
         <Row k="모집 인원" v={job.headcount ? `${job.headcount}명` : null} />
-        <Row k="접수 기간" v={job.start || job.end ? `${dot(job.start) ?? "—"} ~ ${dot(job.end) ?? "—"}` : null} />
-        <Row k="등록일" v={dot(job.reg)} />
+        <Row k="접수 기간" v={job.start || job.end ? <><When iso={job.start} /> ~ <When iso={job.end} /></> : null} />
+        <Row k="등록일" v={job.reg ? <When iso={job.reg} /> : null} />
       </dl>
 
       {/* 접수 마감을 캘린더에, 기관 자리는 지도에. 합격자 발표·면접 공고에는 마감이 없다. */}

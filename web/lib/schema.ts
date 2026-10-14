@@ -48,6 +48,11 @@ export function pageGraph(opts: {
   collection?: boolean;
   /** 마지막으로 바뀐 날. 있으면 적는다. */
   dateModified?: string | null;
+  /**
+   * 목록 쪽이 화면에 그린 항목(앞쪽 몇 개). ItemList 로 적고 쪽의 mainEntity 로 잇는다.
+   * 화면에 실제로 보이는 것만 넘긴다. 30개까지.
+   */
+  items?: { name: string; path: string }[];
 }): Node {
   const url = abs(opts.path);
   const pageId = `${url}#page`;
@@ -86,6 +91,20 @@ export function pageGraph(opts: {
     graph.push({ ...opts.about, mainEntityOfPage: { "@id": pageId } });
     page.mainEntity = { "@id": (opts.about["@id"] as string) ?? undefined };
     if (!opts.about["@id"]) delete page.mainEntity;
+  }
+
+  const items = (opts.items ?? []).filter((x) => x.name && x.path).slice(0, 30);
+  if (items.length) {
+    const listId = `${url}#list`;
+    graph.push({
+      "@type": "ItemList",
+      "@id": listId,
+      name: opts.name,
+      numberOfItems: items.length,
+      itemListElement: items.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: abs(x.path) })),
+    });
+    if (!page.mainEntity) page.mainEntity = { "@id": listId };
+    else page.hasPart = { "@id": listId };
   }
 
   return { "@context": "https://schema.org", "@graph": graph };
