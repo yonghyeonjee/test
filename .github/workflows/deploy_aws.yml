@@ -164,10 +164,25 @@ jobs:
             fi
             # 점검 화면과 Caddy 설정. 점검 화면은 배포 폴더 밖(static)에 둬 서비스가 죽어도 Caddy 가 찾는다.
             sudo mkdir -p /srv/jiwon/static && sudo install -m 644 \$D/maintenance.html /srv/jiwon/static/maintenance.html
-            # 접속 기록 폴더(Caddyfile 의 access). Caddy 설정을 다시 읽기 전에 있어야 한다.
+            # 접속 기록 폴더(Caddyfile 의 access). Caddy 는 caddy 사용자로 돌아 이 폴더·파일이 caddy 것이어야 연다.
             sudo install -d -o caddy -g caddy -m 755 /var/log/caddy
-            if ! cmp -s \$D/Caddyfile /etc/caddy/Caddyfile; then
-              sudo caddy validate --config \$D/Caddyfile --adapter caddyfile && sudo install -m 644 \$D/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+            # Caddy 설정. 마지막으로 다시 읽기에 성공한 판(Caddyfile.applied)과 비교한다 — /etc/caddy/Caddyfile 과
+            # 비교하면, 깔았는데 다시 읽기에 실패한 판이 \"같다\"로 보여 영영 적용되지 않는다.
+            # 2026-10-14: root 로 돈 validate 가 access.log 를 root 소유(0600)로 먼저 만들어, caddy 가 못 열고 reload 가 실패했다.
+            # 그래서 validate 뒤에 소유를 되돌리고, reload 가 실패하면 설정 파일을 직전 정상본으로 되돌린다(재부팅해도 뜨게).
+            if ! sudo cmp -s \$D/Caddyfile /etc/caddy/Caddyfile.applied; then
+              sudo caddy validate --config \$D/Caddyfile --adapter caddyfile
+              sudo chown -R caddy:caddy /var/log/caddy
+              [ -f /etc/caddy/Caddyfile.applied ] || sudo cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before
+              sudo install -m 644 \$D/Caddyfile /etc/caddy/Caddyfile
+              if sudo systemctl reload caddy; then
+                sudo install -m 644 \$D/Caddyfile /etc/caddy/Caddyfile.applied
+              else
+                sudo journalctl -u caddy -n 5 --no-pager -o cat
+                if [ -f /etc/caddy/Caddyfile.applied ]; then sudo cp /etc/caddy/Caddyfile.applied /etc/caddy/Caddyfile; else sudo cp /etc/caddy/Caddyfile.before /etc/caddy/Caddyfile; fi
+                echo '::error::Caddy 가 새 설정을 다시 읽지 못했다. 설정 파일은 배포 전 상태로 되돌렸고, 돌던 Caddy 는 옛 설정 그대로다.'
+                exit 1
+              fi
             fi
             # 지킴이: 3000 이 답하지 않으면 다시 띄우는 타이머(1분). 파일이 바뀌었을 때만 갱신·재시동.
             if ! cmp -s \$D/jiwon-watchdog.sh /usr/local/bin/jiwon-watchdog.sh || ! cmp -s \$D/jiwon-watchdog.timer /etc/systemd/system/jiwon-watchdog.timer || ! cmp -s \$D/jiwon-watchdog.service /etc/systemd/system/jiwon-watchdog.service; then

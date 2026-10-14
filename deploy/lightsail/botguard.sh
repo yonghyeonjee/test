@@ -9,8 +9,10 @@ set -euo pipefail
 SRC="${1:?배포 폴더}/fail2ban"
 
 # 1) 기록 폴더와 빈 파일. 파일이 없으면 fail2ban 감옥이 뜨지 않는다.
+# root 가 만든 파일이 섞이면 caddy 가 못 연다(2026-10-14 첫 배포). 늘 caddy 것으로 맞춘다.
 install -d -o caddy -g caddy -m 755 /var/log/caddy
 [ -f /var/log/caddy/access.log ] || install -o caddy -g caddy -m 640 /dev/null /var/log/caddy/access.log
+chown -R caddy:caddy /var/log/caddy
 
 # 2) fail2ban 설치(처음 한 번). 자동 업데이트가 apt 를 잡고 있으면 2분까지 기다린다.
 if ! command -v fail2ban-client >/dev/null; then
