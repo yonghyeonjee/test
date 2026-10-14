@@ -29,6 +29,9 @@ def is_page(uri: str) -> bool:
 
 def short_ua(ua: str, n: int = 70) -> str:
     ua = ua or "(없음)"
+    # "meta-externalagent/1.1 (+…/crawler)" 처럼 Mozilla 로 시작하지 않으면 맨 앞 이름이 봇 이름이다.
+    if not ua.startswith("Mozilla"):
+        return ua.split(" ")[0][:n]
     m = re.search(r"([A-Za-z-]*(?:bot|crawl|spider|Yeti|Daum)[A-Za-z0-9./-]*)", ua, re.I)
     if m:
         return m.group(1)[:n]
@@ -45,6 +48,9 @@ def main():
     ip_ua: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
     ip_blocked = collections.Counter()
     ua_pages = collections.Counter()
+    ua_full = collections.Counter()
+    net_pages = collections.Counter()
+    net_ua: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
     path_pages = collections.Counter()
     first = last = None
     try:
@@ -78,6 +84,11 @@ def main():
             if code in (403, 404, 429):
                 ip_blocked[ip] += 1
             ua_pages[("검색엔진 " if ENGINE.search(ua) else "") + short_ua(ua, 60)] += 1
+            ua_full[ua[:160] or "(없음)"] += 1
+            # 여러 IP 로 나눠 긁는 수집기는 IP 하나로는 안 보인다. 대역(/24, IPv6 는 /48)으로 묶는다.
+            net = ".".join(ip.split(".")[:3]) + ".0/24" if "." in ip else ":".join(ip.split(":")[:3]) + "::/48"
+            net_pages[net] += 1
+            net_ua[net][short_ua(ua)] += 1
             seg = "/".join(uri.split("?")[0].split("/")[:3]) or "/"
             path_pages[seg] += 1
 
@@ -90,8 +101,15 @@ def main():
     for ip, n in ip_pages.most_common(12):
         ua = ip_ua[ip].most_common(1)[0][0]
         print(f"  {n:6d}  {ip_blocked[ip]:5d}  {ip:<39s} {ua}")
+    print("\n-- 대역 상위 (쪽 요청 · IP 수 · 이름표). 여러 IP 로 나눠 긁는 것은 여기서 보인다")
+    for net, n in net_pages.most_common(8):
+        ips = sum(1 for ip in ip_pages if (".".join(ip.split(".")[:3]) + ".0/24" if "." in ip else ":".join(ip.split(":")[:3]) + "::/48") == net)
+        print(f"  {n:6d}  {ips:4d}  {net:<24s} {net_ua[net].most_common(1)[0][0]}")
     print("\n-- 이름표 상위 (쪽 요청)")
     for ua, n in ua_pages.most_common(10):
+        print(f"  {n:6d}  {ua}")
+    print("\n-- 이름표 전체 문자열 상위 5")
+    for ua, n in ua_full.most_common(5):
         print(f"  {n:6d}  {ua}")
     print("\n-- 경로 상위 (쪽 요청)")
     for p, n in path_pages.most_common(10):
