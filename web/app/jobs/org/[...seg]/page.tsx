@@ -109,7 +109,10 @@ export default async function JobsByOrg({ params }: P) {
           description: `${org}이(가) 나라일터에 낸 채용 공고${stat ? ` ${stat.n.toLocaleString()}건` : ""}. 접수 중인 공고, 연도별 공고 수, 주로 뽑는 자리, 지원서 준비.`,
           dateModified: stat?.lastReg ?? null,
           collection: true,
-          items: board.jobs.slice(0, 20).map((j) => ({ name: j.title, path: `/jobs/${encodeURIComponent(j.id)}` })),
+          // 거르거나 넘긴 쪽(지역·고용형태·접수 중·2쪽 이후)은 화면 목록이 달라 적지 않는다. 기관 첫 쪽만.
+          items: !route.region && !route.hire && !route.open && !route.q && route.page === 1
+            ? board.jobs.slice(0, 20).map((j) => ({ name: j.title, path: `/jobs/${encodeURIComponent(j.id)}` }))
+            : undefined,
           crumbs: [
             { name: "채용", path: "/jobs" },
             { name: "기관별", path: "/jobs/org" },

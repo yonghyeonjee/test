@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -11,6 +12,7 @@ import { STATUS_LABEL } from "@/lib/db";
 import { dot } from "@/lib/pubJobs";
 import { OVERSEAS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { getOverseasJobs, nationFacet } from "@/lib/worldjob";
 import { brandKeys, withOg } from "@/lib/seo";
 
@@ -20,11 +22,13 @@ import { brandKeys, withOg } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
+const DESC =
+  "한국산업인력공단이 우수일자리로 고른 해외 채용 공고를 국가와 직종, 경력으로 걸러 봅니다. " +
+  "필수 언어와 비자 종류를 함께 표시합니다.";
+
 export const metadata: Metadata = withOg({
   title: "해외취업 우수일자리 — 국가·직종별 월드잡플러스 공고",
-  description:
-    "한국산업인력공단이 우수일자리로 고른 해외 채용 공고를 국가와 직종, 경력으로 걸러 봅니다. " +
-    "필수 언어와 비자 종류를 함께 표시합니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("해외취업", "해외 채용"),"해외취업", "해외취업 공고", "월드잡플러스", "일본 취업", "해외 우수일자리"],
   alternates: { canonical: "/jobs/overseas" },
@@ -78,6 +82,10 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
           </div>
         )}
       </PageBanner>
+      {/* 조건으로 거른 화면에는 내지 않는다. 공고마다 우리 쪽 상세가 없어 목록 항목은 적지 않는다. */}
+      {!cur.nation && !cur.q && !cur.career && (
+        <JsonLd data={pageGraph({ path: "/jobs/overseas", name: "해외취업 우수일자리", description: DESC, collection: true })} />
+      )}
 
       {!all.ok ? (
         <div className="card mt-6 p-8 text-center">

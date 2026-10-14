@@ -4,20 +4,24 @@ import Link from "next/link";
 
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getJobRegions } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
+const DESC =
+  "서울·경기·부산 등 시·도별로 공공기관과 지자체 채용 공고를 나눠 두었습니다. " +
+  "사는 곳에서 출퇴근할 수 있는 자리부터 접수 중인 순서로 봅니다.";
+
 export const metadata: Metadata = withOg({
   title: "지역별 공공기관 채용 — 시·도별 채용 공고 모아보기",
-  description:
-    "서울·경기·부산 등 시·도별로 공공기관과 지자체 채용 공고를 나눠 두었습니다. " +
-    "사는 곳에서 출퇴근할 수 있는 자리부터 접수 중인 순서로 봅니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("채용", "지역별 채용"),"지역별 채용", "지자체 채용공고", "공공기관 채용 지역", "우리 지역 채용"],
   alternates: { canonical: "/jobs/region" },
@@ -33,6 +37,15 @@ export default async function JobRegionIndex() {
         title="사는 곳에서 다닐 수 있는 자리부터"
         sub="공공기관 채용 공고를 시·도별로 나눠 두었습니다. 근무 지역은 공고를 낸 기관 이름에서 읽어 냅니다."
         art={<IllusJobs />}
+      />
+      <JsonLd
+        data={pageGraph({
+          path: "/jobs/region",
+          name: "지역별 공공기관 채용",
+          description: DESC,
+          collection: true,
+          items: regions.slice(0, 20).map((r) => ({ name: r.sido, path: `/jobs/region/${encodeURIComponent(r.sido)}` })),
+        })}
       />
 
       {regions.length === 0 ? (

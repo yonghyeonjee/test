@@ -5,24 +5,28 @@ import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import LicenseFinder from "@/components/LicenseFinder";
 import ProLicenseList from "@/components/ProLicenseList";
-import { getLicenses, proBoard } from "@/lib/qnet";
+import { getLicenses, groupBySeries, proBoard } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
 import { PRO_LICENSE_FAQ } from "@/lib/pageFaq";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 /** 종목 명단은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 넉넉하다. */
 export const revalidate = 86400;
 
+const DESC =
+  "등급 없이 자격마다 따로 시행하는 국가전문자격을 한자리에 모았습니다. " +
+  "공인중개사·감정평가사·행정사·청소년상담사 등 종목과 응시 안내, 취득을 돕는 정부 지원 제도를 함께 보실 수 있습니다.";
+
 export const metadata: Metadata = withOg({
   title: "국가전문자격 종류 — 공인중개사·감정평가사·청소년상담사 목록",
-  description:
-    "등급 없이 자격마다 따로 시행하는 국가전문자격을 한자리에 모았습니다. " +
-    "공인중개사·감정평가사·행정사·청소년상담사 등 종목과 응시 안내, 취득을 돕는 정부 지원 제도를 함께 보실 수 있습니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("전문자격", "자격증"),
     "국가전문자격",
@@ -42,6 +46,9 @@ export default async function ProLicensePage() {
   const finder = board.all.map((l) => ({
     code: l.code, name: l.name, series: l.series, field: l.field,
   }));
+  // 구조화 데이터의 목록 항목: ProLicenseList 가 그리는 순서(갈래 있는 자격 → 한 종목 자격) 그대로 앞 20개.
+  const { multi, single } = groupBySeries(board.all);
+  const listed = [...multi.flatMap((g) => g.items), ...single].filter((l) => l.code).slice(0, 20);
 
   return (
     <div className="pb-4">
@@ -67,6 +74,15 @@ export default async function ProLicensePage() {
           </div>
         )}
       </PageBanner>
+      <JsonLd
+        data={pageGraph({
+          path: "/license/pro",
+          name: "국가전문자격 종류",
+          description: DESC,
+          collection: true,
+          items: listed.map((l) => ({ name: l.name, path: `/license/${encodeURIComponent(l.code)}` })),
+        })}
+      />
 
       {board.ok ? (
         <>

@@ -4,16 +4,18 @@ import Link from "next/link";
 
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import LicenseList from "@/components/LicenseList";
 import LicenseFinder from "@/components/LicenseFinder";
 import ExamDeadlines from "@/components/ExamDeadlines";
-import { getLicenses, proBoard, techBoard } from "@/lib/qnet";
+import { getLicenses, groupByField, proBoard, techBoard } from "@/lib/qnet";
 import { getExamRounds, upcoming } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { LICENSE_FAQ } from "@/lib/pageFaq";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 /** 종목 목록은 해마다 몇 개 바뀌는 정도다. 하루 한 번이면 충분하다. */
@@ -24,11 +26,13 @@ import { brandKeys, withOg } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
+const DESC =
+  "한국산업인력공단이 시행하는 국가기술자격 600여 종목을 이름으로 찾고, 응시 자격과 다가오는 " +
+  "원서접수 일정을 확인하세요. 자격증 응시료·학원비를 지원하는 정부 제도도 함께 안내합니다.";
+
 export const metadata: Metadata = withOg({
   title: "국가자격증 찾기 — 종목별 응시 자격·시험 일정·지원 제도",
-  description:
-    "한국산업인력공단이 시행하는 국가기술자격 600여 종목을 이름으로 찾고, 응시 자격과 다가오는 " +
-    "원서접수 일정을 확인하세요. 자격증 응시료·학원비를 지원하는 정부 제도도 함께 안내합니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("자격증", "국가자격"),
     "국가자격증 종류",
@@ -59,6 +63,11 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
   const picked = board.series.some((s) => s.name === asked) ? asked : "";
   const fields = new Set(board.all.map((l) => l.field)).size;
   const finder = all.all.map((l) => ({ code: l.code, name: l.name, series: l.series, field: l.field }));
+  // 구조화 데이터의 목록 항목: 아래 종목 목록에 그려지는 순서(분야 → 중분야) 그대로 앞 20개.
+  const listed = groupByField(board.all)
+    .flatMap((g) => g.subs.flatMap((s) => s.items))
+    .filter((l) => l.code)
+    .slice(0, 20);
 
   return (
     <div className="pb-4">
@@ -85,6 +94,18 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
           </div>
         )}
       </PageBanner>
+      {/* 등급 칩·검색어로 거른 화면에는 내지 않는다(정본은 거르지 않은 /license). */}
+      {!asked && !one(searchParams.q) && (
+        <JsonLd
+          data={pageGraph({
+            path: "/license",
+            name: "국가자격증 찾기",
+            description: DESC,
+            collection: true,
+            items: listed.map((l) => ({ name: l.name, path: `/license/${encodeURIComponent(l.code)}` })),
+          })}
+        />
+      )}
 
       {/* 들어온 사람은 대개 이름 하나를 들고 온다. 그것부터 받는다. */}
       {all.ok && <LicenseFinder items={finder} initial={one(searchParams.q) ?? ""} />}
