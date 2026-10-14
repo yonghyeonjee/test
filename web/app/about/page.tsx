@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import { IllusAbout } from "@/components/Illus";
 import Link from "next/link";
+import JsonLd from "@/components/JsonLd";
 import RelatedLinks from "@/components/RelatedLinks";
 import { HowItWorksArt, TrustIcon } from "@/components/Infographic";
 import { IntroVideo } from "@/components/Video";
 import { aboutRelated } from "@/lib/related";
+import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_NAME, t, withOg } from "@/lib/seo";
+
+const DESC =
+  "K나라지원은 흩어져 있는 정부·지자체 지원사업 중에서 내 조건에 해당되는 것만 골라 보여줍니다. 회원가입도 주민등록번호도 필요 없습니다.";
 
 export const metadata: Metadata = withOg({
   title: "K나라지원 소개 — 무엇을 하는 곳이고, 무엇을 받지 않는가",
-  description:
-    "K나라지원은 흩어져 있는 정부·지자체 지원사업 중에서 내 조건에 해당되는 것만 골라 보여줍니다. 회원가입도 주민등록번호도 필요 없습니다.",
+  description: DESC,
   alternates: { canonical: "/about" },
 });
 
@@ -33,9 +37,19 @@ const USES = [
   },
 ];
 
+/** 소개 쪽은 AboutPage 로 적고, 다루는 것은 layout 이 이미 낸 Organization(#org)을 가리킨다. */
+function aboutLd() {
+  const ld = pageGraph({ path: "/about", name: "K나라지원 소개", description: DESC });
+  const page = (ld["@graph"] as Record<string, unknown>[])[0];
+  page["@type"] = "AboutPage";
+  page.about = { "@id": ORG_ID };
+  return ld;
+}
+
 export default function About() {
   return (
     <div className="py-4">
+      <JsonLd data={aboutLd()} />
       <div className="flex items-start justify-between gap-6">
         <h1 className="display text-[2rem] leading-tight sm:text-[2.4rem]">
           받을 수 있는 지원만

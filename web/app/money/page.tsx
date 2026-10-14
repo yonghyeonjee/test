@@ -3,18 +3,22 @@ import Link from "next/link";
 import { ArtJeonse, ArtStudy } from "@/components/Art";
 import HubCard from "@/components/HubCard";
 import { IllusHousing, IllusMoney } from "@/components/Illus";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { moneyRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { LOAN_ORGS } from "@/lib/studentLoan";
 import { brandKeys, withOg } from "@/lib/seo";
 
+const DESC =
+  "받는 돈만 지원이 아닙니다. 주택금융공사 보증 전세자금대출의 은행별 금리와, " +
+  "학자금 대출 이자를 대신 내주는 지자체를 한자리에 정리했습니다.";
+
 export const metadata: Metadata = withOg({
   title: "생활금융 정보 — 전세자금대출 금리, 학자금 이자지원",
-  description:
-    "받는 돈만 지원이 아닙니다. 주택금융공사 보증 전세자금대출의 은행별 금리와, " +
-    "학자금 대출 이자를 대신 내주는 지자체를 한자리에 정리했습니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("생활금융", "대출"),"전세자금대출 금리", "학자금 이자지원", "생활금융", "정부 지원 대출"],
   alternates: { canonical: "/money" },
@@ -62,6 +66,15 @@ const CARDS = [
 export default function MoneyIndex() {
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path: "/money",
+          name: "생활금융 정보",
+          description: DESC,
+          collection: true,
+          items: CARDS.map((c) => ({ name: c.title, path: c.href })),
+        })}
+      />
       <PageBanner tone="cyan"
         eyebrow="생활금융"
         title="받는 것만 지원이 아닙니다"

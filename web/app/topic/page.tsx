@@ -2,17 +2,20 @@ import type { Metadata } from "next";
 import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import TopicIcon from "@/components/TopicIcon";
 import { countByTopic } from "@/lib/db";
 import { policiesRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { TOPICS } from "@/lib/topics";
 
 export const revalidate = 3600;
+const DESC = "정부·지자체 지원을 분야별로 나눴습니다. 주거지원, 취업지원, 교육비, 의료비, 출산지원금, 돌봄서비스까지 무엇이 필요한지로 고르세요.";
 export const metadata: Metadata = withOg({
   title: "분야별 정부지원 — 주거, 일자리, 교육, 건강, 출산, 돌봄",
-  description: "정부·지자체 지원을 분야별로 나눴습니다. 주거지원, 취업지원, 교육비, 의료비, 출산지원금, 돌봄서비스까지 무엇이 필요한지로 고르세요.",
+  description: DESC,
   alternates: { canonical: "/topic" },
 });
 
@@ -20,6 +23,15 @@ export default async function TopicIndex() {
   const counts = await countByTopic().catch(() => ({} as Record<string, number>));
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path: "/topic",
+          name: "분야별 정부지원",
+          description: DESC,
+          collection: true,
+          items: TOPICS.map((t) => ({ name: t.long, path: `/topic/${t.slug}` })),
+        })}
+      />
       <p className="eyebrow mt-4">분야별</p>
       <h1 className="display mt-2 text-[1.9rem] leading-tight">무엇이 필요한지로 고르세요</h1>
       <p className="mt-3 max-w-[36rem] text-[15.5px] leading-relaxed text-muted">

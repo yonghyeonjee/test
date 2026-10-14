@@ -4,22 +4,26 @@ import { ArtStudy } from "@/components/Art";
 import Faq from "@/components/Faq";
 import FindByCondition from "@/components/FindByCondition";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { studentLoanRelated } from "@/lib/related";
 import { STUDENT_LOAN_FAQ } from "@/lib/pageFaq";
+import { pageGraph } from "@/lib/schema";
 import { hasNote } from "@/lib/areaNotes";
 import {
   LOAN_BASE, LOAN_ORGS, loanGrouped, productLabel,
 } from "@/lib/studentLoan";
 import { brandKeys, withOg } from "@/lib/seo";
 
+const DESC =
+  "한국장학재단과 협약해 학자금 대출 이자를 대신 내주는 지자체를 지역별로 정리했습니다. " +
+  "사는 곳이 목록에 있으면 이자를 한 푼도 안 낼 수 있습니다.";
+
 export const metadata: Metadata = withOg({
   title: "학자금 대출 이자지원 지자체 — 어디가 대신 내주나",
-  description:
-    "한국장학재단과 협약해 학자금 대출 이자를 대신 내주는 지자체를 지역별로 정리했습니다. " +
-    "사는 곳이 목록에 있으면 이자를 한 푼도 안 낼 수 있습니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("학자금", "학자금 이자지원"),
     "학자금 대출 이자지원",
@@ -38,6 +42,7 @@ export default function StudentLoan() {
 
   return (
     <div className="pb-4">
+      <JsonLd data={pageGraph({ path: "/money/student-loan", name: "지자체 학자금 대출 이자지원", description: DESC })} />
       <PageBanner tone="cyan"
         eyebrow="생활금융"
         title="학자금 대출 이자, 지자체가 내주는 곳이 있습니다"

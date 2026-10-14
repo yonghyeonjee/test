@@ -15,5 +15,5 @@ import Home, { businessMetadata } from "../_home/Home";
 export const revalidate = 3600;
 export const generateMetadata = () => businessMetadata();
 export default function BusinessHome() {
-  return <Home searchParams={{}} forceTab="business" />;
+  return <Home searchParams={{}} forceTab="business" ld />;
 }

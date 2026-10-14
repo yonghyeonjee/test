@@ -6,6 +6,7 @@ import AgencyList from "@/components/AgencyList";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -13,6 +14,7 @@ import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness } from "@/lib/alio
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
 import { AGENCY_FAQ } from "@/lib/pageFaq";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
@@ -21,11 +23,13 @@ import { brandKeys, withOg } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
+const DESC =
+  "전국 공공기관이 국민에게 제공하는 사업을 생애주기(청년·중장년·어르신)와 분야(사회복지·취업·교육·건강)로 " +
+  "걸러 봅니다. 기획재정부 알리오 플러스 공개 자료입니다.";
+
 export const metadata: Metadata = withOg({
   title: "공공기관 지원사업·직업훈련 — 청년지원사업부터 어르신 복지까지",
-  description:
-    "전국 공공기관이 국민에게 제공하는 사업을 생애주기(청년·중장년·어르신)와 분야(사회복지·취업·교육·건강)로 " +
-    "걸러 봅니다. 기획재정부 알리오 플러스 공개 자료입니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("공공기관", "공공기관 사업"),"공공기관 지원사업", "공공기관 서비스", "알리오플러스", "청년 공공기관 사업", "어르신 지원사업"],
   alternates: { canonical: "/agency" },
@@ -51,6 +55,10 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
 
   return (
     <div className="pb-4">
+      {/* 조건(?life=…·?q=…)이 붙으면 걸러 본 결과라 구조화 데이터를 싣지 않는다. */}
+      {!Object.values(current).some(Boolean) && (
+        <JsonLd data={pageGraph({ path: "/agency", name: "공공기관이 국민에게 하는 사업", description: DESC, collection: true })} />
+      )}
       <PageBanner tone="indigo"
         eyebrow="공공기관"
         title="공공기관이 국민에게 하는 사업, 한자리에"

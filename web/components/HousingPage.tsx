@@ -12,8 +12,15 @@ import {
   housingCounts, housingFaq, housingList, housingPath, housingTitle, shortSido, sidosFor,
   type KindKey, type WhoKey,
 } from "@/lib/housing";
-import { ORG_ID, pageGraph } from "@/lib/schema";
-import { SITE_URL } from "@/lib/seo";
+import { pageGraph } from "@/lib/schema";
+
+/** 쪽 설명. 메타데이터와 구조화 데이터가 같은 글을 쓰게 여기 둔다. */
+export function housingDescription(kind: KindKey, who: WhoKey, sido: string | undefined, n: number) {
+  const k = KINDS[kind], w = WHO[who];
+  return sido
+    ? `${sido} ${w.label} ${k.noun} 지원 총정리. 지금 접수 중인 시·군 사업 ${n}건과 주택도시기금 대출 조건을 한 화면에서 봅니다.`
+    : `${w.label}이(가) 받을 수 있는 ${k.noun} 지원 총정리. 주택도시기금 대출 조건과 지금 접수 중인 지자체 사업 ${n}건을 지역별로 봅니다.`;
+}
 
 /**
  * 주거 지원 쪽 하나. 전국 쪽과 시·도 쪽이 같은 틀을 쓴다.
@@ -35,37 +42,24 @@ export default async function HousingPage({ kind, who, sido }: { kind: KindKey; 
   const faq = housingFaq(kind, who, sido);
   const sidos = sidosFor(counts, kind, who);
   const sggs = Array.from(new Set(list.map((p) => p.sigungu).filter(Boolean) as string[]));
-  const desc =
-    `${sido ? `${sido}에서 ` : ""}${w.label}이(가) 받을 수 있는 ${k.noun} 지원을 모았습니다. ` +
-    `주택도시기금 등 정부 대출 조건과, 지금 접수 중인 ${sido ? "시·군" : "지자체"} 사업 ${list.length}건을 ` +
-    `한 화면에서 봅니다.`;
-
-  const ld = pageGraph({
+  // 시·도 쪽에 사업이 없으면 색인하지 않는 쪽이라(robots noindex) 구조화 데이터도 싣지 않는다.
+  const ld = sido && n === 0 ? null : pageGraph({
     path,
     name: title,
-    description: desc,
+    description: housingDescription(kind, who, sido, n),
     dateModified: CHECKED,
     collection: true,
     crumbs: [
       { name: "주거 지원", path: "/housing" },
       ...(sido ? [{ name: `${w.label} ${k.label}`, path: housingPath(kind, who) }, { name: sido }] : [{ name: `${w.label} ${k.label}` }]),
     ],
-    about: {
-      "@type": "ItemList",
-      "@id": `${SITE_URL}${path}#list`,
-      name: title,
-      numberOfItems: list.length,
-      itemListElement: list.slice(0, 20).map((p, i) => ({
-        "@type": "ListItem", position: i + 1, name: p.title,
-        url: `${SITE_URL}/p/${encodeURIComponent(p.source_id)}`,
-      })),
-      author: { "@id": ORG_ID },
-    },
+    // 화면의 "지금 접수 중" 목록 앞쪽. ItemList 는 pageGraph 가 짓는다.
+    items: list.slice(0, 20).map((p) => ({ name: p.title, path: `/p/${encodeURIComponent(p.source_id)}` })),
   });
 
   return (
     <div className="pb-4">
-      <JsonLd data={ld} />
+      {ld && <JsonLd data={ld} />}
       <nav aria-label="위치" className="mt-2 text-[13px] text-muted">
         <Link href="/housing" className="hover:text-brand">주거 지원</Link>
         {" · "}

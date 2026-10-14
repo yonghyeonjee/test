@@ -17,6 +17,7 @@ import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
 import RememberMe from "@/components/RememberMe";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import KeywordBar from "@/components/KeywordBar";
 import TopicGrid from "@/components/TopicGrid";
 import SectionHead from "@/components/SectionHead";
@@ -39,6 +40,7 @@ import Tabs from "@/components/Tabs";
 import { promoContextFor } from "@/lib/promo";
 import { SUGGEST_BUSINESS, SUGGEST_WELFARE, cleanQuery } from "@/lib/keywords";
 import { blogIndexRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg } from "@/lib/seo";
 import { SIDO_SHORT } from "@/lib/geo";
 import {
@@ -48,13 +50,21 @@ import {
 } from "@/lib/db";
 
 
+const BIZ_TITLE = "K나라지원 — 중소기업·소상공인 지원사업 조회, 지역·업종·업력으로";
+const BIZ_DESC =
+  "지역과 사업체 형태만 고르면 신청할 수 있는 정부 지원사업 공고를 " +
+  "찾아드립니다. 자금·기술·인력·수출·판로 분야를 마감일 순으로 정리했습니다.";
+const HOME_TITLE = "K나라지원 — 정부지원금·청년지원금 조회, 사는 곳과 나이만 넣으면 됩니다";
+const HOME_DESC =
+  "K나라지원은 전국 지자체와 중앙부처의 정부지원금·복지서비스를 한자리에 모은 곳입니다. " +
+  "사는 곳과 나이를 넣으면 해당될 만한 것만 남습니다. " +
+  "회원가입도 주민등록번호도 필요 없습니다.";
+
 /** 기업 지원사업 첫 화면의 메타데이터. /business 가 쓴다. */
 export function businessMetadata(): Metadata {
   return withOg({
-    title: { absolute: "K나라지원 — 중소기업·소상공인 지원사업 조회, 지역·업종·업력으로" },
-    description:
-      "지역과 사업체 형태만 고르면 신청할 수 있는 정부 지원사업 공고를 " +
-      "찾아드립니다. 자금·기술·인력·수출·판로 분야를 마감일 순으로 정리했습니다.",
+    title: { absolute: BIZ_TITLE },
+    description: BIZ_DESC,
     keywords: ["K나라지원", "나라지원", "소상공인 지원사업", "중소기업 지원사업", "창업 지원사업", "정부 지원사업 조회"],
     // 물음표 주소(/?tab=business)는 Next 가 정본 주소에서 물음표 뒤를 떼어 버려
     // 첫 화면과 같은 쪽으로 보였다. 그래서 /business 라는 제 길을 줬다.
@@ -70,11 +80,8 @@ export async function homeMetadata({ searchParams }: { searchParams: SP }):
   // 사이트 이름이 제목에 없으면 "K나라지원"으로 검색해도 첫 화면이 안 걸린다.
   // 이름을 맨 앞에 두고, 설명문도 이름으로 시작한다.
   return withOg({
-    title: { absolute: "K나라지원 — 정부지원금·청년지원금 조회, 사는 곳과 나이만 넣으면 됩니다" },
-    description:
-      "K나라지원은 전국 지자체와 중앙부처의 정부지원금·복지서비스를 한자리에 모은 곳입니다. " +
-      "사는 곳과 나이를 넣으면 해당될 만한 것만 남습니다. " +
-      "회원가입도 주민등록번호도 필요 없습니다.",
+    title: { absolute: HOME_TITLE },
+    description: HOME_DESC,
     keywords: [
       "K나라지원",
       "나라지원",
@@ -99,6 +106,17 @@ function Lines({ items, fresh = false }: { items: Program[]; fresh?: boolean }) 
   if (!items.length) return null;
   // 휴대폰은 두 칸이 위아래로 쌓여 길어지니 넷째 줄까지만.
   return <ul className="divide-y divide-line max-sm:[&>li:nth-child(n+5)]:hidden">{items.map((p) => <ProgramLine key={p.id} p={p} fresh={fresh} />)}</ul>;
+}
+
+/**
+ * 첫 화면 구조화 데이터. "마감 임박"·"새로 올라온" 칸에 그린 공고만 적는다.
+ * 같은 공고가 두 칸에 다 있으면 한 번만.
+ */
+function homeLd(path: string, name: string, description: string, ...panels: Program[][]) {
+  const seen = new Set<string>();
+  const items = panels.flat().filter((p) => !seen.has(p.source_id) && seen.add(p.source_id))
+    .map((p) => ({ name: p.title, path: `/p/${encodeURIComponent(p.source_id)}` }));
+  return <JsonLd data={pageGraph({ path, name, description, items })} />;
 }
 
 /** 많이 찾는 말 상자의 기준 문구. */
@@ -154,7 +172,11 @@ function Results({ results, total, label, myAge, terms, q }: {
   );
 }
 
-export default async function Home({ searchParams, forceTab }: { searchParams: SP; forceTab?: "business" }) {
+/**
+ * ld: 조건 없는 첫 화면(/, /business)에서만 구조화 데이터를 싣는다. /find 는 같은 틀을
+ * 쓰지만 조회 결과 쪽이라 싣지 않는다.
+ */
+export default async function Home({ searchParams, forceTab, ld = false }: { searchParams: SP; forceTab?: "business"; ld?: boolean }) {
   const tab = forceTab ?? (one(searchParams.tab) === "business" ? "business" : "welfare");
   const via = one(searchParams.via) ?? "form";
   const [bundle, hotTerms] = await Promise.all([getHomeBundle(), getHotTerms()]);
@@ -213,6 +235,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
 
     return (
       <>
+        {ld && homeLd("/business", BIZ_TITLE, BIZ_DESC, closing, fresh)}
         <PortalTop
           index={bundle.sggIndex} hot={hotTerms.business} scope="business" findHref="/business#find"
           h1="기업·소상공인 지원사업, 내 사업에 맞는 것만 — K나라지원 사업자 검색"
@@ -314,6 +337,7 @@ export default async function Home({ searchParams, forceTab }: { searchParams: S
 
   return (
     <>
+      {ld && homeLd("/", HOME_TITLE, HOME_DESC, closing.slice(0, 6), fresh.slice(0, 6))}
       {settings.notice && (
         <p className="mt-4 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">{settings.notice}</p>
       )}
