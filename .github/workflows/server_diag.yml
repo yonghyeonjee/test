@@ -1,6 +1,6 @@
 name: server-diag
 
-# 서울 서버 안을 들여다본다(읽기만). 메모리·CPU 부하·프로세스·서비스 기록·커널 OOM 기록.
+# 서울 서버 안을 들여다본다(읽기만). 메모리·CPU 부하·프로세스·서비스 기록·커널 OOM 기록·접속 기록 요약·막힌 IP.
 # 2026-10-06 서버가 두 번 멈췄는데 SSH 가 같이 죽어 원인을 못 봤다. 재부팅 직후 이걸 돌려 흔적을 남긴다.
 
 on:
@@ -9,6 +9,9 @@ on:
       lines:
         description: "서비스 기록 줄 수"
         default: "120"
+      minutes:
+        description: "접속 기록 요약: 최근 몇 분"
+        default: "60"
 
 jobs:
   diag:
@@ -45,5 +48,9 @@ jobs:
             echo; echo "== jiwon 서비스 기록(최근 ${{ inputs.lines }}줄)"; sudo journalctl -u jiwon -n ${{ inputs.lines }} --no-pager -o short-iso
             echo; echo "== 시스템 기록에서 오류(최근 1시간)"; sudo journalctl -p err -S -1h --no-pager -o short-iso | tail -40
             echo; echo "== Caddy"; systemctl is-active caddy; sudo journalctl -u caddy -n 20 --no-pager -o short-iso
+            echo; echo "== 접속 기록 요약(Caddy access.log)"; sudo python3 /srv/jiwon/current/access_report.py ${{ inputs.minutes || '60' }} 2>&1 || echo "요약 스크립트 없음(배포 전)"
+            echo "-- 기록 파일"; sudo ls -lh /var/log/caddy/ 2>/dev/null
+            echo; echo "== 봇 막기(fail2ban)"; systemctl is-active fail2ban 2>/dev/null
+            for j in jiwon-flood jiwon-flood-long jiwon-scan; do echo "-- $j"; sudo fail2ban-client status $j 2>/dev/null | grep -E "Currently|Total|Banned IP"; done
             echo; echo "== 3000 포트 응답"; curl -s -o /dev/null -m 15 -w "%{http_code} %{time_total}s\n" http://127.0.0.1:3000/ || echo "응답 없음"
           '

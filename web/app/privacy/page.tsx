@@ -48,7 +48,6 @@ export default function Privacy() {
           "생년월일 · 주민등록번호",
           "주소 (사는 지역은 시·군·구까지만)",
           "소득 · 재산 · 가족관계 등 행정정보",
-          "IP 주소 · 브라우저 정보 (저희 서버에는 남기지 않습니다)",
           "검색창에 직접 입력하신 문장",
         ].map((s) => (
           <li key={s} className="flex gap-2">
@@ -120,7 +119,13 @@ export default function Privacy() {
         따로, 어느 사이트를 거쳐 오셨는지(리퍼러 주소의 <b className="font-bold">
         도메인만</b>), 처음 열린 페이지, 링크에 붙은 캠페인 표시(utm)를 방문당
         한 번 저희 서버에 남깁니다. 어떤 경로로 알리는 것이 도움이 되는지 보기
-        위해서이며, 전체 주소·IP·브라우저 정보는 남기지 않습니다.
+        위해서이며, 이 유입 기록에는 전체 주소·IP·브라우저 정보를 남기지 않습니다.
+      </p>
+      <p className="mt-2 text-sm leading-relaxed">
+        <b className="font-bold">서버 접속 기록.</b> 과도한 자동 수집과 공격을 막기 위해, 웹 서버가 요청마다
+        접속 IP 주소, 요청 시각, 요청한 주소, 브라우저 정보(User-Agent), 직전 페이지 주소(리퍼러)를 기록합니다.
+        이 기록은 <b className="font-bold">7일 뒤 자동으로 지워지며</b>, 다른 기록과 합치거나 다른 목적으로 쓰지 않습니다.
+        짧은 시간에 너무 많은 요청을 보내는 IP는 한동안 접속이 막히고, 시간이 지나면 저절로 풀립니다.
       </p>
       <p className="mt-2 text-sm leading-relaxed">
         이 밖에 관리자 화면(<code className="rounded bg-surface2 px-1">/admin</code>)에
@@ -217,7 +222,7 @@ export default function Privacy() {
       <p className="mt-3 text-sm leading-relaxed">
         조건 통계는 Supabase(서울 리전 외 해외 리전 포함)에 저장되며,
         서비스 개선 목적 외에는 쓰지 않습니다. 통계로서 가치가 없어진 기록은
-        주기적으로 지웁니다.
+        주기적으로 지웁니다. 서버 접속 기록은 서울에 있는 웹 서버에만 두고 7일 뒤 지웁니다.
       </p>
 
       <H>10. 문의</H>
@@ -229,7 +234,7 @@ export default function Privacy() {
       </p>
 
       <p className="mt-8 text-xs text-muted">
-        시행일 2026-09-06 · 방침이 바뀌면 이 페이지에 먼저 알립니다.
+        시행일 2026-09-06 · 개정 2026-10-14(서버 접속 기록 항목 추가) · 방침이 바뀌면 이 페이지에 먼저 알립니다.
       </p>
 
       <Link href="/" className="btn btn-ghost mt-10">

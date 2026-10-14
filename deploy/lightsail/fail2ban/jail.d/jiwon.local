@@ -1,0 +1,42 @@
+# 봇 막기(2026-10-14). deploy/lightsail/botguard.sh 가 /etc/fail2ban 에 올린다.
+# 막으면 그 IP 는 80·443 에 아예 닿지 않는다(방화벽). 시간이 지나면 저절로 풀린다.
+#
+#  jiwon-flood       1분에 쪽·API 90번 넘게(초당 1.5회)        → 1시간
+#  jiwon-flood-long  10분에 600번 넘게(초당 1회를 10분 내내)    → 6시간
+#  jiwon-scan        10분에 스캐너 주소 3번                      → 하루
+#
+# 사람은 쪽을 1분에 열 번 넘게 열기 어렵다. 통신사 공유 IP(CGNAT) 뒤에 여러 사람이 있어도 이 사이트 규모로는 닿지 않는다.
+# 너무 세면 maxretry 를 올린다. 지금 막힌 IP: sudo fail2ban-client status jiwon-flood
+# 풀기: sudo fail2ban-client set jiwon-flood unbanip <IP>
+#
+# sshd 감옥은 끈다. 접속은 키로만 되고, GitHub Actions 배포가 잘못 막히면 서버에 못 들어간다.
+
+[DEFAULT]
+ignoreip = 127.0.0.1/8 ::1
+backend  = polling
+port     = http,https
+logpath  = /var/log/caddy/access.log
+
+[sshd]
+enabled = false
+
+[jiwon-flood]
+enabled  = true
+filter   = jiwon-flood
+findtime = 60
+maxretry = 90
+bantime  = 3600
+
+[jiwon-flood-long]
+enabled  = true
+filter   = jiwon-flood
+findtime = 600
+maxretry = 600
+bantime  = 21600
+
+[jiwon-scan]
+enabled  = true
+filter   = jiwon-scan
+findtime = 600
+maxretry = 3
+bantime  = 86400
