@@ -72,6 +72,9 @@ jobs:
           cp ../deploy/lightsail/Caddyfile ../bundle/Caddyfile
           cp ../deploy/lightsail/maintenance.html ../bundle/maintenance.html
           cp ../deploy/lightsail/jiwon-watchdog.sh ../deploy/lightsail/jiwon-watchdog.service ../deploy/lightsail/jiwon-watchdog.timer ../bundle/
+          # 봇 막기: fail2ban 규칙·감옥, 설치 스크립트, 접속 기록 요약(server_diag 가 부른다)
+          cp -r ../deploy/lightsail/fail2ban ../bundle/fail2ban
+          cp ../deploy/lightsail/botguard.sh ../deploy/lightsail/access_report.py ../bundle/
           tar -C ../bundle -czf ../bundle.tgz .
           ls -lh ../bundle.tgz
 
@@ -81,6 +84,13 @@ jobs:
           curl -sSL --retry 3 "https://caddyserver.com/api/download?os=linux&arch=amd64" -o /tmp/caddy && chmod +x /tmp/caddy
           /tmp/caddy version
           /tmp/caddy validate --config deploy/lightsail/Caddyfile --adapter caddyfile
+
+      # 규칙이 쪽 요청만 세고 검색엔진·정적 파일·미리 받기를 빼는지, 감옥 설정이 읽히는지. 틀리면 서버에 안 올린다.
+      - name: fail2ban 규칙 시험
+        if: steps.gate.outputs.go == '1'
+        run: |
+          sudo apt-get update -q >/dev/null && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q fail2ban >/dev/null
+          bash deploy/lightsail/fail2ban/test.sh
 
       - name: 서버 비밀값 파일
         if: steps.gate.outputs.go == '1'
@@ -152,6 +162,8 @@ jobs:
             fi
             # 점검 화면과 Caddy 설정. 점검 화면은 배포 폴더 밖(static)에 둬 서비스가 죽어도 Caddy 가 찾는다.
             sudo mkdir -p /srv/jiwon/static && sudo install -m 644 \$D/maintenance.html /srv/jiwon/static/maintenance.html
+            # 접속 기록 폴더(Caddyfile 의 access). Caddy 설정을 다시 읽기 전에 있어야 한다.
+            sudo install -d -o caddy -g caddy -m 755 /var/log/caddy
             if ! cmp -s \$D/Caddyfile /etc/caddy/Caddyfile; then
               sudo caddy validate --config \$D/Caddyfile --adapter caddyfile && sudo install -m 644 \$D/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
             fi
@@ -163,6 +175,8 @@ jobs:
               sudo systemctl daemon-reload && sudo systemctl enable --now jiwon-watchdog.timer
             fi
             sudo /usr/bin/systemctl restart jiwon
+            # 봇 막기(fail2ban). 사이트를 띄운 뒤에 한다. 실패해도 배포는 계속한다(경고만).
+            sudo bash \$D/botguard.sh \$D || echo '::warning::봇 막기(fail2ban) 설치·갱신 실패. 사이트는 그대로 돈다.'
             # 지난 배포는 셋만 남긴다. 서비스(jiwon)가 쓴 캐시 파일이 섞여 있어 sudo 로 지운다.
             # 수정 시각(-t)으로 고르면 안 된다. 돌던 배포는 쪽 캐시를 계속 써서 늘 \"최신\"으로 보여, 3.3GB 짜리 옛 폴더가
             # 살아남고 그보다 새 폴더가 지워졌다(2026-10-09). 폴더 이름의 실행 번호(run_id)로 줄 세우고, current 는 절대 안 지운다.

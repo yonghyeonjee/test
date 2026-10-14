@@ -7,7 +7,10 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
 |---|---|
 | `setup.sh` | 서버 첫 준비(스왑, Node 22, Caddy, systemd). 한 번만 |
 | `jiwon.service` | Next.js 서버를 띄우고 죽으면 다시 띄운다 |
-| `Caddyfile` | 443 HTTPS 인증서 자동, 3000 으로 넘김. IP 로 들어오면 검색엔진에 숨김 |
+| `Caddyfile` | 443 HTTPS 인증서 자동, 3000 으로 넘김. IP 로 들어오면 검색엔진에 숨김. 접속 기록, 스캐너·막은 봇 차단 |
+| `botguard.sh` | fail2ban 설치·갱신. 배포 때마다 돈다 |
+| `fail2ban/` | 너무 빠른 IP(1분 90번, 10분 600번)·스캐너를 80·443 에서 막는 규칙. `test.sh` 가 배포 전에 시험 |
+| `access_report.py` | 접속 기록 요약(IP·이름표·경로). server-diag 가 부른다 |
 | `../../.github/workflows/deploy_aws.yml` | main 에 합치면 빌드 → 서버로 올림 → 다시 띄움 → 200 확인 |
 | `../../.github/workflows/cron_jobs.yml` | 매일 09:00 KST 최신 수집(Vercel 크론 대신) |
 
@@ -28,6 +31,10 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
 `origin.jiwon.knowhow-it.com` A 레코드 → 고정 IP, CloudFront 원본을 그 주소(HTTPS)로, 인증서는 ACM(us-east-1)에서
 `jiwon.knowhow-it.com` DNS 검증, 캐시 정책은 원본 헤더 따르기(UseOriginCacheControlHeaders-QueryStrings),
 원본 요청 정책은 AllViewerExceptHostHeader. 그다음 `jiwon` 을 CloudFront 주소로 CNAME.
+
+CloudFront 를 앞에 두면 서버에 닿는 주소가 전부 CloudFront 것이 된다. 그때 할 일:
+- Caddyfile 전역 옵션에 `servers { trusted_proxies static <CloudFront 대역> }` 와 `client_ip_headers CloudFront-Viewer-Address X-Forwarded-For` 를 넣어 기록의 client_ip 가 손님 주소가 되게 한다.
+- fail2ban 은 방화벽에서 막으므로 CloudFront 뒤에서는 소용없다. `jiwon-flood`·`jiwon-flood-long` 을 끄고 AWS WAF 속도 규칙으로 옮긴다. 안 그러면 CloudFront 주소를 막아 사이트가 통째로 막힌다.
 
 ## 백업
 

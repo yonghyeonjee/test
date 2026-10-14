@@ -8,7 +8,90 @@
 # 2026-10-06 서버가 멈췄을 때 맨 "502" 글자만 보였다. 503 + Retry-After 는 검색엔진에 "잠깐만" 이라는 뜻이라
 # 색인이 빠지지 않는다. 파일이 없으면(옛 서버) 그냥 짧은 글로 답한다.
 
+# 접속 기록(2026-10-14). 전에는 오류만 남아 누가 얼마나 긁는지 알 수 없었다.
+# fail2ban(deploy/lightsail/fail2ban)이 이 파일을 읽어 너무 빠른 IP 를 방화벽에서 막는다.
+# 시각은 ISO8601 이라야 fail2ban 이 읽는다(기본 epoch 는 줄 중간에서 못 찾는다).
+# 머리글은 이름표(User-Agent)·리퍼러·언어만 남기려고 나머지 흔한 것을 지운다. 이름표는 fail2ban 이 검색엔진을 빼는 데 쓴다.
+# 쿠키·인증·기기 열쇠(X-Device-Key)는 지운다.
+# 20MB 씩 7개, 7일 넘은 것은 지운다. IP 를 담으니 오래 두지 않는다(개인정보 처리방침 '접속 기록').
+(access) {
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 20MiB
+			roll_keep 7
+			roll_keep_for 168h
+		}
+		format filter {
+			wrap json {
+				time_format iso8601
+			}
+			fields {
+				request>headers>Accept delete
+				request>headers>Accept-Encoding delete
+				request>headers>Cookie delete
+				request>headers>Authorization delete
+				request>headers>Cache-Control delete
+				request>headers>Pragma delete
+				request>headers>Connection delete
+				request>headers>Upgrade-Insecure-Requests delete
+				request>headers>Priority delete
+				request>headers>Dnt delete
+				request>headers>Te delete
+				request>headers>Origin delete
+				request>headers>Content-Type delete
+				request>headers>Content-Length delete
+				request>headers>If-None-Match delete
+				request>headers>If-Modified-Since delete
+				request>headers>Purpose delete
+				request>headers>Sec-Ch-Ua delete
+				request>headers>Sec-Ch-Ua-Mobile delete
+				request>headers>Sec-Ch-Ua-Platform delete
+				request>headers>Sec-Fetch-Dest delete
+				request>headers>Sec-Fetch-Mode delete
+				request>headers>Sec-Fetch-Site delete
+				request>headers>Sec-Fetch-User delete
+				request>headers>Sec-Purpose delete
+				request>headers>Rsc delete
+				request>headers>Next-Router-Prefetch delete
+				request>headers>Next-Router-State-Tree delete
+				request>headers>Next-Router-Segment-Prefetch delete
+				request>headers>Next-Url delete
+				request>headers>Next-Action delete
+				request>headers>X-Device-Key delete
+				request>headers>Baggage delete
+				request>headers>Sentry-Trace delete
+				request>tls delete
+				resp_headers delete
+				user_id delete
+			}
+		}
+	}
+}
+
+# 막는 것(Node 까지 가지 않고 Caddy 가 바로 답한다).
+#  1) 스캐너: 이 사이트에 없는 PHP·워드프레스·설정 파일 주소. 404.
+#  2) robots.txt 로 통째로 막은 봇(web/app/robots.txt/route.ts BLOCKED)이 그래도 오면 403. robots.txt 는 읽게 둔다.
+#  3) 이름표(User-Agent)가 없는 요청. 403. 브라우저·검색엔진은 반드시 단다.
+# 검색엔진(Googlebot·Yeti·Daum·bingbot)·AdSense·AI 답변 봇(PerplexityBot·OAI-SearchBot·Claude-User 등)은 건드리지 않는다.
+(guard) {
+	@scan {
+		path *.php *.asp *.aspx *.jsp *.cgi /wp-* /wordpress* /.env* /.git* /.aws* /.ssh* /.vscode* /.DS_Store
+		path /cgi-bin/* /vendor/* /phpmyadmin* /pma* /boaform* /actuator* /server-status* /HNAP1* /owa/* /autodiscover* /xmlrpc*
+	}
+	respond @scan 404 {
+		close
+	}
+	@badbot {
+		not path /robots.txt
+		header_regexp User-Agent (?i)(GPTBot|ClaudeBot|anthropic-ai|CCBot|Bytespider|PetalBot|Amazonbot|meta-externalagent|FacebookBot|cohere-ai|Diffbot|ImagesiftBot|Omgilibot|Timpibot|YouBot|AhrefsBot|SemrushBot|MJ12bot|DotBot|DataForSeoBot|BLEXBot|serpstatbot|Barkrowler|ZoominfoBot|zgrab|masscan|Nuclei|sqlmap|Nikto)
+	}
+	respond @badbot 403
+	@noua not header User-Agent *
+	respond @noua 403
+}
+
 (app) {
+	import guard
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3000 {
 		transport http {
@@ -39,11 +122,13 @@
 # origin.jiwon.knowhow-it.com 은 CloudFront 를 둘 때 DNS 와 함께 다시 넣는다. DNS 없이 적어 두면
 # Caddy 가 2분마다 인증서를 받으려다 실패한 기록을 남긴다.
 jiwon.knowhow-it.com {
+	import access
 	import app
 }
 
 # 도메인을 돌리기 전 점검용: http://<서버 IP>/ 로 들어온 요청. 검색엔진에는 숨긴다.
 :80 {
 	header X-Robots-Tag "noindex, nofollow"
+	import access
 	import app
 }

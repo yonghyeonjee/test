@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Lightsail 서버(Ubuntu 24.04, 서울) 첫 준비. 한 번만 돌린다:
 #   sudo bash setup.sh
-# 하는 일: 스왑 1GB, Node 22, Caddy(HTTPS), jiwon 사용자·폴더, systemd 서비스.
+# 하는 일: 스왑 1GB, Node 22, Caddy(HTTPS), jiwon 사용자·폴더, systemd 서비스, 봇 막기(fail2ban).
 # 앱 파일은 GitHub Actions(deploy_aws.yml)가 /srv/jiwon/releases/<커밋> 에 올리고 current 로 잇는다.
 set -euo pipefail
 
@@ -46,6 +46,9 @@ install -m 644 "$HERE/Caddyfile" /etc/caddy/Caddyfile
 systemctl daemon-reload
 systemctl enable jiwon caddy
 systemctl restart caddy
+
+# 봇 막기: Caddy 접속 기록을 fail2ban 이 읽어 너무 빠른 IP·스캐너를 막는다. 배포 때마다 다시 맞춘다.
+bash "$HERE/botguard.sh" "$HERE"
 
 # 배포 스크립트가 sudo 없이 서비스만 다시 띄울 수 있게.
 echo 'ubuntu ALL=(root) NOPASSWD: /usr/bin/systemctl restart jiwon, /usr/bin/systemctl status jiwon, /usr/bin/journalctl -u jiwon *' > /etc/sudoers.d/jiwon-deploy

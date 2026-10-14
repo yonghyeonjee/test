@@ -12,6 +12,9 @@ export async function POST(req: Request) {
   if (!svcConfigured()) return NextResponse.json({ ok: false }, { status: 503 });
   // 크롤러는 서버에서도 거른다(브라우저 쪽 검사가 빠져도 세지 않게).
   if (isBot(req.headers.get("user-agent"))) return NextResponse.json({ ok: true, skipped: "bot" });
+  // 사람이 쓰는 브라우저는 언어 머리글(Accept-Language)을 반드시 보낸다. 자동화 브라우저는 흔히 빠뜨린다.
+  // 2026-10-10 부터 이름표를 브라우저로 꾸민 수집기가 시간당 40건쯤 "직접 유입"으로 세어졌다.
+  if (!req.headers.get("accept-language")) return NextResponse.json({ ok: true, skipped: "no-lang" });
   if (!allow(`visit:${ipOf(req)}`, 20)) return NextResponse.json({ ok: false }, { status: 429 });
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
