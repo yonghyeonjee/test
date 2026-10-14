@@ -83,6 +83,8 @@ jobs:
         run: |
           curl -sSL --retry 3 "https://caddyserver.com/api/download?os=linux&arch=amd64" -o /tmp/caddy && chmod +x /tmp/caddy
           /tmp/caddy version
+          # 검사는 접속 기록 파일을 실제로 열어 본다. 러너는 일반 사용자라 /var/log/caddy 를 못 만든다(2026-10-14 첫 배포가 여기서 멈춤).
+          sudo install -d -m 777 /var/log/caddy
           /tmp/caddy validate --config deploy/lightsail/Caddyfile --adapter caddyfile
 
       # 규칙이 쪽 요청만 세고 검색엔진·정적 파일·미리 받기를 빼는지, 감옥 설정이 읽히는지. 틀리면 서버에 안 올린다.
