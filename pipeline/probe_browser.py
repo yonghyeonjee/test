@@ -513,21 +513,40 @@ def check_style(browser) -> None:
 
 
 WIDE_JS = """() => {
+  // 문서 폭을 실제로 넓히는 요소만 찾는다. 잘리는 상자(overflow hidden·clip·auto·scroll) 안의 것은
+  // 화면에 안 보이고 문서 폭도 안 늘리므로 뺀다(2026-10-14 배너 슬라이더가 넘침으로 잘못 잡혔다).
+  // 넘친 요소의 자식은 다시 적지 않는다. 가장 오른쪽까지 간 것부터 적는다.
   const vw = document.documentElement.clientWidth;
-  const bad = [];
+  const clipped = (e) => {
+    for (let a = e.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+      const o = getComputedStyle(a).overflowX;
+      if (o === 'hidden' || o === 'clip' || o === 'auto' || o === 'scroll') return true;
+    }
+    return false;
+  };
+  const found = [];
   for (const e of document.querySelectorAll('body *')) {
     const r = e.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
     const cs = getComputedStyle(e);
-    if (cs.position === 'fixed') continue;
-    if (r.right > vw + 1 || r.left < -1) {
-      const inScroller = e.closest('[class*="overflow-x-auto"], .menu-band');
-      if (inScroller && inScroller !== e) continue;
-      const who = e.id || e.getAttribute('data-ad-status') || (e.closest('.ad-slot') ? '광고 안' : e.closest('[role="application"]') ? '지도 안' : '');
-      bad.push(`${e.tagName.toLowerCase()}.${String(e.className).split(' ').slice(0, 3).join('.')} ${Math.round(r.left)}~${Math.round(r.right)} (${Math.round(r.width)}px) ${who}`);
-    }
-    if (bad.length >= 12) break;
+    if (cs.position === 'fixed' || cs.visibility === 'hidden') continue;
+    if (r.right <= vw + 1 && r.left >= -1) continue;
+    if (found.some((f) => f.el.contains(e))) continue;
+    if (clipped(e)) continue;
+    found.push({ el: e, r });
   }
+  found.sort((a, b) => b.r.right - a.r.right);
+  const path = (e) => {
+    const bits = [];
+    for (let a = e; a && a !== document.body && bits.length < 4; a = a.parentElement) {
+      bits.unshift(a.tagName.toLowerCase() + (a.id ? '#' + a.id : '') + (typeof a.className === 'string' && a.className ? '.' + a.className.trim().split(/\\s+/).slice(0, 3).join('.') : ''));
+    }
+    return bits.join(' > ');
+  };
+  const bad = found.slice(0, 10).map(({ el, r }) => {
+    const who = el.getAttribute('data-ad-status') || (el.closest('.ad-slot, ins.adsbygoogle, [id^="aswift"], .google-auto-placed') ? '광고' : el.closest('[role="application"]') ? '지도' : '');
+    return `${Math.round(r.left)}~${Math.round(r.right)} (${Math.round(r.width)}px) ${who} ${path(el)}`;
+  });
   return { vw, scrollW: document.documentElement.scrollWidth, bodyScrollW: document.body.scrollWidth, scrollX: window.scrollX, bad };
 }"""
 
