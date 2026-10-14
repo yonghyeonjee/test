@@ -35,6 +35,9 @@ const BLOCKED = [
   "Bytespider", "PetalBot", "Amazonbot", "Applebot-Extended", "meta-externalagent", "FacebookBot", "cohere-ai",
   "Diffbot", "ImagesiftBot", "Omgilibot", "Timpibot", "YouBot",
   "AhrefsBot", "SemrushBot", "MJ12bot", "DotBot", "DataForSeoBot", "BLEXBot", "serpstatbot", "Barkrowler", "ZoominfoBot",
+  // Meta AI 검색 수집기. 2026-10-14 접속 기록: IP 96개로 나눠 초당 2건, 공통 규칙이 막은 /jobs/…/q/ 까지 긁어
+  // Supabase 요청이 평소의 15배가 됐다. 지난 30일 Meta 쪽에서 온 손님은 0명. Caddy 도 403 으로 막는다.
+  "meta-webindexer",
 ];
 
 /**
@@ -43,9 +46,7 @@ const BLOCKED = [
  * 그림 그리기(글꼴 내려받기·렌더링)는 힙 밖 메모리를 써서 힙 상한(384MB)으로 묶이지 않는다.
  * robots.txt 는 같은 봇에 맞는 무리 하나만 따르므로 공통 숨김 경로도 같이 적는다.
  */
-// meta-webindexer(Meta AI 검색)는 2026-10-14 접속 기록에서 처음 확인했다. 공통 규칙이 막은 /jobs/…/q/ 를 긁고 있어
-// 이름을 불러 같은 규칙과 /og 를 다시 적는다. 그래도 오면 Caddy(@robotsdeny)가 403 으로 막는다.
-const ANSWER_BOTS = ["PerplexityBot", "OAI-SearchBot", "ChatGPT-User", "Google-Extended", "Claude-SearchBot", "Claude-User", "Claude-Web", "meta-webindexer"];
+const ANSWER_BOTS = ["PerplexityBot", "OAI-SearchBot", "ChatGPT-User", "Google-Extended", "Claude-SearchBot", "Claude-User", "Claude-Web"];
 
 export async function GET() {
   // DB 를 못 읽어도 확인 줄은 나가야 한다. 사라지면 소유 확인이 풀린다.
