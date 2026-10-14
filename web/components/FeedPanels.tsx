@@ -13,9 +13,12 @@ export default function FeedPanels({ panels, id }: {
   const shown = panels.filter((p) => p.content);
   if (!shown.length) return null;
   return (
-    <div id={id} className={`grid gap-3 ${shown.length > 1 ? "sm:grid-cols-2" : ""}`}>
+    // grid-cols-1 이라야 칸이 화면 폭(minmax(0,1fr))이 된다. 칸 수를 안 적으면 기본 칸은 안쪽의 가장 긴
+    // 한 줄(말줄임 제목은 줄바꿈이 없어 제목 전체 길이)만큼 넓어져, 휴대폰에서 이 카드만 442px 로 그려지고
+    // 쪽 전체가 옆으로 밀렸다(2026-10-14). 카드에도 min-w-0.
+    <div id={id} className={`grid grid-cols-1 gap-3 ${shown.length > 1 ? "sm:grid-cols-2" : ""}`}>
       {shown.map((p) => (
-        <section key={p.key} className="card feed-panel px-4 pb-2 pt-3 sm:px-5" aria-labelledby={`feed-${p.key}`}>
+        <section key={p.key} className="card feed-panel min-w-0 px-4 pb-2 pt-3 sm:px-5" aria-labelledby={`feed-${p.key}`}>
           <div className="flex items-end justify-between gap-3 border-b border-line">
             <h2 id={`feed-${p.key}`} className="feed-title -mb-px border-b-[3px] border-brand pb-2 text-[16px] font-extrabold tracking-[-.02em] text-ink">
               {p.label}
