@@ -1,0 +1,131 @@
+"""
+indexing.py — 새로 생긴 쪽을 검색엔진에 바로 알린다(2026-10-15).
+
+검색엔진이 스스로 찾아오기를 기다리면 채용 공고는 마감 뒤에야 색인되기도 한다. 하루치 새 주소를 모아
+  1) IndexNow   — 네이버(서치어드바이저)·빙(api.indexnow.org, 빙·얀덱스 등이 나눠 받는다). 키 파일은 web/public/<KEY>.txt
+  2) 구글 Indexing API — 채용 공고(JobPosting) 쪽만 허용된다. 서비스 계정이 있을 때만(GOOGLE_INDEXING_SA, JSON 통째).
+                         하루 기본 한도 200건. 새 공고 먼저, 남으면 어제 마감된 공고(구글이 마감을 빨리 보게).
+에 보낸다. 주소는 정본 주소만(https://jiwon.knowhow-it.com/...). 실패해도 다른 쪽은 계속한다.
+
+  python pipeline/indexing.py                 # 최근 30시간 새 주소
+  python pipeline/indexing.py --hours 72 --dry
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import os
+import sys
+import time
+import urllib.parse
+
+import requests
+
+SITE = "https://jiwon.knowhow-it.com"
+HOST = "jiwon.knowhow-it.com"
+# IndexNow 키. 비밀이 아니다 — 누구나 볼 수 있는 키 파일(web/public/<KEY>.txt)로 이 사이트 주인임을 보인다.
+KEY = "b5cb845dc6f92a695d0bce4736a5ee2b"
+INDEXNOW = ["https://searchadvisor.naver.com/indexnow", "https://api.indexnow.org/indexnow"]
+GOOGLE_QUOTA = 190  # 하루 200건 한도에서 손으로 보낼 몫을 조금 남긴다
+
+
+def enc(x: str) -> str:
+    return urllib.parse.quote(x, safe="")
+
+
+def collect(sb, hours: int) -> dict[str, list[str]]:
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)).isoformat()
+    yday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    jobs = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
+            .order("first_seen_at", desc=True).limit(2000).execute().data or [])
+    closed = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).eq("end_date", yday)
+              .limit(500).execute().data or [])
+    progs = (sb.table("programs").select("source_id").gte("first_seen_at", since).limit(2000).execute().data or [])
+    blogs = (sb.table("blog_posts").select("slug").gte("published_at", since).limit(100).execute().data or [])
+    guides = (sb.table("org_guides").select("slug").gte("updated_at", since).limit(100).execute().data or [])
+    return {
+        "jobs": [f"{SITE}/jobs/{enc(r['source_id'])}" for r in jobs],
+        "closed": [f"{SITE}/jobs/{enc(r['source_id'])}" for r in closed],
+        "programs": [f"{SITE}/p/{enc(r['source_id'])}" for r in progs],
+        "pages": [f"{SITE}/story/{enc(r['slug'])}" for r in blogs] + [f"{SITE}/jobs/guide/{enc(r['slug'])}" for r in guides],
+    }
+
+
+def indexnow(urls: list[str], dry: bool) -> None:
+    if not urls:
+        print("IndexNow: 보낼 주소 없음")
+        return
+    body = {"host": HOST, "key": KEY, "keyLocation": f"{SITE}/{KEY}.txt", "urlList": urls[:10000]}
+    for ep in INDEXNOW:
+        if dry:
+            print(f"IndexNow {ep}: (dry) {len(urls)}건")
+            continue
+        try:
+            r = requests.post(ep, json=body, headers={"Content-Type": "application/json; charset=utf-8"}, timeout=30)
+            # 200·202 가 받음. 422 는 키·주소 불일치, 429 는 너무 잦음.
+            print(f"IndexNow {ep}: {r.status_code} {len(urls)}건 {r.text[:160].strip()}")
+        except requests.RequestException as e:
+            print(f"IndexNow {ep}: 실패 {type(e).__name__}", file=sys.stderr)
+
+
+def google_token() -> str | None:
+    raw = os.environ.get("GOOGLE_INDEXING_SA", "").strip()
+    if not raw:
+        return None
+    from google.oauth2 import service_account  # noqa: PLC0415 — 비밀값이 있을 때만 쓴다
+    from google.auth.transport.requests import Request  # noqa: PLC0415
+    info = json.loads(raw)
+    cred = service_account.Credentials.from_service_account_info(info, scopes=["https://www.googleapis.com/auth/indexing"])
+    cred.refresh(Request())
+    return cred.token
+
+
+def google_publish(new_jobs: list[str], closed: list[str], dry: bool) -> None:
+    try:
+        token = google_token()
+    except Exception as e:  # noqa: BLE001 — 키가 틀려도 IndexNow 는 이미 갔다
+        print(f"구글 Indexing: 인증 실패 {type(e).__name__}: {str(e)[:160]}", file=sys.stderr)
+        return
+    if not token:
+        print("구글 Indexing: GOOGLE_INDEXING_SA 가 없어 건너뜀(사용자가 서비스 계정을 넣으면 켜진다)")
+        return
+    plan = [(u, "URL_UPDATED") for u in new_jobs][:GOOGLE_QUOTA]
+    plan += [(u, "URL_UPDATED") for u in closed][: max(0, GOOGLE_QUOTA - len(plan))]
+    ok = fail = 0
+    for url, kind in plan:
+        if dry:
+            ok += 1
+            continue
+        r = requests.post("https://indexing.googleapis.com/v3/urlNotifications:publish",
+                          headers={"Authorization": f"Bearer {token}"}, json={"url": url, "type": kind}, timeout=30)
+        if r.status_code == 200:
+            ok += 1
+        else:
+            fail += 1
+            if fail <= 3:
+                print(f"  구글 {r.status_code}: {url} {r.text[:200].strip()}", file=sys.stderr)
+            if r.status_code in (403, 429):  # 권한 없음·한도 소진은 계속해도 같다
+                break
+        time.sleep(0.2)
+    print(f"구글 Indexing: 보냄 {ok} · 실패 {fail} (새 공고 {len(new_jobs)}, 어제 마감 {len(closed)})")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--hours", type=int, default=30)
+    ap.add_argument("--dry", action="store_true")
+    a = ap.parse_args()
+    from supabase import create_client
+    sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+    got = collect(sb, a.hours)
+    print("새 주소: " + ", ".join(f"{k} {len(v)}" for k, v in got.items()))
+    for k, v in got.items():
+        for u in v[:3]:
+            print(f"  {k}: {u}")
+    indexnow(got["jobs"] + got["programs"] + got["pages"], a.dry)
+    google_publish(got["jobs"], got["closed"], a.dry)
+
+
+if __name__ == "__main__":
+    main()

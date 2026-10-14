@@ -60,3 +60,48 @@ export function employmentFromTitle(title: string): Employment | null {
   if (/공무직|무기계약|정규직|경력경쟁|공개경쟁|일반직/.test(title)) return "FULL_TIME";
   return null;
 }
+
+/**
+ * 공고 요약의 보수 문구를 구글 JobPosting 의 baseSalary(MonetaryAmount)로.
+ *
+ * 구글은 급여를 강하게 권하지만 틀린 값은 안 된다. 단위(시간·월·연)가 분명한 금액만 쓰고,
+ * "공무원보수규정에 따름" 처럼 숫자가 없거나 단위를 알 수 없으면 null — 지어 넣지 않는다.
+ * 식대·수당·상여금 같은 딸린 금액은 단위별 그럴듯한 범위로 걸러 낸다(월 16만 원 식대는 월급이 아니다).
+ * 금액이 여럿이면(분야별·상한·하한) 가장 작은 것~큰 것 범위로.
+ */
+export type Salary = { "@type": "MonetaryAmount"; currency: "KRW"; value: Record<string, unknown> };
+const UNIT_RANGE = { HOUR: [9_000, 300_000], MONTH: [1_000_000, 20_000_000], YEAR: [15_000_000, 300_000_000] } as const;
+type PayUnit = keyof typeof UNIT_RANGE;
+
+export function salaryFromPay(text: string | null | undefined): Salary | null {
+  const t = (text ?? "").replace(/\s+/g, " ");
+  if (!t) return null;
+  const found: { unit: PayUnit; value: number }[] = [];
+  const re = /(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(천원|만\s*원|만원|원)/g;
+  for (const m of t.matchAll(re)) {
+    const n = Number(m[1].replace(/,/g, ""));
+    const mult = m[2].startsWith("천") ? 1_000 : m[2].startsWith("만") ? 10_000 : 1;
+    const value = n * mult;
+    const before = t.slice(Math.max(0, (m.index ?? 0) - 14), m.index);
+    const after = t.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 4);
+    // 금액 바로 앞에 딸린 금액 이름이 붙어 있으면 뺀다.
+    if (/(식대|급식비|수당|상여금|보로금|휴가비|보조비|기술비|복지|여비)\s*:?\s*(월\s*)?$/.test(before)) continue;
+    let unit: PayUnit | null = null;
+    if (/(시간당|시급|강사료|시간\s*당)/.test(before) || /^\s*\/\s*(시간|h)/.test(after)) unit = "HOUR";
+    else if (/(연봉|연\s|연간|한계액|하한액|상한액|하한|상한)/.test(before) || /^\s*\/\s*(년|연)/.test(after)) unit = "YEAR";
+    else if (/(월급|매월|월\s|기본급|봉급기준액|월$)/.test(before) || /^\s*\/\s*월/.test(after) || /^\s*\(?\s*월/.test(after)) unit = "MONTH";
+    else if (value >= UNIT_RANGE.YEAR[0]) unit = "YEAR";
+    if (!unit) continue;
+    const [lo, hi] = UNIT_RANGE[unit];
+    if (value < lo || value > hi) continue;
+    found.push({ unit, value });
+  }
+  if (!found.length) return null;
+  const unit = found[0].unit;
+  const vals = found.filter((f) => f.unit === unit).map((f) => f.value);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const value: Record<string, unknown> = { "@type": "QuantitativeValue", unitText: unit };
+  if (min === max) value.value = min;
+  else { value.minValue = min; value.maxValue = max; }
+  return { "@type": "MonetaryAmount", currency: "KRW", value };
+}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { withOg } from "@/lib/seo";
 import { notFound } from "next/navigation";
-import HousingPage from "@/components/HousingPage";
+import HousingPage, { housingDescription } from "@/components/HousingPage";
 import {
   KINDS, KIND_KEYS, WHO, WHO_KEYS, countOf, housingCounts, housingPath, housingTitle, isKind, isWho,
 } from "@/lib/housing";
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { kind: string; who
   const title = housingTitle(kind, who, undefined, n);
   return withOg({
     title,
-    description: `${w.label}이(가) 받을 수 있는 ${k.noun} 지원 총정리. 주택도시기금 대출 조건과 지금 접수 중인 지자체 사업 ${n}건을 지역별로 봅니다.`,
+    description: housingDescription(kind, who, undefined, n),
     keywords: [
       `${w.label} ${k.label} 지원`, `${w.label} ${k.label} 대출`, `${w.label} ${k.title}`,
       `${w.label} ${k.label}자금 대출이자 지원`, `${w.label} 주거 지원`, `${w.label} 주택 지원`,

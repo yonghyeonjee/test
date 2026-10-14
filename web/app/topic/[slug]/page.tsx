@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import ProgramEntry from "@/components/ProgramEntry";
 import PromoBanner from "@/components/PromoBanner";
@@ -11,6 +12,7 @@ import TopicIcon from "@/components/TopicIcon";
 import { listByTopic } from "@/lib/db";
 import type { PromoContext } from "@/lib/promo";
 import { policiesRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { SITE_URL, YEAR, brandKeys, withOg } from "@/lib/seo";
 import { TOPICS, topicBySlug } from "@/lib/topics";
 
@@ -19,12 +21,15 @@ export function generateStaticParams() { return TOPICS.map((t) => ({ slug: t.slu
 
 const CTX: Record<string, PromoContext> = { housing: "housing", jobs: "job", education: "student", pregnancy: "family", care: "family", finance: "money" };
 
+const describe = (t: NonNullable<ReturnType<typeof topicBySlug>>) =>
+  `${t.name} 분야 정부·지자체 지원사업을 모았습니다. ${t.intro[0].slice(0, 70)}… 접수 중인 사업부터 보여 드립니다.`;
+
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const t = topicBySlug(params.slug);
   if (!t) return withOg({});
   return withOg({
     title: `${t.long} 정부지원 총정리 (${YEAR}) — 신청 조건과 방법`,
-    description: `${t.name} 분야 정부·지자체 지원사업을 모았습니다. ${t.intro[0].slice(0, 70)}… 접수 중인 사업부터 보여 드립니다.`,
+    description: describe(t),
     keywords: [...brandKeys(t.name, `${t.name} 지원금`), ...t.keywords],
     alternates: { canonical: `${SITE_URL}/topic/${t.slug}` },
   });
@@ -43,6 +48,17 @@ export default async function TopicPage({ params }: { params: { slug: string } }
 
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path: `/topic/${t.slug}`,
+          name: `${t.long} 정부지원`,
+          description: describe(t),
+          collection: true,
+          // 화면 위 길잡이는 "분야별" 한 칸, 그 아래 제목이 지금 쪽이다.
+          crumbs: [{ name: "분야별", path: "/topic" }, { name: t.long }],
+          items: list.slice(0, 20).map((p) => ({ name: p.title, path: `/p/${encodeURIComponent(p.source_id)}` })),
+        })}
+      />
       <nav className="mt-2 text-xs text-muted"><Link href="/topic" className="hover:text-brand">분야별</Link></nav>
       <div className="mt-3 flex items-center gap-4">
         <TopicIcon slug={t.slug} color={t.color} soft={t.soft} size={64} />

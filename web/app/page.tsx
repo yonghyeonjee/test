@@ -17,5 +17,5 @@ export function generateMetadata(): Promise<Metadata> {
 }
 
 export default function Page() {
-  return <Home searchParams={{}} />;
+  return <Home searchParams={{}} ld />;
 }

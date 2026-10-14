@@ -4,6 +4,7 @@ import { IllusHousing } from "@/components/Illus";
 import Faq from "@/components/Faq";
 import FindByCondition from "@/components/FindByCondition";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -12,16 +13,19 @@ import RateTable from "@/components/RateTable";
 import { getRentRates, pct, ymd } from "@/lib/rentRate";
 import { jeonseRelated } from "@/lib/related";
 import { JEONSE_FAQ } from "@/lib/pageFaq";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 /** 공사가 하루 한 번 갱신한다. 여섯 시간마다 다시 받아 오면 충분하다. */
 export const revalidate = 21600;
 
+const DESC =
+  "한국주택금융공사가 보증하는 전세자금대출의 은행별 금리를 낮은 순으로 정리했습니다. " +
+  "기준금리와 가산금리를 나눠 보여드리므로 어디서 차이가 나는지 바로 보입니다.";
+
 export const metadata: Metadata = withOg({
   title: "청년 전세대출·전세자금대출 금리 비교 — 은행별 적용금리 한눈에",
-  description:
-    "한국주택금융공사가 보증하는 전세자금대출의 은행별 금리를 낮은 순으로 정리했습니다. " +
-    "기준금리와 가산금리를 나눠 보여드리므로 어디서 차이가 나는지 바로 보입니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("전세대출", "전세자금대출 금리", "전세"),
     "청년 전세대출",
@@ -42,6 +46,7 @@ export default async function Jeonse() {
 
   return (
     <div className="pb-4">
+      <JsonLd data={pageGraph({ path: "/money/jeonse", name: "전세자금대출 금리 비교", description: DESC })} />
       <PageBanner tone="cyan"
         eyebrow="생활금융"
         title="전세자금대출, 은행마다 금리가 다릅니다"

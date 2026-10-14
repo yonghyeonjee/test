@@ -5,12 +5,14 @@ import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { AGE_LINK } from "@/components/StatTables";
 import { policiesRelated } from "@/lib/related";
 import { POLICIES_FAQ } from "@/lib/pageFaq";
+import { pageGraph } from "@/lib/schema";
 import {
   BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY,
   getAreas, getCoverage, getRegions, getStats,
@@ -20,11 +22,13 @@ import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
+const DESC =
+  "전국 지자체와 중앙부처의 정부 지원 정책을 대상별·분야별·지역별로 한 화면에 펼쳤습니다. " +
+  "조건을 누르면 해당되는 공고만 바로 모아 보실 수 있습니다.";
+
 export const metadata: Metadata = withOg({
   title: "청년정책·정부지원사업 전체 — 청년지원금, 복지서비스, 기업지원 목록",
-  description:
-    "전국 지자체와 중앙부처의 정부 지원 정책을 대상별·분야별·지역별로 한 화면에 펼쳤습니다. " +
-    "조건을 누르면 해당되는 공고만 바로 모아 보실 수 있습니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("정책", "전체 정책", "정부 정책"),
     "청년정책",
@@ -107,6 +111,16 @@ export default async function Policies() {
 
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path: "/policies",
+          name: "찾아볼 수 있는 정책 전체",
+          description: DESC,
+          collection: true,
+          // 조건 칩은 조회 주소(?age=…)라 빼고, 화면의 시·도 쪽 링크만 적는다.
+          items: regions.map((r) => ({ name: r.sido, path: `/area/${encodeURIComponent(r.sido)}` })),
+        })}
+      />
       <PageBanner tone="green"
         eyebrow="전체 보기"
         title="찾아볼 수 있는 정책을 전부 펼쳐 두었습니다"

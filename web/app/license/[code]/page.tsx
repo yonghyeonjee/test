@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -17,6 +18,7 @@ import { getExamSite } from "@/lib/examInsight";
 import { getExamRounds, gradeOfSeries, upcomingForSeries } from "@/lib/qnetExam";
 import { getLicenses, type License } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg } from "@/lib/seo";
 
 /** 하루에 한 번. 큐넷 일정·통계가 주마다 들어오니 일주일 캐시는 길다. 빌드 때 API 가 죽어 있으면 요청 때 만든다. */
@@ -42,12 +44,18 @@ async function find(code: string): Promise<{ l: License; same: License[] } | nul
   return { l, same };
 }
 
+const licenseDesc = (l: License) =>
+  `${l.name}(${l.series}, ${l.field})의 응시 자격과 시험 준비 방법, 학원비·응시료를 지원하는 정부 제도, 이 자격으로 지원할 수 있는 채용을 정리했습니다.`;
+
+/** 화면 머리(eyebrow)에 적는 자격 구분 그대로. */
+const kindLabel = (l: License) => (l.kind === "T" ? "국가기술자격" : l.kindName || "국가자격");
+
 export async function generateMetadata({ params }: { params: { code: string } }): Promise<Metadata> {
   const r = await find(params.code);
   if (!r) return withOg({ title: "찾을 수 없는 종목" });
   const { l } = r;
   const title = `${l.name} 자격증 — 응시 자격, 시험 일정, 취득 지원 제도`;
-  const description = `${l.name}(${l.series}, ${l.field})의 응시 자격과 시험 준비 방법, 학원비·응시료를 지원하는 정부 제도, 이 자격으로 지원할 수 있는 채용을 정리했습니다.`;
+  const description = licenseDesc(l);
   return withOg({
     title, description,
     keywords: [`${l.name}`, `${l.name} 자격증`, `${l.name} 응시자격`, `${l.name} 시험일정`, `${l.series} 자격증`],
@@ -66,15 +74,40 @@ export default async function LicensePage({ params }: { params: { code: string }
   ]);
   // 국가전문자격은 등급별 통합 회차가 없다. 큐넷 종목 안내에서 읽어 둔 올해 일정이 있으면 그것이 "시험 일정" 이다.
   const siteOnly = !gradeOfSeries(l.series) && site.sched.length > 0;
+  const path = `/license/${encodeURIComponent(l.code)}`;
 
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path,
+          name: `${l.name} 자격증`,
+          description: licenseDesc(l),
+          // 위 길잡이 그대로(자격증 / 등급). 마지막 칸은 이 종목.
+          crumbs: [
+            { name: "자격증", path: "/license" },
+            { name: l.series, path: `/license?series=${encodeURIComponent(l.series)}` },
+            { name: l.name },
+          ],
+          // 시행 기관 이름은 화면에 적지 않으므로 recognizedBy 는 두지 않는다.
+          about: {
+            "@type": "EducationalOccupationalCredential",
+            "@id": `${SITE_URL}${path}#credential`,
+            name: l.name,
+            credentialCategory: kindLabel(l),
+            description: licenseIntro(l),
+            // 등급(기능사·기사 …)이 있는 자격만. 국가전문자격의 series 는 등급이 아니다.
+            ...(gradeOfSeries(l.series) ? { educationalLevel: l.series } : {}),
+            url: `${SITE_URL}${path}`,
+          },
+        })}
+      />
       <nav className="mb-3 mt-2 text-xs text-muted">
         <Link href="/license" className="hover:text-brand">자격증</Link>
         {" / "}<Link href={`/license?series=${encodeURIComponent(l.series)}`} className="hover:text-brand">{l.series}</Link>
       </nav>
       <PageBanner tone="orange"
-        eyebrow={`${l.kind === "T" ? "국가기술자격" : l.kindName || "국가자격"} · ${l.series}`}
+        eyebrow={`${kindLabel(l)} · ${l.series}`}
         title={`${l.name} 자격증`}
         sub={`${l.field}${l.subField ? ` › ${l.subField}` : ""} 분야. 응시 자격과 준비 방법, 비용을 줄여 주는 제도까지 한 화면에.`}
         art={<IllusLicense />}

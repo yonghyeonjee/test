@@ -2,16 +2,20 @@ import type { Metadata } from "next";
 import { IllusStory } from "@/components/Illus";
 import Link from "next/link";
 import { PostArt } from "@/components/Art";
+import JsonLd from "@/components/JsonLd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { POSTS } from "@/lib/posts";
 import { blogIndexRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
+
+const DESC =
+  "정부 지원금의 종류와 신청 방법, 대상 확인하는 법을 정리했습니다. 청년 지원 정책과 중소기업·창업 지원사업 안내도 함께 보실 수 있습니다.";
 
 export const metadata: Metadata = withOg({
   title: "정부 지원금 안내 — 종류, 신청 방법, 대상 확인",
-  description:
-    "정부 지원금의 종류와 신청 방법, 대상 확인하는 법을 정리했습니다. 청년 지원 정책과 중소기업·창업 지원사업 안내도 함께 보실 수 있습니다.",
+  description: DESC,
   keywords: [...brandKeys("안내 글", "지원금 안내", "블로그"), "정부 지원금 종류", "지원금 신청 방법"],
   alternates: { canonical: "/blog" },
 });
@@ -19,6 +23,21 @@ export const metadata: Metadata = withOg({
 export default function BlogIndex() {
   return (
     <div className="py-4">
+      <JsonLd
+        data={pageGraph({
+          path: "/blog",
+          name: "지원금 안내 — 처음 찾아보는 분을 위한 안내",
+          description: DESC,
+          collection: true,
+          // 화면 순서 그대로: 위 세 칸(신청 중·채용·계산기) 다음 글 목록.
+          items: [
+            { name: "청년미래적금 2차, 10월 16일까지 신청합니다", path: "/blog/youth-future-savings" },
+            { name: "나라일터 채용공고, 절반이 7일 안에 마감됩니다 — 놓치지 않고 찾는 법", path: "/blog/gojobs-guide" },
+            { name: "“기준 중위소득 180% 이하”는 얼마일까", path: "/blog/income" },
+            ...POSTS.map((p) => ({ name: p.title, path: `/blog/${p.slug}` })),
+          ].slice(0, 20),
+        })}
+      />
       <div className="flex items-start justify-between gap-6">
         <div>
           <p className="eyebrow">지원금 안내</p>

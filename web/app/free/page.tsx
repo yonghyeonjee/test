@@ -4,20 +4,24 @@ import { IllusFree } from "@/components/Illus";
 import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 
 import { FREE_GROUPS, withUtm } from "@/lib/freeServices";
 import { moneyRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 86400;
 
+const DESC =
+  "회원가입도 결제도 없이 쓰는 무료 서비스를 모았습니다. 공개 척도를 쓴 심리 자가진단과 " +
+  "성향 테스트, 순서대로 보는 영어 문법 커리큘럼, 데이터·마케팅 용어 사전입니다.";
+
 export const metadata: Metadata = withOg({
   title: "무료 서비스 — 심리 테스트, 영어 문법, 마케팅 용어",
-  description:
-    "회원가입도 결제도 없이 쓰는 무료 서비스를 모았습니다. 공개 척도를 쓴 심리 자가진단과 " +
-    "성향 테스트, 순서대로 보는 영어 문법 커리큘럼, 데이터·마케팅 용어 사전입니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("무료 서비스", "무료"),
     "무료 심리테스트", "성격유형 테스트", "번아웃 자가진단",
@@ -32,6 +36,8 @@ const GLYPH: Record<string, string> = { "심리": "brain", "영어": "book", "�
 export default function FreePage() {
   return (
     <div className="pb-4">
+      {/* 카드는 모두 바깥 사이트로 가는 링크라 목록(ItemList)은 적지 않는다. */}
+      <JsonLd data={pageGraph({ path: "/free", name: "무료 서비스", description: DESC })} />
       <PageBanner tone="pink"
         eyebrow="무료 서비스"
         title="가입도 결제도 없이 쓰는 것들"

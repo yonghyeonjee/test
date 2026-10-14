@@ -8,13 +8,15 @@ import MidAd from "@/components/MidAd";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
-import { getJobOverview, getJobs } from "@/lib/pubJobs";
-import { jobCanonical, jobRobots, jobRouteLabel, readJobRoute, type JobRoute } from "@/lib/jobRoute";
+import { filterJobs, getJobOverview, getJobs } from "@/lib/pubJobs";
+import { jobCanonical, jobRobots, jobRouteLabel, PER_PAGE, readJobRoute, type JobRoute } from "@/lib/jobRoute";
 import { JOBS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 /**
@@ -25,19 +27,28 @@ import { brandKeys, withOg } from "@/lib/seo";
  * 지역별(/jobs/region/…)과 기관별(/jobs/org/…)은 안내 글이 달라 따로 둔다.
  */
 
-export function jobsIndexMetadata(r: JobRoute): Metadata {
+function jobsIndexTitle(r: JobRoute) {
   const cond = jobRouteLabel(r);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
-  const title = cond.length
+  return cond.length
     ? `${cond.join(" · ")} 공공기관 채용 공고${tail}`
     : `공공기관 채용정보·취업지원제도 — 지역별 채용 공고 한눈에${tail}`;
+}
+
+function jobsIndexDescription(r: JobRoute) {
+  const cond = jobRouteLabel(r);
+  return cond.length
+    ? `${cond.join(" · ")} 조건에 맞는 공공기관·지자체 채용 공고입니다. 접수 중인 것이 앞에 오고 ` +
+      "마감이 가까운 순서로 정렬합니다."
+    : "인사혁신처 나라일터에 올라온 공공기관·지자체 채용 공고를 지역과 기관 구분, 기관명으로 " +
+      "걸러 봅니다. 접수 중인 공고를 마감 임박순으로 보여 드립니다.";
+}
+
+export function jobsIndexMetadata(r: JobRoute): Metadata {
+  const cond = jobRouteLabel(r);
   return withOg({
-    title,
-    description: cond.length
-      ? `${cond.join(" · ")} 조건에 맞는 공공기관·지자체 채용 공고입니다. 접수 중인 것이 앞에 오고 ` +
-        "마감이 가까운 순서로 정렬합니다."
-      : "인사혁신처 나라일터에 올라온 공공기관·지자체 채용 공고를 지역과 기관 구분, 기관명으로 " +
-        "걸러 봅니다. 접수 중인 공고를 마감 임박순으로 보여 드립니다.",
+    title: jobsIndexTitle(r),
+    description: jobsIndexDescription(r),
     keywords: [
       ...brandKeys("채용", "공공기관 채용", "채용정보"),
       "취업지원제도", "구직", "공공기관 채용", "공공기관 채용정보",
@@ -56,6 +67,16 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
   const [board, overview] = await Promise.all([getJobs(), getJobOverview()]);
   const open = overview?.openN ?? board.jobs.filter((j) => j.status !== "closed").length;
   const orgs = overview?.orgs ?? new Set(board.jobs.map((j) => j.org).filter(Boolean)).size;
+
+  // 구조화 데이터. 검색어 쪽(q)은 색인하지 않으니 내지 않는다.
+  // 접수 중만 보기는 정본이 조건을 뺀 쪽이라 그 주소·이름으로 적고, 목록이 달라 항목은 넣지 않는다.
+  const canon = route.open ? { ...route, open: false } : route;
+  const shown = (() => {
+    if (route.open || !board.ok) return [];
+    const list = filterJobs(board.jobs, { q: route.q, region: route.region, hire: route.hire, open: route.open });
+    const cur = Math.min(route.page, Math.max(1, Math.ceil(list.length / PER_PAGE)));
+    return list.slice((cur - 1) * PER_PAGE, (cur - 1) * PER_PAGE + 20);
+  })();
 
   return (
     <div className="pb-4">
@@ -83,6 +104,17 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
         )}
       </PageBanner>
 
+      {!route.q && (
+        <JsonLd
+          data={pageGraph({
+            path: jobCanonical(route),
+            name: jobsIndexTitle(canon),
+            description: jobsIndexDescription(canon),
+            collection: true,
+            items: shown.map((j) => ({ name: j.title, path: `/jobs/${encodeURIComponent(j.id)}` })),
+          })}
+        />
+      )}
       <JobList board={board} route={route} />
       <MidAd name="detail_mid" context="job" seed="jobs" className="mt-10" />
 

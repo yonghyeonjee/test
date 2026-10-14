@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArtStudy } from "@/components/Art";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -13,13 +14,16 @@ import {
 } from "@/lib/majors";
 import { MAJORS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
+
+const DESC =
+  "대학 학과별 취업률을 3년치로 비교합니다. 졸업자 수, 취업률, 프리랜서·창업 비중까지 " +
+  "교육부 취업통계 그대로 보여 드립니다. 전공을 고르거나 진로를 바꾸기 전에 한 번 보세요.";
 
 export const metadata: Metadata = withOg({
   title: `학과별 취업률 ${LATEST} — 전공 고르기 전에 보는 졸업생 통계`,
-  description:
-    "대학 학과별 취업률을 3년치로 비교합니다. 졸업자 수, 취업률, 프리랜서·창업 비중까지 " +
-    "교육부 취업통계 그대로 보여 드립니다. 전공을 고르거나 진로를 바꾸기 전에 한 번 보세요.",
+  description: DESC,
   keywords: [
       ...brandKeys("학과별 취업률"),"학과별 취업률", "대학 취업률", "전공별 취업률", "취업 잘 되는 학과", "대학 졸업생 취업 통계"],
   alternates: { canonical: "/jobs/majors" },
@@ -58,6 +62,8 @@ export default function Majors({ searchParams }: { searchParams: SP }) {
           ))}
         </div>
       </PageBanner>
+      {/* 검색어로 거른 화면에는 내지 않는다. 학과마다 따로 된 쪽이 없어 목록 항목도 적지 않는다. */}
+      {!q && <JsonLd data={pageGraph({ path: "/jobs/majors", name: `학과별 취업률 ${LATEST}`, description: DESC })} />}
 
       <section className="mt-8">
         <h2 className="text-[1.0625rem] font-bold">3년 흐름</h2>

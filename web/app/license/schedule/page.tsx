@@ -5,6 +5,7 @@ import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -13,15 +14,18 @@ import { roundEvents, upcomingRoundEvents } from "@/lib/calEvents";
 import { getLicenses, type License } from "@/lib/qnet";
 import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, GRADE_SLUG, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
+const DESC =
+  "기술사·기능장·기사·산업기사·기능사 시험의 원서접수 기간과 시험일, 합격자 발표일을 " +
+  "마감이 가까운 순으로 정리했습니다. 접수는 정해진 기간에만 열립니다.";
+
 export const metadata: Metadata = withOg({
   title: "국가기술자격 시험 일정 — 원서접수 마감일 한눈에",
-  description:
-    "기술사·기능장·기사·산업기사·기능사 시험의 원서접수 기간과 시험일, 합격자 발표일을 " +
-    "마감이 가까운 순으로 정리했습니다. 접수는 정해진 기간에만 열립니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("시험 일정", "자격증 일정"),"국가기술자격 시험일정", "기사 원서접수", "기능사 시험일정", "큐넷 접수기간", "자격증 시험일"],
   alternates: { canonical: "/license/schedule" },
@@ -106,6 +110,14 @@ export default async function ExamSchedule() {
         art={<IllusLicense />}
       />
 
+      <JsonLd
+        data={pageGraph({
+          path: "/license/schedule",
+          name: "국가기술자격 시험 일정",
+          description: DESC,
+          crumbs: [{ name: "자격증", path: "/license" }, { name: "시험 일정" }],
+        })}
+      />
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/license" className="hover:text-brand">자격증</Link>
         {" · "}

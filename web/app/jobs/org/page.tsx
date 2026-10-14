@@ -5,21 +5,25 @@ import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { MonthTrend, YearBars } from "@/components/TrendBars";
 import { getBusyOrgs, getJobTrend, getRisingOrgs, pctChange, type OrgRecent } from "@/lib/jobTrend";
 import { dot, getJobOverview, getTopOrgs } from "@/lib/pubJobs";
 import { jobsRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 export const revalidate = 3600;
 
+const DESC =
+  "나라일터에 올라온 공공기관·지자체 채용 공고를 기관별로 모았습니다. 기관마다 지금까지 " +
+  "낸 공고 수, 마지막으로 뽑은 날짜, 접수 기간이 며칠이었는지를 함께 봅니다.";
+
 export const metadata: Metadata = withOg({
   title: "기관별 공공기관 채용 이력 — 어디가 얼마나 자주 뽑나",
-  description:
-    "나라일터에 올라온 공공기관·지자체 채용 공고를 기관별로 모았습니다. 기관마다 지금까지 " +
-    "낸 공고 수, 마지막으로 뽑은 날짜, 접수 기간이 며칠이었는지를 함께 봅니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("채용", "기관별 채용"),
     "공공기관 채용 이력",
@@ -53,6 +57,17 @@ export default async function JobOrgIndex() {
         )}
       </PageBanner>
 
+      <JsonLd
+        data={pageGraph({
+          path: "/jobs/org",
+          name: "기관별 공공기관 채용 이력",
+          description: DESC,
+          collection: true,
+          dateModified: overview?.lastReg ?? null,
+          items: orgs.slice(0, 20).map((o) => ({ name: o.org, path: `/jobs/org/${encodeURIComponent(o.org)}` })),
+          crumbs: [{ name: "채용", path: "/jobs" }, { name: "기관별" }],
+        })}
+      />
       <nav aria-label="위치" className="mt-6 text-[13px] text-muted">
         <Link href="/jobs" className="hover:text-brand">채용</Link>
         {" · "}

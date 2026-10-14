@@ -4,6 +4,7 @@ import AgencyList from "@/components/AgencyList";
 
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -11,6 +12,7 @@ import { EVT_CATE, SIDO_SHORT, callAlio, toEvent } from "@/lib/alioplus";
 import { EVENTS_INTRO, EVENTS_FAQ } from "@/lib/pageFaq";
 import { agencyFromStore } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 // 검색어(searchParams)로 걸러 보여 주는 화면이라 어차피 요청마다 그린다.
@@ -19,11 +21,13 @@ import { brandKeys, withOg } from "@/lib/seo";
 // (fetch 마다 next.revalidate 를 직접 주고 있어 응답 캐시는 그대로 산다.)
 export const dynamic = "force-dynamic";
 
+const DESC =
+  "전국 공공기관이 여는 교육·강연, 체험, 문화행사, 공모전을 지역과 유형으로 걸러 봅니다. " +
+  "신청 가능 여부와 유무료를 함께 표시합니다.";
+
 export const metadata: Metadata = withOg({
   title: "공공기관 행사·교육 — 지역별 무료 강좌, 체험, 공모전",
-  description:
-    "전국 공공기관이 여는 교육·강연, 체험, 문화행사, 공모전을 지역과 유형으로 걸러 봅니다. " +
-    "신청 가능 여부와 유무료를 함께 표시합니다.",
+  description: DESC,
   keywords: [
       ...brandKeys("행사", "공공기관 행사"),"공공기관 행사", "무료 교육 강좌", "공공기관 체험", "공모전", "지역 행사"],
   alternates: { canonical: "/agency/events" },
@@ -51,6 +55,10 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
 
   return (
     <div className="pb-4">
+      {/* 조건(?sido=…·?q=…)이 붙으면 걸러 본 결과라 구조화 데이터를 싣지 않는다. */}
+      {!Object.values(current).some(Boolean) && (
+        <JsonLd data={pageGraph({ path: "/agency/events", name: "공공기관이 여는 교육과 행사", description: DESC, collection: true })} />
+      )}
       <PageBanner tone="indigo"
         eyebrow="공공기관"
         title="공공기관이 여는 교육과 행사"

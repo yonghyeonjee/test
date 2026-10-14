@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
 import AdSlot from "@/components/AdSlot";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
 import { areaFaq } from "@/lib/faq";
@@ -12,6 +13,7 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { areaNote, govWelfare, howToApply, howToUse } from "@/lib/areaNotes";
 import { areaRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { loanBySido, productLabel } from "@/lib/studentLoan";
 import { getArea, getAreas, listByArea } from "@/lib/db";
 
@@ -28,6 +30,12 @@ export async function generateStaticParams() {
   }
 }
 
+type Area = NonNullable<Awaited<ReturnType<typeof getArea>>>;
+const describe = (sido: string, a: Area) =>
+  `${sido} 정부 복지와 지원금 ${a.n}건을 한자리에. ` +
+  `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
+  `${HOOK} 신청 방법과 활용 방법까지 정리했습니다.`;
+
 export async function generateMetadata({
   params,
 }: {
@@ -38,10 +46,7 @@ export async function generateMetadata({
   if (!a) return withOg({ title: "찾을 수 없는 지역" });
 
   const title = `${sido} 청년지원금·복지서비스 ${a.n}건 총정리 (${YEAR})`;
-  const description =
-    `${sido} 정부 복지와 지원금 ${a.n}건을 한자리에. ` +
-    `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
-    `${HOOK} 신청 방법과 활용 방법까지 정리했습니다.`;
+  const description = describe(sido, a);
 
   return withOg({
     title,
@@ -129,6 +134,17 @@ export default async function AreaPage({ params }: { params: { sido: string } })
 
   return (
     <article>
+      <JsonLd
+        data={pageGraph({
+          path: `/area/${encodeURIComponent(sido)}`,
+          name: `${sido}에서 받을 수 있는 지원금과 복지서비스`,
+          description: describe(sido, area),
+          collection: true,
+          // 화면 위 길잡이 "지원 / 서울특별시" 그대로.
+          crumbs: [{ name: "지원", path: "/" }, { name: sido }],
+          items: list.slice(0, 20).map((p) => ({ name: p.title, path: `/p/${encodeURIComponent(p.source_id)}` })),
+        })}
+      />
       <nav className="mb-6 text-xs text-muted">
         <Link href="/" className="hover:text-ink">지원</Link>
         {" / "}

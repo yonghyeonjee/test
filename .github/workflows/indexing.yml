@@ -1,0 +1,44 @@
+name: indexing
+
+# 새로 생긴 쪽을 검색엔진에 알린다(pipeline/indexing.py). 하루치 새 채용 공고·지원사업·글 주소를
+# IndexNow(네이버·빙)에, 채용 공고는 구글 Indexing API 에도(GOOGLE_INDEXING_SA 가 있을 때만).
+# 수집(00:00 UTC)·공고 요약(01:40)·알리오 첨부(02:00) 다음에 돈다.
+on:
+  workflow_dispatch:
+    inputs:
+      hours:
+        description: "최근 몇 시간 새 주소"
+        default: "30"
+        type: string
+      dry:
+        description: "보내지 않고 목록만"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "30 2 * * *"    # UTC 02:30 = KST 11:30
+
+concurrency:
+  group: indexing
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests supabase google-auth
+      - name: 알리기
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GOOGLE_INDEXING_SA:   ${{ secrets.GOOGLE_INDEXING_SA }}
+          HOURS: ${{ inputs.hours || '30' }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          args="--hours $HOURS"
+          [ "$DRY" = "true" ] && args="$args --dry"
+          python -u pipeline/indexing.py $args

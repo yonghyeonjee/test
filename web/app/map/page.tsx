@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
+import JsonLd from "@/components/JsonLd";
 import { IllusMap } from "@/components/Illus";
 import PageBanner from "@/components/PageBanner";
 import PolicyMap from "@/components/PolicyMap";
@@ -9,6 +10,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { SIDO_SHORT } from "@/lib/geo";
 import { EMPTY_MAP, getMapData, listItems, liteOf } from "@/lib/mapData";
 import { blogIndexRelated } from "@/lib/related";
+import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 
 /**
@@ -21,11 +23,13 @@ import { brandKeys, withOg } from "@/lib/seo";
  */
 export const revalidate = 3600;
 
+const DESC =
+  "시·군·구마다 지금 접수 중인 정부 지원사업과 공공기관 채용을 지도에 놓았습니다. " +
+  "내 위치를 켜면 가까운 순으로 보고, 반경으로 거르고, 눌러서 요약을 봅니다. 찾아가야 할 때 길찾기까지.";
+
 export const metadata: Metadata = withOg({
   title: "정책지도 — 내 주변 지원금·공공기관 채용을 지도에서 찾기",
-  description:
-    "시·군·구마다 지금 접수 중인 정부 지원사업과 공공기관 채용을 지도에 놓았습니다. " +
-    "내 위치를 켜면 가까운 순으로 보고, 반경으로 거르고, 눌러서 요약을 봅니다. 찾아가야 할 때 길찾기까지.",
+  description: DESC,
   keywords: [
     ...brandKeys("정책지도", "지원금 지도"),
     "내 주변 지원금", "우리 동네 지원금 지도", "근처 공공기관 채용", "지역별 정책 지도", "지원사업 지도", "시군구 지원금",
@@ -51,6 +55,15 @@ export default async function MapPage() {
 
   return (
     <div className="pb-4">
+      <JsonLd
+        data={pageGraph({
+          path: "/map",
+          name: "정책지도 — 내 주변 지원금과 채용",
+          description: DESC,
+          // 자바스크립트 없이 읽히는 "시·도별로 보기" 목록.
+          items: sidos.map(([sido]) => ({ name: SIDO_SHORT[sido] ?? sido, path: `/area/${encodeURIComponent(sido)}` })),
+        })}
+      />
       <PageBanner tone="red"
         eyebrow="정책지도"
         title="내 주변 지원금과 채용, 지도에서"
