@@ -38,6 +38,8 @@ const BLOCKED = [
   // Meta AI 검색 수집기. 2026-10-14 접속 기록: IP 96개로 나눠 초당 2건, 공통 규칙이 막은 /jobs/…/q/ 까지 긁어
   // Supabase 요청이 평소의 15배가 됐다. 지난 30일 Meta 쪽에서 온 손님은 0명. Caddy 도 403 으로 막는다.
   "meta-webindexer",
+  // reflection.ai 수집기. 2026-10-15 접속 기록: IP 80개로 13시간에 737건. 손님을 보내는 검색 서비스가 아니다(사용자 결정으로 막음).
+  "Reflectionbot",
 ];
 
 /**

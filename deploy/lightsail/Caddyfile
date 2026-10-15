@@ -84,7 +84,7 @@
 	}
 	@badbot {
 		not path /robots.txt
-		header_regexp User-Agent (?i)(GPTBot|ClaudeBot|anthropic-ai|CCBot|Bytespider|PetalBot|Amazonbot|meta-externalagent|meta-webindexer|FacebookBot|cohere-ai|Diffbot|ImagesiftBot|Omgilibot|Timpibot|YouBot|AhrefsBot|SemrushBot|MJ12bot|DotBot|DataForSeoBot|BLEXBot|serpstatbot|Barkrowler|ZoominfoBot|zgrab|masscan|Nuclei|sqlmap|Nikto)
+		header_regexp User-Agent (?i)(GPTBot|ClaudeBot|anthropic-ai|CCBot|Bytespider|PetalBot|Amazonbot|meta-externalagent|meta-webindexer|Reflectionbot|FacebookBot|cohere-ai|Diffbot|ImagesiftBot|Omgilibot|Timpibot|YouBot|AhrefsBot|SemrushBot|MJ12bot|DotBot|DataForSeoBot|BLEXBot|serpstatbot|Barkrowler|ZoominfoBot|zgrab|masscan|Nuclei|sqlmap|Nikto)
 	}
 	respond @badbot 403
 	@noua not header User-Agent *
