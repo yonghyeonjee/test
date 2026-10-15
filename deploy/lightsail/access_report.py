@@ -17,6 +17,7 @@ import re
 import sys
 
 STATIC = re.compile(r"^/_next/|^/(?:favicon|icon|apple-icon)|\.(?:png|jpe?g|gif|webp|avif|svg|ico|css|js|map|woff2?|ttf|txt|xml)$", re.I)
+BOTUA = re.compile(r"bot|crawl|spider|slurp|preview|fetch|curl|wget|python|headless|externalhit|indexer", re.I)
 ENGINE = re.compile(r"Googlebot|Google-InspectionTool|AdsBot-Google|Mediapartners-Google|APIs-Google|Storebot-Google|GoogleOther|bingbot|Yeti|Daum|DuckDuckBot|Applebot", re.I)
 
 
@@ -52,6 +53,8 @@ def main():
     net_pages = collections.Counter()
     net_ua: dict[str, collections.Counter] = collections.defaultdict(collections.Counter)
     path_pages = collections.Counter()
+    # 사람 브라우저가 쪽을 열 때 보낸 리퍼러(직전 쪽)의 호스트. 우리 방문 집계(visit_log)와 맞춰 보려고.
+    ref_hosts = collections.Counter()
     first = last = None
     try:
         f = open(path, encoding="utf-8", errors="replace")
@@ -91,6 +94,11 @@ def main():
             net_ua[net][short_ua(ua)] += 1
             seg = "/".join(uri.split("?")[0].split("/")[:3]) or "/"
             path_pages[seg] += 1
+            ref = ((req.get("headers") or {}).get("Referer") or [""])[0]
+            if ref and not BOTUA.search(ua) and not uri.startswith("/api/"):
+                host = re.sub(r"^https?://([^/]+).*$", r"\1", ref).lower()
+                if host and "knowhow-it.com" not in host:
+                    ref_hosts[host] += 1
 
     kst = dt.timezone(dt.timedelta(hours=9))
     span = f"{first.astimezone(kst):%m-%d %H:%M} ~ {last.astimezone(kst):%H:%M} KST" if first else "없음"
@@ -111,6 +119,9 @@ def main():
     print("\n-- 이름표 전체 문자열 상위 5")
     for ua, n in ua_full.most_common(5):
         print(f"  {n:6d}  {ua}")
+    print("\n-- 바깥에서 들어온 리퍼러 (사람 이름표, 쪽 요청)")
+    for h, n in ref_hosts.most_common(12):
+        print(f"  {n:6d}  {h}")
     print("\n-- 경로 상위 (쪽 요청)")
     for p, n in path_pages.most_common(10):
         print(f"  {n:6d}  {p}")
