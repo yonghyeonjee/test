@@ -13,6 +13,7 @@
 # 시각은 ISO8601 이라야 fail2ban 이 읽는다(기본 epoch 는 줄 중간에서 못 찾는다).
 # 머리글은 이름표(User-Agent)·리퍼러·언어만 남기려고 나머지 흔한 것을 지운다. 이름표는 fail2ban 이 검색엔진을 빼는 데 쓴다.
 # 쿠키·인증·기기 열쇠(X-Device-Key)는 지운다.
+# 미리 받기 표시(Sec-Purpose·Purpose)는 남긴다. 구글 검색 결과의 미리 받기와 진짜 방문을 가르는 데 쓴다(2026-10-15).
 # 20MB 씩 7개, 7일 넘은 것은 지운다. IP 를 담으니 오래 두지 않는다(개인정보 처리방침 '접속 기록').
 (access) {
 	log {
@@ -42,7 +43,6 @@
 				request>headers>Content-Length delete
 				request>headers>If-None-Match delete
 				request>headers>If-Modified-Since delete
-				request>headers>Purpose delete
 				request>headers>Sec-Ch-Ua delete
 				request>headers>Sec-Ch-Ua-Mobile delete
 				request>headers>Sec-Ch-Ua-Platform delete
@@ -50,7 +50,6 @@
 				request>headers>Sec-Fetch-Mode delete
 				request>headers>Sec-Fetch-Site delete
 				request>headers>Sec-Fetch-User delete
-				request>headers>Sec-Purpose delete
 				request>headers>Rsc delete
 				request>headers>Next-Router-Prefetch delete
 				request>headers>Next-Router-State-Tree delete
