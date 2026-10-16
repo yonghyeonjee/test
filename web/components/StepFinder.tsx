@@ -19,6 +19,10 @@ type Region = { sido: string; sigungu: { name: string; n: number }[] };
  */
 
 const STEPS = ["사는 곳", "나이", "상태", "가구"] as const;
+// 가나다순(강원·경기·경남…)은 서울 사람이 두 번째 줄에서 찾아야 한다. 익숙한 순으로.
+const ORDER = ["서울특별시", "경기도", "인천광역시", "부산광역시", "대구광역시", "대전광역시", "전남광주통합특별시",
+  "울산광역시", "세종특별자치시", "강원특별자치도", "충청북도", "충청남도", "전북특별자치도", "경상북도", "경상남도", "제주특별자치도"];
+const rank = (s: string) => { const i = ORDER.indexOf(s); return i < 0 ? 99 : i; };
 const DECADES = [10, 20, 30, 40, 50, 60, 70] as const;
 
 function short(sido: string) {
@@ -36,7 +40,9 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
   const [hh, setHh] = useState<string[]>([]);
   const [going, setGoing] = useState(false);
 
-  const sgg = regions.find((r) => r.sido === sido)?.sigungu ?? [];
+  const sorted = [...regions].sort((a, b) => rank(a.sido) - rank(b.sido));
+  // "-" 처럼 이름이 아닌 것이 섞여 있다(원자료). 뺀다.
+  const sgg = (regions.find((r) => r.sido === sido)?.sigungu ?? []).filter((g) => /[가-힣]/.test(g.name));
 
   const go = () => {
     const q = new URLSearchParams();
@@ -57,7 +63,7 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
   if (step > 2) picked.push({ at: 2, text: emp ?? "상태 안 넣음" });
 
   const tile = (on: boolean) =>
-    `flex min-h-[52px] items-center justify-center rounded-[12px] border px-2 text-center text-[15px] font-bold leading-tight
+    `flex min-h-[52px] items-center justify-center rounded-[12px] border px-1.5 text-center text-[14.5px] font-bold leading-tight break-keep
      transition-colors active:scale-[.97] ${on ? "border-brand bg-brand text-white" : "border-line bg-surface text-ink2 hover:border-brand hover:text-brand"}`;
 
   return (
@@ -109,7 +115,7 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
       {/* 1단계: 시·도 → 시·군·구 */}
       {step === 0 && !sido && (
         <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
-          {regions.map((r) => (
+          {sorted.map((r) => (
             <button key={r.sido} type="button" className={tile(false)}
                     onClick={() => { setSido(r.sido); setSigungu(null); }}>
               {short(r.sido)}

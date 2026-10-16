@@ -97,14 +97,14 @@ export function current(path: string | null): { open?: NavItem; leaf?: Leaf } {
  */
 export type Shortcut = { href: string; label: string; icon: string; tone: string };
 export const SHORTCUTS: Shortcut[] = [
-  { href: "/#find", label: "내 조건 찾기", icon: "find", tone: "bg-cat-green" },
-  { href: "/map", label: "정책지도", icon: "map", tone: "bg-cat-red" },
-  { href: "/business", label: "기업·창업", icon: "biz", tone: "bg-cat-violet" },
-  { href: "/jobs", label: "채용", icon: "jobs", tone: "bg-cat-blue" },
-  { href: "/license", label: "자격증", icon: "license", tone: "bg-cat-orange" },
-  { href: "/license/schedule", label: "시험 일정", icon: "calendar", tone: "bg-cat-amber" },
-  { href: "/housing", label: "주거 지원", icon: "home", tone: "bg-cat-lime" },
-  { href: "/money", label: "생활금융", icon: "money", tone: "bg-cat-cyan" },
-  { href: "/agency", label: "공공기관", icon: "agency", tone: "bg-cat-indigo" },
-  { href: "/blog", label: "읽을거리", icon: "read", tone: "bg-cat-pink" },
+  { href: "/#find", label: "내 조건 찾기", icon: "find", tone: "bg-brand text-white" },
+  { href: "/map", label: "정책지도", icon: "map", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/business", label: "기업·창업", icon: "biz", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/jobs", label: "채용", icon: "jobs", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/license", label: "자격증", icon: "license", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/license/schedule", label: "시험 일정", icon: "calendar", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/housing", label: "주거 지원", icon: "home", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/money", label: "생활금융", icon: "money", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/agency", label: "공공기관", icon: "agency", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
+  { href: "/blog", label: "읽을거리", icon: "read", tone: "bg-[#EEF1F5] text-ink group-hover:bg-[#E3E7ED]" },
 ];

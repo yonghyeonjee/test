@@ -25,13 +25,14 @@ const EVERY = 6000;
  */
 const PHOTO: Partial<Record<HotKind, string>> = {};
 
-// 갈래 색(cat.*)과 같은 계열. 예전의 짙은 남보라·먹초록은 화면을 무겁게 했다.
+// 2026-10-16 채도 높은 보라·초록·파랑·주황이 촌스럽다는 말에, 갈래마다 깊고 가라앉은 색으로.
+// 흰 글씨가 어디서나 읽히고, 무늬는 흰색을 옅게 깐다.
 const TONE: Record<HotKind, { from: string; to: string; tint: string }> = {
-  pin: { from: "#3F33C4", to: "#7B6CF6", tint: "#D0BFFF" },
-  exam: { from: "#0B7A5A", to: "#20B486", tint: "#B2F2D7" },
-  job: { from: "#1864AB", to: "#3B9AE8", tint: "#C5E3FF" },
-  biz: { from: "#A84300", to: "#F08C00", tint: "#FFE3A8" },
-  brief: { from: "#0C4A6E", to: "#0EA5E9", tint: "#BAE6FD" },
+  pin: { from: "#262559", to: "#4A42A8", tint: "#FFFFFF" },
+  exam: { from: "#113B3A", to: "#1F6F66", tint: "#FFFFFF" },
+  job: { from: "#17304A", to: "#2C5C8C", tint: "#FFFFFF" },
+  biz: { from: "#3E2A17", to: "#7A5230", tint: "#FFFFFF" },
+  brief: { from: "#0F2638", to: "#1C4E6E", tint: "#FFFFFF" },
 };
 
 /**
@@ -54,7 +55,7 @@ function Art({ kind }: { kind: HotKind }) {
         </linearGradient>
       </defs>
       <rect width="400" height="200" fill={`url(#${gid})`} />
-      <g fill="none" stroke={t.tint} strokeOpacity=".28" strokeWidth="1.4">
+      <g fill="none" stroke={t.tint} strokeOpacity=".18" strokeWidth="1.4">
         {kind === "pin" && (
           <>
             <circle cx="330" cy="62" r="30" />
@@ -174,11 +175,11 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
                   <Art kind={s.kind} />
                 )}
                 {/* 글씨 쪽(왼쪽)을 살짝 어둡게 — 밝은 색 띠에서도 흰 글씨가 읽힌다. */}
-                <span className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/15 to-transparent" />
+                <span className="absolute inset-0 bg-gradient-to-r from-black/25 via-black/10 to-transparent" />
                 <span className="relative min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-[12px] font-semibold text-white/85 sm:text-[12.5px]">
                     <span className={`num rounded-pill px-2 py-px text-[12px] font-extrabold ${
-                      s.kind === "brief" ? "bg-white text-[#0C4A6E]" : s.days <= 1 ? "bg-white text-alert" : "bg-white/20 text-white"}`}>
+                      s.kind === "brief" ? "bg-white text-ink" : s.days <= 1 ? "bg-white text-alert" : "bg-white/20 text-white"}`}>
                       {s.kind === "brief" ? "오늘" : dueLabel(s.days)}
                     </span>
                     {KIND_LABEL[s.kind]}
