@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db, dbLive, dbConfigured } from "./db";
-import { EVT_CATE, FCLT_CATE, LIFE_CYCLE, SVC_CATE, type AlioItem } from "./alioplus";
+import { EVT_CATE, FCLT_CATE, LIFE_CYCLE, SVC_CATE, plainText, type AlioItem } from "./alioplus";
 
 /**
  * 공공기관 사업·행사·시설을 DB 에서 읽는다.
@@ -71,8 +71,8 @@ async function load(
     title: String(r.title ?? ""),
     org: r.org ?? null,
     cate: r.cate ?? null,
-    target: r.target ?? null,
-    desc: r.descr ?? null,
+    target: plainText(r.target),
+    desc: plainText(r.descr),
     address: r.address ?? null,
     start: r.start_date ?? null,
     end: r.end_date ?? null,
