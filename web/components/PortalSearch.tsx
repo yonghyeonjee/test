@@ -47,6 +47,8 @@ export default function PortalSearch({
   // 휴대폰에서는 긴 보기글이 잘린다. 처음 그릴 때는 서버와 같게(넓은 화면 기준) 두고
   // 붙은 뒤에 바꾼다 — 그래야 서버 HTML 과 어긋나지 않는다.
   const [narrow, setNarrow] = useState(false);
+  // 비어 있을 때 "예: 건강보험심사평가원" 처럼 많이 찾는 말이 3초마다 바뀐다. 처음 그릴 때는 서버와 같게(-1).
+  const [spin, setSpin] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const map = useMemo(() => new Map(Object.entries(index)), [index]);
@@ -72,6 +74,11 @@ export default function PortalSearch({
     on(); mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
+  useEffect(() => {
+    if (!hot.length || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setSpin((k) => (k + 1) % hot.length), 3200);
+    return () => clearInterval(t);
+  }, [hot]);
   useEffect(() => {
     if (!autoFocus) return;
     if (window.matchMedia("(min-width: 768px) and (hover: hover)").matches) input.current?.focus({ preventScroll: true });
@@ -118,7 +125,9 @@ export default function PortalSearch({
           onFocus={() => setOpen(true)}
           onKeyDown={onKey}
           role="combobox" aria-expanded={show} aria-controls="portal-suggest" aria-autocomplete="list"
-          placeholder={narrow
+          placeholder={spin >= 0 && hot[spin] && !open
+            ? `예: ${hot[spin]}`
+            : narrow
             ? placeholderNarrow ?? (placeholder ? placeholder.replace(/^.*?[—:]\s*/, "") : "경비, 신혼부부 전세, 기능사…")
             : placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…")}
           aria-label="통합 검색"

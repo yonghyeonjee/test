@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import StoryCover from "./StoryCover";
+import { Reveal } from "./Motion";
 
 /**
  * 글 목록. 브런치처럼 카드 대신 한 줄씩 — 제목, 두 줄 요약, 작은 표식 줄(갈래 · 날짜 · 읽는 시간),
@@ -26,8 +27,8 @@ const dot = (d?: string) => (d ? d.replaceAll("-", ".") : "");
 export default function ArticleList({ items, className = "" }: { items: Article[]; className?: string }) {
   return (
     <ol className={`divide-y divide-line ${className}`}>
-      {items.map((a) => (
-        <li key={a.href}>
+      {items.map((a, i) => (
+        <Reveal as="li" key={a.href} delay={Math.min(i, 6) * 50}>
           <Link href={a.href} className="group flex items-start gap-5 py-6 sm:gap-7 sm:py-7">
             <span className="min-w-0 flex-1">
               {a.tag && <span className="mb-1.5 inline-block rounded-pill bg-brand px-2 py-0.5 text-[11.5px] font-bold text-white">{a.tag}</span>}
@@ -46,7 +47,7 @@ export default function ArticleList({ items, className = "" }: { items: Article[
               </span>
             )}
           </Link>
-        </li>
+        </Reveal>
       ))}
     </ol>
   );

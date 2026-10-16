@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { track } from "./Gtm";
+import { toast } from "./Toast";
 
 /**
  * 공유·저장 단추. 누르면 작은 판이 열리고 여섯 가지 중 고른다.
@@ -65,7 +66,6 @@ export default function ShareButton({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function ShareButton({
     return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
   }, [open]);
 
-  const flash = (m: string) => { setNote(m); setTimeout(() => setNote(null), 2500); };
+  const flash = (m: string) => toast(m);
   const url = () => window.location.href.split("#")[0];
   const line = () => [title, text].filter(Boolean).join(" · ");
   const memoText = () => memo ?? `${title}\n${text ?? ""}\n${url()}\n\n— K나라지원에서 저장`.replace(/\n\n+/g, "\n\n");
@@ -196,7 +196,6 @@ export default function ShareButton({
         </div>
         </>
       )}
-      {note && <span role="status" className="ml-2 align-middle text-[12.5px] text-brand">{note}</span>}
     </div>
   );
 }

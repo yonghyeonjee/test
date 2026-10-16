@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CountUp } from "./Motion";
 
 export default function Tabs({
   active,
@@ -36,7 +37,7 @@ export default function Tabs({
           >
             {it.label}
             <span className={`num ml-1.5 text-[12px] font-semibold ${on ? "text-brand" : "text-faint"}`}>
-              {it.n.toLocaleString()}
+              <CountUp value={it.n} />
             </span>
           </Link>
         );
