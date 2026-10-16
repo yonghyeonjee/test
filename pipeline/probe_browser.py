@@ -584,6 +584,14 @@ def check_shot(browser, path: str) -> None:
         page.screenshot(path=f"shots/{name}-{label}-full.png", full_page=True)
         h = page.evaluate("() => document.documentElement.scrollHeight")
         print(f"   {label}: 쪽 높이 {h}px → shots/{name}-{label}-fold.png, -full.png")
+        # artifact 저장소(Azure blob)에 못 닿는 곳에서도 보게, 첫 화면은 JPEG 로 줄여 기록에 base64 로도 찍는다.
+        import base64
+        jpg = page.screenshot(type="jpeg", quality=55)
+        b64 = base64.b64encode(jpg).decode()
+        print(f"--B64 {name}-{label}-fold.jpg {len(jpg)}--")
+        for i in range(0, len(b64), 120):
+            print(b64[i:i + 120])
+        print("--END--")
         ctx.close()
 
 
