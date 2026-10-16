@@ -246,6 +246,10 @@
 .card-link .go { position: absolute; right: 16px; bottom: 14px; opacity: 0; transform: translateX(-6px); transition: opacity .18s, transform .18s; }
 .card-link:hover .go { opacity: 1; transform: none; }
 
+/* 가로로 미는 띠의 막대 숨김(휴대폰에서 거슬린다). */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
 /* 마감까지 남은 기간 막대 */
 .due { height: 3px; border-radius: 2px; background: #E5E8EC; overflow: hidden; }
 .due > i { display: block; height: 100%; background: linear-gradient(90deg, #5A4BE0, #D9691F); }
