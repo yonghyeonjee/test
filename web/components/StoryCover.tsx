@@ -11,6 +11,7 @@ const KIND: Record<string, { from: string; to: string; glyph: string; label: str
   region: { from: "#BE123C", to: "#FB7185", glyph: "chart",    label: "지역별 지원" },
   license:{ from: "#1D4ED8", to: "#60A5FA", glyph: "calendar", label: "자격증 합격률·일정" },
   sigungu:{ from: "#047857", to: "#34D399", glyph: "lowincome",label: "우리 동네 지원" },
+  daily:  { from: "#0C4A6E", to: "#38BDF8", glyph: "history",  label: "오늘의 채용 브리핑" },
   story:  { from: "#1E1B4B", to: "#3B2FB5", glyph: "book",     label: "사례" },
 };
 
