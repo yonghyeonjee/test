@@ -8,6 +8,9 @@ import AlertBox from "@/components/AlertBox";
 import BizSearchBox from "@/components/BizSearchBox";
 import BusinessSentence from "@/components/BusinessSentence";
 import ConditionSentence from "@/components/ConditionSentence";
+import StepFinder from "@/components/StepFinder";
+import RecentFinds from "@/components/RecentFinds";
+import HowItWorks from "@/components/HowItWorks";
 import FeedPanels from "@/components/FeedPanels";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
@@ -359,10 +362,10 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
         main={<>
           <section id="find" className="card scroll-mt-28 p-4 sm:p-5">
             <Tabs active="welfare" counts={coverage} compact />
-            <Suspense fallback={<div className="h-40" />}>
-              <ConditionSentence regions={regions} />
-            </Suspense>
+            {/* 큰 단계 찾기. 결과 쪽은 예전 문장(ConditionSentence)으로 고쳐 본다. */}
+            <StepFinder regions={regions} />
           </section>
+          <RecentFinds />
           {/* 저장해 둔 조건과 지난번 조건. 조건 카드 바로 아래가 제자리다. */}
           <div className="-mb-5 empty:hidden">
             <Suspense fallback={null}>
@@ -382,6 +385,8 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
               content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
           ]} />
           <AdSlot name="home_mid" />
+          <HowItWorks total={total} closing={closingCount}
+                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} />
           <TopicGrid counts={topicCounts} className="card p-4 sm:p-5" />
           <section id="areas" className="card scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"
