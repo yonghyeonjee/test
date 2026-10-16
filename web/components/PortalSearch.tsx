@@ -105,10 +105,10 @@ export default function PortalSearch({
 
   return (
     <div ref={box} className="relative">
-      {/* 알약 모양 검색창. 테두리는 브랜드 색 두 줄 — 화면에서 가장 먼저 눈에 들어와야 한다. */}
+      {/* 알약 모양 검색창. 테두리는 회색, 초점이 가면 브랜드 색 — 보라 테두리가 늘 켜져 있으면 화면이 들떴다. 단추가 유일한 색. */}
       <form role="search" onSubmit={(e) => { e.preventDefault(); go(q); }}
             className={`flex items-center gap-1.5 rounded-pill border-2 bg-white pr-1.5 transition-shadow
-                        ${show ? "border-brand shadow-lift" : "border-brand/80 shadow-card hover:border-brand focus-within:border-brand focus-within:shadow-lift"}
+                        ${show ? "border-brand shadow-lift" : "border-[#D7DBE2] shadow-card hover:border-[#B9C0CA] focus-within:border-brand focus-within:shadow-lift"}
                         ${xl ? "pl-5 sm:pl-7" : lg ? "pl-5" : "pl-4"}`}>
         <input
           ref={input}

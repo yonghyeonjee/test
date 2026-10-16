@@ -51,9 +51,10 @@ export function PortalShortcuts({ findHref = "/#find" }: { findHref?: string }) 
       {SHORTCUTS.map((s) => (
         <Link key={s.label} href={s.href === "/#find" ? findHref : s.href}
               className="group flex flex-col items-center gap-1.5 text-center">
-          <span className={`flex h-12 w-12 items-center justify-center rounded-[16px] text-white shadow-[0_8px_16px_-10px_rgba(17,24,39,.55)]
-                            transition-transform duration-150 group-hover:-translate-y-0.5 group-active:scale-95 ${s.tone}`}>
-            <PortalIcon name={s.icon} className="h-6 w-6" strokeWidth={2.1} />
+          {/* 2026-10-16 무지개 열 칸이 촌스럽다는 말에 중립 회색 칸 + 먹색 아이콘으로. 첫 칸(내 조건 찾기)만 브랜드 색. */}
+          <span className={`flex h-12 w-12 items-center justify-center rounded-[14px]
+                            transition-[transform,background-color] duration-150 group-hover:-translate-y-0.5 group-active:scale-95 ${s.tone}`}>
+            <PortalIcon name={s.icon} className="h-6 w-6" strokeWidth={2.2} />
           </span>
           <span className="whitespace-nowrap text-[12px] font-semibold tracking-[-.02em] text-ink2 sm:text-[12.5px]">{s.label}</span>
         </Link>
@@ -153,7 +154,7 @@ export function DeadlineList({ slides: all, className = "" }: { slides: Slide[];
 export function MapCard({ className = "" }: { className?: string }) {
   return (
     <Link href="/map" className={`card card-link flex items-center gap-3 p-4 ${className}`}>
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-cat-redSoft text-cat-red">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#EEF1F5] text-ink">
         <PortalIcon name="map" className="h-6 w-6" strokeWidth={2} />
       </span>
       <span className="min-w-0">

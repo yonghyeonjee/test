@@ -16,13 +16,13 @@ export default async function HomeTopAd({ className = "", brief }: { className?:
   if (brief) {
     return (
       <Link href={brief.href}
-            className={`card card-link flex h-[108px] items-center gap-3 border-[#0EA5E9]/30 bg-[#F0F9FF] px-4 ${className}`}>
-        <span className="shrink-0 rounded-pill bg-[#0C4A6E] px-2 py-0.5 text-[12px] font-extrabold text-white">오늘</span>
+            className={`card card-link flex h-[108px] items-center gap-3 px-4 ${className}`}>
+        <span className="shrink-0 rounded-pill bg-ink px-2 py-0.5 text-[12px] font-extrabold text-white">오늘</span>
         <span className="min-w-0 flex-1">
-          <b className="block truncate text-[15px] text-[#0C4A6E]">{brief.title}</b>
+          <b className="block truncate text-[15px] text-ink">{brief.title}</b>
           <span className="mt-0.5 block truncate text-[12.5px] text-muted">{brief.sub}</span>
         </span>
-        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[#0C4A6E]" fill="none" stroke="currentColor"
+        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-faint" fill="none" stroke="currentColor"
              strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 6l6 6-6 6" /></svg>
       </Link>
     );

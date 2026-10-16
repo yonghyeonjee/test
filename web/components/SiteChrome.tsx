@@ -205,8 +205,8 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
       </div>
       <div className="space-y-3 px-4 py-4 pb-24">
         <Link href="/search" onClick={onClose}
-              className="flex items-center gap-2 rounded-pill border-2 border-brand bg-white px-4 py-3 text-[15px] text-faint">
-          <PortalIcon name="search" className="h-5 w-5 text-brand" strokeWidth={2.2} />
+              className="flex items-center gap-2 rounded-pill border-2 border-[#D7DBE2] bg-white px-4 py-3 text-[15px] text-faint">
+          <PortalIcon name="search" className="h-5 w-5 text-muted" strokeWidth={2.2} />
           무엇이든 찾아보세요
         </Link>
         <Link href="/blog/youth-future-savings" onClick={onClose}
