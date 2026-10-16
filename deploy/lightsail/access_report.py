@@ -58,6 +58,9 @@ def main():
     # 구글에서 온 쪽 요청: 미리 받기(Sec-Purpose: prefetch)인지, 같은 IP 가 뒤이어 방문 집계(/api/visit)를 보냈는지.
     google_hits: list[tuple[str, bool]] = []
     visit_ips: set[str] = set()
+    google_ua = collections.Counter()
+    google_ip = collections.Counter()
+    google_lang = collections.Counter()
     first = last = None
     try:
         f = open(path, encoding="utf-8", errors="replace")
@@ -108,6 +111,9 @@ def main():
                     hd = req.get("headers") or {}
                     purpose = ((hd.get("Sec-Purpose") or hd.get("Purpose") or [""])[0]).lower()
                     google_hits.append((ip, "prefetch" in purpose or "prerender" in purpose))
+                    google_ua[ua[:90] or "(없음)"] += 1
+                    google_ip[ip] += 1
+                    google_lang[(hd.get("Accept-Language") or ["(없음)"])[0][:20]] += 1
 
     kst = dt.timezone(dt.timedelta(hours=9))
     span = f"{first.astimezone(kst):%m-%d %H:%M} ~ {last.astimezone(kst):%H:%M} KST" if first else "없음"
@@ -136,6 +142,12 @@ def main():
         real = [ip for ip, p in google_hits if not p]
         counted = sum(1 for ip in real if ip in visit_ips)
         print(f"  구글에서 온 쪽 요청 {len(google_hits)}건: 미리 받기 {pre} · 실제 열람 {len(real)} (그중 방문 집계를 보낸 IP {counted})")
+        # 리퍼러는 꾸밀 수 있다. 구글 유입이 진짜인지 이름표·IP·언어로 본다(가짜는 한 IP·한 이름표에 몰린다).
+        print(f"  구글 리퍼러 IP {len(google_ip)}개. 이름표 상위:")
+        for u, n in google_ua.most_common(5):
+            print(f"    {n:5d}  {u}")
+        print("  IP 상위: " + ", ".join(f"{ip} {n}" for ip, n in google_ip.most_common(5)))
+        print("  언어 상위: " + ", ".join(f"{l} {n}" for l, n in google_lang.most_common(4)))
     print("\n-- 경로 상위 (쪽 요청)")
     for p, n in path_pages.most_common(10):
         print(f"  {n:6d}  {p}")
