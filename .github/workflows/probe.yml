@@ -27,7 +27,9 @@ jobs:
       - name: 탐침
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
-        run: python -u pipeline/${{ inputs.script }} ${{ inputs.arg }}
+          # 인자에 | ' 공백이 섞여도 셸이 안 깨지게 환경변수로 넘긴다.
+          PROBE_ARG: ${{ inputs.arg }}
+        run: python -u pipeline/${{ inputs.script }} "$PROBE_ARG"
       # probe_browser.py shot:<path> 가 찍은 화면 사진. 없으면 조용히 넘어간다.
       - uses: actions/upload-artifact@v4
         if: always()
