@@ -81,7 +81,7 @@ export default function TopSearch({ index }: { index: Idx }) {
         role="search"
         onSubmit={(e) => { e.preventDefault(); go(q); }}
         className={`items-center gap-1 rounded-pill border-2 bg-surface pl-4 pr-1
-                    transition-colors ${show ? "border-brand" : "border-brand/70 focus-within:border-brand"}
+                    transition-colors ${show ? "border-brand" : "border-[#D7DBE2] hover:border-[#B9C0CA] focus-within:border-brand"}
                     ${open ? "flex w-full" : "hidden sm:flex sm:w-[21rem] lg:w-[29rem]"}`}
       >
         <input
