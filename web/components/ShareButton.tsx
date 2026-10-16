@@ -144,8 +144,13 @@ export default function ShareButton({
       </button>
 
       {open && (
+        <>
+        {/* 휴대폰: 화면 아래 시트. 판이 단추 왼쪽에 붙어 오른쪽이 잘렸다. 뒤를 눌러도 닫힌다. */}
+        <button type="button" aria-label="닫기" onClick={() => setOpen(false)}
+                className="fixed inset-0 z-30 bg-black/30 sm:hidden" />
         <div role="menu" aria-label="공유하거나 저장하기"
-             className="absolute left-0 top-[calc(100%+6px)] z-30 w-[20rem] max-w-[calc(100vw-2.5rem)] rounded-card border border-line bg-white p-2 shadow-lift">
+             className="fixed inset-x-3 bottom-3 z-40 rounded-card border border-line bg-white p-2 shadow-lift
+                        sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+6px)] sm:z-30 sm:w-[20rem]">
           <div className="grid grid-cols-3">
             <button type="button" role="menuitem" onClick={kakao} className={item}>
               <span className={`${ic} bg-[#FEE500] text-[#191919]`}>
@@ -189,6 +194,7 @@ export default function ShareButton({
             메모 앱에 저장은 구글 킵·삼성 노트·애플 메모로 보냅니다.
           </p>
         </div>
+        </>
       )}
       {note && <span role="status" className="ml-2 align-middle text-[12.5px] text-brand">{note}</span>}
     </div>

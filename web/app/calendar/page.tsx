@@ -188,7 +188,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
           {jobs.length > 0 && (
             <Group title="채용" n={jobs.length} tone="bg-cat-blueSoft text-cat-blue">{jobs.map((i) => <Row key={`j${i.id}`} it={i} />)}</Group>
           )}
-          {items.length >= 150 && <p className="mt-3 text-[12px] text-faint">150건까지만 보입니다. 지역을 고르면 줄어듭니다.</p>}
+          {items.length >= 150 && <p className="mt-3 text-[12px] text-faint">갈래마다 150건까지만 보입니다. 지역을 고르면 줄어듭니다.</p>}
         </section>
       </div>
 
@@ -200,14 +200,27 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   );
 }
 
-function Group({ title, n, tone, children }: { title: string; n: number; tone: string; children: React.ReactNode }) {
+const FIRST = 12;
+
+/** 갈래 하나. 12건까지 보이고 나머지는 "더 보기"로 편다(details 라 자바스크립트 없이도 된다). */
+function Group({ title, n, tone, children }: { title: string; n: number; tone: string; children: React.ReactNode[] }) {
+  const head = children.slice(0, FIRST), rest = children.slice(FIRST);
   return (
     <div className="mt-4">
       <h3 className="flex items-center gap-2 text-[13px] font-bold text-ink2">
         <span className={`rounded-[6px] px-1.5 py-0.5 text-[12px] font-bold ${tone}`}>{title}</span>
         <span className="num text-faint">{n}건</span>
       </h3>
-      <ul className="mt-1 divide-y divide-line">{children}</ul>
+      <ul className="mt-1 divide-y divide-line">{head}</ul>
+      {rest.length > 0 && (
+        <details className="group mt-1">
+          <summary className="cursor-pointer list-none rounded-ctl py-2 text-center text-[13px] font-semibold text-brand hover:bg-ground">
+            <span className="group-open:hidden">나머지 {rest.length}건 더 보기</span>
+            <span className="hidden group-open:inline">접기</span>
+          </summary>
+          <ul className="divide-y divide-line border-t border-line">{rest}</ul>
+        </details>
+      )}
     </div>
   );
 }
