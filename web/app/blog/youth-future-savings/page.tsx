@@ -7,6 +7,7 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import SerifFont from "@/components/SerifFont";
 import Toc from "@/components/Toc";
 import YouthSavingsCalc from "@/components/YouthSavingsCalc";
 import { CompareBars, SavingsHero, Timeline } from "@/components/YouthSavingsArt";
@@ -133,7 +134,8 @@ export default function YouthFutureSavingsPage() {
   });
 
   return (
-    <article className="py-4">
+    <article className="mx-auto max-w-[44rem] py-4">
+      <SerifFont />
       <JsonLd data={ld} />
 
       <nav aria-label="위치" className="text-[13px] text-muted">
@@ -142,12 +144,13 @@ export default function YouthFutureSavingsPage() {
         <span className="text-ink2">청년미래적금 2차</span>
       </nav>
 
-      <header className="mt-3">
-        <h1 className="display text-[1.75rem] leading-tight">
+      <header className="mt-4 sm:mt-6">
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">
           청년미래적금 2차, 10월 16일까지 신청합니다
         </h1>
-        <p className="num mt-2 text-xs text-faint">{UPDATED} 기준</p>
-        <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
+        <p className="num mt-4 text-[13px] text-faint"><span className="font-semibold text-brand">K나라지원</span> · {UPDATED} 기준 · 읽는 데 6분</p>
+        <div className="mt-6"><SavingsHero /></div>
+        <p className="mt-5 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 text-[16px] leading-[1.85] text-ink">
           매달 최대 50만원을 3년 동안 넣으면 정부가 낸 돈의 <strong>6%나 12%</strong>를 얹어 주고(<a href="#types" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">일반형과 우대형</a>),
           이자에는 <strong>세금을 떼지 않는</strong> 적금입니다. 1차 때 234만명이 몰렸던 그 상품의 두 번째 모집입니다.
           <strong>신청 기간이 열흘뿐</strong>이라 <a href="#schedule" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">날짜</a>부터 적어 두시는 편이 좋습니다.
@@ -155,7 +158,6 @@ export default function YouthFutureSavingsPage() {
           <Link href="/blog/income" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">기준 중위소득 계산기</Link>로
           먼저 확인할 수 있습니다.
         </p>
-        <div className="mt-5"><SavingsHero /></div>
       </header>
 
       <Toc items={[{ id: "glance", label: "한눈에" }, { id: "schedule", label: "언제 무엇을 하나" }, { id: "amount", label: "얼마를 받나" }, { id: "who", label: "누가 되나" }, { id: "types", label: "일반형과 우대형" }, { id: "switch", label: "청년도약계좌에서 갈아타기" }, { id: "pitfalls", label: "놓치기 쉬운 것" }, { id: "changes", label: "앞으로 바뀔 수 있는 것" }, { id: "faq", label: "자주 묻는 질문" }, { id: "sources", label: "확인한 곳" }]} />
