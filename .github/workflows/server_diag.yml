@@ -51,14 +51,14 @@ jobs:
             echo; echo "== 접속 기록 요약(Caddy access.log)"; sudo python3 /srv/jiwon/current/access_report.py ${{ inputs.minutes || '60' }} 2>&1 || echo "요약 스크립트 없음(배포 전)"
             echo "-- 기록 파일"; sudo ls -lh /var/log/caddy/ 2>/dev/null
             echo; sudo python3 /srv/jiwon/current/bot_report.py 2>&1 || echo "봇 보고 스크립트 없음(배포 전)"
-            echo; echo "== 캐시된 채용·사업 쪽 중 '내려간 공고'·404 로 굳은 것(지금 배포 폴더)"
+            echo; echo "== 캐시된 채용·사업 쪽 중 내려간 공고·404 로 굳은 것(지금 배포 폴더)"
             J=/srv/jiwon/current/.next/server/app/jobs; P=/srv/jiwon/current/.next/server/app/p
-            echo "-- 채용 쪽 html 수: $(sudo find $J -maxdepth 1 -name '*.html' 2>/dev/null | wc -l)"
-            echo "-- 그중 '이 채용 공고는 내려갔습니다': $(sudo grep -l '이 채용 공고는 내려갔습니다' $J/*.html 2>/dev/null | wc -l)"
-            echo "-- 번호(최대 40):"; sudo grep -l '이 채용 공고는 내려갔습니다' $J/*.html 2>/dev/null | sed 's#.*/##; s#\.html$##' | head -40 | tr '\n' ' '; echo
-            echo "-- 사업 쪽 html 수: $(sudo find $P -maxdepth 1 -name '*.html' 2>/dev/null | wc -l)"
-            echo "-- 사업 쪽 404 메타: $(sudo grep -l '"status":404' $P/*.meta 2>/dev/null | wc -l)"
-            echo "-- 배포 폴더 시각: $(readlink -f /srv/jiwon/current) $(sudo stat -c %y $(readlink -f /srv/jiwon/current) 2>/dev/null)"
+            echo "-- 채용 쪽 html 수: $(sudo find $J -maxdepth 1 -name "[0-9a]*.html" 2>/dev/null | wc -l)"
+            echo "-- 그중 내려간 공고 문구: $(sudo grep -lF "이 채용 공고는 내려갔습니다" $J/[0-9a]*.html 2>/dev/null | wc -l)"
+            echo "-- 그 번호(최대 60): $(sudo grep -lF "이 채용 공고는 내려갔습니다" $J/[0-9a]*.html 2>/dev/null | xargs -r -n1 basename | sed "s/[.]html//" | head -60 | tr "\n" " ")"
+            echo "-- 사업 쪽 html 수: $(sudo find $P -maxdepth 1 -name "*.html" 2>/dev/null | wc -l)"
+            echo "-- 사업 쪽 404 메타: $(sudo grep -lF "\"status\":404" $P/*.meta 2>/dev/null | wc -l)"
+            echo "-- 배포 폴더: $(readlink -f /srv/jiwon/current) $(sudo stat -c %y $(readlink -f /srv/jiwon/current) 2>/dev/null)"
             echo; echo "== 봇 막기(fail2ban)"; systemctl is-active fail2ban 2>/dev/null
             for j in jiwon-flood jiwon-flood-long jiwon-scan; do echo "-- $j"; sudo fail2ban-client status $j 2>/dev/null | grep -E "Currently|Total|Banned IP"; done
             echo; echo "== 3000 포트 응답"; curl -s -o /dev/null -m 15 -w "%{http_code} %{time_total}s\n" http://127.0.0.1:3000/ || echo "응답 없음"
