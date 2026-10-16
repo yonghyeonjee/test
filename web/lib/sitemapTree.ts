@@ -64,6 +64,7 @@ function pages(): Entry[] {
     e("/free", "monthly", 0.7),
     e("/business/search", "weekly", 0.8),
     e("/map", "daily", 0.8),
+    e("/calendar", "daily", 0.8),
     e("/about", "monthly", 0.7),
     e("/blog", "weekly", 0.8),
     e("/story", "weekly", 0.7),

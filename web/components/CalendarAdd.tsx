@@ -65,7 +65,7 @@ export default function CalendarAdd({
         <button type="button" onClick={() => download(events)} className={btn}>
           <Glyph name="calendar" className="mr-1 h-4 w-4" />{label} <span className="num ml-1 text-muted">{events.length}개 (.ics)</span>
         </button>
-        <span className="text-[12px] text-faint">구글 캘린더는 설정 → 가져오기에서 이 파일을 올리면 됩니다.</span>
+        <span className="text-[12px] text-faint">구글은 설정 → 가져오기, 네이버 캘린더와 톡캘린더는 PC 화면의 가져오기에서 이 파일을 올리면 됩니다. 아이폰은 파일을 열면 바로 들어갑니다.</span>
       </div>
     );
   }
@@ -78,8 +78,8 @@ export default function CalendarAdd({
            onClick={() => track("calendar_add", { how: "google", n: 1 })}>
           <Glyph name="calendar" className="mr-1 h-4 w-4" />구글 캘린더
         </a>
-        <button type="button" onClick={() => download([e])} className={btn} title="애플·아웃룩·네이버 캘린더">
-          .ics 내려받기
+        <button type="button" onClick={() => download([e])} className={btn} title="애플·네이버·톡캘린더·아웃룩에 가져오기">
+          네이버·애플·톡캘린더(.ics)
         </button>
       </span>
     );
