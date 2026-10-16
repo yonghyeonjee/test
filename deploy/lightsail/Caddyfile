@@ -72,6 +72,7 @@
 #  2) robots.txt 로 통째로 막은 봇(web/app/robots.txt/route.ts BLOCKED)이 그래도 오면 403. robots.txt 는 읽게 둔다.
 #  3) 이름표(User-Agent)가 없는 요청. 403. 브라우저·검색엔진은 반드시 단다.
 #  4) 봇이 robots.txt 로 막은 경로에 오면 403(아래 @robotsdeny).
+#  5) AI 답변 봇이 공유 그림(/og)을 그려 가면 403(아래 @ogbot). robots.txt 와 같다.
 # 검색엔진(Googlebot·Yeti·Daum·bingbot)·AdSense·AI 답변 봇(PerplexityBot·OAI-SearchBot·Claude-User 등)은 건드리지 않는다.
 (guard) {
 	@scan {
@@ -98,6 +99,14 @@
 		not header_regexp adsua User-Agent (?i)(Mediapartners-Google|AdsBot-Google)
 	}
 	respond @robotsdeny 403
+	#  5) 공유 그림(/og)은 robots.txt 가 AI 답변 봇에게만 막아 둔 경로다(web/app/robots.txt/route.ts ANSWER_BOTS).
+	#     2026-10-16 PerplexityBot 이 그래도 12시간에 수백 번 그려 가 Next 메모리가 493MB 까지 올랐다(10-09 와 같은 일).
+	#     그림 그리기는 글꼴 내려받기·렌더링이라 쪽 하나보다 훨씬 무겁다. 쪽은 계속 열어 두고 그림만 403.
+	@ogbot {
+		path /og /og/*
+		header_regexp aibot User-Agent (?i)(PerplexityBot|OAI-SearchBot|ChatGPT-User|Google-Extended|Claude-SearchBot|Claude-User|Claude-Web)
+	}
+	respond @ogbot 403
 }
 
 (app) {
