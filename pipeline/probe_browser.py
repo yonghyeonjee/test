@@ -2,6 +2,7 @@
 
     python -u pipeline/probe_browser.py map,dong,home,business,detail
     python -u pipeline/probe_browser.py "ref:https://example.com/page"
+    python -u pipeline/probe_browser.py "shotel:/|#find|서울,전체"   (조각 사진: 주소|선택자|누를 단추 글자)
 
 샌드박스에서는 운영 사이트와 지도 타일에 닿지 않아 이 탐침으로 본다. 사진 대신
 글자로 찍는다 — 핀 수, 이름표 겹침, 타일 응답, 카드 글귀, 많이 찾는 말, 그리고
@@ -595,6 +596,41 @@ def check_shot(browser, path: str) -> None:
         ctx.close()
 
 
+def _b64(tag: str, jpg: bytes) -> None:
+    import base64
+    b64 = base64.b64encode(jpg).decode()
+    print(f"--B64 {tag} {len(jpg)}--")
+    for i in range(0, len(b64), 120):
+        print(b64[i:i + 120])
+    print("--END--")
+
+
+def check_shotel(browser, spec: str) -> None:
+    """한 조각만 찍는다. "주소|선택자|누를 글자,누를 글자…" — 단계 찾기처럼 눌러야 보이는 화면용.
+    누를 글자는 button 의 보이는 글자(정확히 일치)이며 차례로 누른 뒤 찍는다."""
+    import re
+    parts = spec.split("|")
+    path, sel = parts[0], (parts[1] if len(parts) > 1 else "body")
+    clicks = [c.strip() for c in parts[2].split(",")] if len(parts) > 2 and parts[2].strip() else []
+    name = re.sub(r"[^A-Za-z0-9]+", "_", f"{path}-{sel}-{'-'.join(clicks)}").strip("_")[:60] or "el"
+    print(f"\n== 조각 사진 {path} {sel} 누름={clicks}")
+    for label, vp in (("mobile", MOBILE), ("pc", {"width": 1280, "height": 800})):
+        ctx = browser.new_context(viewport=vp, device_scale_factor=1, is_mobile=label == "mobile", locale="ko-KR")
+        page = ctx.new_page()
+        page.goto(path if path.startswith("http") else BASE + path, wait_until="networkidle")
+        page.wait_for_timeout(1200)
+        for c in clicks:
+            page.get_by_role("button", name=c, exact=True).first.click()
+            page.wait_for_timeout(500)
+        el = page.locator(sel).first
+        el.scroll_into_view_if_needed()
+        page.wait_for_timeout(400)
+        box = el.bounding_box()
+        print(f"   {label}: {sel} 크기 {box and (round(box['width']), round(box['height']))}")
+        _b64(f"{name}-{label}.jpg", el.screenshot(type="jpeg", quality=60))
+        ctx.close()
+
+
 def main() -> None:
     args = [a.strip() for a in (sys.argv[1] if len(sys.argv) > 1 else "map,home").split(",") if a.strip()]
     setup()
@@ -628,6 +664,8 @@ def main() -> None:
                     check_wide(browser, a[5:])
                 elif a.startswith("shot:"):
                     check_shot(browser, a[5:])
+                elif a.startswith("shotel:"):
+                    check_shotel(browser, a[7:])
                 elif a.startswith("/search") or a.startswith("/business/search"):
                     check_home(browser, a)
                 elif a.startswith("/"):
