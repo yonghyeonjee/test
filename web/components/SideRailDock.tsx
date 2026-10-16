@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 /**
@@ -12,7 +13,11 @@ import { useEffect, useRef } from "react";
  */
 export default function SideRailDock({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  // 관리자·계정·저장 화면은 내부용이라 광고를 붙이지 않는다(애드센스 정책: 내용 없는 쪽).
+  const path = usePathname() || "";
+  const off = /^\/(admin|account|saved)(\/|$)/.test(path);
   useEffect(() => {
+    if (off) return;
     const el = ref.current;
     if (!el) return;
     const place = () => {
@@ -25,6 +30,7 @@ export default function SideRailDock({ children }: { children: React.ReactNode }
     window.addEventListener("scroll", place, { passive: true });
     window.addEventListener("resize", place);
     return () => { window.removeEventListener("scroll", place); window.removeEventListener("resize", place); };
-  }, []);
+  }, [off]);
+  if (off) return null;
   return <div ref={ref} className="side-rail">{children}</div>;
 }
