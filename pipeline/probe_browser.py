@@ -2,7 +2,7 @@
 
     python -u pipeline/probe_browser.py map,dong,home,business,detail
     python -u pipeline/probe_browser.py "ref:https://example.com/page"
-    python -u pipeline/probe_browser.py "shotel:/|#find|서울,전체"   (조각 사진: 주소|선택자|누를 단추 글자)
+    python -u pipeline/probe_browser.py "shotel:/|#find|서울+서울 전체"   (조각 사진: 주소|선택자|누를 단추 글자)
 
 샌드박스에서는 운영 사이트와 지도 타일에 닿지 않아 이 탐침으로 본다. 사진 대신
 글자로 찍는다 — 핀 수, 이름표 겹침, 타일 응답, 카드 글귀, 많이 찾는 말, 그리고
@@ -606,12 +606,13 @@ def _b64(tag: str, jpg: bytes) -> None:
 
 
 def check_shotel(browser, spec: str) -> None:
-    """한 조각만 찍는다. "주소|선택자|누를 글자,누를 글자…" — 단계 찾기처럼 눌러야 보이는 화면용.
+    """한 조각만 찍는다. "주소|선택자|누를 글자+누를 글자…" — 단계 찾기처럼 눌러야 보이는 화면용.
     누를 글자는 button 의 보이는 글자(정확히 일치)이며 차례로 누른 뒤 찍는다."""
     import re
     parts = spec.split("|")
     path, sel = parts[0], (parts[1] if len(parts) > 1 else "body")
-    clicks = [c.strip() for c in parts[2].split(",")] if len(parts) > 2 and parts[2].strip() else []
+    # 인자 목록이 쉼표로 갈라지니 누를 글자는 + 로 잇는다.
+    clicks = [c.strip() for c in parts[2].split("+")] if len(parts) > 2 and parts[2].strip() else []
     name = re.sub(r"[^A-Za-z0-9]+", "_", f"{path}-{sel}-{'-'.join(clicks)}").strip("_")[:60] or "el"
     print(f"\n== 조각 사진 {path} {sel} 누름={clicks}")
     for label, vp in (("mobile", MOBILE), ("pc", {"width": 1280, "height": 800})):
