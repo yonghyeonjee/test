@@ -243,11 +243,14 @@ export type Detail = Program & {
 };
 
 export async function getProgram(sourceId: string) {
-  const { data } = await db
+  // DB 오류를 "없음"으로 읽으면 멀쩡한 사업 쪽이 404 로 사흘 캐시된다. 오류는 던진다(getJob 과 같은 까닭).
+  const { data, error } = await db
     .from("program_detail")
     .select("*")
     .eq("source_id", sourceId)
+    .limit(1)
     .maybeSingle();
+  if (error) throw new Error(`[getProgram ${sourceId}] ${error.message}`);
   return (data ?? null) as Detail | null;
 }
 

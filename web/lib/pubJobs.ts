@@ -250,20 +250,21 @@ export function facets(jobs: Job[], f: JobFilter = {}) {
  */
 export const getJob = cache(async (sourceId: string): Promise<Job | null> => {
   if (!dbConfigured) return null;
-  try {
-    const { data } = await db
-      .from("job_posts")
-      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
-      .filter("source", SOURCE_OP, SOURCE_VAL)
-      .eq("source_id", sourceId)
-      .maybeSingle();
-    if (!data) return null;
-    return toStoredJob(data as Stored);
-  } catch (e) {
-    // DB 가 잠깐 안 될 때 null 을 돌려주면 그 공고는 "없는 쪽"(404) 이 된다.
-    // 검색엔진은 그걸 보고 색인에서 지운다. 없는 것과 못 읽은 것은 다르다.
-    throw e;
-  }
+  // DB 가 잠깐 안 될 때 null 을 돌려주면 그 공고는 "내려간 공고"(200 + noindex)로 그려지고
+  // ISR 에 사흘 남는다. 검색엔진은 그걸 보고 색인에서 지운다. 없는 것과 못 읽은 것은 다르다.
+  // supabase-js 는 시간 초과·5xx 를 던지지 않고 { data: null, error } 로 돌려준다 — 그래서 예전의
+  // try/catch 는 한 번도 돌지 않았다(2026-10-17 SEO 점검). error 를 직접 보고 던진다. 던지면 첫 렌더는
+  // 500(캐시 안 됨), 재생성은 실패로 남아 이전의 멀쩡한 쪽이 계속 나간다.
+  const { data, error } = await db
+    .from("job_posts")
+    .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+    .filter("source", SOURCE_OP, SOURCE_VAL)
+    .eq("source_id", sourceId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`[getJob ${sourceId}] ${error.message}`);
+  if (!data) return null;
+  return toStoredJob(data as Stored);
 });
 
 /**

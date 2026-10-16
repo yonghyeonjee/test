@@ -16,7 +16,7 @@ import TopStripAd from "@/components/TopStripAd";
 import { blogIndexRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
-import { getStories, getStory, KIND_LABEL } from "@/lib/stories";
+import { getStories, getStoryStrict, KIND_LABEL } from "@/lib/stories";
 
 /**
  * 자료에서 매일 만드는 블로그 글. 파이프라인이 써 둔 블록을 그린다.
@@ -36,7 +36,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
-  const s = await getStory(decodeURIComponent(params.slug));
+  const s = await getStoryStrict(decodeURIComponent(params.slug));
   if (!s) return withOg({ title: "찾을 수 없는 글" });
   const path = `/story/${encodeURIComponent(s.slug)}`;
   return withOg({
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
 
 export default async function StoryPage({ params }: P) {
   const slug = decodeURIComponent(params.slug);
-  const s = await getStory(slug);
+  const s = await getStoryStrict(slug);
   if (!s) notFound();
   const path = `/story/${encodeURIComponent(s.slug)}`;
   const ld = pageGraph({
