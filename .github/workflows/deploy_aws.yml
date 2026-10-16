@@ -75,7 +75,7 @@ jobs:
           cp ../deploy/lightsail/jiwon-watchdog.sh ../deploy/lightsail/jiwon-watchdog.service ../deploy/lightsail/jiwon-watchdog.timer ../bundle/
           # 봇 막기: fail2ban 규칙·감옥, 설치 스크립트, 접속 기록 요약(server_diag 가 부른다)
           cp -r ../deploy/lightsail/fail2ban ../bundle/fail2ban
-          cp ../deploy/lightsail/botguard.sh ../deploy/lightsail/access_report.py ../bundle/
+          cp ../deploy/lightsail/botguard.sh ../deploy/lightsail/access_report.py ../deploy/lightsail/bot_report.py ../bundle/
           tar -C ../bundle -czf ../bundle.tgz .
           ls -lh ../bundle.tgz
 
