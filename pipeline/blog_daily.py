@@ -832,6 +832,22 @@ def write_sigungu(s: dict) -> dict:
 
 # ── 글감 고르기 ──────────────────────────────────────────
 # ── 오늘의 채용 브리핑 ────────────────────────────────────
+# 합격자 발표·면접 안내·채용 계획은 지원할 수 있는 공고가 아니다(web/lib/jobRole.ts stageOf 와 같은 기준).
+_FINAL = re.compile(r"최종\s*합격|합격자\s*발표|합격자\s*공고|채용\s*후보자")
+_DOCS_PASS = re.compile(r"서류\s*(전형|심사)?\s*(합격|통과)")
+_INTERVIEW = re.compile(r"서류\s*(전형)?\s*합격|면접\s*(시험|전형|심사)?\s*(일정|안내|계획)|면접\s*대상")
+_PLAN = re.compile(r"시행\s*계획|채용\s*계획|임용\s*(시험\s*)?계획|시험\s*계획")
+
+
+def is_opening(title: str) -> bool:
+    t = title or ""
+    if _FINAL.search(t) and not _DOCS_PASS.search(t):
+        return False
+    if _INTERVIEW.search(t) or _PLAN.search(t):
+        return False
+    return not t.lstrip().startswith("(적격자 없음)")
+
+
 def daily_stats(sb) -> dict:
     """지난 24시간에 새로 들어온 공공기관 채용 공고와 사흘 안에 마감되는 공고. 검색 유입의 8할이 채용 쪽이라 날마다 쓴다."""
     t = today()
@@ -842,6 +858,8 @@ def daily_stats(sb) -> dict:
     closing = (sb.table("job_posts").select(cols).in_("source", ["gojobs", "alio"])
                .gte("end_date", t.isoformat()).lte("end_date", (t + dt.timedelta(days=2)).isoformat())
                .order("end_date").limit(300).execute().data or [])
+    fresh = [r for r in fresh if is_opening(r.get("title") or "")]
+    closing = [r for r in closing if is_opening(r.get("title") or "")]
     fresh_ids = {r["source_id"] for r in fresh}
     return {"date": t.isoformat(), "fresh": fresh, "closing": [r for r in closing if r["source_id"] not in fresh_ids]}
 
