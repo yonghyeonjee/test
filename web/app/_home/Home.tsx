@@ -348,7 +348,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
       <HotBanner slides={hot} className="mt-3 lg:hidden" />
       <div className="mt-4 hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
         <HotBanner slides={hot} className="" />
-        <HomeTopAd />
+        <HomeTopAd brief={hot.find((s) => s.kind === "brief") ?? null} />
       </div>
       <PortalTop
         index={sggIndex} hot={hotTerms.welfare}

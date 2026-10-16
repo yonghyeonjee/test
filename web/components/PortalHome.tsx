@@ -51,9 +51,9 @@ export function PortalShortcuts({ findHref = "/#find" }: { findHref?: string }) 
       {SHORTCUTS.map((s) => (
         <Link key={s.label} href={s.href === "/#find" ? findHref : s.href}
               className="group flex flex-col items-center gap-1.5 text-center">
-          <span className={`flex h-12 w-12 items-center justify-center rounded-[16px] transition-transform duration-150
-                            group-hover:-translate-y-0.5 group-active:scale-95 ${s.tone}`}>
-            <PortalIcon name={s.icon} className="h-6 w-6" strokeWidth={2} />
+          <span className={`flex h-12 w-12 items-center justify-center rounded-[16px] text-white shadow-[0_8px_16px_-10px_rgba(17,24,39,.55)]
+                            transition-transform duration-150 group-hover:-translate-y-0.5 group-active:scale-95 ${s.tone}`}>
+            <PortalIcon name={s.icon} className="h-6 w-6" strokeWidth={2.1} />
           </span>
           <span className="whitespace-nowrap text-[12px] font-semibold tracking-[-.02em] text-ink2 sm:text-[12.5px]">{s.label}</span>
         </Link>
@@ -119,6 +119,7 @@ const KIND: Record<Slide["kind"], { label: string; cls: string }> = {
   exam: { label: "시험", cls: "bg-cat-orangeSoft text-cat-orange" },
   job: { label: "채용", cls: "bg-cat-blueSoft text-cat-blue" },
   biz: { label: "기업", cls: "bg-cat-violetSoft text-cat-violet" },
+  brief: { label: "브리핑", cls: "bg-cat-cyanSoft text-cat-cyan" },
 };
 
 /** 남은 날 배지. 사흘 안은 빨강, 이레 안은 주황. */
@@ -128,7 +129,8 @@ export function DueBadge({ days }: { days: number }) {
 }
 
 /** 놓치기 쉬운 마감 모음(지원금·시험·채용·기업). 휴대폰은 위쪽 돌림 띠가 같은 것을 보여 준다. */
-export function DeadlineList({ slides, className = "" }: { slides: Slide[]; className?: string }) {
+export function DeadlineList({ slides: all, className = "" }: { slides: Slide[]; className?: string }) {
+  const slides = all.filter((s) => s.kind !== "brief");   // 브리핑은 마감이 아니다
   if (!slides.length) return null;
   return (
     <Box title="놓치면 안 되는 마감" className={className}>

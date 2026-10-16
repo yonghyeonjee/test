@@ -23,7 +23,31 @@ async function build(): Promise<Slide[]> {
 
   if (!dbConfigured) return pinned;
 
-  const [exam, jobs, biz] = await Promise.all([
+  // 오늘의 채용 브리핑(blog_daily 가 매일 아침 쓰는 글). 이틀 안에 쓴 것만. 제목에서 건수를 읽는다.
+  const brief: PromiseLike<Slide[]> = db
+    .from("blog_public")
+    .select("slug,title,published_at")
+    .eq("kind", "daily")
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .then(({ data }): Slide[] => {
+      const r = (data ?? [])[0] as { slug: string; title: string; published_at: string } | undefined;
+      if (!r) return [];
+      // 쓴 날이 오늘이나 어제여야 "오늘"이다(글은 매일 아침 9시 반에 쓴다).
+      const age = -daysLeft(String(r.published_at).slice(0, 10), today);
+      if (age > 1) return [];
+      const m = String(r.title).match(/새 공고 ([\d,]+)건.*?마감 ([\d,]+)건/);
+      const d = new Date(`${String(r.published_at).slice(0, 10)}T00:00:00Z`);
+      return [{
+        key: `brief-${r.slug}`, kind: "brief", days: 0,
+        title: m ? `오늘 새 공고 ${m[1]}건 · 사흘 안 마감 ${m[2]}건` : "오늘의 공공기관 채용 브리핑",
+        sub: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 공공기관 채용 브리핑 · 지역별 새 공고와 마감 임박`,
+        href: `/story/${encodeURIComponent(r.slug)}`, end: iso(today),
+      }];
+    }, () => [] as Slide[]);
+
+  const [briefs, exam, jobs, biz] = await Promise.all([
+    brief,
     // 자격시험 원서접수. 놓치면 다음 회차까지 몇 달을 기다린다.
     getExamRounds()
       .then((rs) => upcoming(rs, today))
@@ -99,7 +123,7 @@ async function build(): Promise<Slide[]> {
     (a, b) => a.days - b.days,
   );
 
-  return [...pinned, ...rest].slice(0, 6);
+  return [...briefs, ...pinned, ...rest].slice(0, 7);
 }
 
 /** 30분이면 넉넉하다. 마감은 날 단위로 움직인다. */

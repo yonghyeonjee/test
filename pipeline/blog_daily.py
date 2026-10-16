@@ -888,7 +888,8 @@ def write_daily(s: dict) -> dict:
     day = f"{t.month}월 {t.day}일"
     lead = f"**{day}** 기준 지난 하루 동안 나라일터와 잡알리오에 새로 올라온 공공기관 채용 공고는 **{n(len(fresh))}건**, 사흘 안에 접수가 끝나는 공고는 **{n(len(closing))}건**입니다. "
     if regions and len(fresh):
-        lead += f"새 공고는 **{regions[0][0]}**가 {n(len(regions[0][1]))}건으로 가장 많습니다."
+        most = max(regions, key=lambda kv: len(kv[1]))
+        lead += f"새 공고는 **{most[0]}**{josa_k(most[0], '이가')[len(most[0]):]} {n(len(most[1]))}건으로 가장 많습니다."
     blocks.append(P(lead.strip()))
     blocks.append(P("공고마다 첨부 공고문을 읽어 모집 분야·자격·접수 방법을 정리한 **공고 요약**이 붙어 있습니다. 제목을 누르면 바로 봅니다. 접수 중인 공고 전체는 [채용 공고](/jobs)에, 기관별 작성 가이드는 [지원서 준비](/jobs/guide)에 있습니다."))
 
@@ -1023,7 +1024,9 @@ def kinds_today(count: int, day: int | None = None) -> list[str]:
 def write_one(sb, kind: str, subject: str | None, done: set[tuple[str, str]], dry: bool) -> str:
     subject, picked = pick(kind, done, sb, subject)
     post = compose(kind, picked)
-    post["stats"] = picked["stats"]
+    # 브리핑은 공고 목록 수백 줄을 통계 칸에 그대로 두지 않는다(글 본문에 이미 있다). 건수만.
+    post["stats"] = ({"date": picked["stats"]["date"], "fresh_n": len(picked["stats"]["fresh"]), "closing_n": len(picked["stats"]["closing"])}
+                     if kind == DAILY else picked["stats"])
     toc = post.pop("toc")
     post["body"] = [{"type": "toc", "items": [{"id": i, "label": l} for i, l in toc]}] + post["body"]
 

@@ -97,14 +97,14 @@ export function current(path: string | null): { open?: NavItem; leaf?: Leaf } {
  */
 export type Shortcut = { href: string; label: string; icon: string; tone: string };
 export const SHORTCUTS: Shortcut[] = [
-  { href: "/#find", label: "내 조건 찾기", icon: "find", tone: "bg-cat-greenSoft text-cat-green" },
-  { href: "/map", label: "정책지도", icon: "map", tone: "bg-cat-redSoft text-cat-red" },
-  { href: "/business", label: "기업·창업", icon: "biz", tone: "bg-cat-violetSoft text-cat-violet" },
-  { href: "/jobs", label: "채용", icon: "jobs", tone: "bg-cat-blueSoft text-cat-blue" },
-  { href: "/license", label: "자격증", icon: "license", tone: "bg-cat-orangeSoft text-cat-orange" },
-  { href: "/license/schedule", label: "시험 일정", icon: "calendar", tone: "bg-cat-amberSoft text-cat-amber" },
-  { href: "/housing", label: "주거 지원", icon: "home", tone: "bg-cat-limeSoft text-cat-lime" },
-  { href: "/money", label: "생활금융", icon: "money", tone: "bg-cat-cyanSoft text-cat-cyan" },
-  { href: "/agency", label: "공공기관", icon: "agency", tone: "bg-cat-indigoSoft text-cat-indigo" },
-  { href: "/blog", label: "읽을거리", icon: "read", tone: "bg-cat-pinkSoft text-cat-pink" },
+  { href: "/#find", label: "내 조건 찾기", icon: "find", tone: "bg-cat-green" },
+  { href: "/map", label: "정책지도", icon: "map", tone: "bg-cat-red" },
+  { href: "/business", label: "기업·창업", icon: "biz", tone: "bg-cat-violet" },
+  { href: "/jobs", label: "채용", icon: "jobs", tone: "bg-cat-blue" },
+  { href: "/license", label: "자격증", icon: "license", tone: "bg-cat-orange" },
+  { href: "/license/schedule", label: "시험 일정", icon: "calendar", tone: "bg-cat-amber" },
+  { href: "/housing", label: "주거 지원", icon: "home", tone: "bg-cat-lime" },
+  { href: "/money", label: "생활금융", icon: "money", tone: "bg-cat-cyan" },
+  { href: "/agency", label: "공공기관", icon: "agency", tone: "bg-cat-indigo" },
+  { href: "/blog", label: "읽을거리", icon: "read", tone: "bg-cat-pink" },
 ];
