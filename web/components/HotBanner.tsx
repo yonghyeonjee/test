@@ -31,6 +31,7 @@ const TONE: Record<HotKind, { from: string; to: string; tint: string }> = {
   exam: { from: "#0B7A5A", to: "#20B486", tint: "#B2F2D7" },
   job: { from: "#1864AB", to: "#3B9AE8", tint: "#C5E3FF" },
   biz: { from: "#A84300", to: "#F08C00", tint: "#FFE3A8" },
+  brief: { from: "#0C4A6E", to: "#0EA5E9", tint: "#BAE6FD" },
 };
 
 /**
@@ -82,6 +83,14 @@ function Art({ kind }: { kind: HotKind }) {
             ))}
           </>
         )}
+        {kind === "brief" && (
+          <>
+            <rect x="256" y="40" width="118" height="124" rx="8" />
+            <path d="M272 64h86M272 82h60M272 100h86M272 118h48M272 136h74" strokeOpacity=".4" strokeWidth="2" />
+            <circle cx="352" cy="118" r="12" strokeOpacity=".7" strokeWidth="2" />
+            <path d="M346 118l4 4 8-8" strokeOpacity=".9" strokeWidth="2.2" />
+          </>
+        )}
         {kind === "biz" && (
           <>
             <path d="M258 150V86l44-22 44 22v64z" />
@@ -94,11 +103,12 @@ function Art({ kind }: { kind: HotKind }) {
   );
 }
 
-const KIND_LABEL: Record<HotKind, string> = { pin: "정부지원", exam: "자격시험", job: "공공기관 채용", biz: "기업지원" };
+const KIND_LABEL: Record<HotKind, string> = { pin: "정부지원", exam: "자격시험", job: "공공기관 채용", biz: "기업지원", brief: "오늘의 채용 브리핑" };
 
 /**
- * 한 줄 높이(휴대폰 64px, 넓은 화면 72px)의 얇은 띠. 예전 156~176px 짜리 큰 그림 띠는 휴대폰 첫
- * 화면을 반 넘게 덮었다. 남은 날·갈래·제목만 싣고, 넓은 화면은 오른쪽에 기관·마감 한 줄과 넘김 단추.
+ * 첫 화면의 큰 띠(휴대폰 92px, 넓은 화면 108px). 2026-10-16 "첫 화면이 눈에 안 띈다"는 말에
+ * 64px 얇은 띠를 키우고 글자를 굵게, 부제를 휴대폰에도 보이게 했다. 156px 짜리 옛 띠처럼 첫 화면을
+ * 반 넘게 덮지는 않는다. 남은 날·갈래·제목·부제, 넓은 화면은 오른쪽에 넘김 단추.
  */
 export default function HotBanner({ slides, className = "mt-6" }: { slides: Slide[]; className?: string }) {
   const [i, setI] = useState(0);
@@ -154,7 +164,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
               <Link
                 href={s.href}
                 tabIndex={idx === i ? 0 : -1}
-                className={`relative flex h-14 items-center gap-4 overflow-hidden sm:h-[72px] ${n > 1 ? "pl-12 pr-[92px] sm:pl-14 sm:pr-[104px]" : "px-4 sm:px-5"}`}
+                className={`relative flex h-[92px] items-center gap-4 overflow-hidden sm:h-[108px] ${n > 1 ? "pl-12 pr-[92px] sm:pl-14 sm:pr-[104px]" : "px-4 sm:px-5"}`}
               >
                 {PHOTO[s.kind] ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -164,20 +174,20 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
                   <Art kind={s.kind} />
                 )}
                 {/* 글씨 쪽(왼쪽)을 살짝 어둡게 — 밝은 색 띠에서도 흰 글씨가 읽힌다. */}
-                <span className="absolute inset-0 bg-gradient-to-r from-black/30 via-black/10 to-transparent" />
+                <span className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/15 to-transparent" />
                 <span className="relative min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5 text-[11.5px] font-semibold text-white/85">
-                    <span className={`num rounded-pill px-1.5 py-px text-[11.5px] font-extrabold ${
-                      s.days <= 1 ? "bg-white text-alert" : "bg-white/20 text-white"}`}>
-                      {dueLabel(s.days)}
+                  <span className="flex items-center gap-1.5 text-[12px] font-semibold text-white/85 sm:text-[12.5px]">
+                    <span className={`num rounded-pill px-2 py-px text-[12px] font-extrabold ${
+                      s.kind === "brief" ? "bg-white text-[#0C4A6E]" : s.days <= 1 ? "bg-white text-alert" : "bg-white/20 text-white"}`}>
+                      {s.kind === "brief" ? "오늘" : dueLabel(s.days)}
                     </span>
                     {KIND_LABEL[s.kind]}
                   </span>
-                  <b className="block truncate text-[14.5px] font-extrabold leading-snug text-white sm:mt-0.5 sm:text-[16px]">
+                  <b className="mt-0.5 block truncate text-[16.5px] font-extrabold leading-snug tracking-[-.02em] text-white sm:mt-1 sm:text-[19px]">
                     {s.title}
                   </b>
+                  <span className="mt-0.5 block truncate text-[12px] text-white/80 sm:text-[13px]">{s.sub}</span>
                 </span>
-                <span className="relative hidden max-w-[38%] truncate text-[12.5px] text-white/85 md:block">{s.sub}</span>
               </Link>
             </div>
           ))}

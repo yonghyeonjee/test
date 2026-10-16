@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   });
 }
 
-const ART: Record<string, (p: { className?: string }) => JSX.Element> = { org: ArtJobs, role: ArtJobs, region: ArtPolicy, topic: ArtJeonse, license: ArtLicense, sigungu: ArtPolicy };
+const ART: Record<string, (p: { className?: string }) => JSX.Element> = { org: ArtJobs, role: ArtJobs, region: ArtPolicy, topic: ArtJeonse, license: ArtLicense, sigungu: ArtPolicy, daily: ArtJobs };
 
 export default async function StoryPage({ params }: P) {
   const slug = decodeURIComponent(params.slug);

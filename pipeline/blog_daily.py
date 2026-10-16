@@ -29,7 +29,9 @@ import re
 import sys
 import time
 
-KINDS = ["topic", "org", "role", "region", "license", "sigungu"]
+KINDS = ["topic", "org", "role", "region", "license", "sigungu"]   # 날마다 돌아가며 쓰는 갈래
+DAILY = "daily"                                                     # 날마다 반드시 쓰는 갈래(채용 브리핑)
+ALL_KINDS = KINDS + [DAILY]
 SITE = "https://jiwon.knowhow-it.com"
 BRAND = "K나라지원"
 
@@ -829,6 +831,114 @@ def write_sigungu(s: dict) -> dict:
 
 
 # ── 글감 고르기 ──────────────────────────────────────────
+# ── 오늘의 채용 브리핑 ────────────────────────────────────
+# 합격자 발표·면접 안내·채용 계획은 지원할 수 있는 공고가 아니다(web/lib/jobRole.ts stageOf 와 같은 기준).
+_FINAL = re.compile(r"최종\s*합격|합격자\s*발표|합격자\s*공고|채용\s*후보자")
+_DOCS_PASS = re.compile(r"서류\s*(전형|심사)?\s*(합격|통과)")
+_INTERVIEW = re.compile(r"서류\s*(전형)?\s*합격|면접\s*(시험|전형|심사)?\s*(일정|안내|계획)|면접\s*대상")
+_PLAN = re.compile(r"시행\s*계획|채용\s*계획|임용\s*(시험\s*)?계획|시험\s*계획")
+
+
+def is_opening(title: str) -> bool:
+    t = title or ""
+    if _FINAL.search(t) and not _DOCS_PASS.search(t):
+        return False
+    if _INTERVIEW.search(t) or _PLAN.search(t):
+        return False
+    return not t.lstrip().startswith("(적격자 없음)")
+
+
+def daily_stats(sb) -> dict:
+    """지난 24시간에 새로 들어온 공공기관 채용 공고와 사흘 안에 마감되는 공고. 검색 유입의 8할이 채용 쪽이라 날마다 쓴다."""
+    t = today()
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=24)).isoformat()
+    cols = "source_id,title,org,region,hire,end_date,reg_date"
+    fresh = (sb.table("job_posts").select(cols).in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
+             .or_(f"end_date.gte.{t.isoformat()},end_date.is.null").order("reg_date", desc=True).limit(400).execute().data or [])
+    closing = (sb.table("job_posts").select(cols).in_("source", ["gojobs", "alio"])
+               .gte("end_date", t.isoformat()).lte("end_date", (t + dt.timedelta(days=2)).isoformat())
+               .order("end_date").limit(300).execute().data or [])
+    fresh = [r for r in fresh if is_opening(r.get("title") or "")]
+    closing = [r for r in closing if is_opening(r.get("title") or "")]
+    fresh_ids = {r["source_id"] for r in fresh}
+    return {"date": t.isoformat(), "fresh": fresh, "closing": [r for r in closing if r["source_id"] not in fresh_ids]}
+
+
+def write_daily(s: dict) -> dict:
+    t = dt.date.fromisoformat(s["date"])
+    fresh, closing = s["fresh"], s["closing"]
+    if len(fresh) < 5 and len(closing) < 5:
+        raise SystemExit(f"브리핑 글감 없음(새 공고 {len(fresh)}건, 마감 임박 {len(closing)}건)")
+    blocks, toc = [], []
+    link = lambda r: {"href": f"/jobs/{r['source_id']}", "label": f"{r['title']} — {r.get('org') or '공공기관'} · {kdate(r.get('end_date')) + ' 마감' if r.get('end_date') else '상시'}"}
+
+    by_region: dict[str, list] = {}
+    for r in fresh:
+        by_region.setdefault(r.get("region") or "전국·중앙부처", []).append(r)
+    regions = sorted(by_region.items(), key=lambda kv: (kv[0] != "전국·중앙부처", -len(kv[1]), kv[0]))
+    hire = {}
+    for r in fresh:
+        hire[r.get("hire") or "구분 없음"] = hire.get(r.get("hire") or "구분 없음", 0) + 1
+    orgs = {}
+    for r in fresh:
+        if r.get("org"):
+            orgs[r["org"]] = orgs.get(r["org"], 0) + 1
+    top_orgs = sorted(orgs.items(), key=lambda kv: -kv[1])[:5]
+
+    day = f"{t.month}월 {t.day}일"
+    lead = f"**{day}** 기준 지난 하루 동안 나라일터와 잡알리오에 새로 올라온 공공기관 채용 공고는 **{n(len(fresh))}건**, 사흘 안에 접수가 끝나는 공고는 **{n(len(closing))}건**입니다. "
+    if regions and len(fresh):
+        most = max(regions, key=lambda kv: len(kv[1]))
+        lead += f"새 공고는 **{most[0]}**{josa_k(most[0], '이가')[len(most[0]):]} {n(len(most[1]))}건으로 가장 많습니다."
+    blocks.append(P(lead.strip()))
+    blocks.append(P("공고마다 첨부 공고문을 읽어 모집 분야·자격·접수 방법을 정리한 **공고 요약**이 붙어 있습니다. 제목을 누르면 바로 봅니다. 접수 중인 공고 전체는 [채용 공고](/jobs)에, 기관별 작성 가이드는 [지원서 준비](/jobs/guide)에 있습니다."))
+
+    if fresh:
+        toc.append(("fresh", f"새로 올라온 공고 {n(len(fresh))}건"))
+        blocks.append(H2(f"새로 올라온 공고 {n(len(fresh))}건", "fresh"))
+        shown = 0
+        for region, rows in regions:
+            if shown >= 60:
+                break
+            rows = sorted(rows, key=lambda r: (r.get("end_date") or "9999", r.get("title") or ""))
+            take = rows[: max(3, min(len(rows), 60 - shown))]
+            blocks.append(P(f"**{region}** {n(len(rows))}건" + (f" · [{short_sido(region) or region} 채용 전체](/jobs/region/{region})" if region != "전국·중앙부처" else "")))
+            blocks.append(LINKS([link(r) for r in take]))
+            shown += len(take)
+        if shown < len(fresh):
+            blocks.append(P(f"나머지 {n(len(fresh) - shown)}건은 [접수 중 공고](/jobs/status/open)에서 등록일순으로 봅니다."))
+
+    if closing:
+        toc.append(("closing", "사흘 안에 마감"))
+        blocks.append(H2("사흘 안에 마감", "closing"))
+        blocks.append(P("오늘부터 모레까지 접수가 끝나는 공고입니다. 마감 시각은 공고마다 달라 보통 오후 6시 전후이니 그날 오전에 내는 편이 안전합니다."))
+        blocks.append(LINKS([link(r) for r in closing[:25]]))
+        if len(closing) > 25:
+            blocks.append(P(f"그 밖에 {n(len(closing) - 25)}건이 더 있습니다. [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
+
+    if len(fresh) >= 5:
+        toc.append(("mix", "어떤 자리인가"))
+        blocks.append(H2("어떤 자리인가", "mix"))
+        blocks.append(BARS([{"label": k, "n": v} for k, v in sorted(hire.items(), key=lambda kv: -kv[1])[:8]]))
+        if top_orgs:
+            blocks.append(P("오늘 공고를 많이 낸 기관: " + ", ".join(f"[{o}](/jobs/org/{o}) {n(c)}건" for o, c in top_orgs) + "."))
+
+    toc.append(("howto", "놓치지 않으려면"))
+    blocks.append(H2("놓치지 않으려면", "howto"))
+    blocks.append(LIST([
+        "공고 쪽의 **저장** 단추를 누르면 머리말의 책갈피에 모입니다. 사용자명을 정해 두면 휴대폰과 컴퓨터에서 같은 목록을 봅니다.",
+        "가고 싶은 기관이 있으면 [기관별 채용](/jobs/org)에서 그 기관의 지난 공고와 채용 시기를 먼저 봅니다. 요구 자격은 회차가 바뀌어도 거의 같습니다.",
+        "자기소개서·직무수행계획서는 [기관별 작성 가이드](/jobs/guide)에 공고문에서 뽑은 항목이 정리돼 있습니다.",
+    ]))
+    blocks.append(NOTE(f"{s['date']} 오전 기준, 인사혁신처 나라일터와 잡알리오에 올라온 공고를 {BRAND}이 모은 것입니다. 기관 홈페이지에만 올리는 공고는 빠질 수 있습니다. 이 브리핑은 매일 아침 새로 씁니다."))
+
+    title = f"{t.year}년 {day} 공공기관 채용 브리핑 — 새 공고 {n(len(fresh))}건, 사흘 안 마감 {n(len(closing))}건"
+    summary = f"{day} 새로 올라온 공공기관·공무직·임기제 채용 공고 {n(len(fresh))}건을 지역별로 모으고, 사흘 안에 접수가 끝나는 공고 {n(len(closing))}건을 마감순으로 정리했습니다."
+    kw = [BRAND, "공공기관 채용", f"{t.month}월 채용 공고", "나라일터 채용", "공무직 채용", "오늘의 채용", f"{day} 채용"]
+    return {"slug": f"jobs-{s['date']}", "kind": DAILY, "subject": s["date"], "title": title, "summary": summary,
+            "keywords": kw, "body": blocks, "toc": toc}
+
+
 def rpc(sb, name: str, params: dict, tries: int = 3):
     """DB 함수 호출. 읽기 시간 초과(httpx.ReadTimeout)가 가끔 나서 세 번까지 다시 부른다."""
     for i in range(tries):
@@ -882,6 +992,8 @@ def pick(kind: str, done: set[tuple[str, str]], sb, subject: str | None = None) 
             if s.get("name") and int(s.get("takers_3y") or 0) >= 1000 and s.get("by_year"):
                 return c["code"], {"stats": s}
         raise SystemExit("자격증 글감 없음(수험자 동향 없음)")
+    if kind == DAILY:
+        return today().isoformat(), {"stats": daily_stats(sb)}
     if kind == "sigungu":
         cands = rpc(sb, "blog_sigungu_candidates", {"p_min": 15, "p_limit": 300}) or []
         cands = [c for c in cands if subject in (None, c["sigungu"], f"{c['sido']} {c['sigungu']}", f"{short_sido(c['sido'])} {c['sigungu']}")]
@@ -899,6 +1011,7 @@ def compose(kind: str, picked: dict) -> dict:
     if kind == "role": return write_role(picked["role"], picked["stats"])
     if kind == "region": return write_region(picked["stats"])
     if kind == "license": return write_license(picked["stats"])
+    if kind == DAILY: return write_daily(picked["stats"])
     return write_sigungu(picked["stats"])
 
 
@@ -911,7 +1024,9 @@ def kinds_today(count: int, day: int | None = None) -> list[str]:
 def write_one(sb, kind: str, subject: str | None, done: set[tuple[str, str]], dry: bool) -> str:
     subject, picked = pick(kind, done, sb, subject)
     post = compose(kind, picked)
-    post["stats"] = picked["stats"]
+    # 브리핑은 공고 목록 수백 줄을 통계 칸에 그대로 두지 않는다(글 본문에 이미 있다). 건수만.
+    post["stats"] = ({"date": picked["stats"]["date"], "fresh_n": len(picked["stats"]["fresh"]), "closing_n": len(picked["stats"]["closing"])}
+                     if kind == DAILY else picked["stats"])
     toc = post.pop("toc")
     post["body"] = [{"type": "toc", "items": [{"id": i, "label": l} for i, l in toc]}] + post["body"]
 
@@ -931,7 +1046,7 @@ def write_one(sb, kind: str, subject: str | None, done: set[tuple[str, str]], dr
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kind", choices=KINDS)
+    ap.add_argument("--kind", choices=ALL_KINDS)
     ap.add_argument("--subject")
     ap.add_argument("--count", type=int, default=1, help="오늘 차례에서 몇 갈래를 쓸지(갈래를 지정하면 무시)")
     ap.add_argument("--dry", action="store_true")
@@ -947,7 +1062,8 @@ def main():
 
     rows = sb.table("blog_posts").select("kind,subject").execute().data or []
     done = {(r["kind"], r["subject"]) for r in rows}
-    kinds = [a.kind] if a.kind else kinds_today(a.count)
+    # 채용 브리핑은 날마다 먼저 쓰고, 그다음 오늘 차례의 갈래를 쓴다.
+    kinds = [a.kind] if a.kind else [DAILY] + kinds_today(a.count)
     written = 0
     for kind in kinds:
         try:

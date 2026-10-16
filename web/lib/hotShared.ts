@@ -2,7 +2,8 @@
  * 첫 화면 띠(HotBanner)에서 서버와 클라이언트가 같이 쓰는 것.
  * hotBanner.ts 는 db 를 가져오므로 클라이언트 컴포넌트가 가져오면 안 된다.
  */
-export type HotKind = "pin" | "exam" | "job" | "biz";
+/** brief: 오늘의 채용 브리핑(날마다 쓰는 글). 마감이 아니라 "오늘" 표시로 보인다. */
+export type HotKind = "pin" | "exam" | "job" | "biz" | "brief";
 
 export type Slide = {
   key: string;
