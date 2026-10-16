@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
-import { ArtJeonse, ArtJobs, ArtLicense, ArtPolicy } from "@/components/Art";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
@@ -10,6 +9,9 @@ import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import StoryBody from "@/components/StoryBody";
 import StorySummary from "@/components/StorySummary";
+import SerifFont from "@/components/SerifFont";
+import StoryCover from "@/components/StoryCover";
+import { blocksText, readMinutes } from "@/lib/readTime";
 import TopStripAd from "@/components/TopStripAd";
 import { blogIndexRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
@@ -47,14 +49,12 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   });
 }
 
-const ART: Record<string, (p: { className?: string }) => JSX.Element> = { org: ArtJobs, role: ArtJobs, region: ArtPolicy, topic: ArtJeonse, license: ArtLicense, sigungu: ArtPolicy, daily: ArtJobs };
 
 export default async function StoryPage({ params }: P) {
   const slug = decodeURIComponent(params.slug);
   const s = await getStory(slug);
   if (!s) notFound();
   const path = `/story/${encodeURIComponent(s.slug)}`;
-  const Art = ART[s.kind] ?? ArtPolicy;
   const ld = pageGraph({
     path, name: s.title, description: s.summary, dateModified: s.updated_at,
     crumbs: [{ name: "블로그", path: "/story" }, { name: KIND_LABEL[s.kind] ?? "블로그" }],
@@ -70,22 +70,28 @@ export default async function StoryPage({ params }: P) {
   const firstP = s.body.findIndex((b) => b.type === "p");
   const body = s.body.filter((b, i) => b.type !== "toc" && i !== firstP);
 
+  const mins = readMinutes(blocksText(s.body));
+
   return (
-    <article className="py-4">
+    <article className="mx-auto max-w-[44rem] py-4">
+      <SerifFont />
       <JsonLd data={ld} />
       <nav aria-label="위치" className="text-[13px] text-muted">
         <Link href="/story" className="inline-block py-1 hover:text-brand">블로그</Link>{" · "}
         <span className="text-ink2">{KIND_LABEL[s.kind] ?? "글"}</span>
       </nav>
-      <header className="mt-3">
-        <h1 className="display text-[1.75rem] leading-tight">{s.title}</h1>
-        <p className="num mt-2 text-xs text-faint">{s.updated_at.slice(0, 10)} 기준 · 모아 둔 자료에서 센 숫자로 씁니다</p>
+      {/* 브런치처럼: 좁은 기둥, 명조 큰 제목, 작은 표식 줄, 그 아래 머리 띠. 2026-10-16. */}
+      <header className="mt-4 sm:mt-6">
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">{s.title}</h1>
+        <p className="num mt-4 text-[13px] text-faint">
+          <span className="font-semibold text-brand">K나라지원</span> · {s.updated_at.slice(0, 10).replaceAll("-", ".")} · 읽는 데 {mins}분 · 모아 둔 자료에서 센 숫자로 씁니다
+        </p>
       </header>
+      <StoryCover kind={s.kind} label={KIND_LABEL[s.kind]} band className="mt-6" />
 
-      {/* 두괄식: 요약 상자가 먼저, 그 아래 광고 띠, 그림, 본문. 2026-10-16 "요약부터, 너무 길다"는 말에. */}
-      <StorySummary summary={s.summary} blocks={s.body} className="mt-5" />
+      {/* 두괄식: 요약 상자가 먼저, 그 아래 광고 띠, 본문. */}
+      <StorySummary summary={s.summary} blocks={s.body} className="mt-6" />
       <TopStripAd className="mt-5" />
-      <div className="mt-6 flex justify-center"><Art /></div>
 
       <StoryBody blocks={body.slice(0, Math.ceil(body.length / 2))} />
       <MidAd name="post_mid" context={s.kind === "topic" || s.kind === "region" ? "general" : "job"} seed={s.slug} className="mt-10" />

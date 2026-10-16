@@ -11,6 +11,8 @@ import type { PromoContext } from "@/lib/promo";
 import RelatedLinks from "@/components/RelatedLinks";
 import Inline from "@/components/Inline";
 import ShareButton from "@/components/ShareButton";
+import SerifFont from "@/components/SerifFont";
+import { readMinutes } from "@/lib/readTime";
 import Toc from "@/components/Toc";
 import { getPost, POSTS } from "@/lib/posts";
 import { postRelated } from "@/lib/related";
@@ -105,28 +107,34 @@ export default function PostPage({ params }: { params: { slug: string } }) {
     },
   });
 
+  const mins = readMinutes([post.lead, ...post.sections.flatMap((s) => [s.h, ...s.p, ...(s.list ?? [])])].join(" "));
+
   return (
-    <article className="py-4">
+    <article className="mx-auto max-w-[44rem] py-4">
+      <SerifFont />
       <JsonLd data={ld} />
-      <nav className="text-xs text-muted">
+      <nav className="text-[13px] text-muted">
         <Link href="/blog" className="inline-block py-1 hover:text-brand">
           지원금 안내
         </Link>
       </nav>
 
-      <div className="mt-2 flex items-start justify-between gap-6">
-        <h1 className="display text-[1.75rem] leading-tight sm:text-[2rem]">
-          {post.title}
-        </h1>
-        <div className="hidden h-24 w-36 shrink-0 sm:block"><PostArt name={post.art} /></div>
+      {/* 브런치처럼: 좁은 기둥, 명조 큰 제목, 표식 줄, 머리 그림. 2026-10-16. */}
+      <header className="mt-4 sm:mt-6">
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">{post.title}</h1>
+        <p className="num mt-4 text-[13px] text-faint">
+          <span className="font-semibold text-brand">K나라지원</span> · {post.updated.replaceAll("-", ".")} 기준 · 읽는 데 {mins}분
+        </p>
+      </header>
+      <div className="mt-6 flex h-40 items-center justify-center rounded-card bg-brandSoft/50 p-6 sm:h-48">
+        <div className="h-full w-56"><PostArt name={post.art} /></div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="num badge badge-quiet">{post.updated} 기준</span>
+      <div className="mt-5 flex flex-wrap items-center gap-2">
         <ShareButton title={post.title} text={post.description} />
       </div>
 
-      <p className="mt-6 border-l-[3px] border-brand pl-4 leading-relaxed text-ink2">
+      <p className="mt-6 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 text-[16px] leading-[1.85] text-ink">
         <Inline text={emph(post.lead, post.keywords)} />
       </p>
 
@@ -137,18 +145,18 @@ export default function PostPage({ params }: { params: { slug: string } }) {
           {i === 2 && (
             <MidAd name="post_mid" context={POST_CONTEXT[post.slug] ?? "general"} seed={post.slug} className="mb-10" />
           )}
-          <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+          <h2 className="article-title text-[1.2rem] sm:text-[1.3rem]">
             {s.h}
           </h2>
           {s.p.map((para, j) => (
-            <p key={para} className="mt-4 leading-relaxed text-ink2">
+            <p key={para} className="mt-4 text-[16px] leading-[1.9] text-ink2 sm:text-[16.5px]">
               <Inline text={j === 0 ? emph(para, post.keywords) : para} />
             </p>
           ))}
           {s.list && (
             <ul className="mt-4 grid gap-2.5">
               {s.list.map((item) => (
-                <li key={item} className="flex gap-2.5 leading-relaxed text-ink2">
+                <li key={item} className="flex gap-2.5 text-[16px] leading-[1.85] text-ink2">
                   <span
                     aria-hidden
                     className="mt-2 h-1.5 w-1.5 shrink-0 rounded-pill bg-brand"

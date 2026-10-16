@@ -15,15 +15,15 @@ export default function StoryBody({ blocks }: { blocks: Block[] }) {
             return <Toc key={i} items={b.items} />;
           case "h2":
             return (
-              <h2 key={i} id={b.id} className="sec-title mt-12 scroll-mt-24 text-[1.0625rem] font-extrabold">{b.text}</h2>
+              <h2 key={i} id={b.id} className="article-title mt-14 scroll-mt-24 text-[1.2rem] sm:text-[1.3rem]">{b.text}</h2>
             );
           case "p":
-            return <p key={i} className="mt-3 text-[15px] leading-[1.85] text-ink2"><Inline text={b.text} /></p>;
+            return <p key={i} className="mt-4 text-[16px] leading-[1.9] text-ink2 sm:text-[16.5px]"><Inline text={b.text} /></p>;
           case "note":
             return <p key={i} className="mt-6 text-xs leading-relaxed text-muted"><Inline text={b.text} /></p>;
           case "list":
             return (
-              <ul key={i} className="mt-3 space-y-2 text-[15px] leading-[1.85] text-ink2">
+              <ul key={i} className="mt-4 space-y-2 text-[16px] leading-[1.85] text-ink2">
                 {b.items.map((t, j) => (
                   <li key={j} className="flex gap-2.5">
                     <span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />

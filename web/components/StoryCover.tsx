@@ -15,8 +15,36 @@ const KIND: Record<string, { from: string; to: string; glyph: string; label: str
   story:  { from: "#1E1B4B", to: "#3B2FB5", glyph: "book",     label: "사례" },
 };
 
-export default function StoryCover({ kind, label, className = "" }: { kind: string; label?: string; className?: string }) {
+export default function StoryCover({ kind, label, className = "", square = false, band = false }: {
+  kind: string; label?: string; className?: string;
+  /** 목록의 작은 네모 썸네일(글자 없이 표식만). */
+  square?: boolean;
+  /** 상세 머리의 가로 띠(네 모서리 둥글게, 조금 높게). */
+  band?: boolean;
+}) {
   const k = KIND[kind] ?? KIND.story;
+  if (square) {
+    return (
+      <span className={`relative flex h-full w-full items-center justify-center text-white ${className}`}
+            style={{ background: `linear-gradient(135deg, ${k.from}, ${k.to})` }} aria-hidden>
+        <Glyph name={k.glyph} className="h-7 w-7" strokeWidth={2} />
+      </span>
+    );
+  }
+  if (band) {
+    return (
+      <div className={`relative flex h-32 items-end overflow-hidden rounded-card px-5 pb-4 text-white sm:h-40 ${className}`}
+           style={{ background: `linear-gradient(135deg, ${k.from}, ${k.to})` }} aria-hidden>
+        <svg viewBox="0 0 320 96" className="absolute inset-0 h-full w-full opacity-20" preserveAspectRatio="none" fill="none" stroke="#fff" strokeWidth="1">
+          <path d="M-20 70c60-30 120 30 180 0s120-40 180-10M-20 30c60-30 120 30 180 0s120-40 180-10M-20 110c60-30 120 30 180 0s120-40 180-10" />
+        </svg>
+        <span className="relative text-[13px] font-bold tracking-wide">{label ?? k.label}</span>
+        <span className="absolute right-4 top-4 flex h-12 w-12 items-center justify-center rounded-[14px] bg-white/15 backdrop-blur-sm">
+          <Glyph name={k.glyph} className="h-6 w-6" strokeWidth={2.2} />
+        </span>
+      </div>
+    );
+  }
   return (
     <div className={`relative flex h-24 items-end overflow-hidden rounded-t-card px-4 pb-3 text-white ${className}`}
          style={{ background: `linear-gradient(135deg, ${k.from}, ${k.to})` }} aria-hidden>

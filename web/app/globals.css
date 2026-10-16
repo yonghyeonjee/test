@@ -64,6 +64,8 @@
   .numeral { @apply font-sans text-[2.4rem] font-black leading-none tracking-[-.04em] text-brand; }
   /* 짧은 위첨자 제목 — 작게, 자간 넓게 */
   .eyebrow { @apply text-[12.5px] font-bold tracking-[.04em] text-brand; }
+  /* 블로그 글 제목. 명조(Noto Serif KR)는 SerifFont 가 그 쪽에서만 받는다. 못 받으면 고딕 굵은 글자. */
+  .article-title { font-family: "Noto Serif KR", "Pretendard Variable", Pretendard, serif; font-weight: 700; letter-spacing: -.01em; word-break: keep-all; }
 
   .tile {
     @apply flex flex-col gap-2.5 rounded-card border border-line
