@@ -54,7 +54,7 @@ export function PortalShortcuts({ findHref = "/#find" }: { findHref?: string }) 
           {/* 2026-10-16 무지개 열 칸이 촌스럽다는 말에 중립 회색 칸 + 먹색 아이콘으로. 첫 칸(내 조건 찾기)만 브랜드 색. */}
           <span className={`flex h-12 w-12 items-center justify-center rounded-[14px]
                             transition-[transform,background-color] duration-150 group-hover:-translate-y-0.5 group-active:scale-95 ${s.tone}`}>
-            <PortalIcon name={s.icon} className="h-6 w-6" strokeWidth={2.2} />
+            <PortalIcon name={s.icon} className="ic-fun h-6 w-6" strokeWidth={2.2} />
           </span>
           <span className="whitespace-nowrap text-[12px] font-semibold tracking-[-.02em] text-ink2 sm:text-[12.5px]">{s.label}</span>
         </Link>

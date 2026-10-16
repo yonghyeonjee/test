@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PortalIcon from "./PortalIcon";
+import { CountUp } from "./Motion";
 
 /**
  * "이렇게 찾습니다" 세 걸음. 숨고의 이용 방법(요청서 → 견적 비교 → 고수 선택) 자리.
@@ -44,7 +45,7 @@ export default function HowItWorks({ total, closing, areas, className = "" }: {
           {nums.map((x) => (
             <div key={x.k} className="px-2">
               <dt className="text-[12px] font-semibold text-muted">{x.k}</dt>
-              <dd className="num mt-0.5 text-[18px] font-extrabold tracking-[-.02em] text-ink">{x.v.toLocaleString("ko-KR")}<span className="ml-0.5 text-[12px] font-bold text-faint">{x.k === "시·군·구" ? "곳" : "건"}</span></dd>
+              <dd className="num mt-0.5 text-[18px] font-extrabold tracking-[-.02em] text-ink"><CountUp value={x.v} /><span className="ml-0.5 text-[12px] font-bold text-faint">{x.k === "시·군·구" ? "곳" : "건"}</span></dd>
             </div>
           ))}
         </dl>

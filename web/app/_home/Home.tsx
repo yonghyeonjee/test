@@ -12,6 +12,7 @@ import StepFinder from "@/components/StepFinder";
 import RecentFinds from "@/components/RecentFinds";
 import HowItWorks from "@/components/HowItWorks";
 import HomeCalendar from "@/components/HomeCalendar";
+import { Reveal } from "@/components/Motion";
 import FeedPanels from "@/components/FeedPanels";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
@@ -387,9 +388,9 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
               content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
           ]} />
           <AdSlot name="home_mid" />
-          <HowItWorks total={total} closing={closingCount}
-                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} />
-          <TopicGrid counts={topicCounts} className="card p-4 sm:p-5" />
+          <Reveal><HowItWorks total={total} closing={closingCount}
+                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} /></Reveal>
+          <Reveal><TopicGrid counts={topicCounts} className="card p-4 sm:p-5" /></Reveal>
           <section id="areas" className="card scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"
                          sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />

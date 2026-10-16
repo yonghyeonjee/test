@@ -130,8 +130,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
               const past = c < today;
               return (
                 <Link key={c} href={q({ d: c })} scroll={false} aria-current={on ? "date" : undefined}
-                      className={`flex min-h-[56px] flex-col items-center rounded-[10px] px-0.5 py-1.5 text-[13px] transition-colors sm:min-h-[64px]
-                                  ${on ? "bg-brand text-white" : past ? "text-faint hover:bg-ground" : "text-ink2 hover:bg-ground"}`}>
+                      className={`flex min-h-[56px] flex-col items-center rounded-[10px] px-0.5 py-1.5 text-[13px] transition-[background-color,transform] hover:-translate-y-0.5 sm:min-h-[64px]
+                                  ${on ? "pop bg-brand text-white" : past ? "text-faint hover:bg-ground" : "text-ink2 hover:bg-ground"}`}>
                   <span className={`num font-bold ${c === today && !on ? "rounded-full bg-brandSoft px-1.5 text-brand" : ""}`}>{Number(c.slice(8, 10))}</span>
                   {total > 0 && (
                     <span className={`num mt-1 text-[11px] font-semibold ${on ? "text-white/90" : "text-muted"}`}>{total}</span>

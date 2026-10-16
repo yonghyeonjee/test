@@ -78,7 +78,8 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
 
   const tile = (on: boolean) =>
     `flex min-h-[52px] items-center justify-center rounded-[12px] border px-1.5 text-center text-[14.5px] font-bold leading-tight break-keep
-     transition-colors active:scale-[.97] ${on ? "border-brand bg-brand text-white" : "border-line bg-surface text-ink2 hover:border-brand hover:text-brand"}`;
+     transition-[color,background-color,border-color,transform] active:scale-[.97] hover:-translate-y-0.5
+     ${on ? "pop border-brand bg-brand text-white" : "border-line bg-surface text-ink2 hover:border-brand hover:text-brand"}`;
 
   return (
     <section aria-label="조건으로 찾기">
@@ -112,6 +113,7 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
         </div>
       )}
 
+      <div key={`${step}-${sido ?? ""}-${decade ?? ""}`} className="step-in">
       <h2 className="mt-4 text-[1.25rem] font-extrabold leading-snug tracking-[-.02em] sm:text-[1.375rem]">
         {step === 0 && (sido ? `${short(sido)} 어디에 사시나요?` : "어디에 사시나요?")}
         {step === 1 && (decade ? "정확한 나이를 골라 주세요" : "나이가 어떻게 되시나요?")}
@@ -237,6 +239,8 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
           </button>
         </div>
       )}
+
+      </div>
 
       {/* 중간에 결과부터 보고 싶은 사람. 2·3단계에서만 — 1단계는 고르면 바로 넘어간다. */}
       {sido && step > 0 && step < 3 && (
