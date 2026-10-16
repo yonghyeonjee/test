@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EMPLOYMENT, HOUSEHOLD } from "@/lib/consts";
 import { SIDO_SHORT } from "@/lib/geo";
+import { useLocate } from "@/lib/useLocate";
+import Glyph from "./Glyph";
 
 type Region = { sido: string; sigungu: { name: string; n: number }[] };
 
@@ -39,6 +41,18 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
   const [emp, setEmp] = useState<string | null>(null);
   const [hh, setHh] = useState<string[]>([]);
   const [going, setGoing] = useState(false);
+  const { locate, busy: locating, err: locErr } = useLocate();
+
+  // 위치를 허용하면 시·도·시·군·구를 바로 채우고 나이 단계로 넘어간다. 목록에 없는 시·군·구면 시·도까지만.
+  const byLocation = async () => {
+    const p = await locate();
+    if (!p) return;
+    const r = regions.find((x) => x.sido === p.sido);
+    if (!r) return;
+    setSido(r.sido);
+    setSigungu(p.sigungu && r.sigungu.some((g) => g.name === p.sigungu) ? p.sigungu : null);
+    setStep(1);
+  };
 
   const sorted = [...regions].sort((a, b) => rank(a.sido) - rank(b.sido));
   // "-" 처럼 이름이 아닌 것이 섞여 있다(원자료). 뺀다.
@@ -114,7 +128,17 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
 
       {/* 1단계: 시·도 → 시·군·구 */}
       {step === 0 && !sido && (
-        <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={byLocation} disabled={locating}
+                  className="inline-flex items-center gap-1.5 rounded-pill border-[1.5px] border-brand/40 bg-brandSoft/60 px-3.5 py-2 text-[13.5px] font-bold text-brand transition-colors hover:bg-brandSoft disabled:opacity-60">
+            <Glyph name="pin" className="h-4 w-4" strokeWidth={2.2} />
+            {locating ? "위치 읽는 중…" : "내 위치로 고르기"}
+          </button>
+          {locErr && <span role="status" className="text-[12.5px] text-muted">{locErr}</span>}
+        </div>
+      )}
+      {step === 0 && !sido && (
+        <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
           {sorted.map((r) => (
             <button key={r.sido} type="button" className={tile(false)}
                     onClick={() => { setSido(r.sido); setSigungu(null); }}>
