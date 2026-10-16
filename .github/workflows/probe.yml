@@ -28,3 +28,11 @@ jobs:
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: python -u pipeline/${{ inputs.script }} ${{ inputs.arg }}
+      # probe_browser.py shot:<path> 가 찍은 화면 사진. 없으면 조용히 넘어간다.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shots
+          path: shots/
+          if-no-files-found: ignore
+          retention-days: 3

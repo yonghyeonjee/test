@@ -569,6 +569,24 @@ def check_wide(browser, path: str) -> None:
         ctx.close()
 
 
+def check_shot(browser, path: str) -> None:
+    """화면 사진. 휴대폰(390)·PC(1280) 각각 첫 화면과 쪽 전체. shots/ 에 저장하면 probe.yml 이 artifact 로 올린다."""
+    import re
+    os.makedirs("shots", exist_ok=True)
+    name = re.sub(r"[^A-Za-z0-9]+", "_", path).strip("_") or "home"
+    print(f"\n== 화면 사진 {path}")
+    for label, vp in (("mobile", MOBILE), ("pc", {"width": 1280, "height": 800})):
+        ctx = browser.new_context(viewport=vp, device_scale_factor=1, is_mobile=label == "mobile", locale="ko-KR")
+        page = ctx.new_page()
+        page.goto(path if path.startswith("http") else BASE + path, wait_until="networkidle")
+        page.wait_for_timeout(1500)
+        page.screenshot(path=f"shots/{name}-{label}-fold.png")
+        page.screenshot(path=f"shots/{name}-{label}-full.png", full_page=True)
+        h = page.evaluate("() => document.documentElement.scrollHeight")
+        print(f"   {label}: 쪽 높이 {h}px → shots/{name}-{label}-fold.png, -full.png")
+        ctx.close()
+
+
 def main() -> None:
     args = [a.strip() for a in (sys.argv[1] if len(sys.argv) > 1 else "map,home").split(",") if a.strip()]
     setup()
@@ -600,6 +618,8 @@ def main() -> None:
                     check_org(browser, a[4:])
                 elif a.startswith("wide:"):
                     check_wide(browser, a[5:])
+                elif a.startswith("shot:"):
+                    check_shot(browser, a[5:])
                 elif a.startswith("/search") or a.startswith("/business/search"):
                     check_home(browser, a)
                 elif a.startswith("/"):
