@@ -41,7 +41,7 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
   // 매일 받아 둔 것을 먼저 본다. 알리오가 늦거나 막혀도 화면은 산다.
   // DB 가 비어 있을 때만(첫 수집 전) 직접 부른다.
   const stored = await agencyFromStore("event",
-    { sido: current.sido, q: current.q, byCode: [current.cate] });
+    { sido: current.sido, q: current.q, cate: current.cate });
   const res = stored ? { ok: true as const, rows: [] } : await callAlio("event", {
     schSiNa: current.sido ?? "", schFstCateCd: current.cate ?? "", schEvtNa: current.q ?? "",
   });
