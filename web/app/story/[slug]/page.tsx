@@ -9,6 +9,8 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import StoryBody from "@/components/StoryBody";
+import StorySummary from "@/components/StorySummary";
+import TopStripAd from "@/components/TopStripAd";
 import { blogIndexRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
@@ -64,6 +66,10 @@ export default async function StoryPage({ params }: P) {
     },
   });
 
+  // 차례와 첫 문단은 요약 상자가 보여 준다. 본문에서는 뺀다.
+  const firstP = s.body.findIndex((b) => b.type === "p");
+  const body = s.body.filter((b, i) => b.type !== "toc" && i !== firstP);
+
   return (
     <article className="py-4">
       <JsonLd data={ld} />
@@ -74,13 +80,16 @@ export default async function StoryPage({ params }: P) {
       <header className="mt-3">
         <h1 className="display text-[1.75rem] leading-tight">{s.title}</h1>
         <p className="num mt-2 text-xs text-faint">{s.updated_at.slice(0, 10)} 기준 · 모아 둔 자료에서 센 숫자로 씁니다</p>
-        <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">{s.summary}</p>
-        <div className="mt-5 flex justify-center"><Art /></div>
       </header>
 
-      <StoryBody blocks={s.body.slice(0, Math.ceil(s.body.length / 2))} />
-      <MidAd name="detail_mid" context={s.kind === "topic" || s.kind === "region" ? "general" : "job"} seed={s.slug} className="mt-10" />
-      <StoryBody blocks={s.body.slice(Math.ceil(s.body.length / 2))} />
+      {/* 두괄식: 요약 상자가 먼저, 그 아래 광고 띠, 그림, 본문. 2026-10-16 "요약부터, 너무 길다"는 말에. */}
+      <StorySummary summary={s.summary} blocks={s.body} className="mt-5" />
+      <TopStripAd className="mt-5" />
+      <div className="mt-6 flex justify-center"><Art /></div>
+
+      <StoryBody blocks={body.slice(0, Math.ceil(body.length / 2))} />
+      <MidAd name="post_mid" context={s.kind === "topic" || s.kind === "region" ? "general" : "job"} seed={s.slug} className="mt-10" />
+      <StoryBody blocks={body.slice(Math.ceil(body.length / 2))} />
 
       <div className="mt-10 flex flex-wrap gap-3">
         <Link href="/story" className="btn btn-primary px-5 py-3">블로그의 다른 글</Link>

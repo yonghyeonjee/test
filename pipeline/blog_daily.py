@@ -896,12 +896,13 @@ def write_daily(s: dict) -> dict:
     if fresh:
         toc.append(("fresh", f"새로 올라온 공고 {n(len(fresh))}건"))
         blocks.append(H2(f"새로 올라온 공고 {n(len(fresh))}건", "fresh"))
+        # 2026-10-16 "너무 길다"는 말에 60건 → 40건, 지역마다 5건까지. 나머지는 지역별 채용 링크로.
         shown = 0
         for region, rows in regions:
-            if shown >= 60:
+            if shown >= 40:
                 break
             rows = sorted(rows, key=lambda r: (r.get("end_date") or "9999", r.get("title") or ""))
-            take = rows[: max(3, min(len(rows), 60 - shown))]
+            take = rows[: max(3, min(len(rows), 5, 40 - shown))]
             blocks.append(P(f"**{region}** {n(len(rows))}건" + (f" · [{short_sido(region) or region} 채용 전체](/jobs/region/{region})" if region != "전국·중앙부처" else "")))
             blocks.append(LINKS([link(r) for r in take]))
             shown += len(take)
@@ -912,9 +913,9 @@ def write_daily(s: dict) -> dict:
         toc.append(("closing", "사흘 안에 마감"))
         blocks.append(H2("사흘 안에 마감", "closing"))
         blocks.append(P("오늘부터 모레까지 접수가 끝나는 공고입니다. 마감 시각은 공고마다 달라 보통 오후 6시 전후이니 그날 오전에 내는 편이 안전합니다."))
-        blocks.append(LINKS([link(r) for r in closing[:25]]))
-        if len(closing) > 25:
-            blocks.append(P(f"그 밖에 {n(len(closing) - 25)}건이 더 있습니다. [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
+        blocks.append(LINKS([link(r) for r in closing[:15]]))
+        if len(closing) > 15:
+            blocks.append(P(f"그 밖에 {n(len(closing) - 15)}건이 더 있습니다. [마감 달력](/calendar)에서 날짜별로, [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
 
     if len(fresh) >= 5:
         toc.append(("mix", "어떤 자리인가"))
