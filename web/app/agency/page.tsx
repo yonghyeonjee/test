@@ -10,8 +10,8 @@ import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
-import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness } from "@/lib/alioplus";
-import { agencyFromStore } from "@/lib/agencyStore";
+import { BSN_CATE, LIFE_CYCLE, SVC_CATE, callAlio, toBusiness, type AlioItem } from "@/lib/alioplus";
+import { agencyFromStore, matchesCodes, tidyTags } from "@/lib/agencyStore";
 import { agencyRelated } from "@/lib/related";
 import { AGENCY_FAQ } from "@/lib/pageFaq";
 import { pageGraph } from "@/lib/schema";
@@ -43,15 +43,33 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
     life: one(searchParams.life), cate: one(searchParams.cate),
     svc: one(searchParams.svc), q: one(searchParams.q),
   };
-  // 매일 받아 둔 것을 먼저 본다. 알리오가 늦거나 막혀도 화면은 산다.
-  // DB 가 비어 있을 때만(첫 수집 전) 직접 부른다.
-  const stored = await agencyFromStore("business",
-    { q: current.q, byCode: [current.life, current.cate, current.svc] });
-  const res = stored ? { ok: true as const, rows: [] } : await callAlio("business", {
-    schLifeCycle: current.life ?? "", schFstCateCd: current.cate ?? "",
-    schSvcCate: current.svc ?? "", schBsnNa: current.q ?? "",
-  });
-  const items = stored ?? (res.ok ? res.rows.map(toBusiness).filter((x): x is NonNullable<typeof x> => !!x) : []);
+  // 받아 둔 것을 먼저 본다. 알리오가 늦거나 막혀도 화면은 산다. 생애주기(?life=)·형태(?svc=)도 저장분에서 거른다.
+  // 분야(?cate=)만은 저장분에 이름이 없어 알리오를 직접 부르고, 그마저 안 되면 분야를 뺀 저장분으로 보여 준다.
+  // (2026-10-16 까지는 코드 조건이 하나라도 있으면 알리오로 갔고, 서버에서 그 호출이 막혀 /agency?life=03 이 빈 화면이었다.)
+  const fromStore = () => agencyFromStore("business", { q: current.q, life: current.life, svc: current.svc });
+  let stored: AlioItem[] | null = current.cate ? null : await fromStore();
+  let res: Awaited<ReturnType<typeof callAlio>> = { ok: true, rows: [] };
+  let note: string | null = null;
+  if (!stored) {
+    res = await callAlio("business", {
+      schLifeCycle: current.life ?? "", schFstCateCd: current.cate ?? "",
+      schSvcCate: current.svc ?? "", schBsnNa: current.q ?? "",
+    });
+    if (!res.ok || !res.rows.length) {
+      const fallback = await fromStore();
+      if (fallback) {
+        stored = fallback;
+        res = { ok: true, rows: [] };
+        if (current.cate) note = "분야 조건은 지금 걸지 못했습니다. 생애주기·형태·검색어만 적용한 목록입니다.";
+      }
+    }
+  }
+  const items = stored ?? (res.ok
+    ? res.rows.map(toBusiness).filter((x): x is NonNullable<typeof x> => !!x)
+        .map((it) => ({ ...it, tags: tidyTags(it.tags) }))
+        // 알리오가 조건을 무시하고 돌려줄 때가 있어 한 번 더 거른다(분야는 저장분에 없어 못 거른다).
+        .filter((it) => matchesCodes("business", it, { life: current.life, svc: current.svc }))
+    : []);
 
   return (
     <div className="pb-4">
@@ -65,6 +83,7 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
         sub="장학금·직업훈련·의료지원처럼 공공기관이 직접 운영하는 사업입니다. 지자체 공고와 다른 곳에서 나와 따로 찾아야 했던 것들입니다."
         art={<IllusAgency />}
       />
+      {note && <p className="mt-4 rounded-card bg-goldSoft px-4 py-3 text-[13.5px] text-gold">{note}</p>}
       <AgencyList
         base="/agency" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[
