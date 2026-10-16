@@ -51,6 +51,8 @@ env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   MAIL_FROM: ${{ secrets.MAIL_FROM }}
+  BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+  RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
   MAIL_TEST_TO: ${{ inputs.to }}
 
 jobs:
