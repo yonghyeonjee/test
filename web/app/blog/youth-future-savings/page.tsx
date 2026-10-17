@@ -15,6 +15,7 @@ import { manwon as mw, standardFor, tableYear } from "@/lib/medianIncome";
 import { postRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
+import { yfsPhase } from "@/lib/hotShared";
 
 /** 신청 기간이 걸려 있는 글이다. 하루 한 번은 새로 그린다. */
 export const revalidate = 86400;
@@ -100,6 +101,7 @@ const FAQ = [
 ];
 
 export default function YouthFutureSavingsPage() {
+  const ph = yfsPhase();
   const year = tableYear();
   // 가구소득 요건을 퍼센트가 아니라 금액으로. 우리 표에 든 해가 아니면 비운다.
   const rows =
@@ -145,8 +147,18 @@ export default function YouthFutureSavingsPage() {
       </nav>
 
       <header className="mt-4 sm:mt-6">
+        {/* 2026-10-17 신청이 끝난 뒤에도 "신청합니다"가 남아 있었다. 날짜 단계마다 지금 할 일을 먼저 적는다. */}
+        {ph !== "apply" && (
+          <p className="mb-4 rounded-card border border-line bg-white px-4 py-3 text-[14.5px] font-semibold leading-relaxed text-ink">
+            {ph === "wait" && <>2차 신청은 10월 16일에 마감됐습니다. 신청한 분은 <span className="text-brand">11월 16일부터 27일 사이</span>에 은행에서 계좌를 열어야 합니다.</>}
+            {ph === "open" && <>지금은 계좌 개설 기간입니다. 신청한 분은 <span className="text-brand">11월 27일까지</span> 계좌를 열어야 신청이 유효합니다.</>}
+            {ph === "done" && <>청년미래적금 2차 모집은 끝났습니다. 아래 조건과 금액 계산은 다음 모집 때 참고하세요.</>}
+          </p>
+        )}
         <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">
-          청년미래적금 2차, 10월 16일까지 신청합니다
+          {ph === "apply" ? "청년미래적금 2차, 10월 16일까지 신청합니다"
+            : ph === "done" ? "청년미래적금 2차 정리 — 조건, 정부기여금, 3년 뒤 받는 돈"
+            : "청년미래적금 2차, 신청 마감 뒤 계좌 개설까지"}
         </h1>
         <p className="num mt-4 text-[13px] text-faint"><span className="font-semibold text-brand">K나라지원</span> · {UPDATED} 기준 · 읽는 데 6분</p>
         <div className="mt-6"><SavingsHero /></div>

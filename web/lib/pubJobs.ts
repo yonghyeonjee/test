@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
 import { SIDO_SHORT, normSido } from "./geo";
-import { dropAlioTwins, isTwin } from "./jobTwins";
+import { dropAlioTwins, isAlioId, isTwin } from "./jobTwins";
 import { gojobsFileUrl, type GojobsDetail } from "./gojobsDetail";
 import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
 import { stageOf } from "./jobRole";
@@ -517,7 +517,7 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
  *
  * 2026-10-17 서치 콘솔에서 사이트맵 표본 60쪽 중 색인 0. 접수 중 나라일터·잡알리오 전부(1천 건 남짓)에
  * 마감 공고까지 채워 넣던 것을, 공고 쪽에서 noindex 로 돌린 것(잡알리오, 합격자 발표·면접 안내,
- * 마감 공고)을 빼고 접수 중인 나라일터 모집 공고만 남긴다. 첨부 공고문 요약이 붙은 것을 앞에, 그다음
+ * 마감 공고)을 빼고 접수 중인 나라일터 모집 공고와 칸별 내용이 붙은 잡알리오 공고만 남긴다. 첨부 공고문 요약이 붙은 것을 앞에, 그다음
  * 나머지. 각 묶음 안은 등록 최신순, 같은 날은 번호순이라 빌드마다 순서가 바뀌지 않는다.
  * 요약을 못 읽으면 순서만 못 가를 뿐 목록은 그대로 낸다(요약이 없어도 접수 중 모집 공고는 색인한다).
  */
@@ -531,7 +531,7 @@ export async function getTopJobIds(limit = 1200): Promise<{ id: string; updated:
   type R = { source_id: string; title: string; reg_date: string | null };
   try {
     const data = await readAll<R>((from, to) => db
-      .from("job_posts").select("source_id,title,reg_date").eq("source", "gojobs")
+      .from("job_posts").select("source_id,title,reg_date").in("source", JOB_SOURCES)
       .gte("end_date", today).gte("reg_date", year)
       .order("reg_date", { ascending: false, nullsFirst: false }).order("source_id")
       .range(from, to));
@@ -548,7 +548,9 @@ export async function getTopJobIds(limit = 1200): Promise<{ id: string; updated:
     } catch {
       withSummary.clear();
     }
-    const ordered = [...rows.filter((r) => withSummary.has(r.source_id)), ...rows.filter((r) => !withSummary.has(r.source_id))];
+    // 잡알리오 공고는 칸별 내용(요약)이 붙은 것만 색인하니 그것만 올린다(요약을 못 읽었으면 잡알리오는 다 뺀다).
+    const ordered = [...rows.filter((r) => withSummary.has(r.source_id)),
+      ...rows.filter((r) => !withSummary.has(r.source_id) && !isAlioId(r.source_id))];
     // 등록일을 <lastmod> 로 쓴다. 공고는 올라온 뒤 내용이 거의 안 바뀐다.
     return ordered.slice(0, limit).map((r) => ({ id: r.source_id, updated: r.reg_date }));
   } catch {

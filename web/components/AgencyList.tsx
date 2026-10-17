@@ -18,8 +18,11 @@ function href(base: string, cur: Record<string, string | undefined>, patch: Reco
  * 거르기는 API 가 받는 조건을 그대로 링크로 만든다. 서버가 걸러 주므로
  * 화면은 받은 것을 보여 주기만 한다. 검색어는 GET 폼이라 스크립트가 없어도 된다.
  */
+/** 한 쪽에 보이는 카드 수. 시설은 천 건이 넘어 한 쪽에 다 그리면 휴대폰에서 25만 픽셀이었다(2026-10-17). */
+const PER_PAGE = 24;
+
 export default function AgencyList({
-  base, items, ok, reason, facets, current, qName, empty, external,
+  base, items, ok, reason, facets, current, qName, empty, external, page = 1,
 }: {
   base: string;
   items: AlioItem[];
@@ -32,8 +35,13 @@ export default function AgencyList({
   empty: string;
   /** 자료를 못 받았을 때 대신 보낼 곳. */
   external: { href: string; label: string };
+  /** 몇째 쪽인지(?page=). 거르기 조건을 바꾸면 첫 쪽으로 돌아간다(current 에 page 를 넣지 않는다). */
+  page?: number;
 }) {
   const active = Object.values(current).some(Boolean);
+  const pages = Math.max(1, Math.ceil(items.length / PER_PAGE));
+  const cur = Math.min(Math.max(1, Math.floor(page) || 1), pages);
+  const shown = items.slice((cur - 1) * PER_PAGE, cur * PER_PAGE);
   return (
     <div className="mt-6">
       {qName && (
@@ -98,9 +106,22 @@ export default function AgencyList({
               <Link href={base} className="btn btn-ghost mt-5">조건 지우기</Link>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {items.map((it) => <AgencyCard key={it.id} it={it} />)}
-            </ul>
+            <>
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {shown.map((it) => <AgencyCard key={it.id} it={it} />)}
+              </ul>
+              {pages > 1 && (
+                <nav aria-label="쪽 넘기기" className="mt-6 flex items-center justify-center gap-2 text-sm">
+                  {cur > 1 ? (
+                    <Link href={href(base, current, { page: cur > 2 ? String(cur - 1) : undefined })} rel="prev" className="btn btn-ghost px-4 py-2">‹ 이전</Link>
+                  ) : <span className="btn btn-ghost pointer-events-none px-4 py-2 opacity-40">‹ 이전</span>}
+                  <span className="num px-2 text-muted">{cur} / {pages}</span>
+                  {cur < pages ? (
+                    <Link href={href(base, current, { page: String(cur + 1) })} rel="next" className="btn btn-ghost px-4 py-2">다음 ›</Link>
+                  ) : <span className="btn btn-ghost pointer-events-none px-4 py-2 opacity-40">다음 ›</span>}
+                </nav>
+              )}
+            </>
           )}
         </>
       )}

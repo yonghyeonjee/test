@@ -71,7 +71,7 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
           { name: "sido", label: "지역", options: SIDO_SHORT.map((s) => ({ code: s, label: s })) },
           { name: "cate", label: "유형", options: EVT_CATE },
         ]}
-        current={current} qName="q"
+        current={current} qName="q" page={Number(one(searchParams.page)) || 1}
         empty="조건에 맞는 행사가 없습니다. 지역을 넓혀 보세요."
         external={{ href: "https://www.alioplus.go.kr", label: "알리오 플러스에서 직접 보기" }}
       />

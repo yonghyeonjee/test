@@ -27,6 +27,7 @@ jobs:
       - name: 탐침
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          ALIO_RECRUIT_KEY: ${{ secrets.ALIO_RECRUIT_KEY }}
           # 인자에 | ' 공백이 섞여도 셸이 안 깨지게 환경변수로 넘긴다.
           PROBE_ARG: ${{ inputs.arg }}
         run: python -u pipeline/${{ inputs.script }} "$PROBE_ARG"

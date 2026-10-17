@@ -106,7 +106,9 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   //  - 마감됐고 공고 요약도 없는 것: 남은 것이 날짜뿐이다.
   //  - 1년 넘게 지난 것(예전 규칙).
   // 접수 중인 나라일터 모집 공고는 요약이 없어도 색인한다 — 요약은 하루 안에 붙는데 noindex 는 사흘 캐시에 남는다.
-  const noindex = stale || isAlioId(job.id) || stage === "final" || stage === "interview"
+  // 잡알리오 공고는 알리오 채용공시 API 로 칸별 내용(자격·우대·전형)이 붙은 것만 색인한다(pipeline/alio_recruit.py,
+  // 2026-10-17). 나라일터와 겹치는 공고에는 요약을 쓰지 않으니 그대로 빠진다.
+  const noindex = stale || (isAlioId(job.id) && !hasSummary) || stage === "final" || stage === "interview"
     || (job.status === "closed" && !hasSummary);
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
@@ -171,7 +173,7 @@ function summaryHtml(s: JobSummary, lead: string): string {
 function jobNode(job: Job, sum?: JobSummary | null) {
   // 2026-10-17 접수 중이고 공고 요약이 있는 것만 구인으로 내보낸다. 요약이 없으면 description 이 틀 문장
   // 몇 줄뿐이라 구글이 요구하는 "공고 전문"에 못 미치고, 마감된 공고는 구인이 아니다. 빵부스러기 등 나머지 표시는 그대로.
-  if (!sum || job.status === "closed" || isAlioId(job.id)) return null;
+  if (!sum || job.status === "closed") return null;
   if (!job.reg || !job.org) return null;
   if (!job.region && !job.hire && !job.headcount) return null;
   // 합격자 발표·면접 안내는 모집 공고가 아니다(색인도 하지 않는다). 구글에 구인으로 내보내지 않는다.
@@ -421,7 +423,8 @@ export default async function JobDetail({ params }: P) {
             </div>
           ))}
           <p className="mt-3 text-xs leading-relaxed text-muted">
-            첨부 공고문{sum.files.length ? `(${sum.files.map((f) => f.replace(/\.[a-z0-9]+$/i, "")).join(", ")})` : ""}에서 추린 요약입니다. 빠진 조건이 있을 수 있으니 접수 전에 원문으로 확인하세요.
+            {isAlioId(job.id) ? "기관이 알리오 채용공시에 올린 내용을 칸별로 나눈 것입니다. 빠진 조건이 있을 수 있으니 접수 전에 원문으로 확인하세요." : <>
+            첨부 공고문{sum.files.length ? `(${sum.files.map((f) => f.replace(/\.[a-z0-9]+$/i, "")).join(", ")})` : ""}에서 추린 요약입니다. 빠진 조건이 있을 수 있으니 접수 전에 원문으로 확인하세요.</>}
           </p>
         </section>
       )}

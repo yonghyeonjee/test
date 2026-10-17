@@ -5,6 +5,7 @@ import JsonLd from "@/components/JsonLd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import SerifFont from "@/components/SerifFont";
+import { yfsPhase } from "@/lib/hotShared";
 import { POSTS } from "@/lib/posts";
 import { readMinutes } from "@/lib/readTime";
 import { blogIndexRelated } from "@/lib/related";
@@ -22,13 +23,24 @@ export const metadata: Metadata = withOg({
   alternates: { canonical: "/blog" },
 });
 
+// 날짜가 걸린 글의 꼬리표·제목은 오늘 날짜로 정한다(빌드 때 굳지 않게 한 시간마다 다시 그린다).
+export const revalidate = 3600;
+
+/** 청년미래적금 글. 신청 중 → 계좌 개설 기다림 → 계좌 개설 중 → 끝(목록 아래로, 꼬리표 없음). */
+function youthSavings(): Article & { pinned: boolean } {
+  const ph = yfsPhase();
+  const base = { href: "/blog/youth-future-savings", label: "청년 · 적금", date: "2026-10-16", mins: 6, art: <PostArt name="money" /> };
+  if (ph === "apply") return { ...base, pinned: true, tag: "신청 중", title: "청년미래적금 2차, 10월 16일까지 신청합니다",
+    excerpt: "나이·소득 조건과 정부기여금 6%·12% 차이, 3년 뒤 받는 금액을 계산해 봅니다." };
+  if (ph === "wait") return { ...base, pinned: true, tag: "11월 16일 계좌 개설", title: "청년미래적금 2차 신청 마감, 11월 16일부터 계좌를 엽니다",
+    excerpt: "신청한 사람은 11월 16일부터 27일 사이에 계좌를 열어야 합니다. 정부기여금과 3년 뒤 받는 금액도 계산해 봅니다." };
+  if (ph === "open") return { ...base, pinned: true, tag: "계좌 개설 중", title: "청년미래적금 2차 계좌 개설, 11월 27일까지",
+    excerpt: "신청한 사람은 27일까지 계좌를 열어야 신청이 유효합니다. 정부기여금과 3년 뒤 받는 금액을 계산해 봅니다." };
+  return { ...base, pinned: false, title: "청년미래적금 2차 정리 — 조건, 정부기여금, 3년 뒤 받는 돈",
+    excerpt: "2차 모집은 끝났습니다. 조건과 정부기여금 6%·12% 차이, 3년 뒤 받는 금액은 다음 모집 때도 참고가 됩니다." };
+}
+
 const FEATURED: Article[] = [
-  {
-    href: "/blog/youth-future-savings", tag: "신청 중", label: "청년 · 적금",
-    title: "청년미래적금 2차, 10월 16일까지 신청합니다",
-    excerpt: "나이·소득 조건과 정부기여금 6%·12% 차이, 3년 뒤 받는 금액을 계산해 봅니다.",
-    date: "2026-10-16", mins: 6, art: <PostArt name="money" />,
-  },
   {
     href: "/blog/gojobs-guide", label: "채용",
     title: "나라일터 채용공고, 절반이 7일 안에 마감됩니다 — 놓치지 않고 찾는 법",
@@ -44,8 +56,11 @@ const FEATURED: Article[] = [
 ];
 
 export default function BlogIndex() {
+  const { pinned, ...ys } = youthSavings();
   const items: Article[] = [
+    ...(pinned ? [ys] : []),
     ...FEATURED,
+    ...(pinned ? [] : [ys]),
     ...POSTS.map((p): Article => ({
       href: `/blog/${p.slug}`,
       title: p.title,

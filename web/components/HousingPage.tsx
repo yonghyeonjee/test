@@ -23,6 +23,19 @@ export function housingDescription(kind: KindKey, who: WhoKey, sido: string | un
 }
 
 /**
+ * 정부 상품 카드 아래에 붙이는 사이트 안 도구. 2026-10-17 카드마다 "원문에서 조건 확인" 하나뿐이라
+ * 누르면 곧장 바깥 누리집으로 나갔다. 금리 비교·소득 계산기·사례 글처럼 여기서 더 볼 것을 먼저 잇는다.
+ */
+function govTools(kind: KindKey, who: WhoKey): { href: string; label: string }[] {
+  const out: { href: string; label: string }[] = [];
+  if (kind === "jeonse") out.push({ href: "/money/jeonse", label: "은행별 전세대출 금리 비교" });
+  if (kind === "buy") out.push({ href: "/money/home-loan", label: "디딤돌·보금자리론 이번 달 금리" });
+  out.push({ href: "/blog/income", label: "내 소득이 중위소득 몇 %인지 계산" });
+  if (kind === "jeonse" && who !== "nohouse") out.push({ href: "/story/jeonse-extension", label: "버팀목 연장·이사 사례와 돈 계산" });
+  return out;
+}
+
+/**
  * 주거 지원 쪽 하나. 전국 쪽과 시·도 쪽이 같은 틀을 쓴다.
  *
  * 위에서부터: 한눈에 → 정부 상품(글) → 지자체 사업(DB) → 시·군 이름 →
@@ -96,9 +109,16 @@ export default async function HousingPage({ kind, who, sido }: { kind: KindKey; 
                 <div className="flex gap-3"><dt className="w-14 shrink-0 text-muted">조건</dt><dd className="text-ink2">{g.cond.join(" · ")}</dd></div>
               </dl>
               {g.note && <p className="mt-2 text-[13px] leading-relaxed text-muted">{g.note}</p>}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {govTools(kind, who).map((t) => (
+                  <Link key={t.href} href={t.href} className="chip !py-1.5 !text-[13px] font-semibold text-brand">
+                    {t.label} →
+                  </Link>
+                ))}
+              </div>
               <a href={g.href} target="_blank" rel="noopener noreferrer"
-                 className="mt-3 inline-block text-[13.5px] font-bold underline underline-offset-4 hover:text-brand">
-                원문에서 조건 확인
+                 className="mt-3 inline-block text-[13px] text-muted underline underline-offset-4 hover:text-brand">
+                기관 원문에서 조건 확인 ↗
               </a>
             </article>
           ))}

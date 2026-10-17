@@ -65,7 +65,7 @@ export default async function AgencyFacilities({ searchParams }: { searchParams:
           { name: "sido", label: "지역", options: SIDO_SHORT.map((s) => ({ code: s, label: s })) },
           { name: "cate", label: "종류", options: FCLT_CATE },
         ]}
-        current={current} qName="q"
+        current={current} qName="q" page={Number(one(searchParams.page)) || 1}
         empty="조건에 맞는 시설이 없습니다. 종류를 넓혀 보세요."
         external={{ href: "https://www.alioplus.go.kr", label: "알리오 플러스에서 직접 보기" }}
       />
