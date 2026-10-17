@@ -206,6 +206,10 @@ def main(argv=None):
     ap.add_argument("--host", default="127.0.0.1", help="기본 127.0.0.1. 다른 기기에서 쓰려면 0.0.0.0 (권장하지 않음)")
     ap.add_argument("--no-browser", action="store_true", help="브라우저를 자동으로 띄우지 않는다")
     args = ap.parse_args(argv)
+    # Windows 에서 콘솔·파일 인코딩이 cp949/cp1252 면 한글 메시지가 UnicodeEncodeError 로 실행을 끊는다. 못 적는 글자는 ? 로.
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
     httpd = None
     # 더블클릭으로 켰는데 포트가 이미 쓰이고 있으면(앞서 켠 편집기 등) 다음 번호를 몇 개 더 시도한다.
     for port in range(args.port, args.port + 20):
