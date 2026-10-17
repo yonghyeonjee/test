@@ -115,6 +115,7 @@ def role_rows(rows: list[dict], today: dt.date) -> list[dict]:
             "top_orgs": [{"org": o, "n": n} for o, n in Counter(r.get("org") for r in hit if r.get("org")).most_common(3)],
             "top_regions": [{"region": g, "n": n} for g, n in Counter((r.get("region") or "전국") for r in hit).most_common(3)],
             "win_med": statistics.median(wins) if wins else None,
+            "by_month": [{"m": m, "n": c} for m, c in sorted(Counter(r["reg_date"][:7] for r in hit).items())],
         })
     return sorted(out, key=lambda r: -r["n12"])
 

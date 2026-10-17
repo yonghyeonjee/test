@@ -35,6 +35,7 @@ pw = rr[0]
 ok(pw["n12"] == 6 and pw["n_open"] == 0 and pw["orgs"] == 1 and pw["win_med"] == 7, json.dumps(pw, ensure_ascii=False))
 ok(any(r["name"] == "환경미화" for r in rr) and any(r["name"] == "조리·급식" for r in rr), "한 공고가 두 직무에")
 ok(next(r for r in rr if r["name"] == "임기제공무원")["n90"] == 4, "최근 석 달")
+ok(pw["by_month"] == [{"m": "2026-08", "n": 6}], f"직무별 월별: {pw['by_month']}")
 
 stats = {"overview": ov, "roles": rr}
 p = t.write(stats)
