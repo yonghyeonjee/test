@@ -40,21 +40,22 @@ def collect(sb, hours: int) -> dict[str, list[str]]:
     # 1년 넘게 지난 공고는 상세 쪽이 noindex 다(web/app/jobs/[id]/page.tsx stale). 옛 공고를 한꺼번에 받아 오는
     # 날이면 그 수천 건이 "새 공고"로 잡혀 구글 몫(190건)을 다 먹으니 처음부터 뺀다.
     cutoff = (dt.date.today() - dt.timedelta(days=365)).isoformat()
-    jobs = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
+    # 잡알리오 공고 쪽은 noindex 라(나라일터와 겹치거나 첨부가 없다, 2026-10-17) 나라일터 공고만 알린다.
+    jobs = (sb.table("job_posts").select("source_id").eq("source", "gojobs").gte("first_seen_at", since)
             .or_(f"end_date.gte.{cutoff},end_date.is.null")
             .order("first_seen_at", desc=True).limit(2000).execute().data or [])
-    closed = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).eq("end_date", yday)
+    closed = (sb.table("job_posts").select("source_id").eq("source", "gojobs").eq("end_date", yday)
               .limit(500).execute().data or [])
     # 화면에 나오는 사업만(programs_public = 정리됐고 확신도 0.3 초과). 원본 표(programs)에서 고르면 정리 안 된
     # 사업(기업마당 행사 전부 등)까지 보내 하루 열에 둘이 404 였다(2026-10-17 점검).
-    progs = (sb.table("programs_public").select("source_id").gte("first_seen_at", since).limit(2000).execute().data or [])
-    blogs = (sb.table("blog_posts").select("slug").gte("published_at", since).limit(100).execute().data or [])
-    guides = (sb.table("org_guides").select("slug").gte("updated_at", since).limit(100).execute().data or [])
+    # 기업마당 사업은 선정기준이 꼬리표뿐이라 noindex 다(web/lib/db.ts programIndexable). 자동 브리핑(/story)과
+    # 기관별 작성 가이드(/jobs/guide)도 noindex 로 돌려 더는 알리지 않는다(2026-10-17).
+    progs = (sb.table("programs_public").select("source_id").neq("source", "bizinfo_support").gte("first_seen_at", since)
+             .limit(2000).execute().data or [])
     return {
         "jobs": [f"{SITE}/jobs/{enc(r['source_id'])}" for r in jobs],
         "closed": [f"{SITE}/jobs/{enc(r['source_id'])}" for r in closed],
         "programs": [f"{SITE}/p/{enc(r['source_id'])}" for r in progs],
-        "pages": [f"{SITE}/story/{enc(r['slug'])}" for r in blogs] + [f"{SITE}/jobs/guide/{enc(r['slug'])}" for r in guides],
     }
 
 
@@ -81,7 +82,7 @@ def google_worthy(sb, urls: list[str]) -> set[str]:
     2026-10-17 서치 콘솔 점검: 사이트 거의 전체가 "크롤링됨 - 현재 색인이 생성되지 않음"으로 빠졌다. 공고 쪽은 본문의
     90% 가 틀에 박힌 글이라 구글이 품질을 낮게 본 것으로 판단했다. 그래서 구글에는 고유한 내용이 있는 공고만 알린다:
     나라일터 공고이면서 공고문 요약(job_summaries)이 있고, 합격자 발표·면접 안내·채용 계획이 아닌 채용 공고.
-    잡알리오 공고는 첨부를 받지 않아 요약이 없다. IndexNow(네이버·빙)는 그대로 다 보낸다.
+    잡알리오 공고는 첨부를 받지 않아 요약이 없다. IndexNow(네이버·빙)에는 나라일터 공고를 다 보낸다.
     """
     from blog_daily import is_opening  # noqa: PLC0415 — 같은 기준(채용 공고인지)을 쓴다
 
@@ -149,7 +150,7 @@ def main():
     for k, v in got.items():
         for u in v[:3]:
             print(f"  {k}: {u}")
-    indexnow(got["jobs"] + got["programs"] + got["pages"], a.dry)
+    indexnow(got["jobs"] + got["programs"], a.dry)
     keep = google_worthy(sb, got["jobs"] + got["closed"])
     new_jobs = [u for u in got["jobs"] if u in keep]
     closed = [u for u in got["closed"] if u in keep]
