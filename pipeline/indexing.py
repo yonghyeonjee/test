@@ -3,7 +3,7 @@ indexing.py — 새로 생긴 쪽을 검색엔진에 바로 알린다(2026-10-15
 
 검색엔진이 스스로 찾아오기를 기다리면 채용 공고는 마감 뒤에야 색인되기도 한다. 하루치 새 주소를 모아
   1) IndexNow   — 네이버(서치어드바이저)·빙(api.indexnow.org, 빙·얀덱스 등이 나눠 받는다). 키 파일은 web/public/<KEY>.txt
-  2) 구글 Indexing API — 채용 공고(JobPosting) 쪽만 허용된다. 서비스 계정이 있을 때만(GOOGLE_INDEXING_SA, JSON 통째).
+  2) 구글 Indexing API — 채용 공고(JobPosting) 쪽만 허용된다. 서비스 계정(GOOGLE_INDEXING_SA) 또는 계정 로그인(GOOGLE_OAUTH_*)이 있을 때만.
                          하루 기본 한도 200건. 새 공고 먼저, 남으면 어제 마감된 공고(구글이 마감을 빨리 보게).
 에 보낸다. 주소는 정본 주소만(https://jiwon.knowhow-it.com/...). 실패해도 다른 쪽은 계속한다.
 
@@ -76,15 +76,9 @@ def indexnow(urls: list[str], dry: bool) -> None:
 
 
 def google_token() -> str | None:
-    raw = os.environ.get("GOOGLE_INDEXING_SA", "").strip()
-    if not raw:
-        return None
-    from google.oauth2 import service_account  # noqa: PLC0415 — 비밀값이 있을 때만 쓴다
-    from google.auth.transport.requests import Request  # noqa: PLC0415
-    info = json.loads(raw)
-    cred = service_account.Credentials.from_service_account_info(info, scopes=["https://www.googleapis.com/auth/indexing"])
-    cred.refresh(Request())
-    return cred.token
+    """서비스 계정 JSON 또는 계정 로그인(OAuth) 토큰(pipeline/google_auth.py)."""
+    from google_auth import INDEXING, access_token  # noqa: PLC0415
+    return access_token([INDEXING])
 
 
 def google_publish(new_jobs: list[str], closed: list[str], dry: bool) -> None:
@@ -94,7 +88,7 @@ def google_publish(new_jobs: list[str], closed: list[str], dry: bool) -> None:
         print(f"구글 Indexing: 인증 실패 {type(e).__name__}: {str(e)[:160]}", file=sys.stderr)
         return
     if not token:
-        print("구글 Indexing: GOOGLE_INDEXING_SA 가 없어 건너뜀(사용자가 서비스 계정을 넣으면 켜진다)")
+        print("구글 Indexing: 인증 정보가 없어 건너뜀(GOOGLE_INDEXING_SA 또는 GOOGLE_OAUTH_* 를 넣으면 켜진다)")
         return
     plan = [(u, "URL_UPDATED") for u in new_jobs][:GOOGLE_QUOTA]
     plan += [(u, "URL_UPDATED") for u in closed][: max(0, GOOGLE_QUOTA - len(plan))]
