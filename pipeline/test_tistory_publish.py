@@ -88,6 +88,42 @@ ok(raises(lambda: t.parse_entry_url("abcfact.tistory.com", "https://evil.example
 ok(raises(lambda: t.parse_entry_url("abcfact.tistory.com", "/auth/login"), t.SessionExpired), "로그인 주소 = 만료")
 ok(raises(lambda: t.parse_entry_url("abcfact.tistory.com", ""), t.TistoryError), "빈 entryUrl")
 
+# 문자 주소 블로그: /entry/<슬러그> 도 글이다 (2026-10-17 실측: abcfact 는 문자 주소)
+pid, purl = t.parse_entry_url("abcfact.tistory.com", "https://abcfact.tistory.com/entry/2026%EB%85%84-%EB%B8%8C%EB%A6%AC%ED%95%91")
+ok(pid == "2026년-브리핑" and purl == "https://abcfact.tistory.com/entry/2026%EB%85%84-%EB%B8%8C%EB%A6%AC%ED%95%91", f"{pid} {purl}")
+ok(raises(lambda: t.parse_entry_url("abcfact.tistory.com", "/entry/"), t.TistoryError), "빈 entry 슬러그")
+
+# 이미지: 첨부 ref·치환자·PNG 크기·끼워 넣기
+up = {"url": "https://blog.kakaocdn.net/dna/abc/k1/img.png?credential=x&expires=1&signature=s", "key": "k1", "filename": "img.png"}
+ref = t.attachment_ref(up)
+ok(ref == "kage@k1/img.png?credential=x&amp;expires=1&amp;signature=s", ref)
+rep = t.image_replacer(ref, 1280, 800)
+ok(rep == '[##_Image|kage@k1/img.png?credential=x&amp;expires=1&amp;signature=s|CDM|1.3|{"originWidth":1280,"originHeight":800,"style":"alignCenter"}_##]', rep)
+ok('"style":"widthOrigin"' in t.image_replacer(ref, 0, 0), "크기 모르면 widthOrigin")
+png = b"\x89PNG\r\n\x1a\n" + (13).to_bytes(4, "big") + b"IHDR" + (640).to_bytes(4, "big") + (480).to_bytes(4, "big") + b"\x08\x06\x00\x00\x00"
+ok(t.png_size(png) == (640, 480) and t.png_size(b"\xff\xd8jpeg") == (0, 0), "PNG IHDR")
+ok(raises(lambda: t.attachment_ref({"url": "x"}), t.TistoryError), "응답에 key 없으면 오류")
+imgs = [("[IMG1]", "첫 장"), ("[IMG2]", None), ("[IMG3]", "셋")]
+woven = "\n".join(t.weave_images(BODY, imgs))
+i1, i2, i3 = woven.index("[IMG1]"), woven.index("[IMG2]"), woven.index("[IMG3]")
+ok(i1 < woven.index("<h2>새 공고</h2>") < i2 < woven.index("<h2>마감</h2>") < i3, "들머리 뒤 · 절마다 첫 블록 뒤")
+ok("<p><em>첫 장</em></p>" in woven and woven.count("<em>") == 2, "캡션은 있을 때만")
+four = t.weave_images(BODY, imgs + [("[IMG4]", None)])
+ok("[IMG4]" in four[-1], "절보다 사진이 많으면 맨 뒤에")
+out_img = t.render(POST, "full", imgs)
+ok(out_img.index("[IMG1]") < out_img.index("<h2>새 공고</h2>"), "render 에도 끼워진다")
+
+# 고쳐 쓸 때 기존 슬러그를 slogan 으로 — 기록된 주소에서 꺼낸다
+class SB:
+    def __init__(self, url): self._u = url
+    def table(self, _): return self
+    def select(self, _): return self
+    def eq(self, *_): return self
+    def execute(self):
+        return type("R", (), {"data": [{"url": self._u}] if self._u else []})()
+ok(t.recorded_slogan(SB("https://abcfact.tistory.com/entry/%EA%B3%B5%EA%B3%B5-TOP10-1"), "x") == "공공-TOP10-1", "entry 슬러그 디코딩")
+ok(t.recorded_slogan(SB("https://abcfact.tistory.com/12"), "x") == "" and t.recorded_slogan(SB(""), "x") == "", "숫자 주소·기록 없음이면 빈 값")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 
