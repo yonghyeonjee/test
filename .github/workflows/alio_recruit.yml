@@ -1,0 +1,45 @@
+name: alio-recruit
+
+# 알리오 공공기관 채용정보 API 로 잡알리오 공고를 받고 공고 요약 자리를 채운다(pipeline/alio_recruit.py).
+# Gemini 를 쓰지 않는다. 공고 요약(01:40)·검색엔진 알림(02:30) 앞에 돈다.
+# 필요한 secret: SUPABASE_URL, SUPABASE_SERVICE_KEY, ALIO_RECRUIT_KEY
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "접수 시작이 며칠 안인 공고까지"
+        default: "90"
+        type: string
+      dry:
+        description: "DB 에 쓰지 않고 결과만"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "15 1 * * *"    # UTC 01:15 = KST 10:15
+
+concurrency:
+  group: alio-recruit
+  cancel-in-progress: false
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python pipeline/test_alio_recruit.py
+      - name: 받아 쓰기
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ALIO_RECRUIT_KEY:     ${{ secrets.ALIO_RECRUIT_KEY }}
+          DAYS: ${{ inputs.days || '90' }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          args="--days $DAYS"
+          [ "$DRY" = "true" ] && args="$args --dry"
+          python -u pipeline/alio_recruit.py $args
