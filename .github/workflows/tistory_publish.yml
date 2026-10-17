@@ -1,0 +1,74 @@
+name: tistory-publish
+
+# blog_daily 가 쓴 글을 티스토리(abcfact.tistory.com)에도 올린다. 기본은 요약 + 원문 링크.
+# 티스토리 공개 API 는 끝났으므로 관리자 내부 주소를 로그인 쿠키로 부른다(pipeline/tistory_publish.py).
+#
+# 필요한 secret
+#   TISTORY_COOKIE   로그인한 브라우저에서 abcfact.tistory.com/manage 요청의 Cookie 헤더 전체(README '티스토리' 절).
+#                    비어 있으면 경고만 내고 그냥 끝난다. 만료되면 종료 코드 2 로 빨갛게 실패한다 → 갱신.
+# 선택 variable (Settings → Variables)
+#   TISTORY_CATEGORY 카테고리 id(정수). 없으면 0(미지정). 목록은 check=true 로 본다.
+on:
+  workflow_dispatch:
+    inputs:
+      check:
+        description: "쿠키 확인 + 카테고리 id 목록만(올리지 않음)"
+        default: false
+        type: boolean
+      slug:
+        description: "이 글 하나만(비우면 어제·오늘 쓴 글 중 아직 안 올린 것)"
+        required: false
+        type: string
+      mode:
+        description: "요약(summary) 또는 전문(full)"
+        default: "summary"
+        type: choice
+        options: ["summary", "full"]
+      visibility:
+        description: "공개 범위(처음 시험할 땐 private)"
+        default: "public"
+        type: choice
+        options: ["public", "private", "protected"]
+      dry:
+        description: "올리지 않고 HTML 만 찍어 본다"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00. blog_daily(00:30) 가 몇 시간 늦어도 끝난 뒤.
+
+concurrency:
+  group: tistory-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python pipeline/test_tistory_publish.py
+      - name: 티스토리에 올리기
+        env:
+          TISTORY_COOKIE:       ${{ secrets.TISTORY_COOKIE }}
+          TISTORY_CATEGORY:     ${{ vars.TISTORY_CATEGORY }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          CHECK: ${{ inputs.check }}
+          SLUG: ${{ inputs.slug }}
+          MODE: ${{ inputs.mode || 'summary' }}
+          VISIBILITY: ${{ inputs.visibility || 'public' }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          if [ -z "$TISTORY_COOKIE" ] && [ "$DRY" != "true" ]; then
+            echo "::warning::TISTORY_COOKIE 가 없어 건너뜀. 로그인 쿠키를 secret 에 넣으면 올라간다(README '티스토리' 절)."
+            exit 0
+          fi
+          args="--mode $MODE --visibility $VISIBILITY"
+          [ "$CHECK" = "true" ] && args="--check"
+          [ -n "$SLUG" ] && args="$args --slug \"$SLUG\""
+          [ "$DRY" = "true" ] && args="$args --dry"
+          eval python -u pipeline/tistory_publish.py $args
