@@ -1,7 +1,7 @@
 name: indexing
 
 # 새로 생긴 쪽을 검색엔진에 알린다(pipeline/indexing.py). 하루치 새 채용 공고·지원사업·글 주소를
-# IndexNow(네이버·빙)에, 채용 공고는 구글 Indexing API 에도(GOOGLE_INDEXING_SA 가 있을 때만).
+# IndexNow(네이버·빙)에, 채용 공고는 구글 Indexing API 에도(GOOGLE_INDEXING_SA 또는 GOOGLE_OAUTH_* 가 있을 때만).
 # 수집(00:00 UTC)·공고 요약(01:40)·알리오 첨부(02:00) 다음에 돈다.
 on:
   workflow_dispatch:
@@ -36,6 +36,9 @@ jobs:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GOOGLE_INDEXING_SA:   ${{ secrets.GOOGLE_INDEXING_SA }}
+          GOOGLE_OAUTH_CLIENT_ID:     ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
           HOURS: ${{ inputs.hours || '30' }}
           DRY: ${{ inputs.dry }}
         run: |
