@@ -14,10 +14,24 @@ rem 폴더 이름은 코드 페이지 문제를 피하려고 영문으로 둔다
 set "DIR=%DESKTOP%\HwpEditor"
 if not exist "%DIR%" mkdir "%DIR%"
 copy /y "%SRC%" "%DIR%\HwpEditor.exe" >nul || (echo 복사하지 못했습니다. & pause & exit /b 1)
+rem 바로가기 저장(WScript.Shell)은 시스템 코드 페이지에 없는 글자가 든 이름에서 실패할 수 있다.
+rem 그래서 영문 이름으로 저장한 뒤 PowerShell 로 한글 이름 "HWP 편집기.lnk" 로 바꾼다. 실패하면 오류 코드로 알린다.
 powershell -NoProfile -Command ^
+  "$ErrorActionPreference='Stop';" ^
+  "$tmp=Join-Path '%DESKTOP%' 'HwpEditor-shortcut.lnk';" ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut($tmp);" ^
+  "$s.TargetPath='%DIR%\HwpEditor.exe'; $s.WorkingDirectory='%DIR%'; $s.Description='HWP/HWPX editor'; $s.Save();" ^
   "$name='HWP ' + [char]0xD3B8 + [char]0xC9D1 + [char]0xAE30 + '.lnk';" ^
-  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path '%DESKTOP%' $name));" ^
-  "$s.TargetPath='%DIR%\HwpEditor.exe'; $s.WorkingDirectory='%DIR%'; $s.Description='HWP/HWPX editor'; $s.Save()"
+  "$dst=Join-Path '%DESKTOP%' $name;" ^
+  "if (Test-Path -LiteralPath $dst) { Remove-Item -LiteralPath $dst -Force };" ^
+  "Rename-Item -LiteralPath $tmp -NewName $name"
+if errorlevel 1 (
+  echo.
+  echo 바로가기를 만들지 못했습니다. 실행 파일은 복사됐으니 아래 파일을 직접 더블클릭해도 됩니다:
+  echo   %DIR%\HwpEditor.exe
+  pause
+  exit /b 1
+)
 echo.
 echo 바탕화면에 설치했습니다:
 echo   %DIR%\HwpEditor.exe
