@@ -254,11 +254,37 @@ export async function getProgram(sourceId: string) {
   return (data ?? null) as Detail | null;
 }
 
-/** 빌드 시 미리 만들어 둘 상세 페이지 목록 */
+/**
+ * 기업마당(bizinfo_support)의 '선정기준' 칸은 문장이 아니라 쉼표로 이은 꼬리표다
+ * ("기술,서울,부산,…,2026,반도체,시제품"). 2026-10-17 에 세어 보니 2,543건 전부가 그랬다.
+ * 사람에게는 읽을 수 없는 낱말 더미이고, 검색엔진에는 낱말 채우기로 보일 수 있다.
+ * 복지로 글은 쉼표가 든 보통 문장이 같은 모양에 걸려서(380여 건) 기업마당만 본다.
+ */
+export function isTagCriteria(p: Pick<Detail, "source" | "criteria_text">): boolean {
+  return p.source === "bizinfo_support" && /^[^,]+(,[^,]+){4,}$/.test((p.criteria_text ?? "").trim());
+}
+
+/**
+ * 사업 상세 쪽을 검색엔진에 색인시킬지(2026-10-17). 사이트 전체가 색인에서 빠졌고(서치콘솔
+ * "크롤링됨 - 현재 색인이 생성되지 않음"), 원문을 옮겨 온 쪽 수천 개가 사이트 단위 품질 평가를
+ * 끌어내린 것으로 본다. 쪽은 그대로 보이게 두고 색인만 끈다(noindex,follow).
+ *  - 마감된 사업(상시 아님, 접수 끝 날짜가 지남): 찾아와도 신청할 수 없다.
+ *  - 선정기준이 꼬리표 목록뿐인 기업마당 사업: 원문보다 나은 것이 없다.
+ * 쪽을 그리려고 이미 읽은 사업 한 건만 보고 정한다 — 따로 읽다 실패해서 색인이 꺼지는 일이 없다.
+ */
+export function programIndexable(p: Detail): boolean {
+  return applyStatus(p) !== "closed" && !isTagCriteria(p);
+}
+
+/** 빌드 시 미리 만들어 둘 상세 페이지 목록. 사이트맵도 이것을 쓴다. */
 export async function getTopSourceIds(limit = 400) {
+  // 색인할 쪽만 고른다(programIndexable 과 같은 기준, 2026-10-17). 꼬리표 판단은 긴 선정기준 글을
+  // 받아 와야 해서, 여기서는 꼬리표뿐인 기업마당을 출처째 뺀다(2026-10-17 기준 전부 꼬리표).
   const { data } = await db
     .from("programs_public")
     .select("source_id,updated_at")
+    .neq("status", "closed")
+    .neq("source", "bizinfo_support")
     .order("norm_confidence", { ascending: false })
     .limit(limit);
   // 사이트맵이 <lastmod> 를 적으려면 언제 바뀌었는지가 있어야 한다.

@@ -39,6 +39,9 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description: g.summary,
     keywords: g.keywords,
     alternates: { canonical: path },
+    // 파이프라인이 자동으로 써 넣는 글이라, 사이트 전체가 색인에서 빠진 뒤(2026-10-17) 한 편씩 사람이 살펴보기
+    // 전까지는 색인하지 않는다. 쪽은 그대로 열리고 링크는 따라간다. 사이트맵에서도 뺐다.
+    robots: { index: false, follow: true },
     openGraph: { type: "article", url: `${SITE_URL}${path}`, title: g.title, description: g.summary,
                  publishedTime: g.published_at, modifiedTime: g.updated_at },
   });

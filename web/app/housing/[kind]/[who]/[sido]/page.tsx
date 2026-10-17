@@ -3,7 +3,7 @@ import { withOg } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import HousingPage, { housingDescription } from "@/components/HousingPage";
 import {
-  KINDS, KIND_KEYS, WHO, WHO_KEYS, countFor, housingCounts, housingPath, housingTitle, isKind, isWho, sidosFor,
+  KINDS, KIND_KEYS, WHO, WHO_KEYS, SIDO_INDEX_MIN, countFor, countOf, housingCounts, housingPath, housingTitle, isKind, isWho, sidosFor,
 } from "@/lib/housing";
 
 export const revalidate = 21600;
@@ -25,8 +25,12 @@ export async function generateMetadata({ params }: { params: { kind: string; who
   const { kind, who } = params;
   const sido = decodeURIComponent(params.sido);
   if (!isKind(kind) || !isWho(who)) return withOg({ title: "찾을 수 없는 쪽" });
-  const counts = await housingCounts().catch(() => []);
-  const n = countFor(counts, kind, who, sido);
+  // 못 읽으면 null. 예전에는 빈 목록으로 받아 0건 → noindex 가 되었다 — DB 가 잠깐 흔들려도 색인이 꺼졌다.
+  const counts = await housingCounts().catch(() => null);
+  const n = counts ? countFor(counts, kind, who, sido) : 0;
+  // 그 시·도만의 사업(전국 제외)이 적으면 전국 쪽과 거의 같은 쪽이다(lib/housing SIDO_INDEX_MIN, 2026-10-17).
+  // 건수를 못 읽었으면 색인을 끄지 않는다.
+  const thin = counts !== null && countOf(counts, kind, who, sido) < SIDO_INDEX_MIN;
   const k = KINDS[kind], w = WHO[who];
   const title = housingTitle(kind, who, sido, n);
   return withOg({
@@ -38,8 +42,7 @@ export async function generateMetadata({ params }: { params: { kind: string; who
       ...(kind === "buy" ? [`${sido} ${w.label} 주택구입자금대출`, `${sido} ${w.label} 매매 대출`] : []),
     ],
     alternates: { canonical: housingPath(kind, who, sido) },
-    // 사업이 없는 시·도는 얇은 쪽이다. 색인하지 않는다.
-    ...(n === 0 ? { robots: { index: false, follow: true } } : {}),
+    ...(thin ? { robots: { index: false, follow: true } } : {}),
   });
 }
 

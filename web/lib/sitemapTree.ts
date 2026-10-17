@@ -6,19 +6,20 @@
  * 다른 갈래는 그대로 나간다.
  *
  *   pages     고정 쪽(첫 화면, 갈래 허브, 소개 …)
- *   programs  지원사업 — 시·도 쪽과 상위 400건
+ *   programs  지원사업 — 시·도 쪽과 접수 중·상시 상위 400건
  *   jobs      채용 — 구분·지역·기관 목차와 접수 중인 나라일터 모집 공고(색인하는 것만)
- *   licenses  자격증 종목
- *   housing   주거 지원 — 대상×종류와 시·도
- *   posts     읽을거리 — 안내 글과 이야기
+ *   licenses  자격증 종목 — 찾는 사람이 있는 것만
+ *   housing   주거 지원 — 대상×종류와 그 시·도 사업이 많은 시·도
+ *   posts     읽을거리 — 손으로 쓴 안내 글
+ *
+ * 2026-10-17: 사이트 전체가 색인에서 빠진 뒤로 각 갈래에는 색인시키는(noindex 가 아닌) 쪽만 올린다.
+ * 기준은 쪽마다 한 곳에 있다 — lib/db programIndexable, lib/qnet licenseIndexable, lib/housing SIDO_*_MIN.
  */
 import { getAreas, getTopSourceIds } from "./db";
-import { KIND_KEYS, WHO_KEYS, housingCounts, housingPath, sidosFor } from "./housing";
+import { KIND_KEYS, SIDO_SITEMAP_MIN, WHO_KEYS, housingCounts, housingPath, sidosFor } from "./housing";
 import { POSTS } from "./posts";
 import { ORG_INDEX_MIN, getJobHires, getJobRegions, getOrgRecentCounts, getTopJobIds, getTopOrgs } from "./pubJobs";
-import { getLicenses } from "./qnet";
-import { getStories } from "./stories";
-import { getGuides, guidePath } from "./guides";
+import { getLicenses, licenseApplicants, licenseIndexable } from "./qnet";
 import { TOPICS } from "./topics";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
@@ -73,7 +74,10 @@ function pages(): Entry[] {
   ];
 }
 
-/** 지원사업: 시·도 쪽과 상위 400건. 자동 생성 쪽을 한 번에 수천 개 올리면 품질 평가에서 통째로 걸릴 수 있어 단계적으로 늘린다. */
+/**
+ * 지원사업: 시·도 쪽과 상위 400건. 자동 생성 쪽을 한 번에 수천 개 올리면 품질 평가에서 통째로 걸릴 수 있어 단계적으로 늘린다.
+ * 400건은 마감되지 않았고 꼬리표뿐인 기업마당이 아닌 것에서 고른다(getTopSourceIds, 2026-10-17).
+ */
 async function programs(): Promise<Entry[]> {
   const [areas, ids] = await Promise.all([getAreas(), getTopSourceIds(400)]);
   return [
@@ -84,17 +88,16 @@ async function programs(): Promise<Entry[]> {
 
 /**
  * 채용: 구분(넷뿐이라 전부)·지역(시·도 고정)·기관(공고 여덟 건 이상, 300곳) 목차와 색인하는 공고(접수 중인
- * 나라일터 모집 공고, 요약 있는 것 먼저 — getTopJobIds), 기관별 작성 가이드.
+ * 나라일터 모집 공고, 요약 있는 것 먼저 — getTopJobIds).
  */
 async function jobs(): Promise<Entry[]> {
-  const [hires, regions, topOrgs, ids, guides] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(), getGuides(300)]);
+  const [hires, regions, topOrgs, ids] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds()]);
   // 2026-10-17 기관 쪽은 최근 365일 공고가 ORG_INDEX_MIN 건 미만이면 noindex 라 사이트맵에서도 뺀다(300곳 중 30곳쯤,
   // 이름이 바뀐 부처 등). 못 세면 그대로 둔다.
   const recent = await getOrgRecentCounts(topOrgs.map((o) => o.org)).catch(() => null);
   const orgs = recent ? topOrgs.filter((o) => (recent.get(o.org) ?? 0) >= ORG_INDEX_MIN) : topOrgs;
   return [
-    e("/jobs/guide", "daily", 0.8),
-    ...guides.map((g) => e(guidePath(g.slug), "monthly", 0.7, day(g.updated_at))),
+    // 기관별 작성 가이드(/jobs/guide 와 그 아래)는 자동으로 쓴 글이라 noindex 로 돌리며 뺐다(2026-10-17).
     ...hires.map((h) => e(`/jobs/hire/${encodeURIComponent(h.hire)}`, "daily", 0.7)),
     ...regions.map((r) => e(`/jobs/region/${encodeURIComponent(r.sido)}`, "daily", 0.7)),
     ...orgs.map((o) => e(`/jobs/org/${encodeURIComponent(o.org)}`, "weekly", 0.6)),
@@ -102,32 +105,43 @@ async function jobs(): Promise<Entry[]> {
   ];
 }
 
+/**
+ * 자격증: 색인시키는 종목만(licenseIndexable, 2026-10-17 기준 613 → 320종목). 응시자 통계를 못 읽으면
+ * 종목 쪽도 색인을 끄지 않으니(fail open) 여기서도 전부 올린다.
+ */
 async function licenses(): Promise<Entry[]> {
   const b = await getLicenses();
-  return b.all.filter((l) => l.code).map((l) => e(`/license/${encodeURIComponent(l.code)}`, "monthly", 0.6));
+  const applicants = await licenseApplicants().catch((err) => {
+    console.warn("[sitemap] 응시자 통계를 못 읽어 자격증 종목을 전부 올린다:", err);
+    return null;
+  });
+  return b.all
+    .filter((l) => l.code && (applicants === null || licenseIndexable(l, b.all, applicants)))
+    .map((l) => e(`/license/${encodeURIComponent(l.code)}`, "monthly", 0.6));
 }
 
-/** 주거 지원: 대상×종류 9쪽은 늘, 시·도 쪽은 사업 3건 이상인 곳만. */
+/** 주거 지원: 대상×종류 9쪽은 늘, 시·도 쪽은 그 시·도 사업(전국 제외)이 SIDO_SITEMAP_MIN 건 이상인 곳만. */
 async function housing(): Promise<Entry[]> {
   const counts = await housingCounts();
   return WHO_KEYS.flatMap((who) =>
     KIND_KEYS.flatMap((kind) => [
       e(housingPath(kind, who), "daily", 0.8),
-      ...sidosFor(counts, kind, who, 3).map((s) => e(housingPath(kind, who, s.sido), "daily", 0.7)),
+      ...sidosFor(counts, kind, who, SIDO_SITEMAP_MIN).map((s) => e(housingPath(kind, who, s.sido), "daily", 0.7)),
     ]),
   );
 }
 
-/** 읽을거리: 손으로 쓴 안내 글, 코드 안의 글 목록, 자동 생성 이야기. */
-async function posts(): Promise<Entry[]> {
-  const stories = await getStories(200);
+/**
+ * 읽을거리: 손으로 쓴 안내 글과 코드 안의 글 목록. 자료로 매일 만드는 글(blog_posts, /story/<slug>)은
+ * noindex 로 돌리며 뺐다(2026-10-17).
+ */
+function posts(): Entry[] {
   return [
     e("/blog/youth-future-savings", "daily", 0.9),
     e("/blog/income", "monthly", 0.8),
     e("/blog/gojobs-guide", "monthly", 0.9),
     e("/story/jeonse-extension", "monthly", 0.9),
     ...POSTS.map((p) => e(`/blog/${p.slug}`, "monthly", 0.6, day(p.updated))),
-    ...stories.map((s) => e(`/story/${encodeURIComponent(s.slug)}`, "weekly", 0.8, day(s.updated_at))),
   ];
 }
 

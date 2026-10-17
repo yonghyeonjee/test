@@ -44,6 +44,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description: s.summary,
     keywords: s.keywords,
     alternates: { canonical: path },
+    // 이 경로의 글은 전부 파이프라인이 자료로 매일 써 내는 글(blog_posts)이다. 사이트 전체가 색인에서 빠진 뒤
+    // (2026-10-17) 자동 글은 색인하지 않는다 — 쪽은 그대로 열리고(첫 화면 띠가 오늘의 브리핑으로 잇는다) 링크는 따라간다.
+    // 손으로 쓴 글(/story/jeonse-extension 같은 고정 쪽, /blog/*)은 따로 있는 경로라 그대로 색인된다.
+    robots: { index: false, follow: true },
     openGraph: { type: "article", url: `${SITE_URL}${path}`, title: s.title, description: s.summary,
                  publishedTime: s.published_at, modifiedTime: s.updated_at },
   });
