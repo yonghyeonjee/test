@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Paras from "@/components/Paras";
 import { IllusAgency } from "@/components/Illus";
 import AgencyList from "@/components/AgencyList";
 
@@ -82,7 +83,7 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
       <section className="mt-14">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">공공기관 행사, 이렇게 고르세요</h2>
         <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
-          {EVENTS_INTRO.map((t) => <p key={t.slice(0, 20)}>{t}</p>)}
+          {EVENTS_INTRO.map((t) => <Paras key={t.slice(0, 20)} text={t} />)}
         </div>
       </section>
 

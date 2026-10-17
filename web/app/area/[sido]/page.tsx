@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Paras from "@/components/Paras";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
@@ -199,7 +200,7 @@ export default async function AreaPage({ params }: { params: { sido: string } })
           {sido}에서는 누가 무엇을 찾나
         </h2>
 
-        <p className="mt-4 leading-relaxed text-ink2">{note.intro}</p>
+        <div className="mt-4 space-y-3 leading-relaxed text-ink2"><Paras text={note.intro} /></div>
 
         <div className="mt-6 grid gap-3">
           {note.cases.map((c) => (
@@ -210,22 +211,18 @@ export default async function AreaPage({ params }: { params: { sido: string } })
           ))}
         </div>
 
-        <p className="mt-6 border-l-[3px] border-brand pl-4 leading-relaxed text-ink2">
-          {note.closing}
-        </p>
+        <div className="mt-6 space-y-3 border-l-[3px] border-brand pl-4 leading-relaxed text-ink2">
+          <Paras text={note.closing} />
+        </div>
       </section>
 
       <section className="mt-16">
         <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
           {sido} 정부 복지, 왜 여기서 찾나
         </h2>
-        <p className="mt-4 leading-relaxed text-ink2">
-          {govWelfare(
-            sido,
-            area.n,
-            stats.map((s) => ({ label: s.label, n: s.n }))
-          )}
-        </p>
+        <div className="mt-4 space-y-3 leading-relaxed text-ink2">
+          <Paras text={govWelfare(sido, area.n, stats.map((s) => ({ label: s.label, n: s.n })))} />
+        </div>
       </section>
 
       <section className="mt-16">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Paras from "@/components/Paras";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Faq from "@/components/Faq";
@@ -68,7 +69,7 @@ export default async function TopicPage({ params }: { params: { slug: string } }
         </div>
       </div>
       <div className="mt-5 space-y-3 text-[15.5px] leading-[1.85] text-ink2">
-        {t.intro.map((p) => <p key={p.slice(0, 16)}>{p}</p>)}
+        {t.intro.map((p) => <Paras key={p.slice(0, 16)} text={p} />)}
       </div>
 
       <div className="mb-3 mt-10 flex items-baseline justify-between">
