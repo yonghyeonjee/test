@@ -54,6 +54,10 @@ on:
         description: "TOP10 글의 사진을 자료 차트로 그린다(chart_top_roles.py). shots 의 open.png 가 있으면 첫 장으로 둔다"
         default: false
         type: boolean
+      top10_topic:
+        description: "순위 연재 한 편을 지금 낸다(top10.py --list 의 주제 키, 예: civil). jiwon 에 쓰고 차트 그려 composer top10 으로 올린다. slug/charts/composer 입력은 무시"
+        required: false
+        type: string
   schedule:
     - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00. blog_daily(00:30) 가 몇 시간 늦어도 끝난 뒤.
 
@@ -78,24 +82,42 @@ jobs:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python -u pipeline/blog_top_roles.py
+      - name: 순위 연재 글 쓰기(top10)
+        if: inputs.top10_topic != ''
+        id: top10
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TOPIC: ${{ inputs.top10_topic }}
+        run: |
+          pip install -q matplotlib
+          python pipeline/test_top10.py
+          python -u pipeline/top10.py --topic "$TOPIC" | tee out.txt
+          grep '^SLUG=' out.txt >> "$GITHUB_OUTPUT"
       - name: 화면 사진 찍기
         if: inputs.shots != ''
         env:
           SHOTS: ${{ inputs.shots }}
         run: python -u pipeline/shot_pages.py "$SHOTS"
       - name: 자료 차트 그리기
-        if: inputs.charts
+        if: inputs.charts || inputs.top10_topic != ''
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          SLUG: ${{ inputs.slug }}
+          SLUG: ${{ steps.top10.outputs.SLUG || inputs.slug }}
+          TOP10: ${{ inputs.top10_topic }}
         run: |
           sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패 — 한글이 네모로 나올 수 있다"
           fc-cache -f >/dev/null 2>&1 || true
           pip install -q matplotlib
-          python -u pipeline/chart_top_roles.py --slug "$SLUG"
+          if [ -n "$TOP10" ]; then
+            [ -f shots/open.png ] || python -u pipeline/shot_pages.py "/jobs/status/open|open|지금 접수 중인 공공기관 채용 공고 (출처: K나라지원)|" || echo "::warning::화면 사진 실패 — 차트만 넣는다"
+            python -u pipeline/chart_top10.py --slug "$SLUG"
+          else
+            python -u pipeline/chart_top_roles.py --slug "$SLUG"
+          fi
       - uses: actions/upload-artifact@v4
-        if: always() && (inputs.shots != '' || inputs.charts)
+        if: always() && (inputs.shots != '' || inputs.charts || inputs.top10_topic != '')
         with:
           name: shots
           path: shots/
@@ -115,7 +137,9 @@ jobs:
           SHOTS: ${{ inputs.shots }}
           UPDATE: ${{ inputs.update }}
           COMPOSER: ${{ inputs.composer }}
+          TOP10_SLUG: ${{ steps.top10.outputs.SLUG }}
         run: |
+          if [ -n "$TOP10_SLUG" ]; then SLUG="$TOP10_SLUG"; COMPOSER="top10"; MODE="full"; fi
           if [ -z "$TISTORY_COOKIE" ] && [ "$DRY" != "true" ]; then
             echo "::warning::TISTORY_COOKIE 가 없어 건너뜀. 로그인 쿠키를 secret 에 넣으면 올라간다(README '티스토리' 절)."
             exit 0
