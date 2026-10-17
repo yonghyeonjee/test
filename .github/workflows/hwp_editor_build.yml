@@ -100,10 +100,14 @@ jobs:
           Get-ChildItem $desk | Format-Table Name, Length
           if (!(Test-Path $exe)) { throw "exe missing: $exe" }
           if (!(Test-Path $lnk)) { throw "shortcut missing: $lnk" }
-          $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
+          # WScript.Shell 은 코드 페이지 밖 글자가 든 이름을 못 읽으므로 영문 이름 사본으로 대상을 읽는다
+          $copy = Join-Path $env:RUNNER_TEMP 'check.lnk'
+          Copy-Item -LiteralPath $lnk -Destination $copy -Force
+          $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($copy)
           "shortcut target: $($sc.TargetPath)"
           if ($sc.TargetPath -ne $exe) { throw "shortcut points elsewhere: $($sc.TargetPath)" }
-          Start-Process $lnk
+          # 탐색기에서 더블클릭하는 것과 같은 ShellExecute 로 한글 이름 바로가기를 연다
+          Start-Process -FilePath $lnk
           $ok = $null
           foreach ($i in 1..30) {
             foreach ($port in 8765..8770) {
