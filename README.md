@@ -116,3 +116,9 @@ npm 의 [tistory-mcp](https://github.com/kim-se-hee/tistory-mcp) 가 쓰는 길�
 `pipeline/blog_top_roles.py` 로 "많이 뽑는 직무 순위 TOP10" 글을 jiwon(blog_posts)에 쓰고 나서 올린다(출처가 jiwon 이 된다).
 이미 올린 글을 고치려면 `update` 에 티스토리 글 번호(숫자)를 넣는다. 번호는 `check=true` 가 찍는 최근 글 목록에 있다.
 이 블로그는 글 주소가 `/entry/<제목>` 꼴(문자 주소)이라 발행 기록의 post_id 도 그 슬러그다.
+
+**순위 TOP10 연재(매일 13:00 KST).** `.github/workflows/tistory_top10_daily.yml` 이 `pipeline/top10_plan.json` 의 그날 주제를
+`pipeline/top10.py` 로 jiwon 에 쓰고(출처), `chart_top10.py` 로 차트를 그려 `tistory_publish.py --composer top10` 으로 티스토리에 올린다.
+30일 일정과 틀은 [`docs/TISTORY-TOP10-PLAN.md`](docs/TISTORY-TOP10-PLAN.md). 직무·직렬 글의 "어려운 점"(번아웃·감정노동 등)은
+`pipeline/top10_notes.py`. 손으로 한 편 내려면 Actions → tistory-publish 의 `top10_topic` 에 주제 키(예: civil).
+같은 slug 를 다시 올리면 새 글을 만들지 않고 기록된 번호의 글을 고쳐 쓴다.

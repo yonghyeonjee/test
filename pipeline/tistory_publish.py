@@ -386,6 +386,24 @@ def recorded_slogan(sb, slug: str) -> str:
     return unquote(m.group(1)) if m else ""
 
 
+def recorded_post_id(sb, slug: str) -> str:
+    """tistory_posts 에 남은 티스토리 글 번호(숫자). 없거나 숫자가 아니면 빈 문자열."""
+    rows = sb.table("tistory_posts").select("post_id").eq("slug", slug).execute().data or []
+    pid = str(rows[0].get("post_id") or "") if rows else ""
+    return pid if pid.isdigit() else ""
+
+
+def numeric_id_by_title(t: "Tistory", title: str) -> str:
+    """방금 올린 글의 숫자 번호를 관리자 글 목록에서 제목으로 찾는다(best-effort)."""
+    try:
+        for it in t.recent_posts():
+            if it["title"].strip() == title.strip():
+                return it["id"]
+    except Exception:  # noqa: BLE001 — 번호를 못 찾아도 발행은 성공이다
+        pass
+    return ""
+
+
 def record(sb, post: dict, post_id: str, url: str, mode: str, visibility: str) -> None:
     sb.table("tistory_posts").upsert({
         "slug": post["slug"], "post_id": post_id, "url": url, "mode": mode, "visibility": visibility,
@@ -462,6 +480,11 @@ def main() -> int:
             sys.exit("TISTORY_COOKIE 가 비어 있다")
         if a.update and (len(posts) != 1 or not a.slug):
             sys.exit("--update 는 --slug 로 글 하나를 집었을 때만 쓴다")
+        if a.slug and not a.update:
+            prev = recorded_post_id(sb, a.slug)
+            if prev:
+                a.update = prev          # 같은 글을 두 번 만들지 않는다 — 기존 티스토리 글을 고쳐 쓴다
+                print(f"이미 올린 글(번호 {prev})이 있어 고쳐 쓴다")
         t = Tistory(host, cookie)
         n = 0
         for p in posts:
@@ -473,8 +496,9 @@ def main() -> int:
                                      category=a.category, tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
                                      slogan=recorded_slogan(sb, p["slug"]) if a.update else "")
-            record(sb, p, a.update or post_id, url, a.mode, a.visibility)
-            print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url}")
+            num = a.update or numeric_id_by_title(t, p["title"]) or post_id
+            record(sb, p, num, url, a.mode, a.visibility)
+            print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url} (번호 {num})")
             n += 1
         print(f"{n}편 올렸다")
         return 0
