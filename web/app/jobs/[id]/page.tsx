@@ -21,15 +21,16 @@ import { jobEvents } from "@/lib/calEvents";
 import { locateJob } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/db";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
-import { getJobSummary } from "@/lib/jobSummary";
+import { getJobSummary, getJobSummaryStrict } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { employmentFromTitle, jobLocation, salaryFromPay } from "@/lib/jobSchema";
 import type { JobSummary } from "@/lib/jobSummary";
+import { isAlioId } from "@/lib/jobTwins";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
-import { SITE_URL, withOg } from "@/lib/seo";
+import { SITE_NAME, SITE_URL, withOg } from "@/lib/seo";
 import { getStory } from "@/lib/stories";
 
 // 공고는 수만 건이라 미리 만들지 않는다. 처음 열릴 때 만들고 하루 동안 쓴다.
@@ -92,14 +93,28 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const rawDetail = detailOf(job.title);
   const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
   const stage = stageOf(job.title);
-  const [attach, sum] = await Promise.all([getJobAttach(job.id), getJobSummary(job.id)]);
+  // 요약은 엄격한 판으로 읽는다. 못 읽었으면(DB 오류) 요약이 있는 것으로 쳐서 색인을 남긴다 — 잠깐의 오류로
+  // noindex 가 사흘 캐시에 남으면 안 된다(2026-10-17).
+  const [attach, sumRead] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const)]);
+  const sum = sumRead === "error" ? null : sumRead;
+  const hasSummary = sumRead === "error" || sumRead !== null; // 오류도 "있음"으로 친다(실패 시 색인 쪽으로)
+  // 2026-10-17 색인 규칙. 서치 콘솔에서 사이트 거의 전체가 '크롤링됨 - 현재 색인이 생성되지 않음'으로 빠졌다 —
+  // 같은 틀에 내용이 얇은 공고 쪽 3만여 건이 사이트 평가를 끌어내린 것으로 본다. 아래 중 하나면 noindex,follow
+  // (쪽은 그대로 보이고 링크도 따라간다. robots.txt 로 막지 않는다).
+  //  - 잡알리오 공고: 첨부도 요약도 없이 목록 몇 줄이 전부다.
+  //  - 합격자 발표·면접 안내·채용 계획: 지원하는 공고가 아니다.
+  //  - 마감됐고 공고 요약도 없는 것: 남은 것이 날짜뿐이다.
+  //  - 1년 넘게 지난 것(예전 규칙).
+  // 접수 중인 나라일터 모집 공고는 요약이 없어도 색인한다 — 요약은 하루 안에 붙는데 noindex 는 사흘 캐시에 남는다.
+  const noindex = stale || isAlioId(job.id) || stage === "final" || stage === "interview" || stage === "plan"
+    || (job.status === "closed" && !hasSummary);
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
     ? ` 첨부 ${attach.files.length}개: ${names.join(", ").slice(0, 90)}${attach.files.length > 3 || names.join(", ").length > 90 ? " 등" : ""}.`
     : "";
   return withOg({
-    ...(stale ? { robots: { index: false, follow: true } } : {}),
+    ...(noindex ? { robots: { index: false, follow: true } } : {}),
     title: seoJobTitle(job, role, detail, stage),
     // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
     description: `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}${fileNote}`,
@@ -154,25 +169,29 @@ function summaryHtml(s: JobSummary, lead: string): string {
 }
 
 function jobNode(job: Job, sum?: JobSummary | null) {
+  // 2026-10-17 접수 중이고 공고 요약이 있는 것만 구인으로 내보낸다. 요약이 없으면 description 이 틀 문장
+  // 몇 줄뿐이라 구글이 요구하는 "공고 전문"에 못 미치고, 마감된 공고는 구인이 아니다. 빵부스러기 등 나머지 표시는 그대로.
+  if (!sum || job.status === "closed") return null;
   if (!job.reg || !job.org) return null;
   if (!job.region && !job.hire && !job.headcount) return null;
-  // 합격자 발표·면접 안내는 채용 공고가 아니다. 구글에 구인으로 내보내지 않는다.
-  if (stageOf(job.title) === "final" || stageOf(job.title) === "interview") return null;
+  // 합격자 발표·면접 안내·채용 계획은 모집 공고가 아니다(색인도 하지 않는다). 구글에 구인으로 내보내지 않는다.
+  const stage = stageOf(job.title);
+  if (stage === "final" || stage === "interview" || stage === "plan") return null;
   const role = detectRole(job.title, job.org);
   const employment = role?.employment ?? employmentFromTitle(job.title)
-    ?? (sum ? employmentFromTitle(sum.positions.map((p) => p.type).join(" ")) : null);
+    ?? employmentFromTitle(sum.positions.map((p) => p.type).join(" "));
   const lead = role ? `${role.name} 자리입니다. ${role.does} ${jobSummary(job)}` : jobSummary(job);
-  // 공고 요약이 있으면 급여·자격·근무 시간까지. 구글이 권하는 칸(baseSalary 등)이 여기서 찬다.
-  const salary = sum ? salaryFromPay(sum.work.pay) : null;
+  // 급여·자격·근무 시간까지. 구글이 권하는 칸(baseSalary 등)이 여기서 찬다.
+  const salary = salaryFromPay(sum.work.pay);
   const openings = job.headcount && /^\d+$/.test(job.headcount) ? Number(job.headcount)
-    : sum ? sum.positions.reduce((n, p) => n + (Number((p.headcount.match(/\d+/) ?? ["0"])[0]) || 0), 0) || null : null;
+    : sum.positions.reduce((n, p) => n + (Number((p.headcount.match(/\d+/) ?? ["0"])[0]) || 0), 0) || null;
   return {
     "@type": "JobPosting",
     "@id": `${SITE_URL}/jobs/${encodeURIComponent(job.id)}#posting`,
     title: job.title,
-    description: sum ? summaryHtml(sum, lead) : lead,
-    ...(sum?.requirements.length ? { qualifications: sum.requirements.join("\n") } : {}),
-    ...(sum?.work.hours ? { workHours: sum.work.hours } : {}),
+    description: summaryHtml(sum, lead),
+    ...(sum.requirements.length ? { qualifications: sum.requirements.join("\n") } : {}),
+    ...(sum.work.hours ? { workHours: sum.work.hours } : {}),
     ...(salary ? { baseSalary: salary } : {}),
     ...(role ? { occupationalCategory: role.name } : {}),
     ...(employment ? { employmentType: employment } : {}),
@@ -461,7 +480,7 @@ export default async function JobDetail({ params }: P) {
       <section className="mt-12">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">이 공고, 이렇게 보세요</h2>
         <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
-          {jobIntro(job).map((t) => <p key={t.slice(0, 24)}>{t}</p>)}
+          <p>{jobIntro(job)}</p>
         </div>
         {guide && (
           <Link href={guidePath(guide.slug)} className="card card-link mt-4 flex items-center justify-between gap-3 border-brand/30 bg-brandSoft/40 px-5 py-4">
@@ -523,8 +542,12 @@ export default async function JobDetail({ params }: P) {
         접수 방법·제출 서류·자격 요건은 기관이 올린 원문에만 있습니다. 마감일이 바뀌는 일도
         있으니 신청 전에 원문에서 한 번 더 확인하세요.
       </p>
+      {/* 2026-10-17 공식 사이트로 오해하지 않게 한 줄. 원문 단추 바로 아래에 둔다. */}
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        {SITE_NAME}은 나라일터·잡알리오 공고를 모아 보여 주는 민간 사이트로, 인사혁신처나 각 기관이 운영하는 공식 사이트가 아닙니다.
+      </p>
 
-      <Faq items={jobFaq(job, role)} />
+      <Faq items={jobFaq(job, role, sum?.summary)} />
 
       {related.length > 0 && (
         <section className="mt-14">

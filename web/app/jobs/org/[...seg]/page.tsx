@@ -14,7 +14,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { YearBars } from "@/components/TrendBars";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getOrgPosts, getOrgTrend, indexWord, pctChange, titleMix, type OrgPost } from "@/lib/jobTrend";
-import { dot, getJobsByOrg, getOrgStat, getOrgStatStrict, peakMonths } from "@/lib/pubJobs";
+import { ORG_INDEX_MIN, dot, getJobsByOrg, getOrgRecentCounts, getOrgStat, getOrgStatStrict, peakMonths } from "@/lib/pubJobs";
 import { isAlioId } from "@/lib/jobTwins";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
@@ -29,20 +29,29 @@ type P = { params: { seg: string[] } };
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const r = peekJobRoute(["org"], params.seg);
   const org = r.org!;
-  const stat = await getOrgStat(org);
+  // 2026-10-17 최근 365일 공고(나라일터+잡알리오)가 ORG_INDEX_MIN(5)건 미만인 기관은 noindex,follow.
+  // 기관 쪽은 서치 콘솔에서 아직 색인에 남은 거의 유일한 갈래라 크게 줄이지 않되, 1만 4천여 곳 가운데
+  // 1만 2천여 곳은 최근 1년 공고가 몇 건뿐인 얇은 쪽이다. 못 세면(DB 오류) 색인한다 — 실패 시 색인 쪽으로.
+  const [stat, recent] = await Promise.all([
+    getOrgStat(org),
+    getOrgRecentCounts([org]).then((m) => m.get(org) ?? 0, () => null),
+  ]);
+  const thin = recent !== null && recent < ORG_INDEX_MIN;
+  // job_org_stats 는 나라일터만 센다. 잡알리오까지 더하면 이보다 많을 수 있어 "이상"으로 적는다.
   const span = stat?.firstReg && stat.lastReg
-    ? `나라일터 공고 ${stat.firstReg.slice(0, 4)}년부터 ${stat.n.toLocaleString()}건`
+    ? `${stat.firstReg.slice(0, 4)}년부터 쌓인 공고 ${stat.n.toLocaleString()}건 이상`
     : "지금까지 올라온 공고";
   const extra = jobRouteLabel(r).filter((v) => v !== org);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
   return withOg({
     title: `${org} 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 지금까지 낸 공고와 접수 기간"}${tail}`,
+    // 출처(나라일터·잡알리오)는 한 번만 적는다. 예전에는 "나라일터·잡알리오에 낸 … 나라일터 공고 …건"으로 두 번 나왔다.
     description:
-      `${org}이(가) 나라일터·잡알리오에 낸 채용 공고를 모았습니다. ${span}을 등록일순으로 보고, ` +
+      `${org}이(가) 낸 채용 공고를 나라일터·잡알리오에서 모았습니다. ${span}을 등록일순으로 보고, ` +
       "접수 중인 공고와 접수 기간이 며칠이었는지를 함께 확인합니다.",
     keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용", "나라일터", "잡알리오"],
     alternates: { canonical: jobCanonical(r) },
-    robots: jobRobots(r),
+    robots: thin ? { index: false, follow: true } : jobRobots(r),
   });
 }
 

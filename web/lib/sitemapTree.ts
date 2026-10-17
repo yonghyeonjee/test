@@ -7,7 +7,7 @@
  *
  *   pages     고정 쪽(첫 화면, 갈래 허브, 소개 …)
  *   programs  지원사업 — 시·도 쪽과 상위 400건
- *   jobs      채용 — 구분·지역·기관 목차와 접수 중 공고 전부(모자라면 최근 400건까지)
+ *   jobs      채용 — 구분·지역·기관 목차와 접수 중인 나라일터 모집 공고(색인하는 것만)
  *   licenses  자격증 종목
  *   housing   주거 지원 — 대상×종류와 시·도
  *   posts     읽을거리 — 안내 글과 이야기
@@ -15,7 +15,7 @@
 import { getAreas, getTopSourceIds } from "./db";
 import { KIND_KEYS, WHO_KEYS, housingCounts, housingPath, sidosFor } from "./housing";
 import { POSTS } from "./posts";
-import { getJobHires, getJobRegions, getTopJobIds, getTopOrgs } from "./pubJobs";
+import { ORG_INDEX_MIN, getJobHires, getJobRegions, getOrgRecentCounts, getTopJobIds, getTopOrgs } from "./pubJobs";
 import { getLicenses } from "./qnet";
 import { getStories } from "./stories";
 import { getGuides, guidePath } from "./guides";
@@ -82,9 +82,16 @@ async function programs(): Promise<Entry[]> {
   ];
 }
 
-/** 채용: 구분(넷뿐이라 전부)·지역(시·도 고정)·기관(공고 여덟 건 이상, 300곳) 목차와 접수 중 공고 전부, 기관별 작성 가이드. */
+/**
+ * 채용: 구분(넷뿐이라 전부)·지역(시·도 고정)·기관(공고 여덟 건 이상, 300곳) 목차와 색인하는 공고(접수 중인
+ * 나라일터 모집 공고, 요약 있는 것 먼저 — getTopJobIds), 기관별 작성 가이드.
+ */
 async function jobs(): Promise<Entry[]> {
-  const [hires, regions, orgs, ids, guides] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(), getGuides(300)]);
+  const [hires, regions, topOrgs, ids, guides] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(), getGuides(300)]);
+  // 2026-10-17 기관 쪽은 최근 365일 공고가 ORG_INDEX_MIN 건 미만이면 noindex 라 사이트맵에서도 뺀다(300곳 중 30곳쯤,
+  // 이름이 바뀐 부처 등). 못 세면 그대로 둔다.
+  const recent = await getOrgRecentCounts(topOrgs.map((o) => o.org)).catch(() => null);
+  const orgs = recent ? topOrgs.filter((o) => (recent.get(o.org) ?? 0) >= ORG_INDEX_MIN) : topOrgs;
   return [
     e("/jobs/guide", "daily", 0.8),
     ...guides.map((g) => e(guidePath(g.slug), "monthly", 0.7, day(g.updated_at))),

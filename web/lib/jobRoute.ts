@@ -131,9 +131,15 @@ export function jobPathPage(r: JobRoute, page: number): string {
  * 검색어(q)로 만든 쪽은 주소가 무한히 생긴다. 그런 것을 색인시키면
  * 알맹이 없는 쪽 수천 개로 사이트 평가가 깎인다. 링크는 따라가되
  * 색인은 하지 말라고 한다.
+ *
+ * 2026-10-17 조건을 둘 이상 겹친 쪽(기관+지역, 기관+구분, 지역+구분)과 접수 중만 보기(status/open)도
+ * 같은 이유로 색인하지 않는다. 서치 콘솔에서 사이트 거의 전체가 색인에서 빠졌고, 겹친 조건 쪽은
+ * 한 조건 쪽 목록의 일부를 다시 보여 주는 것이라 거의 같은 쪽이 수천 개 생긴다. 조건 하나짜리
+ * 쪽과 2쪽 이후는 그대로 색인한다. 정본(jobCanonical)은 손대지 않는다.
  */
 export function jobRobots(r: JobRoute) {
-  return r.q ? { index: false, follow: true } : { index: true, follow: true };
+  const filters = [r.org, r.region, r.hire].filter(Boolean).length;
+  return r.q || r.open || filters >= 2 ? { index: false, follow: true } : { index: true, follow: true };
 }
 
 /**
