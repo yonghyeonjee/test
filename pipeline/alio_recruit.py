@@ -76,11 +76,12 @@ def to_summary(r: dict) -> dict:
     return {
         "one_line": one,
         "positions": [{"name": ncs, "headcount": f"{n}명" if n else "", "grade": "", "type": hire}] if (ncs or n or hire) else [],
-        "requirements": lines(r.get("aplyQlfcCn")),
+        # 원문을 통째로 옮기지 않게 앞 20줄까지만(나머지는 원문에서).
+        "requirements": lines(r.get("aplyQlfcCn"), 20),
         "preferred": pref[:20],
         "period": {"start": ymd(r.get("pbancBgngYmd")) or "", "end": ymd(r.get("pbancEndYmd")) or "", "how": ""},
         "documents": [],
-        "process": lines(r.get("scrnprcdrMthdExpln")),
+        "process": lines(r.get("scrnprcdrMthdExpln"), 20),
         "work": {"place": (r.get("workRgnNmLst") or "").replace(",", ", "), "hours": "", "pay": "", "term": ""},
         "contact": "",
         "notes": [f"학력: {(r.get('acbgCondNmLst') or '').replace(',', ', ')}"] if r.get("acbgCondNmLst") else [],

@@ -40,11 +40,11 @@ def collect(sb, hours: int) -> dict[str, list[str]]:
     # 1년 넘게 지난 공고는 상세 쪽이 noindex 다(web/app/jobs/[id]/page.tsx stale). 옛 공고를 한꺼번에 받아 오는
     # 날이면 그 수천 건이 "새 공고"로 잡혀 구글 몫(190건)을 다 먹으니 처음부터 뺀다.
     cutoff = (dt.date.today() - dt.timedelta(days=365)).isoformat()
-    # 잡알리오 공고 쪽은 noindex 라(나라일터와 겹치거나 첨부가 없다, 2026-10-17) 나라일터 공고만 알린다.
-    jobs = (sb.table("job_posts").select("source_id").eq("source", "gojobs").gte("first_seen_at", since)
+    # 잡알리오 공고는 칸별 내용(요약)이 붙은 것만 색인하니 main() 에서 google_worthy 로 한 번 더 거른다.
+    jobs = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
             .or_(f"end_date.gte.{cutoff},end_date.is.null")
             .order("first_seen_at", desc=True).limit(2000).execute().data or [])
-    closed = (sb.table("job_posts").select("source_id").eq("source", "gojobs").eq("end_date", yday)
+    closed = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).eq("end_date", yday)
               .limit(500).execute().data or [])
     # 화면에 나오는 사업만(programs_public = 정리됐고 확신도 0.3 초과). 원본 표(programs)에서 고르면 정리 안 된
     # 사업(기업마당 행사 전부 등)까지 보내 하루 열에 둘이 404 였다(2026-10-17 점검).
@@ -84,7 +84,8 @@ def google_worthy(sb, urls: list[str]) -> set[str]:
     나라일터 공고이면서 내용 있는 공고문 요약(job_summaries)이 있고, 합격자 발표·면접 안내가 아닌 공고.
     공고 쪽이 JobPosting 을 내는 기준(web/app/jobs/[id]/page.tsx jobNode, lib/jobSummary.ts toLoadedSummary)과 같다.
     임용시험 시행계획 공고는 대개 그 자체가 접수 공고라 넣는다(blog_daily.is_opening 은 브리핑용이라 뺀다).
-    잡알리오 공고는 첨부를 받지 않아 요약이 없다. IndexNow(네이버·빙)에는 나라일터 공고를 다 보낸다.
+    잡알리오 공고는 알리오 채용공시 API 로 칸별 내용이 붙은 것만(pipeline/alio_recruit.py, 나라일터와 겹치면 붙이지 않는다).
+    IndexNow(네이버·빙)에는 나라일터 공고를 다 보내고, 잡알리오는 여기서 고른 것만 보낸다.
     """
     from blog_daily import _DOCS_PASS, _FINAL, _INTERVIEW  # noqa: PLC0415 — web stageOf 와 같은 기준
 
@@ -100,7 +101,7 @@ def google_worthy(sb, urls: list[str]) -> set[str]:
         return sum(len(s.get(k) or []) for k in ("positions", "requirements", "documents", "process")) > 0
 
     ids = {u.rsplit("/", 1)[-1]: u for u in urls}
-    gojobs = [urllib.parse.unquote(i) for i in ids if not urllib.parse.unquote(i).startswith("a")]
+    gojobs = [urllib.parse.unquote(i) for i in ids]
     if not gojobs:
         return set()
     have: set[str] = set()
@@ -109,7 +110,7 @@ def google_worthy(sb, urls: list[str]) -> set[str]:
         chunk = gojobs[i:i + 200]
         rows = sb.table("job_summaries").select("source_id,summary").in_("source_id", chunk).execute().data or []
         have |= {r["source_id"] for r in rows if filled(r.get("summary"))}
-        rows = sb.table("job_posts").select("source_id,title").eq("source", "gojobs").in_("source_id", chunk).execute().data or []
+        rows = sb.table("job_posts").select("source_id,title").in_("source", ["gojobs", "alio"]).in_("source_id", chunk).execute().data or []
         titles |= {r["source_id"]: r.get("title") or "" for r in rows}
     ok = {sid for sid in have if recruiting(titles.get(sid, ""))}
     return {u for i, u in ids.items() if urllib.parse.unquote(i) in ok}
@@ -163,8 +164,9 @@ def main():
     for k, v in got.items():
         for u in v[:3]:
             print(f"  {k}: {u}")
-    indexnow(got["jobs"] + got["programs"], a.dry)
     keep = google_worthy(sb, got["jobs"] + got["closed"])
+    alio = lambda u: u.rsplit("/", 1)[-1].startswith("a")
+    indexnow([u for u in got["jobs"] if not alio(u) or u in keep] + got["programs"], a.dry)
     new_jobs = [u for u in got["jobs"] if u in keep]
     closed = [u for u in got["closed"] if u in keep]
     print(f"구글로 보낼 공고: 새 공고 {len(got['jobs'])} 중 {len(new_jobs)}, 어제 마감 {len(got['closed'])} 중 {len(closed)}"
