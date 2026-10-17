@@ -38,7 +38,8 @@ for base in BASES:
             d = r.json()
         except Exception:  # noqa: BLE001
             continue
-        if isinstance(d, dict) and d.get("resultCode") in (0, "0") and d.get("result"):
+        # 성공 응답에는 resultCode 가 없을 수 있다(2026-10-17 확인). result 목록이 있으면 된 것으로 본다.
+        if isinstance(d, dict) and isinstance(d.get("result"), list) and d["result"]:
             ok = (base, label, kw, d)
             break
     if ok:
@@ -48,7 +49,8 @@ if ok:
     base, label, kw, d = ok
     print(f"\n== 됨: {base} | {label}  totalCount {d.get('totalCount')}")
     first = d["result"][0]
-    print(json.dumps(first, ensure_ascii=False)[:3000])
+    print(f"받은 줄 {len(d['result'])}, 위 칸: {[k for k in d if k != 'result']}")
+    print(json.dumps(first, ensure_ascii=False)[:6000])
     sn = first.get("recrutPblntSn")
     kw2 = json.loads(json.dumps({k: v for k, v in kw.items()}))
     for part in ("data", "params", "json"):
