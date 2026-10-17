@@ -10,12 +10,14 @@ if not exist "%SRC%" (
 )
 for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP=%%D"
 if not exist "%DESKTOP%" set "DESKTOP=%USERPROFILE%\Desktop"
-set "DIR=%DESKTOP%\HWP편집기"
+rem 폴더 이름은 코드 페이지 문제를 피하려고 영문으로 둔다. 바로가기 이름만 한글(PowerShell 안에서 유니코드로 만든다).
+set "DIR=%DESKTOP%\HwpEditor"
 if not exist "%DIR%" mkdir "%DIR%"
 copy /y "%SRC%" "%DIR%\HwpEditor.exe" >nul || (echo 복사하지 못했습니다. & pause & exit /b 1)
 powershell -NoProfile -Command ^
-  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%DESKTOP%\HWP 편집기.lnk');" ^
-  "$s.TargetPath='%DIR%\HwpEditor.exe'; $s.WorkingDirectory='%DIR%'; $s.Description='HWP·HWPX 편집기'; $s.Save()"
+  "$name='HWP ' + [char]0xD3B8 + [char]0xC9D1 + [char]0xAE30 + '.lnk';" ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path '%DESKTOP%' $name));" ^
+  "$s.TargetPath='%DIR%\HwpEditor.exe'; $s.WorkingDirectory='%DIR%'; $s.Description='HWP/HWPX editor'; $s.Save()"
 echo.
 echo 바탕화면에 설치했습니다:
 echo   %DIR%\HwpEditor.exe
