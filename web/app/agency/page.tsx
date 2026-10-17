@@ -91,7 +91,7 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
           { name: "cate", label: "분야", options: BSN_CATE },
           { name: "svc", label: "형태", options: SVC_CATE },
         ]}
-        current={current} qName="q"
+        current={current} qName="q" page={Number(one(searchParams.page)) || 1}
         empty="조건에 맞는 사업이 없습니다. 분야를 넓혀 보세요."
         external={{ href: "https://www.alioplus.go.kr", label: "알리오 플러스에서 직접 보기" }}
       />

@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { db, dbLive, dbConfigured } from "./db";
+import { readAll } from "./pubJobs";
 import { EVT_CATE, FCLT_CATE, LIFE_CYCLE, SVC_CATE, plainText, type AlioItem } from "./alioplus";
 
 /**
@@ -60,12 +61,25 @@ async function load(
 ): Promise<AlioItem[] | null> {
   if (!dbConfigured) return null;
   // 검색어 조회는 캐시에 남기지 않는다(아래 agencyFromStore). 검색 화면은 어차피 요청마다 그린다.
-  let sel = (q?.trim() ? dbLive : db).from("agency_items").select("*").eq("kind", kind).limit(1200);
-  if (sido) sel = sel.eq("sido", sido);
-  if (q) sel = sel.ilike("title", `%${q}%`);
-  const { data, error } = await sel;
+  // PostgREST 는 한 번에 1,000줄까지만 준다. 시설은 1,114건이라(2026-10-17) 전체 목록에서 114건이 빠졌다. 나눠 읽는다.
+  type Row = {
+    id: number | string; title: string | null; org: string | null; cate: string | null; target: string | null;
+    descr: string | null; address: string | null; start_date: string | null; end_date: string | null;
+    url: string | null; tags: string[] | null;
+  };
+  let data: Row[];
+  try {
+    data = await readAll<Row>((from, to) => {
+      let sel = (q?.trim() ? dbLive : db).from("agency_items").select("*").eq("kind", kind);
+      if (sido) sel = sel.eq("sido", sido);
+      if (q) sel = sel.ilike("title", `%${q}%`);
+      return sel.order("id").range(from, to);
+    }, 3000);
+  } catch {
+    return null;
+  }
   // 비었으면 null. 부르는 쪽이 "아직 안 받았구나" 하고 직접 부른다.
-  if (error || !data?.length) return null;
+  if (!data.length) return null;
   return data.map((r) => ({
     id: String(r.id),
     title: String(r.title ?? ""),
