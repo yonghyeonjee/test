@@ -31,6 +31,20 @@ export function daysLeft(end: string, today = todayKst()): number {
 }
 
 /**
+ * 청년미래적금 2차 일정(금융위 2026-09-16 발표). 신청 10/7~16, 신청한 사람의 계좌 개설 11/16~27.
+ * 2026-10-17 신청이 끝났는데 목록에 "신청 중"이 그대로 남아 있었다. 글 목록·글·메뉴가 이 단계를 보고 바뀐다.
+ */
+export const YFS = { applyEnd: "2026-10-16", openStart: "2026-11-16", openEnd: "2026-11-27" } as const;
+export type YfsPhase = "apply" | "wait" | "open" | "done";
+export function yfsPhase(today = todayKst()): YfsPhase {
+  const t = iso(today);
+  if (t <= YFS.applyEnd) return "apply";
+  if (t < YFS.openStart) return "wait";
+  if (t <= YFS.openEnd) return "open";
+  return "done";
+}
+
+/**
  * 손으로 적어 두는 것. 공공데이터에 없지만 중요한 일정을 싣는다.
  *
  * 청년미래적금 2차는 금융위가 따로 발표한 것이라 우리가 모아 둔 표에

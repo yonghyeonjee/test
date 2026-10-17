@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { yfsPhase } from "@/lib/hotShared";
 import BigText from "./BigText";
 import { HeaderFx } from "./Motion";
 import { BrandMark } from "./Illus";
@@ -209,10 +210,13 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
           <PortalIcon name="search" className="h-5 w-5 text-muted" strokeWidth={2.2} />
           무엇이든 찾아보세요
         </Link>
-        <Link href="/blog/youth-future-savings" onClick={onClose}
-              className="flex items-center gap-2 rounded-card bg-brand px-4 py-3 text-[14.5px] font-bold text-white">
-          <PortalIcon name="fire" className="h-5 w-5" /> HOT 정부지원 — 청년미래적금 안내
-        </Link>
+        {/* 청년미래적금 일정 단계에 맞춰 글귀를 바꾸고, 다 끝나면 뺀다(lib/hotShared yfsPhase). */}
+        {yfsPhase() !== "done" && (
+          <Link href="/blog/youth-future-savings" onClick={onClose}
+                className="flex items-center gap-2 rounded-card bg-brand px-4 py-3 text-[14.5px] font-bold text-white">
+            <PortalIcon name="fire" className="h-5 w-5" /> HOT 정부지원 — {yfsPhase() === "apply" ? "청년미래적금 신청 안내" : "청년미래적금 계좌 개설 안내"}
+          </Link>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <Link href="/saved" onClick={onClose} className="flex items-center gap-2 rounded-card bg-white px-4 py-3 text-[14.5px] font-bold">
             <PortalIcon name="bookmark" className="h-5 w-5 text-brand" /> 저장한 공고

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { yfsPhase } from "@/lib/hotShared";
 
 const ITEMS = [
   // 마감이 걸린 것을 맨 위에 둔다. 나머지와 달리 눈에 띄게 그린다.
@@ -53,7 +54,8 @@ export default function FloatingMenu() {
           open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"}`}
         aria-hidden={!open}
       >
-        {ITEMS.map((it, i) => (
+        {/* 청년미래적금 일정이 다 끝나면(11/27 뒤) HOT 칸을 뺀다(lib/hotShared yfsPhase). */}
+        {ITEMS.filter((it) => !it.hot || yfsPhase() !== "done").map((it, i) => (
           <li key={it.href} style={{ transitionDelay: open ? `${i * 25}ms` : "0ms" }}
               className="transition-transform">
             <Link href={it.href} onClick={() => setOpen(false)}
