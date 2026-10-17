@@ -1,0 +1,50 @@
+name: gsc-report
+
+# 서치 콘솔 자료를 API 로 뽑아 기록에 찍는다(pipeline/gsc_report.py) — 날짜별 실적, 두 기간 비교(쪽 종류·쪽·검색어·
+# 노출 유형), 노출 많던 쪽의 URL 검사, 사이트맵 상태. 읽기 전용.
+# 인증: GOOGLE_INDEXING_SA(서비스 계정 JSON) 또는 GOOGLE_OAUTH_CLIENT_ID·SECRET·REFRESH_TOKEN(계정 로그인).
+on:
+  workflow_dispatch:
+    inputs:
+      a:
+        description: "비교 기간 A (시작:끝)"
+        default: "2026-10-01:2026-10-10"
+      b:
+        description: "비교 기간 B (시작:끝, 끝을 비우면 오늘)"
+        default: "2026-10-11:"
+      inspect:
+        description: "URL 검사할 쪽 수(하루 한도 2,000)"
+        default: "40"
+      site:
+        description: "속성(비우면 자동으로 고름). 예: sc-domain:knowhow-it.com"
+        default: ""
+      mode:
+        description: "report=기간 비교 보고서, sites=속성별 날짜별 노출, sample=사이트맵 묶음별 색인 표본"
+        default: "report"
+        type: choice
+        options: [report, sites, sample]
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests google-auth
+      - name: 뽑기
+        env:
+          GOOGLE_INDEXING_SA:         ${{ secrets.GOOGLE_INDEXING_SA }}
+          GOOGLE_OAUTH_CLIENT_ID:     ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+          GSC_SITE: ${{ inputs.site }}
+          A: ${{ inputs.a }}
+          B: ${{ inputs.b }}
+          N: ${{ inputs.inspect }}
+          MODE: ${{ inputs.mode || 'report' }}
+        run: |
+          if [ "$MODE" = "report" ]; then python -u pipeline/gsc_report.py --a "$A" --b "$B" --inspect "$N"
+          else python -u pipeline/gsc_probe.py "$MODE" --k "$N"; fi
