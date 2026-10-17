@@ -402,7 +402,7 @@ def main() -> int:
     ap.add_argument("--mode", choices=["summary", "full"], default=os.environ.get("TISTORY_MODE", "summary"))
     ap.add_argument("--visibility", choices=sorted(VISIBILITY), default=os.environ.get("TISTORY_VISIBILITY", "public"))
     ap.add_argument("--category", type=int, default=int(os.environ.get("TISTORY_CATEGORY") or 0))
-    ap.add_argument("--composer", choices=["top10"], help="jiwon 글을 그대로 옮기지 않고 티스토리용 글을 따로 쓴다(출처는 jiwon). top10 = pipeline/tistory_top_roles.py")
+    ap.add_argument("--composer", choices=["top10"], help="jiwon 글을 그대로 옮기지 않고 티스토리용 글을 따로 쓴다(출처는 jiwon). top10 = pipeline/tistory_top10.py")
     ap.add_argument("--update", help="새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 --check 가 찍는 최근 글 목록에서")
     ap.add_argument("--images", help="shots/manifest.json — [{\"file\": 경로, \"caption\": 설명}] 순서대로 본문에 끼운다")
     ap.add_argument("--dry", action="store_true", help="올리지 않고 HTML 만 찍는다")
@@ -446,7 +446,7 @@ def main() -> int:
             return 0
         if a.composer:
             # 티스토리용 글을 따로 쓴다. 원문(blog_posts)은 자료·출처로만 쓰고 slug 는 기록용으로 유지한다.
-            from tistory_top_roles import COMPOSERS
+            from tistory_top10 import COMPOSERS      # top10.py 글은 generic, 옛 직무 글은 tistory_top_roles 로 넘긴다
             posts = [COMPOSERS[a.composer](p) for p in posts]
             if a.mode != "full":
                 a.mode = "full"          # 작성기가 쓴 글은 요약하지 않는다(요약 안내문도 안 붙는다)
