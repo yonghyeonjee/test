@@ -18,7 +18,7 @@ GitHub Actions 의 **hwp-editor-build** 워크플로가 Windows 용 `HwpEditor.e
 1. 저장소의 **Actions** 탭 → **hwp-editor-build** → 가장 최근 성공한 실행 → 아래 **Artifacts** 에서
    `HwpEditor-windows` (또는 `HwpEditor-macos`) 를 내려받는다(zip).
 2. zip 을 아무 폴더에 풀고, Windows 는 **`install_to_desktop.bat`** 를 더블클릭한다.
-   바탕화면에 `HWP편집기` 폴더와 **HWP 편집기** 바로가기가 생긴다.
+   바탕화면에 `HwpEditor` 폴더와 **HWP 편집기** 바로가기가 생긴다.
 3. 바로가기를 더블클릭 → 검은 창이 뜨고 브라우저가 `http://127.0.0.1:8765/` 로 열린다.
    검은 창을 닫으면 편집기가 꺼진다. 포트가 쓰이고 있으면 다음 번호(8766…) 로 알아서 옮긴다.
 
