@@ -75,6 +75,32 @@ def indexnow(urls: list[str], dry: bool) -> None:
             print(f"IndexNow {ep}: 실패 {type(e).__name__}", file=sys.stderr)
 
 
+def google_worthy(sb, urls: list[str]) -> set[str]:
+    """구글 Indexing API 로 보낼 만한 공고 주소만 고른다.
+
+    2026-10-17 서치 콘솔 점검: 사이트 거의 전체가 "크롤링됨 - 현재 색인이 생성되지 않음"으로 빠졌다. 공고 쪽은 본문의
+    90% 가 틀에 박힌 글이라 구글이 품질을 낮게 본 것으로 판단했다. 그래서 구글에는 고유한 내용이 있는 공고만 알린다:
+    나라일터 공고이면서 공고문 요약(job_summaries)이 있고, 합격자 발표·면접 안내·채용 계획이 아닌 채용 공고.
+    잡알리오 공고는 첨부를 받지 않아 요약이 없다. IndexNow(네이버·빙)는 그대로 다 보낸다.
+    """
+    from blog_daily import is_opening  # noqa: PLC0415 — 같은 기준(채용 공고인지)을 쓴다
+
+    ids = {u.rsplit("/", 1)[-1]: u for u in urls}
+    gojobs = [urllib.parse.unquote(i) for i in ids if not urllib.parse.unquote(i).startswith("a")]
+    if not gojobs:
+        return set()
+    have: set[str] = set()
+    titles: dict[str, str] = {}
+    for i in range(0, len(gojobs), 200):
+        chunk = gojobs[i:i + 200]
+        rows = sb.table("job_summaries").select("source_id").in_("source_id", chunk).execute().data or []
+        have |= {r["source_id"] for r in rows}
+        rows = sb.table("job_posts").select("source_id,title").eq("source", "gojobs").in_("source_id", chunk).execute().data or []
+        titles |= {r["source_id"]: r.get("title") or "" for r in rows}
+    ok = {sid for sid in have if is_opening(titles.get(sid, ""))}
+    return {u for i, u in ids.items() if urllib.parse.unquote(i) in ok}
+
+
 def google_token() -> str | None:
     """서비스 계정 JSON 또는 계정 로그인(OAuth) 토큰(pipeline/google_auth.py)."""
     from google_auth import INDEXING, access_token  # noqa: PLC0415
@@ -124,7 +150,12 @@ def main():
         for u in v[:3]:
             print(f"  {k}: {u}")
     indexnow(got["jobs"] + got["programs"] + got["pages"], a.dry)
-    google_publish(got["jobs"], got["closed"], a.dry)
+    keep = google_worthy(sb, got["jobs"] + got["closed"])
+    new_jobs = [u for u in got["jobs"] if u in keep]
+    closed = [u for u in got["closed"] if u in keep]
+    print(f"구글로 보낼 공고: 새 공고 {len(got['jobs'])} 중 {len(new_jobs)}, 어제 마감 {len(got['closed'])} 중 {len(closed)}"
+          " (나라일터 채용 공고 가운데 공고문 요약이 붙은 것만)")
+    google_publish(new_jobs, closed, a.dry)
 
 
 if __name__ == "__main__":
