@@ -93,6 +93,16 @@ class HwpxTest(unittest.TestCase):
         self.assertEqual([p["text"] for p in again], ["고친 첫 문단", "표 앞\t탭 뒤", "칸1 고침\n둘째 줄", "칸2a", "칸2 새 문단\t탭", "그 다음", "빈 문단에 글"])
         self.assertEqual([p["depth"] for p in again], [0, 0, 1, 1, 1, 1, 0])
 
+    def test_text_follows_inserts_and_deletes(self):
+        # 회귀: txt 가 연 때의 문단 목록으로 만들어져 지운 문단이 남고 더한 문단이 빠졌다.
+        doc = HwpxDocument(hwpx_with_table())
+        doc.apply([{"op": "del", "id": "4"}, {"op": "ins", "after": "0", "id": "n1", "text": "새 문단"}])
+        self.assertEqual(doc.to_text().split("\n"), ["첫 문단 둘째 run", "새 문단", "표 앞\t탭 뒤", "칸1", "칸2a", ""])
+        doc.apply([{"op": "set", "id": "n1", "text": "고친 새 문단"}, {"op": "del", "id": "5"}])
+        self.assertEqual(doc.to_text().split("\n"), ["첫 문단 둘째 run", "고친 새 문단", "표 앞\t탭 뒤", "칸1", "칸2a"])
+        with zipfile.ZipFile(io.BytesIO(doc.to_bytes())) as z:
+            self.assertEqual(z.read("Preview/PrvText.txt").decode("utf-16"), doc.to_text())
+
     def test_delete_rules(self):
         doc = HwpxDocument(hwpx_with_table())
         with self.assertRaises(HwpxError):
@@ -124,6 +134,34 @@ class HwpxTest(unittest.TestCase):
         self.assertTrue(doc.paragraphs()[0]["hasObjects"])  # secPr
         doc.apply([{"op": "set", "id": "1", "text": "바뀜"}])
         self.assertEqual(HwpxDocument(doc.to_bytes()).paragraphs()[1]["text"], "바뀜")
+
+    def test_template_container_rootfile_unprefixed(self):
+        # 회귀: rootfile 속성을 ocf:full-path 로 쓰면 한글 2020 이 파일을 열다 죽는다. 한글이 쓰는 대로 접두사 없이.
+        import xml.etree.ElementTree as ET
+        with zipfile.ZipFile(io.BytesIO(build_hwpx(["a"]))) as z:
+            root = ET.fromstring(z.read("META-INF/container.xml"))
+            rootfiles = root.findall(".//{urn:oasis:names:tc:opendocument:xmlns:container}rootfile")
+            self.assertEqual([rf.attrib for rf in rootfiles],
+                             [{"full-path": "Contents/content.hpf", "media-type": "application/hwpml-package+xml"}])
+            self.assertIn("Contents/content.hpf", z.namelist())
+
+    @unittest.skipUnless(os.environ.get("HWP_EDITOR_HANGUL"), "한글(HWPFrame.HwpObject) 이 깔린 Windows 에서 HWP_EDITOR_HANGUL=1 일 때만")
+    def test_template_opens_in_hangul(self):
+        """만든 HWPX 를 실제 한글로 열어 본다. 파일 접근 보안 모듈(FilePathCheckerModule) 이 등록돼 있어야 창 없이 돈다."""
+        import tempfile
+        import win32com.client
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "t.hwpx")
+            with open(path, "wb") as f:
+                f.write(build_hwpx(["하나", "둘\t탭", ""], "제목"))
+            hwp = win32com.client.Dispatch("HWPFrame.HwpObject")
+            try:
+                hwp.RegisterModule("FilePathCheckDLL", "FilePathCheckerModule")
+                self.assertTrue(hwp.Open(path, "HWPX", "forceopen:true"))  # 고치기 전에는 여기서 한글이 죽었다
+                self.assertEqual(hwp.GetTextFile("TEXT", "").split("\r\n")[:2], ["하나", "둘\t탭"])
+                hwp.Clear(1)
+            finally:
+                hwp.Quit()
 
 
 # ── 최소 OLE 복합 문서(CFB) 만들기: 4096 바이트 미만 스트림만 담아 모두 미니 스트림에 둔다 ──
@@ -298,6 +336,37 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(HwpxDocument(out).paragraphs()[0]["text"], "서버로 고침")
         status, _, txt = self.post("/api/save", json.dumps({"token": info["token"], "ops": [], "format": "txt"}).encode())
         self.assertTrue(txt.decode("utf-8").startswith("서버로 고침\n표 앞\t탭 뒤\n칸1"))
+
+    def test_hwpx_txt_after_insert_and_delete(self):
+        # 회귀: HWPX 를 txt 로 내려받으면 지운 문단이 남고 더한 문단이 빠졌다(글 고침만 반영됐다).
+        status, _, body = self.post("/api/open", hwpx_with_table(), {"X-Filename": "t.hwpx"})
+        token = json.loads(body)["token"]
+        ops = [{"op": "del", "id": "4"}, {"op": "ins", "after": "0", "id": "n1", "text": "더한 문단"}, {"op": "set", "id": "2", "text": "칸 고침"}]
+        status, _, txt = self.post("/api/save", json.dumps({"token": token, "ops": ops, "format": "txt"}).encode())
+        self.assertEqual(status, 200, txt)
+        self.assertEqual(txt.decode("utf-8").split("\n"), ["첫 문단 둘째 run", "더한 문단", "표 앞\t탭 뒤", "칸 고침", "칸2a", ""])
+        # HWPX 로 한 번 저장한 뒤에도 같아야 한다
+        ops = [{"op": "del", "id": "n1"}, {"op": "ins", "after": "5", "id": "n2", "text": "끝 문단"}]
+        status, _, out = self.post("/api/save", json.dumps({"token": token, "ops": ops, "format": "hwpx"}).encode())
+        self.assertEqual(status, 200, out)
+        status, _, txt = self.post("/api/save", json.dumps({"token": token, "ops": [], "format": "txt"}).encode())
+        self.assertEqual(txt.decode("utf-8").split("\n"), ["첫 문단 둘째 run", "표 앞\t탭 뒤", "칸 고침", "칸2a", "", "끝 문단"])
+        self.assertEqual(txt.decode("utf-8"), HwpxDocument(out).to_text())
+
+    def test_port_fallback_when_taken(self):
+        # 회귀: Windows 에서 SO_REUSEADDR 때문에 두 번째 편집기도 같은 포트에 묶여 다음 번호로 넘어가지 않았다.
+        first = app_mod.make_server("127.0.0.1", 0)
+        try:
+            taken = first.server_address[1]
+            second = app_mod.make_server("127.0.0.1", taken, tries=10)
+            try:
+                self.assertNotEqual(second.server_address[1], taken)
+            finally:
+                second.server_close()
+            with self.assertRaises(OSError):
+                app_mod.make_server("127.0.0.1", taken, tries=1)
+        finally:
+            first.server_close()
 
     def test_open_edit_save_hwp(self):
         data = build_hwp([sample_hwp_records("공고", "모집 분야")])

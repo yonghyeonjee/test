@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import secrets
+import socket
 import sys
 import threading
 import time
@@ -194,6 +195,30 @@ def _apply_to_items(items: list[tuple[str, str]], ops: list[dict]) -> list[tuple
     return items
 
 
+class EditorServer(ThreadingHTTPServer):
+    """HTTPServer 는 SO_REUSEADDR 를 켠다. Windows 에서는 그러면 이미 쓰이는 포트에도 또 묶여 버려
+    두 번째 편집기가 다음 포트로 넘어가지 못하므로, Windows 에서는 끄고 그 포트를 혼자 쓰게 한다."""
+
+    if os.name == "nt":
+        allow_reuse_address = False
+
+        def server_bind(self):
+            if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            super().server_bind()
+
+
+def make_server(host: str, port: int, tries: int = 20) -> EditorServer:
+    """``port`` 부터 ``tries`` 개 번호를 차례로 시도해 처음 열리는 포트로 서버를 만든다."""
+    last: OSError | None = None
+    for p in range(port, port + tries):
+        try:
+            return EditorServer((host, p), Handler)
+        except OSError as e:
+            last = e
+    raise OSError(f"{host}:{port} 부터 {tries}개 포트를 열 수 없습니다 ({last})")
+
+
 def _expire():
     now = time.time()
     for k in [k for k, v in _docs.items() if now - v["at"] > DOC_TTL]:
@@ -210,16 +235,11 @@ def main(argv=None):
     for stream in (sys.stdout, sys.stderr):
         if stream is not None and hasattr(stream, "reconfigure"):
             stream.reconfigure(errors="replace")
-    httpd = None
     # 더블클릭으로 켰는데 포트가 이미 쓰이고 있으면(앞서 켠 편집기 등) 다음 번호를 몇 개 더 시도한다.
-    for port in range(args.port, args.port + 20):
-        try:
-            httpd = ThreadingHTTPServer((args.host, port), Handler)
-            break
-        except OSError as e:
-            last = e
-    if httpd is None:
-        print(f"{args.host}:{args.port} 부터 20개 포트를 열 수 없습니다 ({last}). --port 로 다른 번호를 주세요.", file=sys.stderr)
+    try:
+        httpd = make_server(args.host, args.port)
+    except OSError as e:
+        print(f"{e}. --port 로 다른 번호를 주세요.", file=sys.stderr)
         if getattr(sys, "frozen", False):
             input("아무 키나 누르면 닫힙니다...")
         return 1

@@ -31,12 +31,13 @@ MANIFEST_XML = (
     '</odf:manifest>'
 )
 
+# rootfile 의 속성은 접두사 없이 써야 한다. ocf:full-path 처럼 쓰면 한글 2020(11.0.0.1623) 이 열다가 죽는다.
 CONTAINER_XML = (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
     '<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container" '
     'xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf">\n'
     '  <ocf:rootfiles>\n'
-    '    <ocf:rootfile ocf:full-path="Contents/content.hpf" ocf:media-type="application/hwpml-package+xml"/>\n'
+    '    <ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwpml-package+xml"/>\n'
     '  </ocf:rootfiles>\n'
     '</ocf:container>'
 )

@@ -295,4 +295,17 @@ class HwpxDocument:
         return buf.getvalue()
 
     def to_text(self) -> str:
-        return "\n".join(para_text(m["el"]) for m in self.meta)
+        """지금 문서의 글. ``self.meta`` 는 연 때의 목록이라 지우고 더한 문단이 빠지므로 섹션 XML 을 다시 훑는다."""
+        return "\n".join(para_text(p) for p in self._iter_paras())
+
+    def _iter_paras(self):
+        """섹션 순서·문서 순서대로 모든 ``<hp:p>``(표 칸 안 포함)."""
+
+        def walk(el: ET.Element):
+            for child in el:
+                if child.tag == HP + "p":
+                    yield child
+                yield from walk(child)
+
+        for name in self.section_names:
+            yield from walk(self.roots[name])
