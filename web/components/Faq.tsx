@@ -1,3 +1,4 @@
+import Paras from "./Paras";
 import type { QA } from "@/lib/faq";
 
 /**
@@ -29,7 +30,7 @@ export default function Faq({ items, title = "자주 묻는 질문" }: { items: 
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </summary>
-            <p className="pb-4 text-[14.5px] leading-[1.8] text-ink2">{x.a}</p>
+            <div className="space-y-2 pb-4 text-[14.5px] leading-[1.8] text-ink2"><Paras text={x.a} /></div>
           </details>
         ))}
       </div>

@@ -165,7 +165,10 @@ export default function YouthFutureSavingsPage() {
         <p className="mt-5 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 text-[16px] leading-[1.85] text-ink">
           매달 최대 50만원을 3년 동안 넣으면 정부가 낸 돈의 <strong>6%나 12%</strong>를 얹어 주고(<a href="#types" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">일반형과 우대형</a>),
           이자에는 <strong>세금을 떼지 않는</strong> 적금입니다. 1차 때 234만명이 몰렸던 그 상품의 두 번째 모집입니다.
-          <strong>신청 기간이 열흘뿐</strong>이라 <a href="#schedule" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">날짜</a>부터 적어 두시는 편이 좋습니다.
+          {ph === "apply"
+            ? <><strong>신청 기간이 열흘뿐</strong>이라 <a href="#schedule" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">날짜</a>부터 적어 두시는 편이 좋습니다.</>
+            : ph === "done" ? <>2차 모집은 끝났고, 아래 내용은 다음 모집 때 참고가 됩니다.</>
+            : <>신청한 분은 <a href="#schedule" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">계좌 개설 기간</a>을 놓치지 마세요.</>}
           가구소득 조건은{" "}
           <Link href="/blog/income" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">기준 중위소득 계산기</Link>로
           먼저 확인할 수 있습니다.
