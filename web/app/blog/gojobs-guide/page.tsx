@@ -8,6 +8,7 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import SerifFont from "@/components/SerifFont";
 import Toc from "@/components/Toc";
 import { postRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
@@ -177,7 +178,8 @@ export default function GojobsGuidePage() {
   });
 
   return (
-    <article className="py-4">
+    <article className="mx-auto max-w-[44rem] py-4">
+      <SerifFont />
       <JsonLd data={ld} />
 
       <nav aria-label="위치" className="text-[13px] text-muted">
@@ -186,12 +188,13 @@ export default function GojobsGuidePage() {
         <span className="text-ink2">나라일터 이용법</span>
       </nav>
 
-      <header className="mt-3">
-        <h1 className="display text-[1.75rem] leading-tight">
+      <header className="mt-4 sm:mt-6">
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">
           나라일터 채용공고, 절반이 7일 안에 마감됩니다
         </h1>
-        <p className="num mt-2 text-xs text-faint">{UPDATED} 기준</p>
-        <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
+        <p className="num mt-4 text-[13px] text-faint"><span className="font-semibold text-brand">K나라지원</span> · {UPDATED} 기준 · 읽는 데 7분</p>
+        <div className="mt-6"><GojobsHero /></div>
+        <p className="mt-5 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 text-[16px] leading-[1.85] text-ink">
           <a href="https://www.gojobs.go.kr" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 decoration-brand/40 hover:text-brand"><strong>나라일터</strong>(gojobs.go.kr)</a>는
           인사혁신처가 운영하는 공직 채용 공고 사이트입니다. 중앙부처와 지자체, 교육청과 학교,
           공공기관이 뽑는 <strong>공무직·기간제·임기제</strong> 자리가 여기 올라옵니다. K나라지원은 이 공고를
@@ -202,7 +205,6 @@ export default function GojobsGuidePage() {
           보니 처음 쓰는 사람이 알아 두면 좋은 것이 몇 가지 보였습니다. <strong>절반이 일주일 안에 마감</strong>된다는
           것이 그 첫째입니다(<a href="#deadline" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">접수 기간</a>).
         </p>
-        <div className="mt-5"><GojobsHero /></div>
       </header>
 
       <Toc items={[{ id: "glance", label: "한눈에" }, { id: "steps", label: "지원하는 순서" }, { id: "deadline", label: "접수 기간은 생각보다 짧습니다" }, { id: "roles", label: "어떤 자리가 올라오나" }, { id: "when", label: "언제 올라오나" }, { id: "where", label: "어디 자리가 많나" }, { id: "pitfalls", label: "처음 쓰면 막히는 곳" }, { id: "services", label: "나라일터에 있는 다른 서비스" }, { id: "faq", label: "자주 묻는 질문" }, { id: "sources", label: "확인한 곳" }]} />

@@ -29,6 +29,12 @@ import re
 import sys
 import time
 
+def org_href(org: str) -> str:
+    """기관 쪽 주소. 글 속 링크 [이름](주소)는 빈칸·괄호에서 끊기므로 그것만 인코딩한다(한글은 그대로 둔다).
+    2026-10-17: "충청북도 옥천군" 같은 이름이 링크가 되지 않고 글자 그대로 보였다."""
+    return "/jobs/org/" + org.replace("%", "%25").replace(" ", "%20").replace("(", "%28").replace(")", "%29")
+
+
 KINDS = ["topic", "org", "role", "region", "license", "sigungu"]   # 날마다 돌아가며 쓰는 갈래
 DAILY = "daily"                                                     # 날마다 반드시 쓰는 갈래(채용 브리핑)
 ALL_KINDS = KINDS + [DAILY]
@@ -177,7 +183,7 @@ def write_org(s: dict) -> dict:
     peaks = peak_months(bm)
     med = s.get("win_med")
     win_n, le7 = int(s.get("win_n") or 0), int(s.get("win_le7") or 0)
-    org_url = f"/jobs/org/{org}"
+    org_url = org_href(org)
     blocks: list[dict] = []
     toc = []
 
@@ -322,7 +328,7 @@ def write_role(role: dict, s: dict) -> dict:
         toc.append(("orgs", "어느 기관이 자주 뽑나"))
         blocks.append(H2("어느 기관이 자주 뽑나", "orgs"))
         blocks.append(TABLE(["기관", "최근 3년 공고", "접수 중"],
-                            [[f"[{o['org']}](/jobs/org/{o['org']})", f"{n(o['n'])}건", f"{n(o['open_n'])}건" if o.get("open_n") else "—"] for o in orgs]))
+                            [[f"[{o['org']}]({org_href(o['org'])})", f"{n(o['n'])}건", f"{n(o['open_n'])}건" if o.get("open_n") else "—"] for o in orgs]))
         top_share = pct(sum(int(o["n"]) for o in orgs[:3]), n3y)
         if top_share >= 30:
             blocks.append(P(f"상위 세 기관이 전체의 **{top_share}%**를 차지합니다. 이 기관들의 [채용 이력](/jobs/org)을 따로 봐 두면 시기를 잡기 쉽습니다."))
@@ -360,7 +366,7 @@ def write_role(role: dict, s: dict) -> dict:
     blocks.append(H2("이렇게 찾으세요", "howto"))
     tips = [f"[{name} 채용 공고]({q_url})에서 **접수 중만** 켜고 지역 칩으로 좁힙니다."]
     if orgs:
-        tips.append(f"자주 뽑는 기관([{orgs[0]['org']}](/jobs/org/{orgs[0]['org']}) 등)은 기관 이력 페이지를 저장해 둡니다.")
+        tips.append(f"자주 뽑는 기관([{orgs[0]['org']}]({org_href(orgs[0]['org'])}) 등)은 기관 이력 페이지를 저장해 둡니다.")
     if peaks and n3y >= 24:
         tips.append(f"공고가 많은 **{'·'.join(MONTHS[m - 1] for m, _ in peaks[:2])}** 앞뒤로 더 자주 확인합니다.")
     tips.append("접수 순서와 서류는 [나라일터 이용법](/blog/gojobs-guide)에 정리해 두었습니다.")
@@ -512,7 +518,7 @@ def write_region(s: dict) -> dict:
     txt = f"최근 3년 {sh} 지역 채용 공고는 **{n(jobs_3y)}건**입니다. "
     orgs = s.get("jobs_orgs") or []
     if orgs:
-        txt += "자주 뽑는 기관: " + ", ".join(f"[{o['org']}](/jobs/org/{o['org']}) {n(o['n'])}건" for o in orgs[:4]) + "."
+        txt += "자주 뽑는 기관: " + ", ".join(f"[{o['org']}]({org_href(o['org'])}) {n(o['n'])}건" for o in orgs[:4]) + "."
     blocks.append(P(txt))
     if s.get("jobs_open_list"):
         blocks.append(LINKS([{"href": f"/jobs/{r['id']}", "label": f"{r['title']} — {r.get('org') or ''} · {kdate(r['end'])} 마감"} for r in s["jobs_open_list"]]))
@@ -798,14 +804,14 @@ def write_sigungu(s: dict) -> dict:
     orgs = s.get("jobs_orgs") or []
     if jobs_3y:
         txt = f"최근 3년 나라일터에 올라온 {sg} 쪽 채용 공고는 **{n(jobs_3y)}건**입니다. "
-        txt += "기관별로는 " + ", ".join(f"[{o['org']}](/jobs/org/{o['org']}) {n(o['n'])}건" for o in orgs[:4]) + "."
+        txt += "기관별로는 " + ", ".join(f"[{o['org']}]({org_href(o['org'])}) {n(o['n'])}건" for o in orgs[:4]) + "."
         blocks.append(P(txt))
         bm = s.get("jobs_by_month") or []
         peaks = peak_months(bm)
         if jobs_3y >= 24 and peaks:
             blocks.append(BARS(month_bars(bm)))
             top3 = sum(c for _, c in peaks)
-            blocks.append(P(f"**{'·'.join(MONTHS[m - 1] for m, _ in peaks)}**에 {n(top3)}건, 전체의 {pct(top3, jobs_3y)}%가 올라왔습니다. 이 달들 앞뒤로 [{orgs[0]['org']} 채용 이력](/jobs/org/{orgs[0]['org']})을 확인해 두면 놓치지 않습니다." if orgs else ""))
+            blocks.append(P(f"**{'·'.join(MONTHS[m - 1] for m, _ in peaks)}**에 {n(top3)}건, 전체의 {pct(top3, jobs_3y)}%가 올라왔습니다. 이 달들 앞뒤로 [{orgs[0]['org']} 채용 이력]({org_href(orgs[0]['org'])})을 확인해 두면 놓치지 않습니다." if orgs else ""))
         if s.get("jobs_open_list"):
             blocks.append(LINKS([{"href": f"/jobs/{r['id']}", "label": f"{r['title']} — {r.get('org') or ''} · {kdate(r['end'])} 마감"} for r in s["jobs_open_list"]]))
         else:
@@ -879,9 +885,11 @@ def write_daily(s: dict) -> dict:
     hire = {}
     for r in fresh:
         hire[r.get("hire") or "구분 없음"] = hire.get(r.get("hire") or "구분 없음", 0) + 1
+    # 기관 쪽(/jobs/org)은 나라일터 이력만 센다. 잡알리오 공고(번호가 a 로 시작)로 센 기관은 그 쪽이 404 일 수
+    # 있어 나라일터 공고로만 센다. 이름에 빈칸·괄호가 있으면 글 속 링크가 깨지므로 주소는 org_href 로 만든다.
     orgs = {}
     for r in fresh:
-        if r.get("org"):
+        if r.get("org") and not str(r.get("source_id", "")).startswith("a"):
             orgs[r["org"]] = orgs.get(r["org"], 0) + 1
     top_orgs = sorted(orgs.items(), key=lambda kv: -kv[1])[:5]
 
@@ -896,12 +904,13 @@ def write_daily(s: dict) -> dict:
     if fresh:
         toc.append(("fresh", f"새로 올라온 공고 {n(len(fresh))}건"))
         blocks.append(H2(f"새로 올라온 공고 {n(len(fresh))}건", "fresh"))
+        # 2026-10-16 "너무 길다"는 말에 60건 → 40건, 지역마다 5건까지. 나머지는 지역별 채용 링크로.
         shown = 0
         for region, rows in regions:
-            if shown >= 60:
+            if shown >= 40:
                 break
             rows = sorted(rows, key=lambda r: (r.get("end_date") or "9999", r.get("title") or ""))
-            take = rows[: max(3, min(len(rows), 60 - shown))]
+            take = rows[: max(3, min(len(rows), 5, 40 - shown))]
             blocks.append(P(f"**{region}** {n(len(rows))}건" + (f" · [{short_sido(region) or region} 채용 전체](/jobs/region/{region})" if region != "전국·중앙부처" else "")))
             blocks.append(LINKS([link(r) for r in take]))
             shown += len(take)
@@ -912,16 +921,16 @@ def write_daily(s: dict) -> dict:
         toc.append(("closing", "사흘 안에 마감"))
         blocks.append(H2("사흘 안에 마감", "closing"))
         blocks.append(P("오늘부터 모레까지 접수가 끝나는 공고입니다. 마감 시각은 공고마다 달라 보통 오후 6시 전후이니 그날 오전에 내는 편이 안전합니다."))
-        blocks.append(LINKS([link(r) for r in closing[:25]]))
-        if len(closing) > 25:
-            blocks.append(P(f"그 밖에 {n(len(closing) - 25)}건이 더 있습니다. [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
+        blocks.append(LINKS([link(r) for r in closing[:15]]))
+        if len(closing) > 15:
+            blocks.append(P(f"그 밖에 {n(len(closing) - 15)}건이 더 있습니다. [마감 달력](/calendar)에서 날짜별로, [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
 
     if len(fresh) >= 5:
         toc.append(("mix", "어떤 자리인가"))
         blocks.append(H2("어떤 자리인가", "mix"))
         blocks.append(BARS([{"label": k, "n": v} for k, v in sorted(hire.items(), key=lambda kv: -kv[1])[:8]]))
         if top_orgs:
-            blocks.append(P("오늘 공고를 많이 낸 기관: " + ", ".join(f"[{o}](/jobs/org/{o}) {n(c)}건" for o, c in top_orgs) + "."))
+            blocks.append(P("오늘 공고를 많이 낸 기관: " + ", ".join(f"[{o}]({org_href(o)}) {n(c)}건" for o, c in top_orgs) + "."))
 
     toc.append(("howto", "놓치지 않으려면"))
     blocks.append(H2("놓치지 않으려면", "howto"))

@@ -138,6 +138,21 @@ const g = (r: Record<string, string>, ...keys: string[]) => {
   return null;
 };
 
+/**
+ * 알리오 설명칸에는 편집기 HTML 이 그대로 오는 줄이 있다(시설 1,082건 중 647건, 2026-10-17).
+ * 태그를 걷고 &nbsp; 같은 문자 참조를 풀어 한 줄 글로. 빈 글이면 null.
+ */
+export function plainText(v: string | null | undefined): string | null {
+  if (!v) return null;
+  const t = v
+    .replace(/<br\s*\/?>(?!\n)/gi, " ").replace(/<\/(p|div|li|tr)>/gi, " ").replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&middot;/g, "·")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/&[a-z]+;/gi, " ")
+    .replace(/\s+/g, " ").trim();
+  return t || null;
+}
+
 const iso = (v: string | null) => {
   const m = v?.match(/(\d{4})[.\-/]?(\d{2})[.\-/]?(\d{2})/);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
@@ -150,7 +165,7 @@ export function toBusiness(r: Record<string, string>): AlioItem | null {
   return {
     id: `${g(r, "apbaNa") ?? ""}|${title}`,
     title, org: g(r, "apbaNa"), cate: g(r, "cateNaPath", "cateNa"),
-    target: g(r, "guideTar"), desc: g(r, "bsnDsc"), address: null,
+    target: plainText(g(r, "guideTar")), desc: plainText(g(r, "bsnDsc")), address: null,
     start: iso(g(r, "bsnStDt")), end: iso(g(r, "bsnEndDt")),
     url: g(r, "siteUrl"), tags,
   };
@@ -166,7 +181,7 @@ export function toEvent(r: Record<string, string>): AlioItem | null {
   return {
     id: `${g(r, "apbaNa") ?? ""}|${title}|${g(r, "evtStDt") ?? ""}`,
     title, org: g(r, "apbaNa", "hostName"), cate: g(r, "cateNaPath", "cateNa"),
-    target: g(r, "evtTar"), desc: g(r, "evtDsc"), address: g(r, "address"),
+    target: plainText(g(r, "evtTar")), desc: plainText(g(r, "evtDsc")), address: g(r, "address"),
     start: iso(g(r, "evtStDt")), end: iso(g(r, "evtEndDt")),
     url: g(r, "aplMthUrl"), tags,
   };
@@ -182,7 +197,7 @@ export function toFacility(r: Record<string, string>): AlioItem | null {
   return {
     id: `${g(r, "apbaNa") ?? ""}|${title}|${g(r, "address") ?? ""}`,
     title, org: g(r, "apbaNa"), cate: g(r, "cateNaPath"),
-    target: g(r, "guideTar"), desc: g(r, "guideDsc"), address: g(r, "address"),
+    target: plainText(g(r, "guideTar")), desc: plainText(g(r, "guideDsc")), address: g(r, "address"),
     start: null, end: null, url: g(r, "siteUrl"), tags,
   };
 }

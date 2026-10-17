@@ -171,11 +171,12 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         return (
           <p className="flex flex-wrap items-center gap-2 text-sm font-bold">
             {topic && (
-              <span className="inline-flex items-center gap-1.5 rounded-pill py-0.5 pl-0.5 pr-2.5 text-[13px]"
+              <Link href={`/topic/${topic.slug}`} title={`${topic.long} 사업 모아 보기`}
+                    className="inline-flex items-center gap-1.5 rounded-pill py-0.5 pl-0.5 pr-2.5 text-[13px] transition-opacity hover:opacity-80"
                     style={{ background: topic.soft, color: topic.color }}>
                 <TopicIcon slug={topic.slug} color={topic.color} soft="transparent" size={24} />
                 {topic.name}
-              </span>
+              </Link>
             )}
             <span>{where}</span>
           </p>

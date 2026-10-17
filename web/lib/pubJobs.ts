@@ -19,6 +19,15 @@ export const JOB_SOURCES = ["gojobs"];
 export const SOURCE_OP = JOB_SOURCES.length === 1 ? "eq" : "in";
 export const SOURCE_VAL = JOB_SOURCES.length === 1 ? JOB_SOURCES[0] : `(${JOB_SOURCES.join(",")})`;
 
+/**
+ * 상세 쪽(공고 한 건)이 읽는 출처. 목록은 아직 나라일터만(JOB_SOURCES) 읽지만, 잡알리오 공고도 매일 받아
+ * 두고 브리핑 글(pipeline/blog_daily.py)과 색인 알림(pipeline/indexing.py)이 그 주소를 내보낸다.
+ * 상세가 나라일터만 찾자 접수 중인 잡알리오 공고가 전부 "내려간 공고"(200 + noindex)로 나갔다 —
+ * 2026-10-17 서치 콘솔 noindex 목록과 서버 캐시에서 확인. 한 건 찾기는 source_id 인덱스를 타므로
+ * 출처가 둘이어도 10-06 목록 장애(정렬 인덱스를 못 탐)와 달리 느려지지 않는다.
+ */
+export const DETAIL_SOURCES = ["gojobs", "alio"];
+
 export { filterJobs, jobTermsUsed, regionTokens, type JobFilter } from "./jobFilter";
 
 /**
@@ -56,6 +65,8 @@ export type JobBoard = {
   reason: string | null;
   jobs: Job[];
   total: number;
+  /** DB 를 읽지 못해 비었다(없어서 빈 것과 다르다). 상세·기관 쪽은 이때 404 대신 던져 캐시에 남기지 않는다. */
+  failed?: boolean;
 };
 
 const ALIAS: Record<keyof Omit<Job, "status">, string[]> = {
@@ -250,20 +261,21 @@ export function facets(jobs: Job[], f: JobFilter = {}) {
  */
 export const getJob = cache(async (sourceId: string): Promise<Job | null> => {
   if (!dbConfigured) return null;
-  try {
-    const { data } = await db
-      .from("job_posts")
-      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
-      .filter("source", SOURCE_OP, SOURCE_VAL)
-      .eq("source_id", sourceId)
-      .maybeSingle();
-    if (!data) return null;
-    return toStoredJob(data as Stored);
-  } catch (e) {
-    // DB 가 잠깐 안 될 때 null 을 돌려주면 그 공고는 "없는 쪽"(404) 이 된다.
-    // 검색엔진은 그걸 보고 색인에서 지운다. 없는 것과 못 읽은 것은 다르다.
-    throw e;
-  }
+  // DB 가 잠깐 안 될 때 null 을 돌려주면 그 공고는 "내려간 공고"(200 + noindex)로 그려지고
+  // ISR 에 사흘 남는다. 검색엔진은 그걸 보고 색인에서 지운다. 없는 것과 못 읽은 것은 다르다.
+  // supabase-js 는 시간 초과·5xx 를 던지지 않고 { data: null, error } 로 돌려준다 — 그래서 예전의
+  // try/catch 는 한 번도 돌지 않았다(2026-10-17 SEO 점검). error 를 직접 보고 던진다. 던지면 첫 렌더는
+  // 500(캐시 안 됨), 재생성은 실패로 남아 이전의 멀쩡한 쪽이 계속 나간다.
+  const { data, error } = await db
+    .from("job_posts")
+    .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+    .in("source", DETAIL_SOURCES)
+    .eq("source_id", sourceId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(`[getJob ${sourceId}] ${error.message}`);
+  if (!data) return null;
+  return toStoredJob(data as Stored);
 });
 
 /**
@@ -289,7 +301,7 @@ export const getJobAttach = cache(async (sourceId: string): Promise<JobAttach | 
   try {
     const { data } = await db
       .from("job_posts").select("url,korea:raw->korea,gojobs:raw->gojobs")
-      .filter("source", SOURCE_OP, SOURCE_VAL).eq("source_id", sourceId).maybeSingle();
+      .in("source", DETAIL_SOURCES).eq("source_id", sourceId).limit(1).maybeSingle();
     const row = data as { url: string | null; korea?: Partial<JobAttach> | null; gojobs?: GojobsDetail | null } | null;
     const k = row?.korea;
     if (k && k.url && Array.isArray(k.files))
@@ -512,6 +524,19 @@ export const getOrgStat = cache(async (org: string): Promise<OrgStat | null> => 
 });
 
 /**
+ * 기관 쪽(/jobs/org)이 쓰는 엄격한 판. DB 오류를 "없는 기관"으로 읽지 않고 던진다.
+ * 느슨한 getOrgStat 은 오류를 null 로 삼킨다. 기관 쪽은 null 이고 목록도 비면 notFound() 를 부르고
+ * 그 404 가 세 시간 캐시에 남았다(2026-10-17 점검, getJob 과 같은 결함). 공고 상세의 곁가지 통계는
+ * 느슨한 판을 그대로 쓴다 — 곁가지 하나 때문에 공고 쪽 전체가 500 이 되면 안 된다.
+ */
+export const getOrgStatStrict = cache(async (org: string): Promise<OrgStat | null> => {
+  if (!dbConfigured) return null;
+  const { data, error } = await db.from("job_org_stats").select(ORG_COLS).eq("org", org).maybeSingle();
+  if (error) throw new Error(`[getOrgStat ${org}] ${error.message}`);
+  return data ? toOrgStat(data as Record<string, unknown>) : null;
+});
+
+/**
  * 공고를 많이 낸 기관 순. 기관 목차와 사이트맵이 쓴다.
  *
  * 두 건짜리 기관까지 4,564곳이 있다. 전부 페이지로 만들면 알맹이 없는
@@ -558,7 +583,7 @@ export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> 
       total: count ?? jobs.length,
     };
   } catch {
-    return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0 };
+    return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0, failed: true };
   }
 }
 

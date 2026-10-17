@@ -11,13 +11,15 @@ const LINK_CLS = "underline underline-offset-4 decoration-brand/40 hover:text-br
 
 export function inline(text: string): ReactNode[] {
   const out: ReactNode[] = [];
-  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)\s]+)\)/g;
+  // 안쪽 주소(/로 시작)는 빈칸이 있어도 받는다. 자료 글이 "[충청북도 옥천군](/jobs/org/충청북도 옥천군)"처럼
+  // 기관 이름을 그대로 넣어 링크가 되지 않고 글자로 보였다(2026-10-17). 바깥 주소는 예전처럼 빈칸에서 끊는다.
+  const re = /\*\*([^*]+)\*\*|\[([^\]]+)\]\((\/[^)\n]+|[^)\s]+)\)/g;
   let last = 0, m: RegExpExecArray | null, i = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) out.push(text.slice(last, m.index));
     if (m[1] !== undefined) out.push(<strong key={i++}>{m[1]}</strong>);
     else {
-      const href = m[3];
+      const href = m[3].startsWith("/") ? m[3].trim().replace(/ /g, "%20") : m[3];
       out.push(
         href.startsWith("/")
           ? <Link key={i++} href={href} className={LINK_CLS}>{m[2]}</Link>

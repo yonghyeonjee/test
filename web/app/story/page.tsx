@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ArtJeonse } from "@/components/Art";
-import StoryCover from "@/components/StoryCover";
-import { IllusStory } from "@/components/Illus";
+import ArticleList, { type Article } from "@/components/ArticleList";
 import JsonLd from "@/components/JsonLd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
+import SerifFont from "@/components/SerifFont";
+import { blocksText, readMinutes } from "@/lib/readTime";
 import { blogIndexRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
 import { getStories, KIND_LABEL } from "@/lib/stories";
 
 /**
- * 블로그. 제도 설명(지원금 안내)과 달리, 한 사람이 실제로 겪을 법한 상황을
- * 따라가며 방법을 안내하는 글을 둔다. 사례는 각색한다.
+ * 블로그 목록. 브런치처럼 좁은 기둥에 한 줄씩 — 제목, 두 줄 요약, 갈래·날짜·읽는 시간, 작은 썸네일.
+ * 제도 설명(지원금 안내)과 달리, 자료를 세어 나온 것과 실제로 겪을 법한 사례를 둔다.
  */
 const DESC =
   "전세 만기에 집주인이 집을 판다고 할 때, 대출을 옮겨 이사할 때처럼 실제로 겪을 법한 상황을 따라가며 순서와 서류, 돈 계산을 안내합니다.";
@@ -25,14 +25,15 @@ export const metadata: Metadata = withOg({
   alternates: { canonical: "/story" },
 });
 
-const STORIES = [
+const STORIES: Article[] = [
   {
     href: "/story/jeonse-extension",
-    tag: "전세",
+    label: "전세 · 사례",
     title: "버팀목 전세대출 1개월 연장, 연장 후 이사까지",
-    desc: "집주인이 집을 판다고 할 때 세입자가 할 일. 집주인에게 보낼 문자, 한시적 연장 계약서, 목적물 변경, 돈 계산을 순서대로.",
+    excerpt: "집주인이 집을 판다고 할 때 세입자가 할 일. 집주인에게 보낼 문자, 한시적 연장 계약서, 목적물 변경, 돈 계산을 순서대로.",
     date: "2026-10-02",
-    Art: ArtJeonse,
+    mins: 9,
+    art: <ArtJeonse />,
   },
 ];
 
@@ -40,58 +41,40 @@ export const revalidate = 3600;
 
 export default async function StoryIndex() {
   const posts = await getStories(60);
+  const items: Article[] = [
+    ...STORIES,
+    ...posts.map((s): Article => ({
+      href: `/story/${encodeURIComponent(s.slug)}`,
+      title: s.title,
+      excerpt: s.summary,
+      label: KIND_LABEL[s.kind] ?? "글",
+      date: s.published_at,
+      mins: readMinutes(blocksText(s.body)),
+      kind: s.kind,
+    })),
+  ];
   return (
-    <div className="py-4">
+    <div className="mx-auto max-w-[46rem] py-4">
+      <SerifFont />
       <JsonLd
         data={pageGraph({
           path: "/story",
           name: "블로그 — 자료가 말해 주는 것, 매일 세 편",
           description: DESC,
           collection: true,
-          items: [
-            ...STORIES.map((s) => ({ name: s.title, path: s.href })),
-            ...posts.map((s) => ({ name: s.title, path: `/story/${encodeURIComponent(s.slug)}` })),
-          ].slice(0, 20),
+          items: items.map((a) => ({ name: a.title, path: a.href })).slice(0, 20),
         })}
       />
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <p className="eyebrow">블로그</p>
-          <h1 className="display mt-2 text-[1.9rem] leading-tight">자료가 말해 주는 것, 매일 세 편</h1>
-          <p className="mt-3 max-w-[34rem] leading-relaxed text-muted">
-            제도 설명은 지원금 안내에 있습니다. 여기서는 모아 둔 자료를 세어 나온 것을 매일 세 편씩
-            적습니다 — 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지, 자격증 합격률은 어떤지. 사례 글은
-            여러 경우를 섞어 각색합니다.
-          </p>
-        </div>
-        <div className="hidden h-32 w-44 shrink-0 sm:block"><IllusStory /></div>
-      </div>
+      <header className="pt-4 sm:pt-8">
+        <p className="eyebrow">블로그</p>
+        <h1 className="article-title mt-2 text-[1.75rem] leading-tight sm:text-[2.125rem]">자료가 말해 주는 것, 매일 세 편</h1>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">
+          모아 둔 자료를 세어 나온 것을 매일 세 편씩 적습니다. 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지,
+          자격증 합격률은 어떤지. 사례 글은 여러 경우를 섞어 각색합니다.
+        </p>
+      </header>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
-        {STORIES.map((s) => (
-          <Link key={s.href} href={s.href} className="card card-link group flex flex-col overflow-hidden">
-            <span className="flex h-36 items-center justify-center bg-gradient-to-br from-brandSoft to-surface2 px-6 py-3">
-              <span className="h-full w-44 transition-transform duration-300 group-hover:scale-[1.04]"><s.Art /></span>
-            </span>
-            <span className="flex flex-1 flex-col p-5">
-              <span className="text-[12px] font-bold text-brand">{s.tag} · 사례</span>
-              <b className="mt-1 block text-[15.5px] leading-snug group-hover:text-brand">{s.title}</b>
-              <span className="mt-1.5 line-clamp-3 text-[13.5px] leading-relaxed text-muted">{s.desc}</span>
-              <span className="num mt-auto block pt-3 text-xs text-faint">{s.date}</span>
-            </span>
-          </Link>
-        ))}
-        {posts.map((s) => (
-          <Link key={s.slug} href={`/story/${encodeURIComponent(s.slug)}`} className="card card-link group flex flex-col overflow-hidden">
-            <StoryCover kind={s.kind} label={KIND_LABEL[s.kind] ?? "글"} />
-            <span className="flex flex-1 flex-col p-5">
-              <b className="block text-[15.5px] leading-snug group-hover:text-brand">{s.title}</b>
-              <span className="mt-1.5 line-clamp-3 text-[13.5px] leading-relaxed text-muted">{s.summary}</span>
-              <span className="num mt-auto block pt-3 text-xs text-faint">{s.published_at}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
+      <ArticleList items={items} className="mt-6 border-t border-line" />
 
       <PromoBanner placement="story" context="money" />
       <RelatedLinks items={blogIndexRelated()} />

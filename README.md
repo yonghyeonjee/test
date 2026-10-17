@@ -108,5 +108,5 @@ npm 의 [tistory-mcp](https://github.com/kim-se-hee/tistory-mcp) 가 쓰는 길�
 5. 처음엔 `slug` 하나에 `visibility=private` 로 올려 보고, 티스토리 관리자에서 모양을 본 뒤 공개로 바꾼다.
 
 쿠키가 만료되면 실행이 종료 코드 2 로 빨갛게 실패하고 "쿠키가 만료됐다" 고 찍는다. 1~3 을 다시 한다.
-어느 글을 올렸는지는 `tistory_posts` 표(`sql/013`)에 남고, 한 글은 한 번만 올라간다.
+어느 글을 올렸는지는 `tistory_posts` 표(`sql/015`)에 남고, 한 글은 한 번만 올라간다.
 비공식 주소라 카카오 쪽이 바꾸면 멈출 수 있다. 그때는 `--check` 부터 돌려 본다.

@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { EMPLOYMENT, HOUSEHOLD } from "@/lib/consts";
 import { SIDO_SHORT } from "@/lib/geo";
+import { useLocate } from "@/lib/useLocate";
+import Glyph from "./Glyph";
 
 type Region = { sido: string; sigungu: { name: string; n: number }[] };
 
@@ -39,6 +41,18 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
   const [emp, setEmp] = useState<string | null>(null);
   const [hh, setHh] = useState<string[]>([]);
   const [going, setGoing] = useState(false);
+  const { locate, busy: locating, err: locErr } = useLocate();
+
+  // 위치를 허용하면 시·도·시·군·구를 바로 채우고 나이 단계로 넘어간다. 목록에 없는 시·군·구면 시·도까지만.
+  const byLocation = async () => {
+    const p = await locate();
+    if (!p) return;
+    const r = regions.find((x) => x.sido === p.sido);
+    if (!r) return;
+    setSido(r.sido);
+    setSigungu(p.sigungu && r.sigungu.some((g) => g.name === p.sigungu) ? p.sigungu : null);
+    setStep(1);
+  };
 
   const sorted = [...regions].sort((a, b) => rank(a.sido) - rank(b.sido));
   // "-" 처럼 이름이 아닌 것이 섞여 있다(원자료). 뺀다.
@@ -64,7 +78,8 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
 
   const tile = (on: boolean) =>
     `flex min-h-[52px] items-center justify-center rounded-[12px] border px-1.5 text-center text-[14.5px] font-bold leading-tight break-keep
-     transition-colors active:scale-[.97] ${on ? "border-brand bg-brand text-white" : "border-line bg-surface text-ink2 hover:border-brand hover:text-brand"}`;
+     transition-[color,background-color,border-color,transform] active:scale-[.97] hover:-translate-y-0.5
+     ${on ? "pop border-brand bg-brand text-white" : "border-line bg-surface text-ink2 hover:border-brand hover:text-brand"}`;
 
   return (
     <section aria-label="조건으로 찾기">
@@ -98,6 +113,7 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
         </div>
       )}
 
+      <div key={`${step}-${sido ?? ""}-${decade ?? ""}`} className="step-in">
       <h2 className="mt-4 text-[1.25rem] font-extrabold leading-snug tracking-[-.02em] sm:text-[1.375rem]">
         {step === 0 && (sido ? `${short(sido)} 어디에 사시나요?` : "어디에 사시나요?")}
         {step === 1 && (decade ? "정확한 나이를 골라 주세요" : "나이가 어떻게 되시나요?")}
@@ -114,7 +130,17 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
 
       {/* 1단계: 시·도 → 시·군·구 */}
       {step === 0 && !sido && (
-        <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-6">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={byLocation} disabled={locating}
+                  className="inline-flex items-center gap-1.5 rounded-pill border-[1.5px] border-brand/40 bg-brandSoft/60 px-3.5 py-2 text-[13.5px] font-bold text-brand transition-colors hover:bg-brandSoft disabled:opacity-60">
+            <Glyph name="pin" className="h-4 w-4" strokeWidth={2.2} />
+            {locating ? "위치 읽는 중…" : "내 위치로 고르기"}
+          </button>
+          {locErr && <span role="status" className="text-[12.5px] text-muted">{locErr}</span>}
+        </div>
+      )}
+      {step === 0 && !sido && (
+        <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
           {sorted.map((r) => (
             <button key={r.sido} type="button" className={tile(false)}
                     onClick={() => { setSido(r.sido); setSigungu(null); }}>
@@ -213,6 +239,8 @@ export default function StepFinder({ regions }: { regions: Region[] }) {
           </button>
         </div>
       )}
+
+      </div>
 
       {/* 중간에 결과부터 보고 싶은 사람. 2·3단계에서만 — 1단계는 고르면 바로 넘어간다. */}
       {sido && step > 0 && step < 3 && (

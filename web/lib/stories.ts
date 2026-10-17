@@ -46,6 +46,7 @@ export async function getStories(limit = 100): Promise<Story[]> {
   }
 }
 
+/** 곁가지용(채용 쪽의 기관 글 고리 등). 못 읽으면 null — 그 쪽 전체를 망치지 않는다. */
 export async function getStory(slug: string): Promise<Story | null> {
   if (!dbConfigured) return null;
   try {
@@ -54,6 +55,17 @@ export async function getStory(slug: string): Promise<Story | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * 글 쪽(/story/[slug]) 전용. DB 오류는 던진다 — null 이면 notFound() 가 404 를 캐시해
+ * 멀쩡한 글이 색인에서 빠진다. 없는 글만 null.
+ */
+export async function getStoryStrict(slug: string): Promise<Story | null> {
+  if (!dbConfigured) return null;
+  const { data, error } = await db.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
+  if (error) throw new Error(`[getStory ${slug}] ${error.message}`);
+  return (data as Story | null) ?? null;
 }
 
 /** 통합 검색용. 제목·요약에 낱말이 든 글. */

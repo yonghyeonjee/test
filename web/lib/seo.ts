@@ -45,6 +45,7 @@ function kindOf(path: string | undefined): string {
   if (p.startsWith("/business")) return "기업·소상공인";
   if (p.startsWith("/license")) return "자격증";
   if (p.startsWith("/map")) return "정책지도";
+  if (p.startsWith("/calendar")) return "지원금";
   if (p.startsWith("/agency")) return "공공기관 사업";
   if (p.startsWith("/p/")) return "지원사업";
   if (p.startsWith("/blog") || p.startsWith("/story")) return "안내 글";

@@ -7,6 +7,7 @@ import { WRAP } from "@/lib/nav";
 import VisitTracker from "@/components/VisitTracker";
 import { HotkeyFocus } from "@/components/Motion";
 import FloatingMenu from "@/components/FloatingMenu";
+import Toaster from "@/components/Toast";
 import { unstable_cache } from "next/cache";
 import { getSigunguIndex } from "@/lib/db";
 import { getSiteConfig } from "@/lib/settings";
@@ -156,6 +157,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         <SiteFooter />
         <FloatingMenu />
+        <Toaster />
         <HotkeyFocus />
         <SideRailAd />
       </body>

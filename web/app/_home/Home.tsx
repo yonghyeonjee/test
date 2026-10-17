@@ -11,6 +11,8 @@ import ConditionSentence from "@/components/ConditionSentence";
 import StepFinder from "@/components/StepFinder";
 import RecentFinds from "@/components/RecentFinds";
 import HowItWorks from "@/components/HowItWorks";
+import HomeCalendar from "@/components/HomeCalendar";
+import { Reveal } from "@/components/Motion";
 import FeedPanels from "@/components/FeedPanels";
 import ProgramEntry from "@/components/ProgramEntry";
 import Finder from "@/components/Finder";
@@ -377,6 +379,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           <RecentStrip />
           {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
           <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />
+          <HomeCalendar className="lg:hidden" />
           <FeedPanels panels={[
             { key: "closing", label: "마감 임박",
               sub: closingFallback ? "마감일이 가까운 순" : `${settings.closingDays}일 이내 마감`,
@@ -385,9 +388,9 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
               content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
           ]} />
           <AdSlot name="home_mid" />
-          <HowItWorks total={total} closing={closingCount}
-                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} />
-          <TopicGrid counts={topicCounts} className="card p-4 sm:p-5" />
+          <Reveal><HowItWorks total={total} closing={closingCount}
+                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} /></Reveal>
+          <Reveal><TopicGrid counts={topicCounts} className="card p-4 sm:p-5" /></Reveal>
           <section id="areas" className="card scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"
                          sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />
@@ -440,6 +443,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
         </>}
         aside={<>
           <HomeMap areas={areas} total={areaTotal} className="hidden lg:block" />
+          <HomeCalendar className="hidden lg:block" />
           <AlertBox />
           <HotRank terms={hotTerms.welfare} sub={hotSub(hotTerms)} className="hidden lg:block" />
           <DeadlineList slides={hot} className="hidden lg:block" />

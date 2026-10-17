@@ -17,7 +17,8 @@ export function jobLocation(job: Job) {
   // Search Console 이 addressRegion 이 빠졌다고 알렸다(권장 항목). 끝까지 모르면 비워 둔다 — 지어 넣지 않는다.
   const place = locateJob({ org: job.org, title: job.title, region: job.region });
   const region = job.region || sidoFromOrg(job.org) || sidoFromOrg(job.title) || place?.sido || null;
-  if (region) address.addressRegion = region;
+  // 잡알리오는 해외 근무를 지역 "해외"로 적는다. 나라가 KR 로 박혀 있으니 시·도 칸에 넣지 않는다.
+  if (region && region !== "해외") address.addressRegion = region;
   if (place?.sigungu && place.sido === region) address.addressLocality = place.sigungu;
   return { "@type": "Place", address };
 }

@@ -3,6 +3,7 @@ import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import AdSlot from "@/components/AdSlot";
 import { PostArt } from "@/components/Art";
+import SerifFont from "@/components/SerifFont";
 import Faq from "@/components/Faq";
 import IncomeEstimator from "@/components/IncomeEstimator";
 import JsonLd from "@/components/JsonLd";
@@ -59,7 +60,8 @@ export default function IncomePage() {
   const year = tableYear();
 
   return (
-    <div className="pb-4">
+    <div className="mx-auto max-w-[44rem] pb-4">
+      <SerifFont />
       <JsonLd
         data={pageGraph({
           path: "/blog/income",
@@ -77,15 +79,16 @@ export default function IncomePage() {
         <span className="text-ink2">소득 기준</span>
       </nav>
 
-      <header className="mt-3">
-        <h1 className="display text-[1.75rem] leading-tight">
+      <header className="mt-4 sm:mt-6">
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">
           &ldquo;기준 중위소득 180% 이하&rdquo;는 얼마일까
         </h1>
-        <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
+        <p className="num mt-4 text-[13px] text-faint"><span className="font-semibold text-brand">K나라지원</span> · {year ?? "—"}년 고시 기준 · 읽는 데 3분</p>
+        <div className="mt-6 flex h-40 items-center justify-center rounded-card bg-brandSoft/50 p-6 sm:h-48"><div className="h-full w-56"><PostArt name="money" /></div></div>
+        <p className="mt-5 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 text-[16px] leading-[1.85] text-ink">
           지원금 공고의 소득 요건은 거의 다 이렇게 적혀 있습니다. 퍼센트만 적혀 있으니
           내가 되는지 알 수가 없습니다. 가구원 수와 소득을 넣으면 금액으로 바꿔 드립니다.
         </p>
-        <div className="mt-4"><PostArt name="money" /></div>
       </header>
 
       {year === null ? (

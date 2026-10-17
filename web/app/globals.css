@@ -64,6 +64,8 @@
   .numeral { @apply font-sans text-[2.4rem] font-black leading-none tracking-[-.04em] text-brand; }
   /* 짧은 위첨자 제목 — 작게, 자간 넓게 */
   .eyebrow { @apply text-[12.5px] font-bold tracking-[.04em] text-brand; }
+  /* 블로그 글 제목. 명조(Noto Serif KR)는 SerifFont 가 그 쪽에서만 받는다. 못 받으면 고딕 굵은 글자. */
+  .article-title { font-family: "Noto Serif KR", "Pretendard Variable", Pretendard, serif; font-weight: 700; letter-spacing: -.01em; word-break: keep-all; }
 
   .tile {
     @apply flex flex-col gap-2.5 rounded-card border border-line
@@ -224,6 +226,21 @@
 .reveal.in { opacity: 1; transform: none; }
 @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .page-enter { animation: page-in .24s ease-out both; }
+/* 단계 찾기의 장이 바뀔 때 오른쪽에서 살짝 들어온다. */
+@keyframes step-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.step-in { animation: step-in .28s cubic-bezier(.2,.7,.2,1) both; }
+/* 고른 칸·숫자가 톡 튄다. */
+@keyframes pop { 0% { transform: scale(.94); } 60% { transform: scale(1.05); } 100% { transform: scale(1); } }
+.pop { animation: pop .32s cubic-bezier(.2,.7,.2,1); }
+/* 책갈피가 채워질 때 한 번 흔들린다. */
+@keyframes bounce-in { 0% { transform: scale(1); } 35% { transform: scale(1.35) rotate(-8deg); } 70% { transform: scale(.92); } 100% { transform: scale(1); } }
+.bounce-in { animation: bounce-in .5s ease; }
+/* 화면 아래 알림. */
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 60; animation: toast-in .25s ease-out both; }
+/* 바로가기 아이콘이 손을 올리면 살짝 커진다. */
+.group:hover .ic-fun { transform: scale(1.12) rotate(-4deg); }
+.ic-fun { transition: transform .2s cubic-bezier(.2,.7,.2,1); }
 
 /*
  * 머리말: 화면 폭 전체의 흰 띠(아래 가는 선). 위에 붙어 따라오고, 스크롤하면 그림자가 생긴다.
@@ -342,6 +359,7 @@ main .ad-slot:not(.ad-tall):not(.ad-band) .ad-html { line-height: 0; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .page-enter { animation: none; }
   .sk { animation: none; }
+  .step-in, .pop, .bounce-in, .toast { animation: none; }
   *, ::before, ::after {
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;

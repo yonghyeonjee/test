@@ -107,7 +107,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
       job.region && role && `${job.region} ${role.name}`,
-      "공공기관 채용", "채용 공고", "나라일터",
+      "공공기관 채용", "채용 공고", sourceName(job.id),
     ].filter(Boolean) as string[],
     alternates: { canonical: `/jobs/${encodeURIComponent(job.id)}` },
   });
@@ -208,6 +208,9 @@ export default async function JobDetail({ params }: P) {
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
+  // 기관 쪽(/jobs/org)은 나라일터 이력만 센다. 잡알리오에만 공고를 내는 기관은 그 쪽이 404 라,
+  // 잡알리오 공고는 이력이 있을 때만 기관 쪽으로 잇는다. 나라일터 공고는 예전처럼 늘 잇는다.
+  const orgLink = Boolean(job.org && (stat || !job.id.startsWith("a")));
   const role = detectRole(job.title, job.org);
   // "무도실무관 (무도실무관)" 처럼 괄호 안이 직무 이름 그대로면 두 번 적지 않는다.
   const rawDetail = detailOf(job.title);
@@ -511,7 +514,7 @@ export default async function JobDetail({ params }: P) {
             {job.region} 공고 더 보기
           </Link>
         )}
-        {job.org && (
+        {orgLink && job.org && (
           <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="btn btn-ghost px-5 py-2.5">
             {job.org} 채용 이력
           </Link>
@@ -527,7 +530,7 @@ export default async function JobDetail({ params }: P) {
       {related.length > 0 && (
         <section className="mt-14">
           <h2 className="sec-title text-[1.0625rem] font-extrabold">
-            {job.org ? (
+            {orgLink && job.org ? (
               <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="inline-block py-1 hover:text-brand">
                 {job.org}의 다른 공고
               </Link>

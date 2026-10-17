@@ -8,6 +8,7 @@ import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
+import SerifFont from "@/components/SerifFont";
 import Toc from "@/components/Toc";
 import { Timeline } from "@/components/YouthSavingsArt";
 import { jeonsePostRelated } from "@/lib/related";
@@ -138,7 +139,8 @@ export default function JeonseExtensionPage() {
   });
 
   return (
-    <article className="py-4">
+    <article className="mx-auto max-w-[44rem] py-4">
+      <SerifFont />
       <JsonLd data={ld} />
 
       <nav aria-label="위치" className="text-[13px] text-muted">
@@ -147,12 +149,13 @@ export default function JeonseExtensionPage() {
         <span className="text-ink2">버팀목 전세대출 1개월 연장</span>
       </nav>
 
-      <header className="mt-3">
-        <h1 className="display text-[1.75rem] leading-tight">
+      <header className="mt-4 sm:mt-6">
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">
           버팀목 전세대출 1개월 연장, 그리고 연장 후 이사
         </h1>
-        <p className="num mt-2 text-xs text-faint">{UPDATED} 기준 · 사례는 여러 경우를 섞어 각색했습니다</p>
-        <p className="mt-3 text-[15.5px] leading-[1.85] text-ink2">
+        <p className="num mt-4 text-[13px] text-faint"><span className="font-semibold text-brand">K나라지원</span> · {UPDATED} 기준 · 읽는 데 9분 · 사례는 여러 경우를 섞어 각색했습니다</p>
+        <div className="mt-6 flex h-44 items-center justify-center rounded-card bg-brandSoft/50 p-6 sm:h-52"><div className="h-full w-64"><ArtJeonse /></div></div>
+        <p className="mt-5 rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 text-[16px] leading-[1.85] text-ink">
           <strong>버팀목 전세대출</strong>에는 “1개월 연장” 상품이 따로 없습니다. 집주인과 종료일을 새 집 잔금일로
           적은 <strong>한시적 연장 계약서</strong>를 쓰고 그날까지 <strong>기한연장</strong>한 뒤, 잔금일에{" "}
           <a href="#procedure" className="underline underline-offset-4 decoration-brand/40 hover:text-brand"><strong>목적물 변경</strong></a>으로 대출을
@@ -161,7 +164,6 @@ export default function JeonseExtensionPage() {
           <a href="#messages" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">집주인에게 보낼 문자</a>와 은행 서류,{" "}
           <a href="#money" className="underline underline-offset-4 decoration-brand/40 hover:text-brand">돈 계산</a>까지 차례로 안내합니다.
         </p>
-        <div className="mt-5 flex justify-center"><ArtJeonse /></div>
       </header>
 
       <Toc items={[{ id: "glance", label: "한눈에" }, { id: "when", label: "이런 상황에서 씁니다" }, { id: "steps", label: "순서대로 하면 됩니다" }, { id: "messages", label: "집주인에게 보낼 문자, 이렇게" }, { id: "facts", label: "알아두면 흔들리지 않는 것" }, { id: "procedure", label: "1개월 연장 절차 (한시적 연장 + 목적물 변경)" }, { id: "requirements", label: "청년버팀목 요건 (2026년 9월 확인)" }, { id: "money", label: "돈 계산은 이렇게" }, { id: "newhome", label: "새 집 고를 때 확인할 것" }, { id: "checklist", label: "만기 2개월 전 체크리스트" }, { id: "summary", label: "정리" }, { id: "faq", label: "자주 묻는 질문" }, { id: "sources", label: "확인한 곳" }]} />

@@ -3,6 +3,8 @@ import Inline from "./Inline";
 import Toc from "./Toc";
 import type { Block } from "@/lib/stories";
 
+const FOLD = 8;
+
 /** 자료에서 만든 글의 블록을 그린다. 종류별로 모양이 정해져 있다. */
 export default function StoryBody({ blocks }: { blocks: Block[] }) {
   return (
@@ -13,15 +15,15 @@ export default function StoryBody({ blocks }: { blocks: Block[] }) {
             return <Toc key={i} items={b.items} />;
           case "h2":
             return (
-              <h2 key={i} id={b.id} className="sec-title mt-12 scroll-mt-24 text-[1.0625rem] font-extrabold">{b.text}</h2>
+              <h2 key={i} id={b.id} className="article-title mt-14 scroll-mt-24 text-[1.2rem] sm:text-[1.3rem]">{b.text}</h2>
             );
           case "p":
-            return <p key={i} className="mt-3 text-[15px] leading-[1.85] text-ink2"><Inline text={b.text} /></p>;
+            return <p key={i} className="mt-4 text-[16px] leading-[1.9] text-ink2 sm:text-[16.5px]"><Inline text={b.text} /></p>;
           case "note":
             return <p key={i} className="mt-6 text-xs leading-relaxed text-muted"><Inline text={b.text} /></p>;
           case "list":
             return (
-              <ul key={i} className="mt-3 space-y-2 text-[15px] leading-[1.85] text-ink2">
+              <ul key={i} className="mt-4 space-y-2 text-[16px] leading-[1.85] text-ink2">
                 {b.items.map((t, j) => (
                   <li key={j} className="flex gap-2.5">
                     <span className="mt-[11px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
@@ -30,16 +32,28 @@ export default function StoryBody({ blocks }: { blocks: Block[] }) {
                 ))}
               </ul>
             );
-          case "links":
-            return (
-              <ul key={i} className="card mt-3 divide-y divide-line">
-                {b.items.map((l, j) => (
-                  <li key={j}>
-                    <Link href={l.href} className="block px-4 py-3 text-[14.5px] leading-snug hover:text-brand">{l.label}</Link>
-                  </li>
-                ))}
-              </ul>
+          case "links": {
+            // 여덟 줄까지 펴고 나머지는 접는다. 하루 공고 60줄이 줄줄이 깔려 글이 너무 길었다.
+            const row = (l: { href: string; label: string }, j: number) => (
+              <li key={j}>
+                <Link href={l.href} className="block px-4 py-3 text-[14.5px] leading-snug hover:text-brand">{l.label}</Link>
+              </li>
             );
+            const head = b.items.slice(0, FOLD), rest = b.items.slice(FOLD);
+            return (
+              <div key={i} className="card mt-3 overflow-hidden">
+                <ul className="divide-y divide-line">{head.map(row)}</ul>
+                {rest.length > 0 && (
+                  <details className="group border-t border-line">
+                    <summary className="cursor-pointer list-none px-4 py-2.5 text-center text-[13.5px] font-semibold text-brand hover:bg-ground">
+                      <span className="group-open:hidden">나머지 {rest.length}건 더 보기</span><span className="hidden group-open:inline">접기</span>
+                    </summary>
+                    <ul className="divide-y divide-line border-t border-line">{rest.map((l, j) => row(l, j + FOLD))}</ul>
+                  </details>
+                )}
+              </div>
+            );
+          }
           case "table":
             return (
               <div key={i} className="mt-3 overflow-x-auto">
