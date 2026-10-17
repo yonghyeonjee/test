@@ -18,6 +18,11 @@ on:
       site:
         description: "속성(비우면 자동으로 고름). 예: sc-domain:knowhow-it.com"
         default: ""
+      mode:
+        description: "report=기간 비교 보고서, sites=속성별 날짜별 노출, sample=사이트맵 묶음별 색인 표본"
+        default: "report"
+        type: choice
+        options: [report, sites, sample]
 
 jobs:
   report:
@@ -39,4 +44,7 @@ jobs:
           A: ${{ inputs.a }}
           B: ${{ inputs.b }}
           N: ${{ inputs.inspect }}
-        run: python -u pipeline/gsc_report.py --a "$A" --b "$B" --inspect "$N"
+          MODE: ${{ inputs.mode || 'report' }}
+        run: |
+          if [ "$MODE" = "report" ]; then python -u pipeline/gsc_report.py --a "$A" --b "$B" --inspect "$N"
+          else python -u pipeline/gsc_probe.py "$MODE" --k "$N"; fi
