@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HWP·HWPX 편집기</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --line:#d9dde3; --text:#1d2430; --muted:#6b7482; --accent:#2457d6; --accent-soft:#e8eefc; --warn-bg:#fff6e0; --warn-line:#f0c96a; --danger:#c0392b; --changed:#fff9d6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif; background:var(--bg); color:var(--text); }
+  header { position:sticky; top:0; z-index:5; background:var(--card); border-bottom:1px solid var(--line); padding:10px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:17px; margin:0 12px 0 0; }
+  header .name { color:var(--muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:36vw; }
+  .spacer { flex:1; }
+  button { font:inherit; padding:6px 12px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--text); cursor:pointer; }
+  button:hover { border-color:#b8c0cc; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  button.primary:disabled, button:disabled { opacity:.5; cursor:default; }
+  button.small { padding:2px 8px; font-size:12px; }
+  button.danger { color:var(--danger); }
+  select, input[type=text] { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  #drop { border:2px dashed #b8c0cc; border-radius:12px; padding:48px 24px; text-align:center; background:var(--card); color:var(--muted); cursor:pointer; }
+  #drop.over { border-color:var(--accent); background:var(--accent-soft); }
+  #drop strong { color:var(--text); font-size:17px; }
+  .notes { background:var(--warn-bg); border:1px solid var(--warn-line); border-radius:8px; padding:10px 14px; margin:12px 0; font-size:14px; }
+  .notes p { margin:4px 0; }
+  .tools { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:12px 0; }
+  .tools input[type=text] { flex:1; min-width:140px; }
+  .stats { color:var(--muted); font-size:13px; }
+  .para { display:flex; gap:8px; align-items:flex-start; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin:6px 0; }
+  .para.changed { background:var(--changed); }
+  .para.new { border-style:dashed; }
+  .para.depth1 { margin-left:28px; } .para.depth2 { margin-left:56px; } .para.depth3 { margin-left:84px; }
+  .para .no { width:44px; flex:none; color:var(--muted); font-size:12px; padding-top:7px; text-align:right; }
+  .para .badge { display:inline-block; font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:4px; padding:0 4px; margin-top:4px; }
+  .para textarea { flex:1; font:inherit; border:1px solid transparent; border-radius:6px; padding:6px 8px; resize:none; min-height:34px; line-height:1.5; background:transparent; overflow:hidden; }
+  .para textarea:hover { border-color:var(--line); }
+  .para textarea:focus { outline:none; border-color:var(--accent); background:#fff; }
+  .para .acts { display:flex; flex-direction:column; gap:4px; flex:none; opacity:.35; }
+  .para:hover .acts, .para:focus-within .acts { opacity:1; }
+  .hit { outline:2px solid #f4b400; }
+  #status { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:#222; color:#fff; padding:8px 16px; border-radius:20px; font-size:13px; opacity:0; transition:opacity .2s; pointer-events:none; }
+  #status.show { opacity:1; }
+  footer { color:var(--muted); font-size:12px; text-align:center; padding:24px 0 40px; }
+  kbd { font:12px monospace; border:1px solid var(--line); border-bottom-width:2px; border-radius:4px; padding:0 4px; background:#fff; }
+  button.primary kbd { background:transparent; color:#fff; border-color:rgba(255,255,255,.6); }
+</style>
+</head>
+<body>
+<header>
+  <h1>HWP·HWPX 편집기</h1>
+  <span class="name" id="fname"></span>
+  <span class="spacer"></span>
+  <span id="headTools" hidden>
+    <select id="fmt"></select>
+    <button id="save" class="primary">저장(내려받기) <kbd>Ctrl+S</kbd></button>
+    <button id="reopen">다른 파일 열기</button>
+  </span>
+</header>
+<main>
+  <div id="drop">
+    <strong>HWP 또는 HWPX 파일을 여기에 끌어다 놓거나 눌러서 고르세요</strong>
+    <p>파일은 이 컴퓨터 안의 편집기 서버(127.0.0.1)로만 가고 바깥으로 나가지 않습니다.</p>
+    <input type="file" id="file" accept=".hwp,.hwpx" hidden>
+  </div>
+  <section id="editor" hidden>
+    <div class="notes" id="notes"></div>
+    <div class="tools">
+      <input type="text" id="find" placeholder="찾을 글">
+      <input type="text" id="repl" placeholder="바꿀 글">
+      <button id="findNext">다음 찾기</button>
+      <button id="replaceAll">모두 바꾸기</button>
+      <span class="stats" id="stats"></span>
+    </div>
+    <div id="paras"></div>
+  </section>
+</main>
+<footer>글만 고치는 편집기입니다. 줄 안 줄바꿈(<kbd>Enter</kbd>) 은 문단 안 줄바꿈으로 저장되고, 새 문단은 각 문단 오른쪽 <b>＋</b> 로 더합니다.</footer>
+<div id="status"></div>
+
+<script>
+(() => {
+  const $ = (s) => document.querySelector(s);
+  const state = { token: null, kind: null, name: '', rows: [], seq: 0, dirty: false };
+  // rows: {id, orig(원본 글; 새 문단은 null), text, depth, deletable, hasObjects, section}
+
+  const status = (msg, ms = 2200) => { const el = $('#status'); el.textContent = msg; el.classList.add('show'); clearTimeout(status.t); status.t = setTimeout(() => el.classList.remove('show'), ms); };
+  const autosize = (ta) => { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; };
+
+  // ── 열기 ─────────────────────────
+  const drop = $('#drop'), fileInput = $('#file');
+  drop.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => fileInput.files[0] && openFile(fileInput.files[0]));
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+  document.addEventListener('dragover', e => e.preventDefault());
+  document.addEventListener('drop', e => { e.preventDefault(); if ($('#editor').hidden) return; const f = e.dataTransfer.files[0]; if (f && confirm('지금 문서를 닫고 ' + f.name + ' 을 열까요?')) openFile(f); });
+
+  async function openFile(file) {
+    status('여는 중… ' + file.name, 60000);
+    try {
+      const r = await fetch('/api/open', { method: 'POST', headers: { 'X-Filename': encodeURIComponent(file.name) }, body: file });
+      const info = await r.json();
+      if (!r.ok) throw new Error(info.error || r.statusText);
+      if (state.token) fetch('/api/close', { method: 'POST', body: JSON.stringify({ token: state.token }) });
+      state.token = info.token; state.kind = info.kind; state.name = info.name; state.seq = 0; state.dirty = false;
+      state.rows = info.paragraphs.map(p => ({ ...p, orig: p.text }));
+      $('#fname').textContent = info.name + (info.version ? ' (HWP ' + info.version + ')' : '') + ' · ' + (info.size / 1024).toFixed(0) + 'KB';
+      $('#notes').innerHTML = info.notes.map(n => '<p>' + esc(n) + '</p>').join('');
+      const fmt = $('#fmt'); fmt.innerHTML = '';
+      const opts = info.kind === 'hwpx' ? [['hwpx', 'HWPX 로 저장'], ['txt', 'txt 로 저장(글만)']] : [['hwpx', 'HWPX 로 저장(글만)'], ['txt', 'txt 로 저장']];
+      opts.forEach(([v, l]) => { const o = document.createElement('option'); o.value = v; o.textContent = l; fmt.appendChild(o); });
+      drop.hidden = true; $('#editor').hidden = false; $('#headTools').hidden = false;
+      render();
+      status(info.paragraphs.length + '개 문단을 읽었습니다');
+    } catch (e) {
+      status('열지 못했습니다: ' + e.message, 6000);
+      alert('열지 못했습니다.\n' + e.message);
+    } finally { fileInput.value = ''; }
+  }
+
+  const esc = (s) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ── 그리기 ─────────────────────────
+  function render() {
+    const box = $('#paras'); box.innerHTML = '';
+    state.rows.forEach((row, i) => {
+      const div = document.createElement('div');
+      div.className = 'para depth' + Math.min(row.depth, 3) + (row.orig === null ? ' new' : (row.text !== row.orig ? ' changed' : ''));
+      div.dataset.id = row.id;
+      const no = document.createElement('div'); no.className = 'no'; no.textContent = i + 1;
+      if (row.depth > 0) { const b = document.createElement('div'); b.className = 'badge'; b.textContent = '표 안'; no.appendChild(b); }
+      if (row.hasObjects) { const b = document.createElement('div'); b.className = 'badge'; b.title = '표·그림·구역 설정을 품은 문단. 글은 고칠 수 있지만 지울 수 없습니다.'; b.textContent = '개체'; no.appendChild(b); }
+      const ta = document.createElement('textarea'); ta.value = row.text; ta.rows = 1; ta.spellcheck = false;
+      ta.addEventListener('input', () => { row.text = ta.value; state.dirty = true; autosize(ta); div.classList.toggle('changed', row.orig !== null && row.text !== row.orig); updateStats(); });
+      ta.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); addAfter(row.id); }
+      });
+      const acts = document.createElement('div'); acts.className = 'acts';
+      const add = document.createElement('button'); add.className = 'small'; add.textContent = '＋'; add.title = '아래에 문단 더하기 (Ctrl+Enter)'; add.onclick = () => addAfter(row.id);
+      const del = document.createElement('button'); del.className = 'small danger'; del.textContent = '✕'; del.title = row.deletable ? '이 문단 지우기' : '표 칸의 하나뿐인 문단이거나 개체를 품어 지울 수 없습니다'; del.disabled = !row.deletable; del.onclick = () => removeRow(row.id);
+      acts.append(add, del);
+      div.append(no, ta, acts);
+      box.appendChild(div);
+    });
+    requestAnimationFrame(() => box.querySelectorAll('textarea').forEach(autosize));
+    updateStats();
+  }
+
+  function updateStats() {
+    const changed = state.rows.filter(r => r.orig !== null && r.text !== r.orig).length;
+    const added = state.rows.filter(r => r.orig === null).length;
+    const removed = state.removed || 0;
+    $('#stats').textContent = state.rows.length + '문단' + (changed ? ' · 고침 ' + changed : '') + (added ? ' · 더함 ' + added : '') + (removed ? ' · 지움 ' + removed : '');
+  }
+
+  function addAfter(id) {
+    const i = state.rows.findIndex(r => r.id === id);
+    const ref = state.rows[i];
+    state.rows.splice(i + 1, 0, { id: 'n' + (++state.seq), orig: null, text: '', depth: ref.depth, deletable: true, hasObjects: false, section: ref.section });
+    state.dirty = true; render();
+    const ta = $('#paras').children[i + 1].querySelector('textarea'); ta.focus();
+  }
+
+  function removeRow(id) {
+    const i = state.rows.findIndex(r => r.id === id);
+    const row = state.rows[i];
+    if (row.orig !== null && row.text && !confirm('이 문단을 지울까요?\n\n' + row.text.slice(0, 120))) return;
+    state.rows.splice(i, 1);
+    if (row.orig !== null) { state.deleted = state.deleted || []; state.deleted.push(row.id); state.removed = (state.removed || 0) + 1; }
+    state.dirty = true; render();
+  }
+
+  // ── 찾기·바꾸기 ─────────────────────────
+  let findPos = -1;
+  $('#findNext').addEventListener('click', () => {
+    const q = $('#find').value; if (!q) return;
+    const n = state.rows.length;
+    for (let k = 1; k <= n; k++) {
+      const i = (findPos + k) % n;
+      if (state.rows[i].text.includes(q)) {
+        findPos = i;
+        const div = $('#paras').children[i]; div.scrollIntoView({ block: 'center' });
+        document.querySelectorAll('.hit').forEach(el => el.classList.remove('hit')); div.classList.add('hit');
+        const ta = div.querySelector('textarea'); const at = ta.value.indexOf(q); ta.focus(); ta.setSelectionRange(at, at + q.length);
+        return;
+      }
+    }
+    status('"' + q + '" 를 찾지 못했습니다');
+  });
+  $('#find').addEventListener('keydown', e => { if (e.key === 'Enter') $('#findNext').click(); });
+  $('#replaceAll').addEventListener('click', () => {
+    const q = $('#find').value, r = $('#repl').value; if (!q) return;
+    let count = 0;
+    state.rows.forEach(row => { const parts = row.text.split(q); if (parts.length > 1) { count += parts.length - 1; row.text = parts.join(r); } });
+    if (count) { state.dirty = true; render(); }
+    status(count ? count + '곳을 바꿨습니다' : '"' + q + '" 를 찾지 못했습니다');
+  });
+
+  // ── 저장 ─────────────────────────
+  function buildOps() {
+    const ops = [];
+    (state.deleted || []).forEach(id => ops.push({ op: 'del', id }));
+    state.rows.forEach(r => { if (r.orig !== null && r.text !== r.orig) ops.push({ op: 'set', id: r.id, text: r.text }); });
+    state.rows.forEach((r, i) => { if (r.orig === null) ops.push({ op: 'ins', id: r.id, after: state.rows[i - 1].id, text: r.text }); });
+    return ops;
+  }
+
+  async function save() {
+    if (!state.token) return;
+    const btn = $('#save'); btn.disabled = true; status('저장 중…', 60000);
+    try {
+      const r = await fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: state.token, ops: buildOps(), format: $('#fmt').value }) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(j.error || r.statusText); }
+      const blob = await r.blob();
+      const name = decodeURIComponent(r.headers.get('X-Filename') || 'document.hwpx');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      // 서버 쪽 문서는 이미 고쳐졌으니, 화면의 '원본' 도 지금 글로 맞춘다. 새 문단도 이제 보통 문단.
+      state.rows.forEach(r => { r.orig = r.text; });
+      state.deleted = []; state.removed = 0; state.dirty = false; render();
+      status(name + ' 을 내려받았습니다');
+    } catch (e) {
+      status('저장하지 못했습니다: ' + e.message, 6000); alert('저장하지 못했습니다.\n' + e.message);
+    } finally { btn.disabled = false; }
+  }
+  $('#save').addEventListener('click', save);
+  document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (state.token) save(); } });
+  $('#reopen').addEventListener('click', () => { if (!state.dirty || confirm('저장하지 않은 고침이 있습니다. 그래도 다른 파일을 열까요?')) fileInput.click(); });
+  window.addEventListener('beforeunload', e => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
+})();
+</script>
+</body>
+</html>

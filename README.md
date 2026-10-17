@@ -8,6 +8,11 @@
 나중에 AWS 와 Java(Spring Boot) 백엔드로 옮길 때를 위한 문서가 [`docs/migration/`](docs/migration/README.md) 에 있다.
 지금 의존성 목록, DB 스키마 스냅샷, REST 계약 초안(OpenAPI), 메일·문자 알림과 수신 동의 규칙을 담았다.
 
+## HWP·HWPX 편집기 (`hwp_editor/`)
+
+한글 문서를 브라우저에 올려 글을 고치고 다시 내려받는 로컬 프로그램. 저장소 루트에서
+`python -m hwp_editor` (Windows 는 `hwp_editor\run.bat`). 자세한 것은 [`hwp_editor/README.md`](hwp_editor/README.md).
+
 ## 로컬 실행
 
 ```bash
