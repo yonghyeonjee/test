@@ -89,3 +89,24 @@ Vercel Hobby 는 리전을 하나만 고를 수 있다. 기본값이 미국(iad1
   원문(raw_*)과 내부 메타는 공개하지 않는다.
 - 매칭 대상은 정규화가 끝나고 확신도 0.3 을 넘는 행뿐이다.
   미정규화 행은 나이 조건이 비어 있어 전 연령에 걸리므로 제외한다.
+
+## 티스토리 (abcfact.tistory.com)
+
+`blog_daily` 가 쓴 글을 매일 낮 12시(KST) [abcfact.tistory.com](https://abcfact.tistory.com) 에도 올린다
+(`.github/workflows/tistory_publish.yml` → `pipeline/tistory_publish.py`). 기본은 **요약 + 원문 링크**다.
+사이트 `/story/<slug>` 에 전문이 있으므로 같은 글을 두 곳에 통째로 두지 않는다(`--mode full` 로 바꿀 수 있다).
+
+티스토리 공개 API 는 끝났다. 관리자 화면이 쓰는 내부 주소(`POST /manage/post.json`)를 **로그인 쿠키**로 부른다.
+npm 의 [tistory-mcp](https://github.com/kim-se-hee/tistory-mcp) 가 쓰는 길과 같다. 그래서 사람이 한 번 로그인해 쿠키를 넘겨야 한다.
+
+1. 크롬에서 카카오 계정으로 티스토리에 로그인하고 `https://abcfact.tistory.com/manage` 를 연다.
+2. F12 → Network → 아무 `manage` 요청 → Request Headers 의 `Cookie:` 값 전체를 복사한다
+   (`TSSESSION=…` 이 들어 있다. 여러 줄이어도 된다).
+3. GitHub → Settings → Secrets → `TISTORY_COOKIE` 에 붙여 넣는다. **코드·채팅·PR 에 붙이지 않는다** — 그 자체가 로그인이다.
+4. Actions → tistory-publish → Run workflow, `check=true`. 쿠키가 살아 있으면 카테고리 id 목록이 찍힌다.
+   쓸 카테고리가 있으면 그 id 를 Settings → Variables → `TISTORY_CATEGORY` 에 넣는다(없으면 0 = 미지정).
+5. 처음엔 `slug` 하나에 `visibility=private` 로 올려 보고, 티스토리 관리자에서 모양을 본 뒤 공개로 바꾼다.
+
+쿠키가 만료되면 실행이 종료 코드 2 로 빨갛게 실패하고 "쿠키가 만료됐다" 고 찍는다. 1~3 을 다시 한다.
+어느 글을 올렸는지는 `tistory_posts` 표(`sql/015`)에 남고, 한 글은 한 번만 올라간다.
+비공식 주소라 카카오 쪽이 바꾸면 멈출 수 있다. 그때는 `--check` 부터 돌려 본다.
