@@ -1,9 +1,10 @@
-import { SOURCE_OP, SOURCE_VAL } from "./pubJobs";
+import { SOURCE_OP, SOURCE_VAL, readAll } from "./pubJobs";
 import { unstable_cache } from "next/cache";
 import { db, dbConfigured } from "./db";
 import { haversineKm, locate, locateJob, sggFromDept, type Place } from "./geo";
 import { dongInText } from "./dong";
 import { keyOf, labelOf, moreOf, toRow, type MapDataLite, type MapKind, type MapPointLite } from "./mapShape";
+import { dropAlioTwins } from "./jobTwins";
 
 /**
  * 정책지도에 올릴 점들.
@@ -138,16 +139,19 @@ async function loadJobs() {
   const points = new Map<string, MapPoint>();
   const dongs: Record<string, ItemRow[]> = {};
   const today = new Date().toISOString().slice(0, 10);
-  const { data, error } = await db
+  type R = { source_id: string; title: string; org: string | null; region: string | null; start_date: string | null; end_date: string | null; reg_date: string | null };
+  // 접수 중 공고를 1,000줄씩 나눠 끝까지 읽는다(PostgREST 한 번 최대 1,000줄, 잡알리오를 넣자 1,033건).
+  const data = await readAll<R>((from, to) => db
     .from("job_posts")
-    .select("source_id,title,org,region,start_date,end_date")
+    .select("source_id,title,org,region,start_date,end_date,reg_date")
     .filter("source", SOURCE_OP, SOURCE_VAL)
     .gte("end_date", today)
-    .order("end_date", { ascending: true })
-    .limit(3000);
-  if (error) throw error;
+    .order("end_date", { ascending: true }).order("source_id")
+    .range(from, to), 3000);
   let noPlace = 0;
-  for (const r of (data ?? []) as { source_id: string; title: string; org: string | null; region: string | null; start_date: string | null; end_date: string | null }[]) {
+  // 나라일터·잡알리오에 같이 올라온 공고는 핀 하나로(lib/jobTwins).
+  const rows = dropAlioTwins(data, (r) => ({ id: r.source_id, title: r.title, reg: r.reg_date, end: r.end_date }));
+  for (const r of rows) {
     const place = locateJob({ org: r.org, title: r.title, region: r.region });
     if (!place) { noPlace++; continue; }
     const more = moreOf("jobs", place.sido, place.sigungu);

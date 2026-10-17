@@ -1,15 +1,18 @@
 import { cache } from "react";
 import { applyStatus, db, dbConfigured, type ApplyStatus } from "./db";
-import { SIDO_SHORT } from "./geo";
+import { SIDO_SHORT, normSido } from "./geo";
+import { dropAlioTwins, isTwin } from "./jobTwins";
 import { gojobsFileUrl, type GojobsDetail } from "./gojobsDetail";
 import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
 
 /**
  * 채용 목록이 읽는 출처. 나라일터(gojobs)와 잡알리오(alio, source_id 가 a 로 시작).
- * 잠시 나라일터만: 두 출처를 in() 으로 읽자 source='gojobs' 부분 인덱스를 못 타 22만 건을 정렬하다
- * 시간 초과가 났다(2026-10-06 /jobs 목록 장애). 두 출처용 인덱스를 만든 뒤 alio 를 다시 넣는다.
+ * 2026-10-06 두 출처를 in() 으로 읽자 정렬 색인을 못 타 22만 건을 정렬하다 시간 초과가 나서 나라일터만 남겼다.
+ * 2026-10-17 다시 넣었다. 그사이 두 출처용 부분 색인(job_posts_pub_reg_idx)이 생겨 목록·사이트맵·검색·지도는
+ * 0.5~7ms 로 같다(쿼리마다 EXPLAIN 으로 잼). 기관(org) 조회만은 (org, reg_date) 색인이 나라일터 부분 색인이라
+ * 출처마다 따로 읽어 합친다(perSource). 같은 공고가 두 곳에 다 있으면 lib/jobTwins 가 잡알리오 쪽을 뺀다.
  */
-export const JOB_SOURCES = ["gojobs"];
+export const JOB_SOURCES = ["gojobs", "alio"];
 
 /**
  * source 조건을 거는 법. 출처가 하나뿐일 때 in() 으로 물으면 SQL 이 source = ANY(...) 가 되고,
@@ -20,8 +23,8 @@ export const SOURCE_OP = JOB_SOURCES.length === 1 ? "eq" : "in";
 export const SOURCE_VAL = JOB_SOURCES.length === 1 ? JOB_SOURCES[0] : `(${JOB_SOURCES.join(",")})`;
 
 /**
- * 상세 쪽(공고 한 건)이 읽는 출처. 목록은 아직 나라일터만(JOB_SOURCES) 읽지만, 잡알리오 공고도 매일 받아
- * 두고 브리핑 글(pipeline/blog_daily.py)과 색인 알림(pipeline/indexing.py)이 그 주소를 내보낸다.
+ * 상세 쪽(공고 한 건)이 읽는 출처. 목록(JOB_SOURCES)과 같지만 따로 둔다 — 목록에서 출처를 다시 빼는 일이
+ * 있어도 브리핑 글(pipeline/blog_daily.py)과 색인 알림(pipeline/indexing.py)이 내보낸 주소는 살아 있어야 한다.
  * 상세가 나라일터만 찾자 접수 중인 잡알리오 공고가 전부 "내려간 공고"(200 + noindex)로 나갔다 —
  * 2026-10-17 서치 콘솔 noindex 목록과 서버 캐시에서 확인. 한 건 찾기는 source_id 인덱스를 타므로
  * 출처가 둘이어도 10-06 목록 장애(정렬 인덱스를 못 탐)와 달리 느려지지 않는다.
@@ -140,19 +143,59 @@ function toStoredJob(r: Stored): Job {
   };
 }
 
+/** 나라일터·잡알리오에 같이 올라온 공고는 나라일터 쪽만 남긴다(lib/jobTwins). */
+const noTwins = (jobs: Job[]) => dropAlioTwins(jobs, (j) => ({ id: j.id, title: j.title, reg: j.reg, end: j.end }));
+
+type SrcResult = { data: unknown[] | null; error: { message: string } | null; count?: number | null };
+
 /**
- * 목록에 올릴 최대 건수.
+ * 같은 쿼리를 출처마다 따로 돌려 등록일 최신순으로 합친다. (org, reg_date) 색인은 source='gojobs' 부분
+ * 색인이라 source in (…) 으로 물으면 못 탄다 — 기관 쪽·관련 공고만 이 길로 간다. 건수는 출처별 합.
+ */
+async function perSource(q: (src: string) => PromiseLike<SrcResult>): Promise<{ rows: Stored[]; count: number | null; error: string | null }> {
+  const res = await Promise.all(JOB_SOURCES.map((s) => q(s)));
+  const err = res.find((r) => r.error)?.error ?? null;
+  const rows = res.flatMap((r) => (r.data ?? []) as Stored[])
+    .sort((a, b) => (b.reg_date ?? "").localeCompare(a.reg_date ?? ""));
+  const count = res.every((r) => typeof r.count === "number") ? res.reduce((a, r) => a + (r.count as number), 0) : null;
+  return { rows, count, error: err ? err.message : null };
+}
+
+/** PostgREST 가 한 번에 돌려주는 최대 줄 수(Supabase max_rows). .limit(3000) 을 걸어도 1,000줄만 온다. */
+export const PAGE_ROWS = 1000;
+
+/**
+ * 1,000줄씩 나눠 끝까지(또는 max 줄까지) 읽는다. 쿼리는 순서가 정해져 있어야 쪽이 겹치거나 빠지지 않는다
+ * (끝에 source_id 같은 유일한 열로 한 번 더 정렬). 잡알리오를 넣자 접수 중 공고가 1,033건이 되어 한 번에
+ * 다 안 왔다(2026-10-17 검토).
+ */
+export async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
+  max = 5000,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; from < max; from += PAGE_ROWS) {
+    const { data, error } = await page(from, Math.min(from + PAGE_ROWS, max) - 1);
+    if (error) throw new Error(error.message);
+    out.push(...((data ?? []) as T[]));
+    if (!data || data.length < PAGE_ROWS) break;
+  }
+  return out;
+}
+
+/**
+ * 목록에 올릴 최근 공고 수.
  *
  * 600건이었다. 그런데 모아 둔 것이 2만 건을 넘어가면서 "수집한 것에 비해
  * 너무 적게 나온다"는 말이 나왔다 — 맞는 말이다. 다만 2만 건 전부가 지금
  * 볼 만한 것은 아니다. 대부분은 2008~2013년에 끝난 공고이고, 그건 목록이
  * 아니라 기관별 이력(/jobs/org/…)에서 봐야 한다.
  *
- * 여기서는 최신순으로 3,000건까지 읽고 화면은 쪽으로 나눠 보여 준다.
- * 읽어 온 전체를 대상으로 걸러야 칩에 붙는 숫자가 맞기 때문에, 쪽 나눔은
- * 읽는 단계가 아니라 그리는 단계에서 한다.
+ * 3,000건으로 적어 두었지만 PostgREST 가 한 번에 1,000줄까지만 줘서 실제로는 늘 1,000건이었다.
+ * 지금은 최근 1,000건(한 번)에 접수 중인 것 전부(나눠 읽기)를 더한다. 읽어 온 전체를 대상으로 걸러야
+ * 칩에 붙는 숫자가 맞기 때문에, 쪽 나눔은 읽는 단계가 아니라 그리는 단계에서 한다.
  */
-const LIST_MAX = 3000;
+const LIST_MAX = PAGE_ROWS;
 
 /**
  * 매일 아침 수집해 둔 표에서 최신순으로 읽는다. 표가 비어 있으면(첫 배포·
@@ -161,16 +204,30 @@ const LIST_MAX = 3000;
 async function fromStore(): Promise<JobBoard | null> {
   if (!dbConfigured) return null;
   try {
-    const { data, count } = await db
-      .from("job_posts")
-      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "estimated" })
-      .filter("source", SOURCE_OP, SOURCE_VAL)
-      .order("reg_date", { ascending: false, nullsFirst: false })
-      .order("end_date", { ascending: false, nullsFirst: false })
-      .limit(LIST_MAX);
-    const rows = (data ?? []) as Stored[];
+    // 최근 1,000건에 더해 접수 중인 것은 전부(1천 건 남짓, 마감일 색인, 나눠 읽기). 잡알리오가 들어오면서
+    // 최근 창이 좁아져, 일찍 올라와 아직 접수 중인 공고가 목록에서 빠지던 것을 막는다. 접수 중 읽기가
+    // 실패해도 목록은 최근 것으로 그린다.
+    const today = new Date().toISOString().slice(0, 10);
+    const [recent, open] = await Promise.all([
+      db.from("job_posts")
+        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "estimated" })
+        .filter("source", SOURCE_OP, SOURCE_VAL)
+        .order("reg_date", { ascending: false, nullsFirst: false })
+        .order("end_date", { ascending: false, nullsFirst: false })
+        .limit(LIST_MAX),
+      readAll<Stored>((from, to) => db.from("job_posts")
+        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+        .filter("source", SOURCE_OP, SOURCE_VAL)
+        .gte("end_date", today)
+        .order("end_date", { ascending: true }).order("source_id")
+        .range(from, to)).catch(() => [] as Stored[]),
+    ]);
+    const { data, count } = recent;
+    const seen = new Set<string>();
+    const rows = [...((data ?? []) as Stored[]), ...open]
+      .filter((r) => (seen.has(r.source_id) ? false : (seen.add(r.source_id), true)));
     if (!rows.length) return null;
-    const jobs: Job[] = rows.map(toStoredJob);
+    const jobs: Job[] = noTwins(rows.map(toStoredJob));
     return { ok: true, reason: null, jobs: sortJobs(jobs), total: count ?? jobs.length };
   } catch {
     return null;
@@ -342,45 +399,69 @@ export async function getOpenJobs(limit = 10): Promise<Job[]> {
     .gte("end_date", today)
     .order("end_date", { ascending: true })
     .limit(limit);
-  return ((data ?? []) as Stored[]).map(toStoredJob).filter((j) => j.status === "ongoing");
+  return noTwins(((data ?? []) as Stored[]).map(toStoredJob)).filter((j) => j.status === "ongoing");
 }
 
 /** 같은 기관, 없으면 같은 지역의 다른 공고. 상세 페이지 아래에 붙인다. */
 export async function getRelatedJobs(job: Job, limit = 6): Promise<Job[]> {
   if (!dbConfigured) return [];
-  const run = async (col: "org" | "region", v: string) => {
-    const { data } = await db
+  // 출처마다 따로 묻는다. in() 으로 물으면 (org, reg_date)·(source, region, reg_date) 색인을 못 타
+  // 공고 쪽마다 0.7ms 이던 것이 8~70ms 가 됐다(2026-10-17 측정).
+  const run = async (col: "org" | "region", v: string) =>
+    (await perSource((src) => db
       .from("job_posts")
       .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
-      .filter("source", SOURCE_OP, SOURCE_VAL).eq(col, v).neq("source_id", job.id)
+      .eq("source", src).eq(col, v).neq("source_id", job.id)
       .order("reg_date", { ascending: false, nullsFirst: false })
-      .limit(limit);
-    return (data ?? []) as Stored[];
-  };
+      .limit(limit))).rows;
   let rows: Stored[] = [];
   if (job.org) rows = await run("org", job.org);
   if (rows.length < 3 && job.region) rows = rows.concat(await run("region", job.region));
   const seen = new Set<string>();
-  return rows
+  const me = { id: job.id, title: job.title, reg: job.reg, end: job.end };
+  // 지금 보는 공고의 다른 출처 쌍둥이도 뺀다(같은 공고가 "다른 공고"로 맨 위에 뜨던 것).
+  return noTwins(rows
     .filter((r) => (seen.has(r.source_id) ? false : (seen.add(r.source_id), true)))
-    .slice(0, limit)
-    .map(toStoredJob);
+    .map(toStoredJob))
+    .filter((j) => !isTwin({ id: j.id, title: j.title, reg: j.reg, end: j.end }, me))
+    .slice(0, limit);
 }
 
-/** 공고가 실제로 있는 시·도와 건수. 지역별 목차가 쓴다. */
+/** 지역 쪽이 한 시·도로 치는 이름들: 정식 이름과 줄임말("서울특별시", "서울"). getJobsByRegion 과 목차가 같이 쓴다. */
+function sidoNames(sido: string): string[] {
+  const safe = (w: string) => w.replace(/[,()%]/g, "").trim();
+  return Array.from(new Set([sido, ...(SIDO_SHORT[sido] ?? "").split("·")].map(safe).filter((t) => t.length >= 2)));
+}
+
+/**
+ * 시·도와 지금 접수 중인 공고 수. 지역별 목차와 사이트맵이 쓴다.
+ *
+ * 예전에는 region 칸을 순서 없이 5,000줄 읽어 세서 강원·경기 두 곳만 나왔다(2026-10-17 점검).
+ * 지역 쪽(getJobsByRegion)과 같은 기준으로 센다: region 이 그 시·도이거나, 기관명·제목에 그 이름이 있으면.
+ * 나라일터 공고는 region 이 빈 것이 많아(누리집에서 받은 것) 이름으로 잡는다. 두 시·도 이름이 다 들어간
+ * 공고는 양쪽에 센다(지역 쪽에도 양쪽에 나온다). 시·도 목록은 고정이라 목차와 사이트맵이 흔들리지 않는다.
+ */
 export async function getJobRegions(): Promise<{ sido: string; n: number }[]> {
   if (!dbConfigured) return [];
+  const sidos = Object.keys(SIDO_SHORT);
+  const n = new Map(sidos.map((s) => [s, 0]));
   try {
-    const { data } = await db
-      .from("job_posts").select("region").filter("source", SOURCE_OP, SOURCE_VAL).not("region", "is", null)
-      .limit(5000);
-    const m = new Map<string, number>();
-    for (const r of (data ?? []) as { region: string }[])
-      m.set(r.region, (m.get(r.region) ?? 0) + 1);
-    return [...m.entries()].map(([sido, n]) => ({ sido, n })).sort((a, b) => b.n - a.n);
+    const today = new Date().toISOString().slice(0, 10);
+    type R = { source_id: string; title: string; org: string | null; region: string | null; reg_date: string | null; end_date: string | null };
+    const data = await readAll<R>((from, to) => db
+      .from("job_posts").select("source_id,title,org,region,reg_date,end_date")
+      .filter("source", SOURCE_OP, SOURCE_VAL).gte("end_date", today)
+      .order("source_id").range(from, to));
+    const rows = dropAlioTwins(data, (r) => ({ id: r.source_id, title: r.title, reg: r.reg_date, end: r.end_date }));
+    const names = sidos.map((s) => [s, sidoNames(s)] as const);
+    for (const r of rows) {
+      const hay = `${r.org ?? ""} ${r.title}`;
+      for (const [s, ns] of names) if (r.region === s || ns.some((t) => hay.includes(t))) n.set(s, (n.get(s) ?? 0) + 1);
+    }
   } catch {
-    return [];
+    // 숫자를 못 셌어도 시·도 목록은 그대로 낸다.
   }
+  return sidos.map((sido) => ({ sido, n: n.get(sido) ?? 0 })).sort((a, b) => b.n - a.n);
 }
 
 /**
@@ -392,22 +473,37 @@ export async function getJobRegions(): Promise<{ sido: string; n: number }[]> {
  */
 export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoard> {
   if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
+  // 시·도가 아닌 값("해외" 등)은 두 글자 ILIKE 로 22만 건을 훑는다(2.5초). 묻지 않는다.
+  if (!normSido(sido)) return { ok: false, reason: "시·도 이름이 아닙니다.", jobs: [], total: 0 };
   try {
-    const safe = (w: string) => w.replace(/[,()%]/g, "").trim();
-    const names = Array.from(new Set([sido, ...(SIDO_SHORT[sido] ?? "").split("·")].map(safe).filter((t) => t.length >= 2)));
-    const clause = [`region.eq.${safe(sido)}`, ...names.flatMap((t) => [`org.ilike.%${t}%`, `title.ilike.%${t}%`])].join(",");
-    const { data, count } = await db
-      .from("job_posts")
-      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
-              { count: "estimated" })
-      .filter("source", SOURCE_OP, SOURCE_VAL).or(clause)
-      .order("reg_date", { ascending: false, nullsFirst: false })
-      .limit(limit);
-    const jobs: Job[] = ((data ?? []) as Stored[]).map(toStoredJob);
+    const names = sidoNames(sido);
+    const clause = [`region.eq.${sido.replace(/[,()%]/g, "").trim()}`, ...names.flatMap((t) => [`org.ilike.%${t}%`, `title.ilike.%${t}%`])].join(",");
+    const today = new Date().toISOString().slice(0, 10);
+    // 건수(count)는 묻지 않는다. PostgREST 가 같은 조건으로 한 번 더 세는데, 두 글자 ILIKE 라 매번 전체를 훑어
+    // 평균 1.2초, 길게는 3초 제한에 걸렸다(2026-10-17 pg_stat_statements). 화면은 읽어 온 건수만 쓴다.
+    // 최근 200건에 더해 접수 중인 것은 전부(마감일 색인, 시·도마다 많아야 수백 건). 잡알리오가 최근 창의
+    // 3분의 1을 차지해 접수 중 공고가 빠지던 것(서울 194건 중 133건만 보임)을 막는다.
+    const [recent, open] = await Promise.all([
+      db.from("job_posts")
+        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+        .filter("source", SOURCE_OP, SOURCE_VAL).or(clause)
+        .order("reg_date", { ascending: false, nullsFirst: false })
+        .limit(limit),
+      db.from("job_posts")
+        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+        .filter("source", SOURCE_OP, SOURCE_VAL).or(clause).gte("end_date", today)
+        .order("end_date", { ascending: true })
+        .limit(PAGE_ROWS),
+    ]);
+    if (recent.error) throw recent.error;
+    const seen = new Set<string>();
+    const rows = [...((recent.data ?? []) as Stored[]), ...((open.data ?? []) as Stored[])]
+      .filter((r) => (seen.has(r.source_id) ? false : (seen.add(r.source_id), true)));
+    const jobs: Job[] = noTwins(rows.map(toStoredJob));
     return {
       ok: jobs.length > 0,
       reason: jobs.length ? null : "아직 이 지역 공고를 받아오지 못했습니다.",
-      jobs: sortJobs(jobs), total: count ?? jobs.length,
+      jobs: sortJobs(jobs), total: jobs.length,
     };
   } catch {
     return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0 };
@@ -415,24 +511,39 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
 }
 
 /**
- * 사이트맵에 올릴 공고. 최근 등록순 위에서부터.
+ * 사이트맵에 올릴 공고. 지금 접수 중인 것을 먼저, 등록 최신순으로.
  *
- * 과거 공고를 수십만 건 받아 오므로 전부 올리면 안 된다. 오래전에 끝난
- * 공고는 사람에게도 검색엔진에도 쓸모가 없다. 최근 1년치 안에서만 고른다.
+ * 과거 공고를 수십만 건 받아 오므로 전부 올리면 안 된다. 오래전에 끝난 공고는 사람에게도 검색엔진에도
+ * 쓸모가 없다. 예전에는 등록순 400건이라 나흘치만 들어가고 접수 중인 공고 600여 건이 빠졌다(2026-10-17).
+ * 접수 중(1천 건 남짓)을 다 넣고, 그보다 적으면 최근 1년치 마감 공고로 min 건까지 채운다.
+ * 나라일터·잡알리오에 같이 올라온 공고는 나라일터 쪽만. 같은 날 등록은 번호순이라 빌드마다 바뀌지 않는다.
  */
-export async function getTopJobIds(limit = 400): Promise<{ id: string; updated: string | null }[]> {
+export async function getTopJobIds(limit = 1500, min = 400): Promise<{ id: string; updated: string | null }[]> {
   if (!dbConfigured) return [];
   const yearAgo = new Date();
   yearAgo.setDate(yearAgo.getDate() - 365);
+  const year = yearAgo.toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  type R = { source_id: string; title: string; reg_date: string | null; end_date: string | null };
+  const pick = (r: R) => ({ id: r.source_id, title: r.title, reg: r.reg_date, end: r.end_date });
   try {
-    const { data } = await db
-      .from("job_posts").select("source_id,reg_date").filter("source", SOURCE_OP, SOURCE_VAL)
-      .gte("reg_date", yearAgo.toISOString().slice(0, 10))
-      .order("reg_date", { ascending: false, nullsFirst: false })
-      .limit(limit);
+    const data = await readAll<R>((from, to) => db
+      .from("job_posts").select("source_id,title,reg_date,end_date").filter("source", SOURCE_OP, SOURCE_VAL)
+      .gte("end_date", today).gte("reg_date", year)
+      .order("reg_date", { ascending: false, nullsFirst: false }).order("source_id")
+      .range(from, to), limit);
+    let rows = dropAlioTwins(data, pick);
+    if (rows.length < min) {
+      const { data: more } = await db
+        .from("job_posts").select("source_id,title,reg_date,end_date").filter("source", SOURCE_OP, SOURCE_VAL)
+        .gte("reg_date", year)
+        .order("reg_date", { ascending: false, nullsFirst: false }).order("source_id")
+        .limit(min);
+      const have = new Set(rows.map((r) => r.source_id));
+      rows = dropAlioTwins([...rows, ...((more ?? []) as R[]).filter((r) => !have.has(r.source_id))], pick).slice(0, Math.max(min, rows.length));
+    }
     // 등록일을 <lastmod> 로 쓴다. 공고는 올라온 뒤 내용이 거의 안 바뀐다.
-    return ((data ?? []) as { source_id: string; reg_date: string | null }[])
-      .map((r) => ({ id: r.source_id, updated: r.reg_date }));
+    return rows.map((r) => ({ id: r.source_id, updated: r.reg_date }));
   } catch {
     return [];
   }
@@ -465,6 +576,21 @@ export type JobOverview = {
   lastReg: string | null;
   medDays: number | null;
 };
+
+/**
+ * 잡알리오 공고 수(전체·접수 중). job_overview 는 2008년부터의 추이를 보는 나라일터 집계라 잡알리오를 넣지
+ * 않는다(잡알리오는 2026-08 부터라 섞으면 월별·기관별 추이가 틀어진다). 첫 화면 숫자에만 더한다. 각 1ms 남짓.
+ */
+export const getAlioCounts = cache(async (): Promise<{ total: number; open: number } | null> => {
+  if (!dbConfigured) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const [all, open] = await Promise.all([
+    db.from("job_posts").select("id", { count: "exact", head: true }).eq("source", "alio"),
+    db.from("job_posts").select("id", { count: "exact", head: true }).eq("source", "alio").gte("end_date", today),
+  ]);
+  if (all.error || open.error) return null;
+  return { total: all.count ?? 0, open: open.count ?? 0 };
+});
 
 export async function getJobOverview(): Promise<JobOverview | null> {
   if (!dbConfigured) return null;
@@ -561,26 +687,24 @@ export async function getTopOrgs(limit = 300, minN = 8): Promise<OrgStat[]> {
 export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> {
   if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
   try {
-    const read = () => db
+    // 출처마다 따로 읽는다(perSource). in() 으로 물으면 (org, reg_date) 색인을 못 타 1.4ms → 11~70ms.
+    const read = () => perSource((src) => db
       .from("job_posts")
-      .select(
-        "source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url",
-        { count: "estimated" },
-      )
-      .filter("source", SOURCE_OP, SOURCE_VAL).eq("org", org)
+      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+      .eq("source", src).eq("org", org)
       .order("reg_date", { ascending: false, nullsFirst: false })
-      .limit(limit);
+      .limit(limit));
     // 한 번 늦으면(공고 수집이 도는 동안 가끔) 한 번 더 읽는다.
     let res = await read();
     if (res.error) res = await read();
-    if (res.error) throw res.error;
-    const { data, count } = res;
-    const jobs = ((data ?? []) as Stored[]).map(toStoredJob);
+    if (res.error) throw new Error(res.error);
+    // 건수(count)는 묻지 않는다. 기관 쪽 머리 숫자는 통계(job_org_stats)와 목록에서 센다.
+    const jobs = noTwins(res.rows.map(toStoredJob)).slice(0, limit);
     return {
       ok: jobs.length > 0,
       reason: jobs.length ? null : "이 기관의 공고를 아직 받아오지 못했습니다.",
       jobs: sortJobs(jobs),
-      total: count ?? jobs.length,
+      total: jobs.length,
     };
   } catch {
     return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0, failed: true };

@@ -13,6 +13,7 @@ import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { getJobsByRegion } from "@/lib/pubJobs";
+import { normSido } from "@/lib/geo";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
@@ -43,6 +44,8 @@ export default async function JobsByRegion({ params }: P) {
   const route = readJobRoute(["region"], params.seg);
   if (!route) notFound();
   const sido = route.region!;
+  // 시·도가 아닌 이름("해외" 등)은 지역 쪽이 없다. 예전에는 두 글자로 전체를 훑어 2.5초가 걸리고 엉뚱한 공고가 나왔다.
+  if (!normSido(sido)) notFound();
   const board = await getJobsByRegion(sido);
   const openN = board.jobs.filter((j) => j.status !== "closed").length;
 
@@ -56,7 +59,7 @@ export default async function JobsByRegion({ params }: P) {
       >
         {board.ok && (
           <p className="num mt-4 text-sm text-muted">
-            {board.total.toLocaleString()}건 · 접수 중 {openN.toLocaleString()}건
+            최근 {board.total.toLocaleString()}건 · 접수 중 {openN.toLocaleString()}건
           </p>
         )}
       </PageBanner>

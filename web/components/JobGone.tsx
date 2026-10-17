@@ -26,7 +26,7 @@ export default async function JobGone() {
         <div>
           <h1 className="display mt-2 text-[1.5rem] leading-tight">이 채용 공고는 내려갔습니다</h1>
           <p className="mt-3 text-[14.5px] leading-relaxed text-muted">
-            접수가 끝나 목록에서 빠졌거나 주소가 바뀐 공고입니다. 나라일터에는 하루에도
+            접수가 끝나 목록에서 빠졌거나 주소가 바뀐 공고입니다. 나라일터와 잡알리오에는 하루에도
             수백 건이 새로 올라오니, 지금 접수 중인 공고에서 비슷한 자리를 찾아보세요.
           </p>
         </div>

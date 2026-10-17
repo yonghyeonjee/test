@@ -70,6 +70,9 @@ async function build(): Promise<Slide[]> {
     db
       .from("job_posts")
       .select("source_id,title,org,end_date")
+      // 나라일터만. 해외채용(worldjob)은 region 이 늘 비어 있어 섞이면 /jobs/{번호} 가 없는 쪽으로 가고,
+      // 잡알리오는 region 이 빈 것이 해외 근무뿐이라 "전국"이 아니다.
+      .eq("source", "gojobs")
       .not("end_date", "is", null)
       .gte("end_date", from)
       .lte("end_date", to)

@@ -854,6 +854,26 @@ def is_opening(title: str) -> bool:
     return not t.lstrip().startswith("(적격자 없음)")
 
 
+_TWIN_NORM = re.compile(r"[\s\[\]()「」『』\"'·ㆍ.,\-_]")
+
+
+def drop_alio_twins(rows: list[dict]) -> list[dict]:
+    """나라일터·잡알리오에 같이 올라온 공고는 나라일터 쪽만(web/lib/jobTwins.ts 와 같은 기준).
+    등록일·마감일이 같고 제목이 같거나 한쪽이 다른 쪽을 품으면(8자 이상) 잡알리오(번호가 a 로 시작) 쪽을 뺀다."""
+    norm = lambda t: _TWIN_NORM.sub("", t or "").lower()
+    keys: dict[str, list[str]] = {}
+    for r in rows:
+        if not str(r.get("source_id", "")).startswith("a"):
+            keys.setdefault(f"{r.get('reg_date') or ''}|{r.get('end_date') or ''}", []).append(norm(r.get("title")))
+    def twin(r: dict) -> bool:
+        if not str(r.get("source_id", "")).startswith("a"):
+            return False
+        n = norm(r.get("title"))
+        return any(t == n or (len(t) >= 8 and t in n) or (len(n) >= 8 and n in t)
+                   for t in keys.get(f"{r.get('reg_date') or ''}|{r.get('end_date') or ''}", []))
+    return [r for r in rows if not twin(r)]
+
+
 def daily_stats(sb) -> dict:
     """지난 24시간에 새로 들어온 공공기관 채용 공고와 사흘 안에 마감되는 공고. 검색 유입의 8할이 채용 쪽이라 날마다 쓴다."""
     t = today()
@@ -864,8 +884,8 @@ def daily_stats(sb) -> dict:
     closing = (sb.table("job_posts").select(cols).in_("source", ["gojobs", "alio"])
                .gte("end_date", t.isoformat()).lte("end_date", (t + dt.timedelta(days=2)).isoformat())
                .order("end_date").limit(300).execute().data or [])
-    fresh = [r for r in fresh if is_opening(r.get("title") or "")]
-    closing = [r for r in closing if is_opening(r.get("title") or "")]
+    fresh = drop_alio_twins([r for r in fresh if is_opening(r.get("title") or "")])
+    closing = drop_alio_twins([r for r in closing if is_opening(r.get("title") or "")])
     fresh_ids = {r["source_id"] for r in fresh}
     return {"date": t.isoformat(), "fresh": fresh, "closing": [r for r in closing if r["source_id"] not in fresh_ids]}
 
@@ -885,11 +905,11 @@ def write_daily(s: dict) -> dict:
     hire = {}
     for r in fresh:
         hire[r.get("hire") or "구분 없음"] = hire.get(r.get("hire") or "구분 없음", 0) + 1
-    # 기관 쪽(/jobs/org)은 나라일터 이력만 센다. 잡알리오 공고(번호가 a 로 시작)로 센 기관은 그 쪽이 404 일 수
-    # 있어 나라일터 공고로만 센다. 이름에 빈칸·괄호가 있으면 글 속 링크가 깨지므로 주소는 org_href 로 만든다.
+    # 기관 쪽(/jobs/org)은 2026-10-17 부터 잡알리오 공고도 목록에 올려, 잡알리오에만 내는 기관도 쪽이 있다.
+    # 이름에 빈칸·괄호가 있으면 글 속 링크가 깨지므로 주소는 org_href 로 만든다.
     orgs = {}
     for r in fresh:
-        if r.get("org") and not str(r.get("source_id", "")).startswith("a"):
+        if r.get("org"):
             orgs[r["org"]] = orgs.get(r["org"], 0) + 1
     top_orgs = sorted(orgs.items(), key=lambda kv: -kv[1])[:5]
 
