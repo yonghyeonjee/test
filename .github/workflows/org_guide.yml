@@ -21,8 +21,10 @@ on:
         description: "시도할 Gemini 모델(쉼표). 비우면 코드 기본값"
         required: false
         type: string
-  schedule:
-    - cron: "10 1 * * *"    # UTC 01:10 = KST 10:10. 블로그(00:30) 다음
+  # 2026-10-17 예약 실행을 멈췄다. 사이트 전체가 구글 색인에서 빠졌고, Gemini 로 만든 가이드가 기관 고유의 사실 없이
+  # 비슷한 글이 되는 일이 많았다(본문 47% 가 열네 곳 이상에서 같음). 손으로만 돌린다.
+  # schedule:
+  #   - cron: "10 1 * * *"    # UTC 01:10 = KST 10:10. 블로그(00:30) 다음
 
 concurrency:
   group: org-guide

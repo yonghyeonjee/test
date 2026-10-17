@@ -161,7 +161,7 @@ def targets(sb, days: int, limit: int, only_id: str | None) -> list[dict]:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--days", type=int, default=3)
+    ap.add_argument("--days", type=int, default=7)  # 3일이면 늦게 올라온 첨부를 놓친다(2026-10-17)
     ap.add_argument("--limit", type=int, default=300)
     ap.add_argument("--id")
     ap.add_argument("--dry", action="store_true")

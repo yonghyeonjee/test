@@ -1,6 +1,8 @@
 name: blog-daily
 
-# 모아 둔 자료로 매일 블로그 글 세 편: 채용 브리핑(daily) 한 편은 날마다, 나머지 두 편은 여섯 갈래를 세 갈래 건너 짝지어 돈다.
+# 모아 둔 자료로 쓰는 블로그 글: 채용 브리핑(daily) 한 편은 날마다(첫 화면 띠가 쓴다, 검색엔진에는 noindex),
+# 나머지 갈래 글은 월·목요일에만 한 편. 2026-10-17 사이트 전체가 구글 색인에서 빠진 뒤 자동 글을 줄였다
+# (하루 세 편 → 브리핑 + 주 2편). 손으로 돌릴 때는 count 를 그대로 쓴다.
 # 수집·정규화가 끝난 아침에 돈다.
 # 갈래: daily 오늘의 채용 브리핑 / topic 지원 주제 / org 기관 / role 직무 / region 시·도 / license 자격증 / sigungu 시·군·구
 on:
@@ -17,7 +19,7 @@ on:
         type: string
       count:
         description: "갈래를 비웠을 때 브리핑 말고 오늘 차례에서 몇 편 쓸지"
-        default: "2"
+        default: "1"
         type: string
       dry:
         description: "DB 에 쓰지 않고 글만 찍어 본다"
@@ -47,9 +49,12 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           KIND: ${{ inputs.kind }}
           SUBJECT: ${{ inputs.subject }}
-          COUNT: ${{ inputs.count || '2' }}
+          COUNT: ${{ inputs.count || '1' }}
           DRY: ${{ inputs.dry }}
+          EVENT: ${{ github.event_name }}
         run: |
+          # 예약 실행은 월(1)·목(4)요일에만 갈래 글 한 편, 나머지 날은 브리핑만.
+          if [ "$EVENT" = "schedule" ]; then case "$(date -u +%u)" in 1|4) COUNT=1 ;; *) COUNT=0 ;; esac; fi
           args="--count $COUNT"
           [ -n "$KIND" ] && args="$args --kind $KIND"
           [ -n "$SUBJECT" ] && args="$args --subject \"$SUBJECT\""

@@ -1091,8 +1091,9 @@ def main():
 
     rows = sb.table("blog_posts").select("kind,subject").execute().data or []
     done = {(r["kind"], r["subject"]) for r in rows}
-    # 채용 브리핑은 날마다 먼저 쓰고, 그다음 오늘 차례의 갈래를 쓴다.
-    kinds = [a.kind] if a.kind else [DAILY] + kinds_today(a.count)
+    # 채용 브리핑은 날마다 먼저 쓰고, 그다음 오늘 차례의 갈래를 쓴다. --count 0 이면 브리핑만.
+    # 2026-10-17: 사이트 전체가 구글 색인에서 빠져(틀에 박힌 자동 글이 많다는 판단) 자동 글은 주 2회 한 편으로 줄였다.
+    kinds = [a.kind] if a.kind else [DAILY] + (kinds_today(a.count) if a.count > 0 else [])
     written = 0
     for kind in kinds:
         try:
