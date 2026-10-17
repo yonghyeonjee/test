@@ -40,6 +40,8 @@ jobs:
         run: sh hwp_editor/build_exe.sh
       - name: 실행 파일 연기 검사
         shell: bash
+        env:
+          PYTHONUTF8: "1"   # Windows 러너의 cp1252 로는 검사 스크립트의 한글 출력이 깨진다
         run: |
           set -e
           "./dist/${{ matrix.exe }}" --no-browser --port 8799 > run.log 2>&1 &
