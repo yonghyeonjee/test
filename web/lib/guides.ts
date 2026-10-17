@@ -45,6 +45,18 @@ export const getGuideBySlug = cache(async (slug: string): Promise<Guide | null> 
   }
 });
 
+/**
+ * 가이드 쪽(/jobs/guide/[slug])이 쓰는 엄격한 판. DB 오류를 "없는 가이드"로 읽으면 notFound() 가
+ * 하루 캐시에 남는다(getJob 과 같은 결함, 2026-10-17 점검). supabase-js 는 시간 초과에도 던지지 않고
+ * { data: null, error } 를 돌려주므로 error 를 직접 보고 던진다.
+ */
+export const getGuideBySlugStrict = cache(async (slug: string): Promise<Guide | null> => {
+  if (!dbConfigured) return null;
+  const { data, error } = await db.from("org_guides_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
+  if (error) throw new Error(`[getGuideBySlug ${slug}] ${error.message}`);
+  return (data as Guide | null) ?? null;
+});
+
 /** 기관 쪽·공고 쪽에서 "이 기관 가이드가 있나"만 본다. 없으면 null. */
 export const getGuideByOrg = cache(async (org: string | null): Promise<Pick<Guide, "org" | "slug" | "title"> | null> => {
   if (!dbConfigured || !org) return null;
