@@ -159,8 +159,32 @@ def new_para_like(src: ET.Element, text: str) -> ET.Element:
     return p
 
 
-def serialize(root: ET.Element) -> bytes:
-    return (XML_DECL + ET.tostring(root, encoding="unicode")).encode("utf-8")
+def root_namespaces(xml_bytes: bytes) -> list[tuple[str, str]]:
+    """XML 첫 요소(루트) 에 선언된 ``xmlns:접두사`` 목록. 원본 순서 그대로."""
+    m = re.search(rb"<(?![?!])[^>]*>", xml_bytes)
+    if not m:
+        return []
+    return [(a.decode(), b.decode()) for a, b in re.findall(rb'xmlns:([\w.-]+)="([^"]*)"', m.group(0))]
+
+
+def serialize(root: ET.Element, namespaces: list[tuple[str, str]] | None = None) -> bytes:
+    """ElementTree 는 쓰지 않는 네임스페이스 선언을 버린다. 한글은 루트에 한컴 표준 선언이 모두 있기를 기대하므로
+    ``namespaces`` 로 받은 선언 가운데 빠진 것을 루트 시작 태그에 되살린다."""
+    body = ET.tostring(root, encoding="unicode")
+    if namespaces:
+        end = body.index(">")
+        if body[end - 1] == "/":
+            end -= 1
+        head = body[:end]
+        missing = [f' xmlns:{p}="{u}"' for p, u in namespaces if f"xmlns:{p}=" not in head]
+        body = head + "".join(missing) + body[end:]
+    return (XML_DECL + body).encode("utf-8")
+
+
+# 한컴이 만든 HWPX 의 header.xml·section*.xml 루트가 늘 선언하는 목록(순서도 한컴과 같게).
+HANCOM_ROOT_NS = [(p, NAMESPACES[p]) for p in (
+    "ha", "hp", "hp10", "hs", "hc", "hh", "hhs", "hm", "hpf", "dc", "opf", "ooxmlchart", "hwpunitchar", "epub", "config",
+)]
 
 
 class HwpxDocument:
@@ -180,9 +204,11 @@ class HwpxDocument:
         if not self.section_names:
             raise HwpxError("HWPX 가 아닙니다 (Contents/section*.xml 이 없음)")
         self.roots: dict[str, ET.Element] = {}
+        self.root_ns: dict[str, list[tuple[str, str]]] = {}
         for name in self.section_names:
             raw = self.zip_in.read(name)
             register_namespaces(raw)
+            self.root_ns[name] = root_namespaces(raw)
             try:
                 self.roots[name] = ET.fromstring(raw)
             except ET.ParseError as e:
@@ -281,7 +307,7 @@ class HwpxDocument:
         with zipfile.ZipFile(buf, "w") as zout:
             for info in self.zip_in.infolist():
                 if info.filename in self.roots:
-                    data = serialize(self.roots[info.filename])
+                    data = serialize(self.roots[info.filename], self.root_ns[info.filename])
                 elif info.filename == PREVIEW_TEXT:  # 미리보기 글도 고친 글로 맞춘다(인코딩은 원본 BOM 을 따른다)
                     old = self.zip_in.read(info)
                     enc = "utf-16-le" if old.startswith(b"\xff\xfe") else "utf-8"

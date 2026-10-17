@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - run: pip install olefile pyinstaller
+      - run: pip install olefile pyinstaller python-hwpx lxml
       - name: 검사
         run: python hwp_editor/test_hwp_editor.py
       - name: 묶기 (Windows)
@@ -67,6 +67,16 @@ jobs:
           assert [p["text"] for p in HwpxDocument(out).paragraphs()] == ["하나", "둘 고침"], "hwpx 편집 실패"
           info = json.loads(post("/api/open", build_hwp([sample_hwp_records("HWP 글")]), {"X-Filename": "t.hwp"}))
           assert info["kind"] == "hwp" and info["paragraphs"][0]["text"] == "HWP 글", info
+          out_hwp = post("/api/save", json.dumps({"token": info["token"], "ops": [{"op": "set", "id": "0", "text": "HWP 고침"}], "format": "hwpx"}).encode())
+          # 독립 라이브러리(python-hwpx) 의 한컴 호환 검사: 한글 편집기 열기 안전 · 패키지 · OWPML 스키마
+          from hwpx.tools.package_validator import validate_editor_open_safety, validate_package
+          from hwpx.tools.validator import validate_document
+          for label, blob in (("hwpx-edit", out), ("hwp-to-hwpx", out_hwp)):
+              assert validate_editor_open_safety(blob).ok, (label, validate_editor_open_safety(blob))
+              assert validate_package(blob).ok, (label, validate_package(blob).issues)
+              rep = validate_document(blob)
+              assert rep.ok, (label, rep.issues)
+              print(label, "python-hwpx 검사 통과")
           print("실행 파일 검사 통과")
           PY
           kill $PID
@@ -77,6 +87,36 @@ jobs:
           cp "dist/${{ matrix.exe }}" bundle/
           cp hwp_editor/README.md bundle/README.md
           if [ "${{ runner.os }}" = "Windows" ]; then cp hwp_editor/install_to_desktop.bat bundle/; fi
+      - name: Desktop install test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # install_to_desktop.bat 를 사용자가 더블클릭한 것처럼 돌리고(pause 는 nul 입력으로 넘김), 바로가기로 켜 본다.
+          cmd /c "bundle\install_to_desktop.bat < nul"
+          if ($LASTEXITCODE -ne 0) { throw "install_to_desktop.bat exit $LASTEXITCODE" }
+          $desk = [Environment]::GetFolderPath('Desktop')
+          $exe = Join-Path $desk 'HwpEditor\HwpEditor.exe'
+          $lnk = Join-Path $desk ('HWP ' + [char]0xD3B8 + [char]0xC9D1 + [char]0xAE30 + '.lnk')
+          Get-ChildItem $desk | Format-Table Name, Length
+          if (!(Test-Path $exe)) { throw "exe missing: $exe" }
+          if (!(Test-Path $lnk)) { throw "shortcut missing: $lnk" }
+          $sc = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk)
+          "shortcut target: $($sc.TargetPath)"
+          if ($sc.TargetPath -ne $exe) { throw "shortcut points elsewhere: $($sc.TargetPath)" }
+          Start-Process $lnk
+          $ok = $null
+          foreach ($i in 1..30) {
+            foreach ($port in 8765..8770) {
+              try { $r = Invoke-RestMethod "http://127.0.0.1:$port/api/health" -TimeoutSec 1; if ($r.ok) { $ok = $port; break } } catch {}
+            }
+            if ($ok) { break }
+            Start-Sleep 1
+          }
+          if (!$ok) { throw "editor did not answer after launching the shortcut" }
+          "editor started from desktop shortcut on port $ok"
+          $page = Invoke-WebRequest "http://127.0.0.1:$ok/" -UseBasicParsing
+          if ($page.Content -notmatch 'HWPX') { throw "main page missing" }
+          Get-Process HwpEditor -ErrorAction SilentlyContinue | Stop-Process -Force
       - uses: actions/upload-artifact@v4
         with:
           name: HwpEditor-${{ matrix.name }}

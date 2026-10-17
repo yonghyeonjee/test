@@ -89,6 +89,7 @@ class HwpxTest(unittest.TestCase):
         self.assertIn("<hp:lineBreak", xml)
         self.assertIn("<hp:tab ", xml)
         self.assertNotIn("ns0:", xml)
+        self.assertIn('xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section"', xml.split(">", 2)[1])
         again = HwpxDocument(out).paragraphs()
         self.assertEqual([p["text"] for p in again], ["고친 첫 문단", "표 앞\t탭 뒤", "칸1 고침\n둘째 줄", "칸2a", "칸2 새 문단\t탭", "그 다음", "빈 문단에 글"])
         self.assertEqual([p["depth"] for p in again], [0, 0, 1, 1, 1, 1, 0])
@@ -116,9 +117,20 @@ class HwpxTest(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(data)) as z:
             self.assertEqual(z.namelist()[0], "mimetype")
             self.assertEqual(z.read("mimetype"), b"application/hwp+zip")
+            import xml.etree.ElementTree as ET
             for name in z.namelist()[1:]:
-                import xml.etree.ElementTree as ET
-                ET.fromstring(z.read(name))  # 모두 올바른 XML
+                if name.endswith((".xml", ".hpf", ".rdf")):
+                    ET.fromstring(z.read(name))  # 모두 올바른 XML
+            # 한컴 HWPX 처럼 rootfile 의 full-path 는 접두사 없는 속성이어야 다른 프로그램이 본문을 찾는다
+            ocf = "{urn:oasis:names:tc:opendocument:xmlns:container}"
+            roots = ET.fromstring(z.read("META-INF/container.xml")).iter(ocf + "rootfile")
+            self.assertIn("Contents/content.hpf", [r.get("full-path") for r in roots])
+            self.assertIn("META-INF/container.rdf", z.namelist())
+            for part in ("Contents/header.xml", "Contents/section0.xml"):  # 한컴 표준 루트 선언 15개
+                head = z.read(part).decode("utf-8").split(">", 2)[1]
+                import re
+                self.assertEqual(len(re.findall(r'\sxmlns:[\w.-]+="', head)), 15, part)
+            self.assertTrue(z.read("Preview/PrvText.txt").decode("utf-16").startswith("제목"))
         doc = HwpxDocument(data)
         self.assertEqual([p["text"] for p in doc.paragraphs()], ["제목", "본문\t탭\n줄바꿈", ""])
         self.assertTrue(doc.paragraphs()[0]["hasObjects"])  # secPr

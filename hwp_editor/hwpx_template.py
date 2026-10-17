@@ -10,7 +10,7 @@ import zipfile
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 
-from .hwpx_doc import HP, NAMESPACES, fill_t
+from .hwpx_doc import HANCOM_ROOT_NS, HP, NAMESPACES, fill_t, serialize
 
 MIMETYPE = b"application/hwp+zip"
 
@@ -36,9 +36,22 @@ CONTAINER_XML = (
     '<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container" '
     'xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf">\n'
     '  <ocf:rootfiles>\n'
-    '    <ocf:rootfile ocf:full-path="Contents/content.hpf" ocf:media-type="application/hwpml-package+xml"/>\n'
+    '    <ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwpml-package+xml"/>\n'
+    '    <ocf:rootfile full-path="META-INF/container.rdf" media-type="application/rdf+xml"/>\n'
     '  </ocf:rootfiles>\n'
     '</ocf:container>'
+)
+
+# 한컴이 만든 HWPX 에 늘 들어 있는 패키지 설명(머리·구역 파일이 어디 있는지).
+CONTAINER_RDF = (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+    '<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">'
+    '<rdf:Description rdf:about=""><ns0:hasPart xmlns:ns0="http://www.hancom.co.kr/hwpml/2016/meta/pkg#" rdf:resource="Contents/header.xml"/></rdf:Description>'
+    '<rdf:Description rdf:about="Contents/header.xml"><rdf:type rdf:resource="http://www.hancom.co.kr/hwpml/2016/meta/pkg#HeaderFile"/></rdf:Description>'
+    '<rdf:Description rdf:about=""><ns0:hasPart xmlns:ns0="http://www.hancom.co.kr/hwpml/2016/meta/pkg#" rdf:resource="Contents/section0.xml"/></rdf:Description>'
+    '<rdf:Description rdf:about="Contents/section0.xml"><rdf:type rdf:resource="http://www.hancom.co.kr/hwpml/2016/meta/pkg#SectionFile"/></rdf:Description>'
+    '<rdf:Description rdf:about=""><rdf:type rdf:resource="http://www.hancom.co.kr/hwpml/2016/meta/pkg#Document"/></rdf:Description>'
+    '</rdf:RDF>'
 )
 
 SETTINGS_XML = (
@@ -87,8 +100,7 @@ def _border(name: str) -> str:
 
 HEADER_XML = (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
-    f'<hh:head xmlns:hh="{NAMESPACES["hh"]}" xmlns:hp="{NAMESPACES["hp"]}" xmlns:hc="{NAMESPACES["hc"]}" '
-    'version="1.4" secCnt="1">'
+    '<hh:head ' + " ".join(f'xmlns:{p}="{u}"' for p, u in HANCOM_ROOT_NS) + ' version="1.4" secCnt="1">'
     '<hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/>'
     '<hh:refList>'
     + _fontfaces() +
@@ -151,7 +163,7 @@ HEADER_XML = (
 SECTION_PR = (
     '<hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" '
     'tabStopUnit="HWPUNIT" outlineShapeIDRef="1" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0">'
-    '<hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0" strictXMLFormat="0"/>'
+    '<hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/>'
     '<hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/>'
     '<hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" '
     'hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/>'
@@ -190,8 +202,7 @@ def section_xml(texts: list[str]) -> bytes:
             p.append(first)
         run = ET.SubElement(p, HP + "run", {"charPrIDRef": "0"})
         fill_t(ET.SubElement(run, HP + "t"), text)
-    from .hwpx_doc import serialize
-    return serialize(root)
+    return serialize(root, HANCOM_ROOT_NS)
 
 
 def build_hwpx(texts: list[str], title: str = "") -> bytes:
@@ -204,10 +215,16 @@ def build_hwpx(texts: list[str], title: str = "") -> bytes:
             ("version.xml", VERSION_XML),
             ("META-INF/manifest.xml", MANIFEST_XML),
             ("META-INF/container.xml", CONTAINER_XML),
+            ("META-INF/container.rdf", CONTAINER_RDF),
             ("Contents/content.hpf", content_hpf(title)),
             ("Contents/header.xml", HEADER_XML),
             ("Contents/section0.xml", section_xml(texts)),
             ("settings.xml", SETTINGS_XML),
+            ("Preview/PrvText.txt", "\ufeff" + "\r\n".join(texts)[:1000]),
         ):
-            z.writestr(name, body.encode("utf-8") if isinstance(body, str) else body, zipfile.ZIP_DEFLATED)
+            if name == "Preview/PrvText.txt":  # 한컴은 미리보기 글을 UTF-16LE(BOM) 로 둔다
+                data = body.encode("utf-16-le")
+            else:
+                data = body.encode("utf-8") if isinstance(body, str) else body
+            z.writestr(name, data, zipfile.ZIP_DEFLATED)
     return buf.getvalue()
