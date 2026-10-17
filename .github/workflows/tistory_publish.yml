@@ -33,6 +33,18 @@ on:
         description: "올리지 않고 HTML 만 찍어 본다"
         default: false
         type: boolean
+      top10:
+        description: "먼저 '많이 뽑는 직무 TOP10' 글을 DB 에 쓴다(blog_top_roles.py). slug 는 그 글로 맞춘다"
+        default: false
+        type: boolean
+      shots:
+        description: "본문에 끼울 화면 사진: '주소|파일이름|설명|선택자' 를 쉼표로(pipeline/shot_pages.py). 비우면 사진 없음"
+        required: false
+        type: string
+      update:
+        description: "새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 check=true 가 찍는 최근 글 목록에서"
+        required: false
+        type: string
   schedule:
     - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00. blog_daily(00:30) 가 몇 시간 늦어도 끝난 뒤.
 
@@ -51,6 +63,24 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python pipeline/test_tistory_publish.py
+      - name: TOP10 글 먼저 쓰기
+        if: inputs.top10
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python -u pipeline/blog_top_roles.py
+      - name: 화면 사진 찍기
+        if: inputs.shots != ''
+        env:
+          SHOTS: ${{ inputs.shots }}
+        run: python -u pipeline/shot_pages.py "$SHOTS"
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.shots != ''
+        with:
+          name: shots
+          path: shots/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: 티스토리에 올리기
         env:
           TISTORY_COOKIE:       ${{ secrets.TISTORY_COOKIE }}
@@ -62,6 +92,8 @@ jobs:
           MODE: ${{ inputs.mode || 'summary' }}
           VISIBILITY: ${{ inputs.visibility || 'public' }}
           DRY: ${{ inputs.dry }}
+          SHOTS: ${{ inputs.shots }}
+          UPDATE: ${{ inputs.update }}
         run: |
           if [ -z "$TISTORY_COOKIE" ] && [ "$DRY" != "true" ]; then
             echo "::warning::TISTORY_COOKIE 가 없어 건너뜀. 로그인 쿠키를 secret 에 넣으면 올라간다(README '티스토리' 절)."
@@ -71,4 +103,6 @@ jobs:
           [ "$CHECK" = "true" ] && args="--check"
           [ -n "$SLUG" ] && args="$args --slug \"$SLUG\""
           [ "$DRY" = "true" ] && args="$args --dry"
+          [ -n "$SHOTS" ] && [ -f shots/manifest.json ] && args="$args --images shots/manifest.json"
+          [ -n "$UPDATE" ] && args="$args --update \"$UPDATE\""
           eval python -u pipeline/tistory_publish.py $args
