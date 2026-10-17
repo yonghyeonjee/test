@@ -81,10 +81,23 @@ def google_worthy(sb, urls: list[str]) -> set[str]:
 
     2026-10-17 서치 콘솔 점검: 사이트 거의 전체가 "크롤링됨 - 현재 색인이 생성되지 않음"으로 빠졌다. 공고 쪽은 본문의
     90% 가 틀에 박힌 글이라 구글이 품질을 낮게 본 것으로 판단했다. 그래서 구글에는 고유한 내용이 있는 공고만 알린다:
-    나라일터 공고이면서 공고문 요약(job_summaries)이 있고, 합격자 발표·면접 안내·채용 계획이 아닌 채용 공고.
+    나라일터 공고이면서 내용 있는 공고문 요약(job_summaries)이 있고, 합격자 발표·면접 안내가 아닌 공고.
+    공고 쪽이 JobPosting 을 내는 기준(web/app/jobs/[id]/page.tsx jobNode, lib/jobSummary.ts toLoadedSummary)과 같다.
+    임용시험 시행계획 공고는 대개 그 자체가 접수 공고라 넣는다(blog_daily.is_opening 은 브리핑용이라 뺀다).
     잡알리오 공고는 첨부를 받지 않아 요약이 없다. IndexNow(네이버·빙)에는 나라일터 공고를 다 보낸다.
     """
-    from blog_daily import is_opening  # noqa: PLC0415 — 같은 기준(채용 공고인지)을 쓴다
+    from blog_daily import _DOCS_PASS, _FINAL, _INTERVIEW  # noqa: PLC0415 — web stageOf 와 같은 기준
+
+    def recruiting(t: str) -> bool:
+        if _FINAL.search(t) and not _DOCS_PASS.search(t):
+            return False
+        return not _INTERVIEW.search(t) and not t.lstrip().startswith("(적격자 없음)")
+
+    def filled(s) -> bool:
+        # 빈 표시({})나 칸이 다 빈 요약은 쪽에서 요약 없음으로 친다(toLoadedSummary).
+        if not isinstance(s, dict):
+            return False
+        return sum(len(s.get(k) or []) for k in ("positions", "requirements", "documents", "process")) > 0
 
     ids = {u.rsplit("/", 1)[-1]: u for u in urls}
     gojobs = [urllib.parse.unquote(i) for i in ids if not urllib.parse.unquote(i).startswith("a")]
@@ -94,11 +107,11 @@ def google_worthy(sb, urls: list[str]) -> set[str]:
     titles: dict[str, str] = {}
     for i in range(0, len(gojobs), 200):
         chunk = gojobs[i:i + 200]
-        rows = sb.table("job_summaries").select("source_id").in_("source_id", chunk).execute().data or []
-        have |= {r["source_id"] for r in rows}
+        rows = sb.table("job_summaries").select("source_id,summary").in_("source_id", chunk).execute().data or []
+        have |= {r["source_id"] for r in rows if filled(r.get("summary"))}
         rows = sb.table("job_posts").select("source_id,title").eq("source", "gojobs").in_("source_id", chunk).execute().data or []
         titles |= {r["source_id"]: r.get("title") or "" for r in rows}
-    ok = {sid for sid in have if is_opening(titles.get(sid, ""))}
+    ok = {sid for sid in have if recruiting(titles.get(sid, ""))}
     return {u for i, u in ids.items() if urllib.parse.unquote(i) in ok}
 
 
@@ -155,7 +168,7 @@ def main():
     new_jobs = [u for u in got["jobs"] if u in keep]
     closed = [u for u in got["closed"] if u in keep]
     print(f"구글로 보낼 공고: 새 공고 {len(got['jobs'])} 중 {len(new_jobs)}, 어제 마감 {len(got['closed'])} 중 {len(closed)}"
-          " (나라일터 채용 공고 가운데 공고문 요약이 붙은 것만)")
+          " (나라일터 공고 가운데 공고문 요약이 붙은 것만, 합격자 발표·면접 안내 제외)")
     google_publish(new_jobs, closed, a.dry)
 
 

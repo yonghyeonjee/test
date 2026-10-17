@@ -35,6 +35,18 @@ export const KIND_LABEL: Record<string, string> = {
 
 const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated_at";
 
+/**
+ * 색인시킬 자동 글인지(2026-10-17). 사이트 전체가 색인에서 빠진 뒤로 다른 쪽과 겹치는 갈래는 색인하지 않는다.
+ *  - 오늘의 브리핑(daily)은 /jobs 목록을 날마다 다시 적은 것, 지원 주제·지역·시군구 글은 /topic·/area·/housing 과 겹친다.
+ *  - 기관·직무·자격증 글은 공고를 세어 쓴 분석이라 남긴다.
+ *  - 순위 연재(top10-…)는 티스토리에 같은 틀로 따로 내는 글이라 여기서는 색인하지 않는다.
+ * 쪽은 그대로 열리고 링크는 따라간다(noindex,follow).
+ */
+const INDEX_KINDS = new Set(["org", "role", "license"]);
+export function storyIndexable(s: Pick<Story, "kind" | "slug">): boolean {
+  return INDEX_KINDS.has(s.kind) && !s.slug.startsWith("top10-");
+}
+
 export async function getStories(limit = 100): Promise<Story[]> {
   if (!dbConfigured) return [];
   try {

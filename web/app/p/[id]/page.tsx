@@ -81,7 +81,7 @@ export async function generateMetadata({
     title: seoTitle(p),
     description: desc,
     alternates: { canonical: `${SITE}/p/${encodeURIComponent(p.source_id)}` },
-    // 마감된 사업, 선정기준이 꼬리표뿐인 기업마당 사업은 색인하지 않는다(lib/db programIndexable, 2026-10-17).
+    // 마감된 사업은 색인하지 않는다(lib/db programIndexable, 2026-10-17).
     // 쪽은 그대로 열리고 링크도 따라간다. 이미 읽은 사업 한 건으로만 정하니 DB 오류로 색인이 꺼지지 않는다.
     ...(programIndexable(p) ? {} : { robots: { index: false, follow: true } }),
     openGraph: { title: seoTitle(p), description: desc, type: "article" },

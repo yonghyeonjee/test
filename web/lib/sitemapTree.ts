@@ -10,7 +10,7 @@
  *   jobs      채용 — 구분·지역·기관 목차와 접수 중인 나라일터 모집 공고(색인하는 것만)
  *   licenses  자격증 종목 — 찾는 사람이 있는 것만
  *   housing   주거 지원 — 대상×종류와 그 시·도 사업이 많은 시·도
- *   posts     읽을거리 — 손으로 쓴 안내 글
+ *   posts     읽을거리 — 손으로 쓴 안내 글과 기관·직무·자격증 분석 글
  *
  * 2026-10-17: 사이트 전체가 색인에서 빠진 뒤로 각 갈래에는 색인시키는(noindex 가 아닌) 쪽만 올린다.
  * 기준은 쪽마다 한 곳에 있다 — lib/db programIndexable, lib/qnet licenseIndexable, lib/housing SIDO_*_MIN.
@@ -18,8 +18,9 @@
 import { getAreas, getTopSourceIds } from "./db";
 import { KIND_KEYS, SIDO_SITEMAP_MIN, WHO_KEYS, housingCounts, housingPath, sidosFor } from "./housing";
 import { POSTS } from "./posts";
+import { getStories, storyIndexable } from "./stories";
 import { ORG_INDEX_MIN, getJobHires, getJobRegions, getOrgRecentCounts, getTopJobIds, getTopOrgs } from "./pubJobs";
-import { getLicenses, licenseApplicants, licenseIndexable } from "./qnet";
+import { LICENSE_DEMAND_MIN, getLicenses, licenseApplicants, licenseIndexable } from "./qnet";
 import { TOPICS } from "./topics";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
@@ -106,7 +107,7 @@ async function jobs(): Promise<Entry[]> {
 }
 
 /**
- * 자격증: 색인시키는 종목만(licenseIndexable, 2026-10-17 기준 613 → 320종목). 응시자 통계를 못 읽으면
+ * 자격증: 응시자가 많은 종목만(licenseIndexable 에 LICENSE_DEMAND_MIN, 2026-10-17 기준 613 → 320종목). 응시자 통계를 못 읽으면
  * 종목 쪽도 색인을 끄지 않으니(fail open) 여기서도 전부 올린다.
  */
 async function licenses(): Promise<Entry[]> {
@@ -116,7 +117,7 @@ async function licenses(): Promise<Entry[]> {
     return null;
   });
   return b.all
-    .filter((l) => l.code && (applicants === null || licenseIndexable(l, b.all, applicants)))
+    .filter((l) => l.code && (applicants === null || licenseIndexable(l, b.all, applicants, LICENSE_DEMAND_MIN)))
     .map((l) => e(`/license/${encodeURIComponent(l.code)}`, "monthly", 0.6));
 }
 
@@ -132,16 +133,18 @@ async function housing(): Promise<Entry[]> {
 }
 
 /**
- * 읽을거리: 손으로 쓴 안내 글과 코드 안의 글 목록. 자료로 매일 만드는 글(blog_posts, /story/<slug>)은
- * noindex 로 돌리며 뺐다(2026-10-17).
+ * 읽을거리: 손으로 쓴 안내 글, 코드 안의 글 목록, 자동 글 가운데 색인하는 갈래(기관·직무·자격증, lib/stories
+ * storyIndexable). 브리핑·주제·지역·순위 연재는 noindex 로 돌리며 뺐다(2026-10-17).
  */
-function posts(): Entry[] {
+async function posts(): Promise<Entry[]> {
+  const stories = (await getStories(200)).filter(storyIndexable);
   return [
     e("/blog/youth-future-savings", "daily", 0.9),
     e("/blog/income", "monthly", 0.8),
     e("/blog/gojobs-guide", "monthly", 0.9),
     e("/story/jeonse-extension", "monthly", 0.9),
     ...POSTS.map((p) => e(`/blog/${p.slug}`, "monthly", 0.6, day(p.updated))),
+    ...stories.map((s) => e(`/story/${encodeURIComponent(s.slug)}`, "weekly", 0.8, day(s.updated_at))),
   ];
 }
 

@@ -52,7 +52,7 @@ export function jobsIndexMetadata(r: JobRoute): Metadata {
     keywords: [
       ...brandKeys("채용", "공공기관 채용", "채용정보"),
       "취업지원제도", "구직", "공공기관 채용", "공공기관 채용정보",
-      "나라일터 채용", "공무직 채용", "지자체 채용공고",
+      "공무직 채용", "지자체 채용공고",
       ...cond.map((c) => `${c} 채용`),
     ],
     alternates: { canonical: jobCanonical(r) },

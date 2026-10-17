@@ -119,8 +119,9 @@ ok("1월·12월·2월" in text or "12월·1월·2월" in text, "채용 몰리는
 ok("/?sido=충청북도&sigungu=옥천군&via=story" in text, "조건 검색 링크")
 ok("None" not in text and "nan" not in text.lower(), "빈 값 없음")
 
-ok(b.kinds_today(2, 0) == ["topic", "region"] and b.kinds_today(2, 1) == ["org", "license"] and b.kinds_today(2, 2) == ["role", "sigungu"], "두 갈래 짝")
-ok(b.kinds_today(1, 4) == ["license"] and len(b.kinds_today(9, 0)) == 6, "갈래 수 한도")
+ok(b.kinds_today(1, 0) == ["org"] and b.kinds_today(1, 1) == ["role"] and b.kinds_today(1, 2) == ["license"], "기관·직무·자격증만 돈다")
+ok(b.kinds_today(2, 0) == ["org", "role"] and b.kinds_today(2, 2) == ["license", "org"], "두 갈래")
+ok(len(b.kinds_today(9, 0)) == 3, "갈래 수 한도")
 ok(b.BRAND == "K나라지원", "이름")
 
 ok(b.josa("공단", "은는") == "공단은" and b.josa("공사", "이가") == "공사가", "조사")

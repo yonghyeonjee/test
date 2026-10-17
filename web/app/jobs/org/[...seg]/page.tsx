@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description:
       `${org}이(가) 낸 채용 공고를 나라일터·잡알리오에서 모았습니다. ${span}을 등록일순으로 보고, ` +
       "접수 중인 공고와 접수 기간이 며칠이었는지를 함께 확인합니다.",
-    keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용", "나라일터", "잡알리오"],
+    keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용"],
     alternates: { canonical: jobCanonical(r) },
     robots: thin ? { index: false, follow: true } : jobRobots(r),
   });

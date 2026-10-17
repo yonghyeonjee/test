@@ -102,11 +102,11 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 같은 틀에 내용이 얇은 공고 쪽 3만여 건이 사이트 평가를 끌어내린 것으로 본다. 아래 중 하나면 noindex,follow
   // (쪽은 그대로 보이고 링크도 따라간다. robots.txt 로 막지 않는다).
   //  - 잡알리오 공고: 첨부도 요약도 없이 목록 몇 줄이 전부다.
-  //  - 합격자 발표·면접 안내·채용 계획: 지원하는 공고가 아니다.
+  //  - 합격자 발표·면접 안내: 지원하는 공고가 아니다. 임용시험 시행계획 공고는 대개 그 자체가 접수 공고라 색인한다.
   //  - 마감됐고 공고 요약도 없는 것: 남은 것이 날짜뿐이다.
   //  - 1년 넘게 지난 것(예전 규칙).
   // 접수 중인 나라일터 모집 공고는 요약이 없어도 색인한다 — 요약은 하루 안에 붙는데 noindex 는 사흘 캐시에 남는다.
-  const noindex = stale || isAlioId(job.id) || stage === "final" || stage === "interview" || stage === "plan"
+  const noindex = stale || isAlioId(job.id) || stage === "final" || stage === "interview"
     || (job.status === "closed" && !hasSummary);
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
@@ -122,7 +122,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
       job.region && role && `${job.region} ${role.name}`,
-      "공공기관 채용", "채용 공고", sourceName(job.id),
+      "공공기관 채용", "채용 공고",
     ].filter(Boolean) as string[],
     alternates: { canonical: `/jobs/${encodeURIComponent(job.id)}` },
   });
@@ -171,12 +171,12 @@ function summaryHtml(s: JobSummary, lead: string): string {
 function jobNode(job: Job, sum?: JobSummary | null) {
   // 2026-10-17 접수 중이고 공고 요약이 있는 것만 구인으로 내보낸다. 요약이 없으면 description 이 틀 문장
   // 몇 줄뿐이라 구글이 요구하는 "공고 전문"에 못 미치고, 마감된 공고는 구인이 아니다. 빵부스러기 등 나머지 표시는 그대로.
-  if (!sum || job.status === "closed") return null;
+  if (!sum || job.status === "closed" || isAlioId(job.id)) return null;
   if (!job.reg || !job.org) return null;
   if (!job.region && !job.hire && !job.headcount) return null;
-  // 합격자 발표·면접 안내·채용 계획은 모집 공고가 아니다(색인도 하지 않는다). 구글에 구인으로 내보내지 않는다.
+  // 합격자 발표·면접 안내는 모집 공고가 아니다(색인도 하지 않는다). 구글에 구인으로 내보내지 않는다.
   const stage = stageOf(job.title);
-  if (stage === "final" || stage === "interview" || stage === "plan") return null;
+  if (stage === "final" || stage === "interview") return null;
   const role = detectRole(job.title, job.org);
   const employment = role?.employment ?? employmentFromTitle(job.title)
     ?? employmentFromTitle(sum.positions.map((p) => p.type).join(" "));
@@ -538,13 +538,12 @@ export default async function JobDetail({ params }: P) {
           </Link>
         )}
       </div>
+      {/* 안내는 한 문단으로. 2026-10-17 공식 사이트로 오해하지 않게 민간 사이트임을 같이 적는다. */}
       <p className="mt-2 text-xs leading-relaxed text-muted">
-        접수 방법·제출 서류·자격 요건은 기관이 올린 원문에만 있습니다. 마감일이 바뀌는 일도
-        있으니 신청 전에 원문에서 한 번 더 확인하세요.
-      </p>
-      {/* 2026-10-17 공식 사이트로 오해하지 않게 한 줄. 원문 단추 바로 아래에 둔다. */}
-      <p className="mt-1 text-xs leading-relaxed text-muted">
-        {SITE_NAME}은 나라일터·잡알리오 공고를 모아 보여 주는 민간 사이트로, 인사혁신처나 각 기관이 운영하는 공식 사이트가 아닙니다.
+        {/* 요약이 있으면 요약 상자 아래에 이미 "원문으로 확인" 안내가 있다. */}
+        {!sum && "접수 방법·제출 서류·자격 요건은 기관이 올린 원문에만 있습니다. "}
+        마감일이 바뀌는 일도 있으니 신청 전에 원문에서 한 번 더 확인하세요. {SITE_NAME}은 나라일터·잡알리오 공고를 모아 보여 주는
+        민간 사이트로, 인사혁신처나 각 기관이 운영하는 공식 사이트가 아닙니다.
       </p>
 
       <Faq items={jobFaq(job, role, sum?.summary)} />

@@ -68,7 +68,7 @@ export default async function GuideIndex() {
 
       <section className="mt-10">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">기관별 가이드 {guides.length ? `${guides.length}곳` : ""}</h2>
-        <p className="mt-2 text-[14px] text-muted">찾는 사람이 많고 접수 중인 공고가 많은 기관부터 매일 몇 곳씩 더합니다. 없는 기관은 기관 채용 공고 쪽의 공고문에서 직접 확인하세요.</p>
+        <p className="mt-2 text-[14px] text-muted">찾는 사람이 많고 접수 중인 공고가 많은 기관부터 차례로 더합니다. 없는 기관은 기관 채용 공고 쪽의 공고문에서 직접 확인하세요.</p>
         {guides.length ? (
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {guides.map((g) => (
