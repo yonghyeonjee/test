@@ -543,9 +543,24 @@ TIPS_BY_ENTITY = {
 }
 
 
+ROTATION_START = dt.date(2026, 10, 18)   # 기획표 첫날. 표에 없는 날은 이 날부터 센 날수로 주제를 돌려 쓴다
+
+
 def plan_for(date: dt.date) -> dict | None:
+    """그날 주제. 기획표(top10_plan.json)에 있으면 그것, 없으면 기획표 순서대로 31개 주제를 끝없이 돌린다.
+    한 주제는 31일마다 돌아오고 slug 가 월 단위라 달이 바뀌면 새 글, 같은 달이면 고쳐 쓴다."""
     plan = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
-    return next((p for p in plan if p["date"] == date.isoformat()), None)
+    hit = next((p for p in plan if p["date"] == date.isoformat()), None)
+    if hit:
+        return hit
+    order = []
+    for p in plan:
+        if p["topic"] not in order:
+            order.append(p["topic"])
+    order += [k for k in TOPICS if k not in order]
+    if not order or date < ROTATION_START:
+        return None
+    return {"date": date.isoformat(), "topic": order[(date - ROTATION_START).days % len(order)], "rotation": True}
 
 
 def write(topic_key: str, ov: dict, items: list[dict], today: dt.date) -> dict:
@@ -639,8 +654,14 @@ def main() -> int:
     ap.add_argument("--date", help="기획표에서 이 날짜(YYYY-MM-DD)의 주제")
     ap.add_argument("--today", action="store_true", help="기획표에서 오늘(KST) 주제")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--pick", action="store_true", help="그날 주제 키만 찍는다(기획표 → 없으면 순환). 워크플로가 쓴다")
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
+    if a.pick:
+        d = dt.date.fromisoformat(a.date) if a.date else b.today()
+        p = plan_for(d)
+        print(p["topic"] if p else "")
+        return 0
     if a.list:
         for k, t in TOPICS.items():
             print(f"{k:22} {t['entity']:15} {t['name']}")

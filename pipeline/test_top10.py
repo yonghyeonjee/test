@@ -123,6 +123,10 @@ dates = [dt.date.fromisoformat(p["date"]) for p in plan]
 ok(len(plan) == 30 and all((dates[i+1] - dates[i]).days == 1 for i in range(29)), "30일 연속")
 ok(all(p["topic"] in t.TOPICS for p in plan), f"미등록 주제: {[p['topic'] for p in plan if p['topic'] not in t.TOPICS]}")
 ok(plan[0] == {"date": "2026-10-18", "topic": "civil"}, "첫날은 공무 직군")
+# 기획표가 끝난 뒤: 순환
+ok(t.plan_for(dt.date(2026, 11, 17)) == {"date": "2026-11-17", "topic": "civil", "rotation": True}, f"31일째는 처음(civil)으로: {t.plan_for(dt.date(2026, 11, 17))}")
+ok(t.plan_for(dt.date(2026, 11, 18))["topic"] == "orgs-national" and t.plan_for(dt.date(2027, 1, 1))["topic"] in t.TOPICS, "순환이 이어진다")
+ok(t.plan_for(dt.date(2026, 10, 1)) is None, "기획표 시작 전엔 없음")
 
 print("실패 %d" % bad if bad else "모두 통과")
 sys.exit(1 if bad else 0)

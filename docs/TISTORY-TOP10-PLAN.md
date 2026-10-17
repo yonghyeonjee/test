@@ -52,6 +52,7 @@
 
 ## 다음 달을 위해
 
-- 같은 주제를 달마다 반복해도 된다(월별 slug). 11월 17일부터는 `top10_plan.json` 에 30줄을 더 넣으면 된다.
+- **11월 17일부터는 자동으로 돈다.** 기획표에 없는 날은 기획표 순서(31개 주제)대로 끝없이 돌려 쓴다(`top10.py plan_for`). 한 주제는 31일마다 돌아오고, slug 가 월 단위라 달이 바뀌면 새 글이 된다.
+- 특정 날에 다른 주제를 내고 싶으면 `top10_plan.json` 에 그 날짜 한 줄만 넣으면 그날은 그 주제가 우선한다.
 - 새 주제를 만들려면 `top10.py` 의 `TOPICS` 에 한 줄(항목 종류 + 세는 함수)을 더한다. 항목 종류(keyword·org·region·welfare_*·license)마다 글 틀과 차트가 이미 있다.
 - 직무 설명·어려운 점·준비 방법은 `blog_top_roles.NOTES`, `top10.CIVIL_NOTES`, `top10_notes.HARD`, `tistory_top_roles.TIPS` 에 있다. 사실이 아닌 수치는 넣지 않는다.
