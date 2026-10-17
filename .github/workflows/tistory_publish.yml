@@ -7,7 +7,7 @@ name: tistory-publish
 #   TISTORY_COOKIE   로그인한 브라우저에서 abcfact.tistory.com/manage 요청의 Cookie 헤더 전체(README '티스토리' 절).
 #                    비어 있으면 경고만 내고 그냥 끝난다. 만료되면 종료 코드 2 로 빨갛게 실패한다 → 갱신.
 # 선택 variable (Settings → Variables)
-#   TISTORY_CATEGORY 카테고리 id(정수). 없으면 0(미지정). 목록은 check=true 로 본다.
+#   TISTORY_CATEGORY 카테고리 id(정수). 비우면 글마다 고른다(채용·공무원·복지 policy, 자격증 일상TIP, 기업지원 B2G). 목록은 check=true 로 본다.
 on:
   workflow_dispatch:
     inputs:

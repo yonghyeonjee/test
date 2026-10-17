@@ -18,7 +18,8 @@ tistory_publish.py — blog_posts 의 글을 티스토리(abcfact.tistory.com)�
 환경변수
   TISTORY_COOKIE     필수. 로그인한 브라우저에서 abcfact.tistory.com/manage 요청의 Cookie 헤더 전체.
   TISTORY_HOST       기본 abcfact.tistory.com
-  TISTORY_CATEGORY   카테고리 id(정수). 기본 0(미지정). --check 로 목록을 본다.
+  TISTORY_CATEGORY   카테고리 id(정수). 비우면 글마다 알맞은 것을 고른다(category_for: 자격증 → 일상TIP,
+                     기업지원 → B2G, 그 밖의 채용·공무원·복지 → policy). --check 로 목록을 본다.
   SUPABASE_URL, SUPABASE_SERVICE_KEY   글을 읽고 발행 기록(tistory_posts)을 남길 때. --dry 라도 글을 읽는 데 쓴다.
 
 이미지: `pipeline/shot_pages.py` 가 찍은 shots/manifest.json([{"file","caption"}])을 --images 로 주면
@@ -44,6 +45,9 @@ BRAND = "K나라지원"
 DEFAULT_HOST = "abcfact.tistory.com"
 VISIBILITY = {"private": 0, "protected": 15, "public": 20}   # 티스토리 post.json 의 visibility 정수
 MAX_TAGS = 10                                                  # 티스토리 글 하나의 태그 한도
+
+# abcfact.tistory.com 의 카테고리 id(--check 가 찍는 목록, 2026-10-17). 새 카테고리를 만들면 여기도 적는다.
+CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430}
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
@@ -346,6 +350,17 @@ def parse_entry_url(host: str, entry: str, raw: str = "") -> tuple[str, str]:
 
 
 # ── 글 고르기·기록 ────────────────────────────────────────
+def category_for(post: dict) -> int:
+    """글의 성격으로 카테고리를 고른다. 자격증 순위 → 일상TIP, 기업지원 순위 → B2G,
+    채용·공무원·복지·브리핑(그 밖의 전부) → policy. TISTORY_CATEGORY 나 --category 가 있으면 그쪽이 이긴다."""
+    slug = str(post.get("slug") or "")
+    if slug.startswith("top10-license-") or post.get("kind") == "license":
+        return CATEGORIES["일상TIP"]
+    if slug.startswith("top10-biz-"):
+        return CATEGORIES["B2G"]
+    return CATEGORIES["policy"]
+
+
 def today_kst() -> dt.date:
     return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
 
@@ -419,7 +434,8 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=5, help="한 번에 올릴 최대 편수")
     ap.add_argument("--mode", choices=["summary", "full"], default=os.environ.get("TISTORY_MODE", "summary"))
     ap.add_argument("--visibility", choices=sorted(VISIBILITY), default=os.environ.get("TISTORY_VISIBILITY", "public"))
-    ap.add_argument("--category", type=int, default=int(os.environ.get("TISTORY_CATEGORY") or 0))
+    ap.add_argument("--category", type=int, default=int(os.environ.get("TISTORY_CATEGORY") or 0),
+                    help="카테고리 id. 0(기본)이면 글마다 category_for 가 고른다(정책·B2G·일상TIP)")
     ap.add_argument("--composer", choices=["top10"], help="jiwon 글을 그대로 옮기지 않고 티스토리용 글을 따로 쓴다(출처는 jiwon). top10 = pipeline/tistory_top10.py")
     ap.add_argument("--update", help="새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 --check 가 찍는 최근 글 목록에서")
     ap.add_argument("--images", help="shots/manifest.json — [{\"file\": 경로, \"caption\": 설명}] 순서대로 본문에 끼운다")
@@ -443,7 +459,7 @@ def main() -> int:
                 sys.exit("TISTORY_COOKIE 가 비어 있다")
             cats = Tistory(host, cookie).categories()
             print(f"쿠키 살아 있음: {host}")
-            print("카테고리 id → 이름 (TISTORY_CATEGORY 에 넣을 값):")
+            print("카테고리 id → 이름 (비우면 글마다 고른다: " + ", ".join(f"{k}={v}" for k, v in CATEGORIES.items()) + "):")
             for cid, name in cats:
                 print(f"  {cid:>8}  {name}")
             if not cats:
@@ -472,7 +488,7 @@ def main() -> int:
         if a.dry:
             fake = [(f"[이미지 {i+1}: {m['file']}]", m.get("caption")) for i, m in enumerate(manifest)]
             for p in posts:
-                print(f"\n===== [{p['kind']}] {p['slug']} · {p['title']}  (mode={a.mode}, visibility={a.visibility}, category={a.category})")
+                print(f"\n===== [{p['kind']}] {p['slug']} · {p['title']}  (mode={a.mode}, visibility={a.visibility}, category={a.category or category_for(p)})")
                 print(render(p, a.mode, fake))
             return 0
 
@@ -493,7 +509,7 @@ def main() -> int:
             for rep, _ref, _cap in uploaded:
                 print(f"  사진 올림: {rep[:60]}…")
             post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded]),
-                                     category=a.category, tags=list(p.get("keywords") or []), visibility=a.visibility,
+                                     category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
                                      slogan=recorded_slogan(sb, p["slug"]) if a.update else "")
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
