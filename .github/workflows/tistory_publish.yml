@@ -45,6 +45,11 @@ on:
         description: "새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 check=true 가 찍는 최근 글 목록에서"
         required: false
         type: string
+      composer:
+        description: "티스토리용 글을 따로 쓴다(jiwon 글은 출처). top10 = 많이 뽑는 직무 순위"
+        default: ""
+        type: choice
+        options: ["", "top10"]
   schedule:
     - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00. blog_daily(00:30) 가 몇 시간 늦어도 끝난 뒤.
 
@@ -94,6 +99,7 @@ jobs:
           DRY: ${{ inputs.dry }}
           SHOTS: ${{ inputs.shots }}
           UPDATE: ${{ inputs.update }}
+          COMPOSER: ${{ inputs.composer }}
         run: |
           if [ -z "$TISTORY_COOKIE" ] && [ "$DRY" != "true" ]; then
             echo "::warning::TISTORY_COOKIE 가 없어 건너뜀. 로그인 쿠키를 secret 에 넣으면 올라간다(README '티스토리' 절)."
@@ -105,4 +111,5 @@ jobs:
           [ "$DRY" = "true" ] && args="$args --dry"
           [ -n "$SHOTS" ] && [ -f shots/manifest.json ] && args="$args --images shots/manifest.json"
           [ -n "$UPDATE" ] && args="$args --update \"$UPDATE\""
+          [ -n "$COMPOSER" ] && args="$args --composer $COMPOSER"
           eval python -u pipeline/tistory_publish.py $args
