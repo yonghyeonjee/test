@@ -22,6 +22,9 @@ export const metadata: Metadata = withOg({
     "공공기관·정부기관별로 공식 누리집과 공고에서 밝힌 인재상·전형 절차·자기소개서 문항을 모으고, 최근 3년 공고의 접수 기간과 자리 구성에 맞춰 자기소개서와 직무수행계획서 쓰는 순서를 정리합니다.",
   keywords: [...brandKeys("자기소개서", "직무수행계획서"), "공공기관 자기소개서 작성법", "직무수행계획서 작성법", "공기업 자소서 문항", "임기제공무원 직무수행계획서", "NCS 자기소개서"],
   alternates: { canonical: "/jobs/guide" },
+  // 기관별 가이드를 색인하지 않게 되자(2026-10-17) 이 쪽은 소개 한 문단과 noindex 쪽으로 가는 링크 목록만 남는다.
+  // 얇은 목차라 같이 색인하지 않는다. 링크는 따라가게 두어 손으로 쓴 작성법 글 두 편으로 이어진다.
+  robots: { index: false, follow: true },
 });
 
 export default async function GuideIndex() {
@@ -65,7 +68,7 @@ export default async function GuideIndex() {
 
       <section className="mt-10">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">기관별 가이드 {guides.length ? `${guides.length}곳` : ""}</h2>
-        <p className="mt-2 text-[14px] text-muted">찾는 사람이 많고 접수 중인 공고가 많은 기관부터 매일 몇 곳씩 더합니다. 없는 기관은 기관 채용 공고 쪽의 공고문에서 직접 확인하세요.</p>
+        <p className="mt-2 text-[14px] text-muted">찾는 사람이 많고 접수 중인 공고가 많은 기관부터 차례로 더합니다. 없는 기관은 기관 채용 공고 쪽의 공고문에서 직접 확인하세요.</p>
         {guides.length ? (
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {guides.map((g) => (

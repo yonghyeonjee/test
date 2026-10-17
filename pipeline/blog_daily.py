@@ -35,7 +35,10 @@ def org_href(org: str) -> str:
     return "/jobs/org/" + org.replace("%", "%25").replace(" ", "%20").replace("(", "%28").replace(")", "%29")
 
 
-KINDS = ["topic", "org", "role", "region", "license", "sigungu"]   # 날마다 돌아가며 쓰는 갈래
+KINDS = ["topic", "org", "role", "region", "license", "sigungu"]   # 쓸 수 있는 갈래(--kind 로 하나만 쓸 때)
+# 돌아가며 쓰는 갈래. 2026-10-17 사이트 전체가 색인에서 빠진 뒤로 다른 쪽(/topic·/area·/housing)과 겹치는
+# 주제·지역·시군구 글은 더 쓰지 않고(쪽도 noindex, web/lib/stories storyIndexable) 공고를 세어 쓰는 셋만 돌린다.
+ROTATION = ["org", "role", "license"]
 DAILY = "daily"                                                     # 날마다 반드시 쓰는 갈래(채용 브리핑)
 ALL_KINDS = KINDS + [DAILY]
 SITE = "https://jiwon.knowhow-it.com"
@@ -1045,9 +1048,9 @@ def compose(kind: str, picked: dict) -> dict:
 
 
 def kinds_today(count: int, day: int | None = None) -> list[str]:
-    """오늘 차례의 갈래. 둘이면 세 갈래 건너 짝(주제+지역, 기관+자격증, 직무+시군구)이 된다."""
+    """오늘 차례의 갈래(ROTATION 을 날짜순으로 돌린다). 둘이면 이웃한 두 갈래."""
     d = today().timetuple().tm_yday if day is None else day
-    return [KINDS[(d + i * (len(KINDS) // 2)) % len(KINDS)] for i in range(max(1, min(count, len(KINDS))))]
+    return [ROTATION[(d + i) % len(ROTATION)] for i in range(max(1, min(count, len(ROTATION))))]
 
 
 def write_one(sb, kind: str, subject: str | None, done: set[tuple[str, str]], dry: bool) -> str:
@@ -1091,8 +1094,9 @@ def main():
 
     rows = sb.table("blog_posts").select("kind,subject").execute().data or []
     done = {(r["kind"], r["subject"]) for r in rows}
-    # 채용 브리핑은 날마다 먼저 쓰고, 그다음 오늘 차례의 갈래를 쓴다.
-    kinds = [a.kind] if a.kind else [DAILY] + kinds_today(a.count)
+    # 채용 브리핑은 날마다 먼저 쓰고, 그다음 오늘 차례의 갈래를 쓴다. --count 0 이면 브리핑만.
+    # 2026-10-17: 사이트 전체가 구글 색인에서 빠져(틀에 박힌 자동 글이 많다는 판단) 자동 글은 주 2회 한 편으로 줄였다.
+    kinds = [a.kind] if a.kind else [DAILY] + (kinds_today(a.count) if a.count > 0 else [])
     written = 0
     for kind in kinds:
         try:

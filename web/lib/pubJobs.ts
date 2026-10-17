@@ -4,6 +4,8 @@ import { SIDO_SHORT, normSido } from "./geo";
 import { dropAlioTwins, isTwin } from "./jobTwins";
 import { gojobsFileUrl, type GojobsDetail } from "./gojobsDetail";
 import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
+import { stageOf } from "./jobRole";
+import { toLoadedSummary, type JobSummary } from "./jobSummary";
 
 /**
  * 채용 목록이 읽는 출처. 나라일터(gojobs)와 잡알리오(alio, source_id 가 a 로 시작).
@@ -511,39 +513,44 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
 }
 
 /**
- * 사이트맵에 올릴 공고. 지금 접수 중인 것을 먼저, 등록 최신순으로.
+ * 사이트맵에 올릴 공고. 색인하는 것(app/jobs/[id] 의 robots 규칙)만 올린다.
  *
- * 과거 공고를 수십만 건 받아 오므로 전부 올리면 안 된다. 오래전에 끝난 공고는 사람에게도 검색엔진에도
- * 쓸모가 없다. 예전에는 등록순 400건이라 나흘치만 들어가고 접수 중인 공고 600여 건이 빠졌다(2026-10-17).
- * 접수 중(1천 건 남짓)을 다 넣고, 그보다 적으면 최근 1년치 마감 공고로 min 건까지 채운다.
- * 나라일터·잡알리오에 같이 올라온 공고는 나라일터 쪽만. 같은 날 등록은 번호순이라 빌드마다 바뀌지 않는다.
+ * 2026-10-17 서치 콘솔에서 사이트맵 표본 60쪽 중 색인 0. 접수 중 나라일터·잡알리오 전부(1천 건 남짓)에
+ * 마감 공고까지 채워 넣던 것을, 공고 쪽에서 noindex 로 돌린 것(잡알리오, 합격자 발표·면접 안내,
+ * 마감 공고)을 빼고 접수 중인 나라일터 모집 공고만 남긴다. 첨부 공고문 요약이 붙은 것을 앞에, 그다음
+ * 나머지. 각 묶음 안은 등록 최신순, 같은 날은 번호순이라 빌드마다 순서가 바뀌지 않는다.
+ * 요약을 못 읽으면 순서만 못 가를 뿐 목록은 그대로 낸다(요약이 없어도 접수 중 모집 공고는 색인한다).
  */
-export async function getTopJobIds(limit = 1500, min = 400): Promise<{ id: string; updated: string | null }[]> {
+export async function getTopJobIds(limit = 1200): Promise<{ id: string; updated: string | null }[]> {
   if (!dbConfigured) return [];
   const yearAgo = new Date();
   yearAgo.setDate(yearAgo.getDate() - 365);
   const year = yearAgo.toISOString().slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
-  type R = { source_id: string; title: string; reg_date: string | null; end_date: string | null };
-  const pick = (r: R) => ({ id: r.source_id, title: r.title, reg: r.reg_date, end: r.end_date });
+  // 한국 날짜로 센다. 공고 쪽의 "마감"(applyStatus)이 한국 날짜라, UTC 로 세면 새벽 아홉 시간 동안 어제 마감한 공고가 남는다.
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  type R = { source_id: string; title: string; reg_date: string | null };
   try {
     const data = await readAll<R>((from, to) => db
-      .from("job_posts").select("source_id,title,reg_date,end_date").filter("source", SOURCE_OP, SOURCE_VAL)
+      .from("job_posts").select("source_id,title,reg_date").eq("source", "gojobs")
       .gte("end_date", today).gte("reg_date", year)
       .order("reg_date", { ascending: false, nullsFirst: false }).order("source_id")
-      .range(from, to), limit);
-    let rows = dropAlioTwins(data, pick);
-    if (rows.length < min) {
-      const { data: more } = await db
-        .from("job_posts").select("source_id,title,reg_date,end_date").filter("source", SOURCE_OP, SOURCE_VAL)
-        .gte("reg_date", year)
-        .order("reg_date", { ascending: false, nullsFirst: false }).order("source_id")
-        .limit(min);
-      const have = new Set(rows.map((r) => r.source_id));
-      rows = dropAlioTwins([...rows, ...((more ?? []) as R[]).filter((r) => !have.has(r.source_id))], pick).slice(0, Math.max(min, rows.length));
+      .range(from, to));
+    const rows = data.filter((r) => { const s = stageOf(r.title); return s !== "final" && s !== "interview"; });
+    const withSummary = new Set<string>();
+    try {
+      for (let i = 0; i < rows.length; i += 300) {
+        const ids = rows.slice(i, i + 300).map((r) => r.source_id);
+        const { data: sums, error } = await db.from("job_summaries_public").select("source_id,summary").in("source_id", ids);
+        if (error) throw new Error(error.message);
+        for (const s of (sums ?? []) as { source_id: string; summary: Partial<JobSummary> | null }[])
+          if (toLoadedSummary(s)) withSummary.add(s.source_id);
+      }
+    } catch {
+      withSummary.clear();
     }
+    const ordered = [...rows.filter((r) => withSummary.has(r.source_id)), ...rows.filter((r) => !withSummary.has(r.source_id))];
     // 등록일을 <lastmod> 로 쓴다. 공고는 올라온 뒤 내용이 거의 안 바뀐다.
-    return rows.map((r) => ({ id: r.source_id, updated: r.reg_date }));
+    return ordered.slice(0, limit).map((r) => ({ id: r.source_id, updated: r.reg_date }));
   } catch {
     return [];
   }
@@ -661,6 +668,38 @@ export const getOrgStatStrict = cache(async (org: string): Promise<OrgStat | nul
   if (error) throw new Error(`[getOrgStat ${org}] ${error.message}`);
   return data ? toOrgStat(data as Record<string, unknown>) : null;
 });
+
+/** 기관 쪽을 색인하는 최근 365일 공고 수(나라일터 + 잡알리오)의 하한. */
+export const ORG_INDEX_MIN = 5;
+
+/**
+ * 기관들의 최근 365일 공고 수(나라일터 + 잡알리오). 기관 쪽의 색인 여부와 사이트맵이 쓴다(2026-10-17).
+ * 나라일터는 미리 센 표 job_org_recent 의 n12(등록일이 오늘부터 365일 안)를 쓰고, 잡알리오는 그 표에
+ * 없어 공고를 직접 센다 — 1년에 2천 건 남짓이라 (source, reg_date) 색인으로 몇 ms 다. 두 곳에 같이 올라온
+ * 공고(lib/jobTwins)는 겹쳐 센다. 못 읽으면 던진다 — 부르는 쪽이 "못 읽음"을 "적음"으로 치지 않고 색인 쪽으로 두게.
+ */
+export async function getOrgRecentCounts(orgs: string[]): Promise<Map<string, number>> {
+  const n = new Map(orgs.map((o) => [o, 0]));
+  if (!orgs.length) return n;
+  if (!dbConfigured) throw new Error("[getOrgRecentCounts] DB 가 설정되지 않아 셀 수 없다");
+  const yearAgo = new Date();
+  yearAgo.setDate(yearAgo.getDate() - 365);
+  const year = yearAgo.toISOString().slice(0, 10);
+  const chunks: string[][] = [];
+  for (let i = 0; i < orgs.length; i += 50) chunks.push(orgs.slice(i, i + 50));
+  await Promise.all(chunks.map(async (chunk) => {
+    const [g, a] = await Promise.all([
+      db.from("job_org_recent").select("org,n12").in("org", chunk),
+      readAll<{ org: string }>((from, to) => db
+        .from("job_posts").select("org").eq("source", "alio").gt("reg_date", year).in("org", chunk)
+        .order("source_id").range(from, to)),
+    ]);
+    if (g.error) throw new Error(`[job_org_recent] ${g.error.message}`);
+    for (const r of (g.data ?? []) as { org: string; n12: number | null }[]) n.set(r.org, (n.get(r.org) ?? 0) + Number(r.n12 ?? 0));
+    for (const r of a) n.set(r.org, (n.get(r.org) ?? 0) + 1);
+  }));
+  return n;
+}
 
 /**
  * 공고를 많이 낸 기관 순. 기관 목차와 사이트맵이 쓴다.

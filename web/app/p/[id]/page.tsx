@@ -31,6 +31,8 @@ import {
   getProgram,
   getRelated,
   getTopSourceIds,
+  isTagCriteria,
+  programIndexable,
   type Detail,
 } from "@/lib/db";
 
@@ -73,12 +75,15 @@ export async function generateMetadata({
   // 설명문에도 사업 이름이 들어가야 한다. 요약문은 대개 이름 없이 시작한다.
   const desc = `${p.title}. ${programTagline(p)}. ` + (
     body ? `${body.slice(0, 90)}${body.length > 90 ? "…" : ""} ` : ""
-  ) + "지원대상·선정기준·신청방법을 한눈에 정리했습니다.";
+  ) + (isTagCriteria(p) ? "지원대상·지원내용·신청방법" : "지원대상·선정기준·신청방법") + "을 한눈에 정리했습니다.";
 
   return withOg({
     title: seoTitle(p),
     description: desc,
     alternates: { canonical: `${SITE}/p/${encodeURIComponent(p.source_id)}` },
+    // 마감된 사업은 색인하지 않는다(lib/db programIndexable, 2026-10-17).
+    // 쪽은 그대로 열리고 링크도 따라간다. 이미 읽은 사업 한 건으로만 정하니 DB 오류로 색인이 꺼지지 않는다.
+    ...(programIndexable(p) ? {} : { robots: { index: false, follow: true } }),
     openGraph: { title: seoTitle(p), description: desc, type: "article" },
   });
 }
@@ -300,7 +305,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <MidAd name="detail_mid" context={promoContextForProgram(p)} seed={p.source_id} />
 
       <Section title="지원대상" body={p.target_text} />
-      {p.criteria_text !== p.target_text && (
+      {/* 기업마당의 선정기준 칸은 쉼표로 이은 꼬리표뿐이라 읽을 거리가 아니다(2026-10-17). 그때는 그리지 않는다. */}
+      {p.criteria_text !== p.target_text && !isTagCriteria(p) && (
         <Section title="선정기준" body={p.criteria_text} />
       )}
       <Section title="지원내용" body={p.benefit_text} />

@@ -171,7 +171,16 @@ export function countFor(counts: Count[], kind: KindKey, who: WhoKey, sido: stri
   return countOf(counts, kind, who, sido) + countOf(counts, kind, who, null);
 }
 
-/** 시·도별 건수(전국 제외), 많은 곳부터. 사이트맵은 이 중 3건 이상만 올린다. */
+/**
+ * 시·도 쪽의 색인 기준(2026-10-17). 시·도 쪽은 그 시·도 사업에 전국 사업을 더해 보여 주므로(countFor)
+ * 그 시·도만의 사업이 적으면 전국 쪽과 거의 같은 쪽이 된다. 그래서 전국 사업은 빼고 그 시·도 사업만 센다.
+ *  - SIDO_INDEX_MIN 건 미만: noindex,follow. 쪽은 그대로 열린다.
+ *  - SIDO_SITEMAP_MIN 건 이상: 사이트맵에 올린다. 그 사이는 색인은 두되 사이트맵으로 밀지 않는다.
+ */
+export const SIDO_INDEX_MIN = 5;
+export const SIDO_SITEMAP_MIN = 8;
+
+/** 시·도별 건수(전국 제외), 많은 곳부터. 사이트맵은 이 중 SIDO_SITEMAP_MIN 건 이상만 올린다. */
 export function sidosFor(counts: Count[], kind: KindKey, who: WhoKey, min = 1) {
   return counts
     .filter((c) => c.kind === kind && c.who === who && c.sido && Number(c.n) >= min)

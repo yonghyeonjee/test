@@ -46,6 +46,14 @@ function aboutLd() {
   return ld;
 }
 
+/** 자료 출처와 받아 오는 주기. 수집 워크플로(.github/workflows)와 맞춘다. */
+const SOURCES = [
+  { what: "지원사업", from: "복지로(중앙부처·지자체 복지서비스), 기업마당, 소상공인24 공개 자료를 매일 받아 옵니다." },
+  { what: "공공기관 채용", from: "인사혁신처 나라일터와 잡알리오(공공기관 채용정보시스템)의 공고를 매일 받아 옵니다." },
+  { what: "공공기관 사업·행사·시설", from: "기획재정부 알리오 플러스 공개 자료를 주 1회 받아 옵니다." },
+  { what: "자격증·시험 일정", from: "한국산업인력공단 큐넷의 종목과 시험 일정을 주 1회 받아 옵니다." },
+];
+
 export default function About() {
   return (
     <div className="py-4">
@@ -146,6 +154,30 @@ export default function About() {
             </div>
           ))}
         </dl>
+      </section>
+
+      {/* 2026-10-17: 자료 출처와 자동으로 만드는 것을 밝힌다. 사이트 전체가 구글 색인에서 빠진 뒤, 누가 어떻게 만드는
+          사이트인지 알 수 있게 했다. 운영자 연락처는 주인이 알려 주면 넣는다(지어내지 않는다). */}
+      <section className="mt-12">
+        <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+          자료는 어디서 오고, 어떻게 만드나
+        </h2>
+        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+          {SOURCES.map((x) => (
+            <div key={x.what} className="card p-5">
+              <dt className="font-bold">{x.what}</dt>
+              <dd className="mt-2 text-sm leading-relaxed text-muted">{x.from}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-4 max-w-[36rem] leading-relaxed text-ink2">
+          공고와 사업 쪽은 위 공개 자료를 프로그램이 정리해 보여 주는 것입니다. 채용 공고의{" "}
+          <b className="font-bold">공고 요약</b>은 첨부된 공고문을 AI가 읽어 항목으로 뽑은 것이라 틀릴 수 있습니다.
+          읽을거리의 통계 글과 오늘의 채용 브리핑도 모아 둔 자료로 자동으로 씁니다. 지원금 안내 글 일부는 사람이 직접 씁니다.
+        </p>
+        <p className="mt-3 max-w-[36rem] leading-relaxed text-ink2">
+          어느 쪽이든 신청하기 전에는 공고 원문을 기준으로 확인하세요. 모든 공고와 사업 쪽에 원문 링크가 있습니다.
+        </p>
       </section>
 
       <Link href="/" className="btn btn-primary mt-12 w-full py-4">

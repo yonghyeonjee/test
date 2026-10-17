@@ -16,7 +16,7 @@ import TopStripAd from "@/components/TopStripAd";
 import { blogIndexRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
-import { getStories, getStoryStrict, KIND_LABEL } from "@/lib/stories";
+import { getStories, getStoryStrict, KIND_LABEL, storyIndexable } from "@/lib/stories";
 
 /**
  * 자료에서 매일 만드는 블로그 글. 파이프라인이 써 둔 블록을 그린다.
@@ -44,6 +44,9 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description: s.summary,
     keywords: s.keywords,
     alternates: { canonical: path },
+    // 이 경로의 글은 전부 파이프라인이 자료로 써 내는 글(blog_posts)이다. 다른 쪽과 겹치는 갈래(브리핑·주제·지역·
+    // 순위 연재)는 색인하지 않는다(lib/stories storyIndexable, 2026-10-17). 쪽은 그대로 열리고 링크는 따라간다.
+    ...(storyIndexable(s) ? {} : { robots: { index: false, follow: true } }),
     openGraph: { type: "article", url: `${SITE_URL}${path}`, title: s.title, description: s.summary,
                  publishedTime: s.published_at, modifiedTime: s.updated_at },
   });

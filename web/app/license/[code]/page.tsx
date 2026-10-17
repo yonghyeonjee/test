@@ -16,7 +16,7 @@ import ExamRoundsFor from "@/components/ExamRoundsFor";
 import { licenseFaq, licenseIntro, seriesEligibility } from "@/lib/licenseText";
 import { getExamSite } from "@/lib/examInsight";
 import { getExamRounds, gradeOfSeries, upcomingForSeries } from "@/lib/qnetExam";
-import { getLicenses, type License } from "@/lib/qnet";
+import { getLicenses, licenseApplicants, licenseIndexable, type License } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg } from "@/lib/seo";
@@ -36,12 +36,12 @@ export function generateStaticParams(): { code: string }[] {
   return [];
 }
 
-async function find(code: string): Promise<{ l: License; same: License[] } | null> {
+async function find(code: string): Promise<{ l: License; same: License[]; all: License[] } | null> {
   const b = await getLicenses();
   const l = b.all.find((x) => x.code === code);
   if (!l) return null;
   const same = b.all.filter((x) => x.field === l.field && x.code !== code).slice(0, 12);
-  return { l, same };
+  return { l, same, all: b.all };
 }
 
 const licenseDesc = (l: License) =>
@@ -53,13 +53,18 @@ const kindLabel = (l: License) => (l.kind === "T" ? "국가기술자격" : l.kin
 export async function generateMetadata({ params }: { params: { code: string } }): Promise<Metadata> {
   const r = await find(params.code);
   if (!r) return withOg({ title: "찾을 수 없는 종목" });
-  const { l } = r;
+  const { l, all } = r;
   const title = `${l.name} 자격증 — 응시 자격, 시험 일정, 취득 지원 제도`;
   const description = licenseDesc(l);
+  // 찾는 사람이 적은 종목은 색인하지 않는다(lib/qnet licenseIndexable, 2026-10-17). 응시자 통계를 못 읽으면
+  // 색인을 끄지 않는다 — 잠깐의 DB 오류가 하루 캐시에 noindex 로 남으면 멀쩡한 종목이 색인에서 빠진다.
+  const applicants = await licenseApplicants(l.code).catch(() => null);
+  const thin = applicants !== null && !licenseIndexable(l, all, applicants);
   return withOg({
     title, description,
     keywords: [`${l.name}`, `${l.name} 자격증`, `${l.name} 응시자격`, `${l.name} 시험일정`, `${l.series} 자격증`],
     alternates: { canonical: `${SITE_URL}/license/${encodeURIComponent(l.code)}` },
+    ...(thin ? { robots: { index: false, follow: true } } : {}),
   });
 }
 

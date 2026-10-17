@@ -185,6 +185,61 @@ export async function getLicenses(): Promise<LicenseBoard> {
   return board(all);
 }
 
+/**
+ * 종목별 최근 두 해 응시자 수(필기·실기처럼 단계별 줄을 더한 값). exam_stats 에서 종목마다 가장 최근 두 해를 쓴다 —
+ * 큐넷은 지난해 통계를 이듬해에야 내므로 "올해−2 이후" 로 자르면 연초에 한 해치만 남아 숫자가 반토막 난다.
+ * code 를 주면 그 종목만 읽는다. 오류이면 던진다 — 부르는 쪽이 "색인 유지" 로 받는다. 전체를 읽었는데 줄이
+ * 하나도 없을 때도 던진다(표가 비었다는 뜻). 한 종목만 읽어 줄이 없으면 통계 없는 종목이라 빈 값을 돌려준다.
+ */
+export async function licenseApplicants(code?: string): Promise<Map<string, number>> {
+  type R = { code: string; year: number; applicants: number | null };
+  const since = new Date().getFullYear() - 3;
+  const rows: R[] = [];
+  // PostgREST 는 한 번에 1,000줄까지만 준다(613종목 × 해 × 단계 ≈ 3,700줄). 나눠 읽는다.
+  for (let from = 0; from < 10_000; from += 1000) {
+    let q = db.from("exam_stats").select("code,year,applicants").gte("year", since);
+    if (code) q = q.eq("code", code);
+    const { data, error } = await q.order("id").range(from, from + 999);
+    if (error) throw new Error(`[licenseApplicants] ${error.message}`);
+    rows.push(...((data ?? []) as R[]));
+    if (!data || data.length < 1000) break;
+  }
+  if (!rows.length && !code) throw new Error("[licenseApplicants] exam_stats 에 줄이 없다");
+  const byCode = new Map<string, Map<number, number>>();
+  for (const r of rows) {
+    const years = byCode.get(r.code) ?? new Map<number, number>();
+    years.set(r.year, (years.get(r.year) ?? 0) + (r.applicants ?? 0));
+    byCode.set(r.code, years);
+  }
+  const out = new Map<string, number>();
+  byCode.forEach((years, c) => {
+    const recent = Array.from(years.entries()).sort((a, b) => b[0] - a[0]).slice(0, 2);
+    out.set(c, recent.reduce((s, [, n]) => s + n, 0));
+  });
+  return out;
+}
+
+/** 사이트맵에 올리는 최근 두 해 응시자 수. 2026-10-17 기준 국가기술자격 513종목 가운데 283종목이 넘는다. */
+export const LICENSE_DEMAND_MIN = 1000;
+/** 이보다 적으면 종목 쪽을 noindex 로 둔다. 100~999명은 색인하되 사이트맵에는 올리지 않는다(주거 5/8 과 같은 꼴). */
+export const LICENSE_INDEX_MIN = 100;
+
+/**
+ * 종목 쪽을 검색엔진에 색인시킬지(2026-10-17). 사이트 전체가 색인에서 빠졌고, 613종목 쪽은 등급 단위
+ * 같은 글에 이름만 바뀌는 꼴이라 찾는 사람이 있는 종목만 남긴다. 나머지도 쪽은 그대로 열린다(noindex,follow).
+ *  - 최근 두 해 응시자가 min 이상인 종목(쪽은 LICENSE_INDEX_MIN, 사이트맵은 LICENSE_DEMAND_MIN)
+ *  - 응시자 통계가 없는 종목(국가전문자격 100종목 전부)은 계열마다 첫 종목(코드가 가장 작은 것) 하나만 —
+ *    관광통역안내사(언어 12갈래)·국가유산수리기능자(직종 24갈래)처럼 같은 글이 갈래만 바꿔 되풀이된다.
+ *    첫 종목은 수요가 아니라 코드 순서로 고른 대표다.
+ */
+export function licenseIndexable(l: License, all: License[], applicants: Map<string, number>, min = LICENSE_INDEX_MIN): boolean {
+  const n = applicants.get(l.code) ?? 0;
+  if (n >= min) return true;
+  if (n > 0) return false;
+  const first = all.filter((x) => x.series === l.series).reduce((a, x) => (x.code < a ? x.code : a), l.code);
+  return first === l.code;
+}
+
 /** 대직무분야 → 중직무분야 → 종목. 화면에서 그대로 접어 보여 준다. */
 export function groupByField(list: License[]) {
   const map = new Map<string, Map<string, License[]>>();
