@@ -59,7 +59,15 @@ export async function deadlineItems(day: string, sido?: string | null, sigungu?:
     });
     if (error) throw error;
     type Row = { kind: "p" | "job"; id: string; title: string; org: string | null; place: string; start_date: string | null };
-    return ((data ?? []) as Row[]).map((r) => ({ kind: r.kind, id: r.id, title: r.title, org: r.org, place: r.place, start: r.start_date }));
+    // 채용은 공고 번호(source_id)로 잇는다. sql/013 판은 job_posts.id("gojobs:305694")를 돌려줘 달력의 채용
+    // 링크가 전부 "내려간 공고"로 갔다(2026-10-17, sql/014 로 고침). DB 함수가 어느 판이든 맞게 나오도록
+    // 앞머리를 떼고, 상세 쪽이 없는 해외채용(worldjob) 줄은 뺀다.
+    return ((data ?? []) as Row[]).flatMap((r): DayItem[] => {
+      if (r.kind !== "job") return [{ kind: r.kind, id: r.id, title: r.title, org: r.org, place: r.place, start: r.start_date }];
+      const m = /^(gojobs|alio|worldjob):(.+)$/.exec(r.id);
+      if (m?.[1] === "worldjob") return [];
+      return [{ kind: r.kind, id: m ? m[2] : r.id, title: r.title, org: r.org, place: r.place, start: r.start_date }];
+    });
   } catch (e) {
     console.warn("[calendar] items", e instanceof Error ? e.message : e);
     return [];

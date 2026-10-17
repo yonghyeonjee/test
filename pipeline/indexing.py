@@ -37,11 +37,17 @@ def enc(x: str) -> str:
 def collect(sb, hours: int) -> dict[str, list[str]]:
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)).isoformat()
     yday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+    # 1년 넘게 지난 공고는 상세 쪽이 noindex 다(web/app/jobs/[id]/page.tsx stale). 옛 공고를 한꺼번에 받아 오는
+    # 날이면 그 수천 건이 "새 공고"로 잡혀 구글 몫(190건)을 다 먹으니 처음부터 뺀다.
+    cutoff = (dt.date.today() - dt.timedelta(days=365)).isoformat()
     jobs = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
+            .or_(f"end_date.gte.{cutoff},end_date.is.null")
             .order("first_seen_at", desc=True).limit(2000).execute().data or [])
     closed = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).eq("end_date", yday)
               .limit(500).execute().data or [])
-    progs = (sb.table("programs").select("source_id").gte("first_seen_at", since).limit(2000).execute().data or [])
+    # 화면에 나오는 사업만(programs_public = 정리됐고 확신도 0.3 초과). 원본 표(programs)에서 고르면 정리 안 된
+    # 사업(기업마당 행사 전부 등)까지 보내 하루 열에 둘이 404 였다(2026-10-17 점검).
+    progs = (sb.table("programs_public").select("source_id").gte("first_seen_at", since).limit(2000).execute().data or [])
     blogs = (sb.table("blog_posts").select("slug").gte("published_at", since).limit(100).execute().data or [])
     guides = (sb.table("org_guides").select("slug").gte("updated_at", since).limit(100).execute().data or [])
     return {

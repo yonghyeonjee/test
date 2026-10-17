@@ -14,7 +14,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { YearBars } from "@/components/TrendBars";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getOrgPosts, getOrgTrend, indexWord, pctChange, titleMix, type OrgPost } from "@/lib/jobTrend";
-import { dot, getJobsByOrg, getOrgStat, peakMonths } from "@/lib/pubJobs";
+import { dot, getJobsByOrg, getOrgStat, getOrgStatStrict, peakMonths } from "@/lib/pubJobs";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
@@ -66,7 +66,12 @@ export default async function JobsByOrg({ params }: P) {
   if (!route) notFound();
   const org = route.org!;
   const [board, stat, trend, own, guide] = await Promise.all([getJobsByOrg(org), getOrgStat(org), getOrgTrend(org), getOrgPosts(org), getGuideByOrg(org)]);
-  if (!stat && !board.jobs.length) notFound();
+  // 404 를 내기 전에 "없는 것"인지 "못 읽은 것"인지 가린다(404 는 세 시간 캐시에 남는다). 목록을 못 읽었거나
+  // 통계를 다시 읽다 오류가 나면 던진다 — 이전에 그린 쪽이 계속 나간다. 통계만 못 읽은 것은 통계 없이 그린다.
+  if (!stat && !board.jobs.length) {
+    if (board.failed) throw new Error(`기관 공고 목록을 읽지 못했습니다: ${org}`);
+    if (!(await getOrgStatStrict(org))) notFound();
+  }
   // 공고가 있는 기관인데 목록만 못 읽었으면 잠깐 DB 가 늦은 것이다. 이 그림을 세 시간 동안
   // 캐시에 남기지 않게 던진다. 다시 그리는 중이면 Next 가 이전에 그린 쪽을 계속 보인다.
   if (stat && stat.n > 0 && !board.ok) throw new Error(`기관 공고 목록을 읽지 못했습니다: ${org}`);

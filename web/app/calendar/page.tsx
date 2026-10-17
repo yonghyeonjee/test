@@ -43,9 +43,17 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   const sigungu = one(searchParams.sigungu) || null;
   const dParam = one(searchParams.d);
   const mParam = one(searchParams.m);
-  const month = /^\d{4}-\d{2}$/.test(mParam ?? "") ? (mParam as string) : /^\d{4}-\d{2}-\d{2}$/.test(dParam ?? "") ? ym(dParam as string) : ym(today);
+  // 달은 지난 석 달부터 앞으로 열두 달까지만. 예전에는 지난달·다음달이 끝없이 이어져(마감 기록이
+  // 1901년까지 있다) 검색 로봇이 수천 개 주소를 긁었다(2026-10-17 점검). 범위 밖은 이번 달로.
+  const minMonth = shiftMonth(ym(today), -3);
+  const maxMonth = shiftMonth(ym(today), 12);
+  // 13월·00월 같은 값은 문자열 비교로는 범위 안으로 들어와 달력 칸을 만들다 500 이 났다. 진짜 달만 받는다.
+  const okM = (v?: string) => /^\d{4}-(0[1-9]|1[0-2])$/.test(v ?? "");
+  const okD = (v?: string) => /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(v ?? "");
+  const asked = okM(mParam) ? (mParam as string) : okD(dParam) ? ym(dParam as string) : ym(today);
+  const month = asked >= minMonth && asked <= maxMonth ? asked : ym(today);
   const { from, to } = monthRange(month);
-  const day = /^\d{4}-\d{2}-\d{2}$/.test(dParam ?? "") && (dParam as string) >= from && (dParam as string) <= to
+  const day = okD(dParam) && (dParam as string) >= from && (dParam as string) <= to
     ? (dParam as string) : ym(today) === month ? today : from;
 
   const [days, exams, items] = await Promise.all([
@@ -64,7 +72,8 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
 
   const q = (patch: Record<string, string | null | undefined>) => {
     const sp = new URLSearchParams();
-    const all = { m: month, d: day, sido, sigungu, ...patch };
+    // 날짜만 바꾸면 달도 그 날짜의 달로. 전날·다음날이 달을 넘으면 그 달 1일로 튀던 것.
+    const all = { m: patch.d && !("m" in patch) ? ym(patch.d) : month, d: day, sido, sigungu, ...patch };
     for (const [k, v] of Object.entries(all)) if (v) sp.set(k, v);
     return `/calendar?${sp}`;
   };
@@ -97,7 +106,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
         <LocateButton base="/calendar" keep={{ m: month, d: day }} />
         <Link href={q({ sido: null, sigungu: null })} className={`chip ${!sido ? "chip-on" : ""}`}>전국</Link>
         {SIDOS.map((s) => (
-          <Link key={s} href={q({ sido: s, sigungu: null })} className={`chip ${sido === s ? "chip-on" : ""}`}>{SIDO_SHORT[s]}</Link>
+          <Link key={s} href={q({ sido: s, sigungu: null })} rel="nofollow" className={`chip ${sido === s ? "chip-on" : ""}`}>{SIDO_SHORT[s]}</Link>
         ))}
       </div>
       {sigungu && (
@@ -111,12 +120,16 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
         {/* 달력 */}
         <section className="card p-3 sm:p-4" aria-label={`${month} 달력`}>
           <div className="flex items-center justify-between">
-            <Link href={q({ m: shiftMonth(month, -1), d: null })} className="btn btn-ghost !px-3 !py-1.5 text-[13px]" aria-label="지난달">‹ 지난달</Link>
+            {month > minMonth
+              ? <Link href={q({ m: shiftMonth(month, -1), d: null })} rel="nofollow" className="btn btn-ghost !px-3 !py-1.5 text-[13px]" aria-label="지난달">‹ 지난달</Link>
+              : <span className="w-[4.5rem]" aria-hidden />}
             <h2 className="num text-[1.0625rem] font-extrabold tracking-[-.02em]">
               {Number(month.slice(0, 4))}년 {Number(month.slice(5, 7))}월
               <span className="ml-2 text-[12.5px] font-semibold text-faint">{where} · {monthTotal.toLocaleString("ko-KR")}건</span>
             </h2>
-            <Link href={q({ m: shiftMonth(month, 1), d: null })} className="btn btn-ghost !px-3 !py-1.5 text-[13px]" aria-label="다음달">다음달 ›</Link>
+            {month < maxMonth
+              ? <Link href={q({ m: shiftMonth(month, 1), d: null })} rel="nofollow" className="btn btn-ghost !px-3 !py-1.5 text-[13px]" aria-label="다음달">다음달 ›</Link>
+              : <span className="w-[4.5rem]" aria-hidden />}
           </div>
           <div className="mt-3 grid grid-cols-7 text-center text-[11.5px] font-semibold text-faint">
             {WD.map((w, i) => <span key={w} className={i === 0 ? "text-alert" : i === 6 ? "text-cat-blue" : ""}>{w}</span>)}
@@ -129,7 +142,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
               const on = c === day;
               const past = c < today;
               return (
-                <Link key={c} href={q({ d: c })} scroll={false} aria-current={on ? "date" : undefined}
+                <Link key={c} href={q({ d: c })} scroll={false} rel="nofollow" aria-current={on ? "date" : undefined}
                       className={`flex min-h-[56px] flex-col items-center rounded-[10px] px-0.5 py-1.5 text-[13px] transition-[background-color,transform] hover:-translate-y-0.5 sm:min-h-[64px]
                                   ${on ? "pop bg-brand text-white" : past ? "text-faint hover:bg-ground" : "text-ink2 hover:bg-ground"}`}>
                   <span className={`num font-bold ${c === today && !on ? "rounded-full bg-brandSoft px-1.5 text-brand" : ""}`}>{Number(c.slice(8, 10))}</span>
@@ -162,8 +175,12 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
               {label(day)} <span className="text-[13px] font-semibold text-muted">{items.length + dayExams.length}건 마감</span>
             </h2>
             <span className="flex gap-1 text-[12.5px]">
-              <Link href={q({ d: addDays(day, -1) })} scroll={false} className="rounded-ctl px-2 py-1 text-muted hover:bg-ground hover:text-ink">‹ 전날</Link>
-              <Link href={q({ d: addDays(day, 1) })} scroll={false} className="rounded-ctl px-2 py-1 text-muted hover:bg-ground hover:text-ink">다음날 ›</Link>
+              {ym(addDays(day, -1)) >= minMonth && (
+                <Link href={q({ d: addDays(day, -1) })} scroll={false} rel="nofollow" className="rounded-ctl px-2 py-1 text-muted hover:bg-ground hover:text-ink">‹ 전날</Link>
+              )}
+              {ym(addDays(day, 1)) <= maxMonth && (
+                <Link href={q({ d: addDays(day, 1) })} scroll={false} rel="nofollow" className="rounded-ctl px-2 py-1 text-muted hover:bg-ground hover:text-ink">다음날 ›</Link>
+              )}
             </span>
           </div>
           {events.length > 0 && <CalendarAdd events={events} label="이날 마감 캘린더에 담기" size="sm" file={`마감 ${day}`} bulk className="mt-3" />}

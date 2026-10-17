@@ -10,7 +10,7 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import StoryBody from "@/components/StoryBody";
-import { getGuideBySlug, getGuides, guidePath } from "@/lib/guides";
+import { getGuideBySlugStrict, guidePath } from "@/lib/guides";
 import { jobsRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { OG_IMAGE, SITE_URL, withOg } from "@/lib/seo";
@@ -25,15 +25,13 @@ export const dynamicParams = true;
 type P = { params: { slug: string } };
 
 export async function generateStaticParams() {
-  try {
-    return (await getGuides(30)).map((g) => ({ slug: g.slug }));
-  } catch {
-    return [];
-  }
+  // 빌드 때 미리 그리지 않는다. 가이드 쪽은 DB 오류에 던지므로(getGuideBySlugStrict) 빌드 중 DB 가 잠깐 늦으면
+  // 배포가 통째로 실패한다. 스물몇 쪽이라 처음 들어올 때 그려도 가볍다.
+  return [];
 }
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
-  const g = await getGuideBySlug(decodeURIComponent(params.slug));
+  const g = await getGuideBySlugStrict(decodeURIComponent(params.slug));
   if (!g) return withOg({ title: "찾을 수 없는 가이드" });
   const path = guidePath(g.slug);
   return withOg({
@@ -48,7 +46,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
 
 export default async function GuidePage({ params }: P) {
   const slug = decodeURIComponent(params.slug);
-  const g = await getGuideBySlug(slug);
+  const g = await getGuideBySlugStrict(slug);
   if (!g) notFound();
   const path = guidePath(g.slug);
   const ld = pageGraph({
