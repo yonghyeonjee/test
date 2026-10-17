@@ -11,7 +11,25 @@
 HWP 는 압축된 이진 레코드라 글만 바꿔 제자리에 다시 쓸 수 없다(레코드 길이·압축 스트림이 다 바뀜).
 암호 문서, 배포용(ViewText) 문서, 한글 97 이하 `.hwp` 는 열지 못한다.
 
-## 준비 (한 번만)
+## 실행 파일로 쓰기 (Python 설치 없이)
+
+GitHub Actions 의 **hwp-editor-build** 워크플로가 Windows 용 `HwpEditor.exe` 와 macOS 용 `HwpEditor` 를 만든다.
+
+1. 저장소의 **Actions** 탭 → **hwp-editor-build** → 가장 최근 성공한 실행 → 아래 **Artifacts** 에서
+   `HwpEditor-windows` (또는 `HwpEditor-macos`) 를 내려받는다(zip).
+2. zip 을 아무 폴더에 풀고, Windows 는 **`install_to_desktop.bat`** 를 더블클릭한다.
+   바탕화면에 `HWP편집기` 폴더와 **HWP 편집기** 바로가기가 생긴다.
+3. 바로가기를 더블클릭 → 검은 창이 뜨고 브라우저가 `http://127.0.0.1:8765/` 로 열린다.
+   검은 창을 닫으면 편집기가 꺼진다. 포트가 쓰이고 있으면 다음 번호(8766…) 로 알아서 옮긴다.
+
+Windows 가 "Windows 의 PC 보호" 경고를 띄우면 **추가 정보 → 실행** 을 누른다(서명되지 않은 실행 파일이라 그렇다).
+macOS 는 `chmod +x HwpEditor` 뒤 터미널에서 `./HwpEditor` 로 켜고, "확인되지 않은 개발자" 경고는
+시스템 설정 → 개인정보 보호 및 보안에서 허용한다.
+
+직접 묶으려면 `pip install pyinstaller olefile` 뒤 `hwp_editor\build_exe.bat` (Windows) 또는
+`sh hwp_editor/build_exe.sh` (macOS·Linux). 결과는 `dist/` 에 생긴다.
+
+## 소스로 쓰기 — 준비 (한 번만)
 
 Python 3.10 이상이 필요하다. https://www.python.org/downloads/ 에서 설치할 때 **"Add python.exe to PATH"** 를 켠다.
 
@@ -56,6 +74,9 @@ hwp_editor/
   hwp_doc.py        HWP 5.0 읽기 (olefile + zlib, 레코드 파서)
   hwpx_template.py  글만으로 가장 단순한 HWPX 만들기 (HWP → HWPX 내려받기에 쓴다)
   static/index.html 화면 (바닐라 JS, 바깥 자원 없음)
+  launcher.py       PyInstaller 진입점
+  build_exe.bat / build_exe.sh      실행 파일 묶기
+  install_to_desktop.bat            (Windows) 바탕화면에 복사하고 바로가기 만들기
   test_hwp_editor.py
 ```
 

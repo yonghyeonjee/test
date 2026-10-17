@@ -1,0 +1,26 @@
+@echo off
+rem HwpEditor.exe 를 바탕화면에 복사하고 "HWP 편집기" 바로가기를 만든다.
+rem 이 파일과 같은 폴더에 HwpEditor.exe 가 있어야 한다(내려받은 zip 을 푼 폴더에서 더블클릭).
+chcp 65001 >nul
+set "SRC=%~dp0HwpEditor.exe"
+if not exist "%SRC%" (
+  echo HwpEditor.exe 가 이 폴더에 없습니다: %~dp0
+  pause
+  exit /b 1
+)
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('Desktop')"`) do set "DESKTOP=%%D"
+if not exist "%DESKTOP%" set "DESKTOP=%USERPROFILE%\Desktop"
+set "DIR=%DESKTOP%\HWP편집기"
+if not exist "%DIR%" mkdir "%DIR%"
+copy /y "%SRC%" "%DIR%\HwpEditor.exe" >nul || (echo 복사하지 못했습니다. & pause & exit /b 1)
+powershell -NoProfile -Command ^
+  "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%DESKTOP%\HWP 편집기.lnk');" ^
+  "$s.TargetPath='%DIR%\HwpEditor.exe'; $s.WorkingDirectory='%DIR%'; $s.Description='HWP·HWPX 편집기'; $s.Save()"
+echo.
+echo 바탕화면에 설치했습니다:
+echo   %DIR%\HwpEditor.exe
+echo   바로가기: %DESKTOP%\HWP 편집기.lnk
+echo 바로가기를 더블클릭하면 검은 창이 뜨고 브라우저가 열립니다. 검은 창을 닫으면 편집기가 꺼집니다.
+echo.
+echo (Windows 가 "알 수 없는 게시자" 경고를 띄우면 "추가 정보" ^> "실행" 을 누르세요.)
+pause

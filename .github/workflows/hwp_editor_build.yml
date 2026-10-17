@@ -1,0 +1,82 @@
+name: hwp-editor-build
+
+# HWP·HWPX 편집기를 PyInstaller 로 실행 파일 하나로 묶는다(Windows .exe, macOS 바이너리).
+# 결과는 Actions 실행 페이지의 Artifacts 에 zip 으로 올라간다(바탕화면 설치 스크립트 포함).
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "hwp_editor/**"
+      - ".github/workflows/hwp_editor_build.yml"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+            exe: HwpEditor.exe
+          - os: macos-latest
+            name: macos
+            exe: HwpEditor
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install olefile pyinstaller
+      - name: 검사
+        run: python hwp_editor/test_hwp_editor.py
+      - name: 묶기 (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: hwp_editor\build_exe.bat
+      - name: 묶기 (macOS)
+        if: runner.os != 'Windows'
+        run: sh hwp_editor/build_exe.sh
+      - name: 실행 파일 연기 검사
+        shell: bash
+        run: |
+          set -e
+          "./dist/${{ matrix.exe }}" --no-browser --port 8799 > run.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:8799/api/health > /dev/null; then break; fi
+            sleep 1
+          done
+          cat run.log
+          curl -sf http://127.0.0.1:8799/api/health
+          curl -sf http://127.0.0.1:8799/ | grep -q "HWP·HWPX 편집기"
+          python - <<'PY'
+          import sys, json, urllib.request
+          sys.path.insert(0, ".")
+          from hwp_editor.hwpx_template import build_hwpx
+          from hwp_editor.hwpx_doc import HwpxDocument
+          from hwp_editor.test_hwp_editor import build_hwp, sample_hwp_records
+          base = "http://127.0.0.1:8799"
+          def post(path, body, headers={}):
+              return urllib.request.urlopen(urllib.request.Request(base + path, data=body, method="POST", headers=headers)).read()
+          info = json.loads(post("/api/open", build_hwpx(["하나", "둘"]), {"X-Filename": "t.hwpx"}))
+          out = post("/api/save", json.dumps({"token": info["token"], "ops": [{"op": "set", "id": "1", "text": "둘 고침"}], "format": "hwpx"}).encode())
+          assert [p["text"] for p in HwpxDocument(out).paragraphs()] == ["하나", "둘 고침"], "hwpx 편집 실패"
+          info = json.loads(post("/api/open", build_hwp([sample_hwp_records("HWP 글")]), {"X-Filename": "t.hwp"}))
+          assert info["kind"] == "hwp" and info["paragraphs"][0]["text"] == "HWP 글", info
+          print("실행 파일 검사 통과")
+          PY
+          kill $PID
+      - name: 묶음 폴더 만들기
+        shell: bash
+        run: |
+          mkdir -p bundle
+          cp "dist/${{ matrix.exe }}" bundle/
+          cp hwp_editor/README.md bundle/README.md
+          if [ "${{ runner.os }}" = "Windows" ]; then cp hwp_editor/install_to_desktop.bat bundle/; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HwpEditor-${{ matrix.name }}
+          path: bundle/
+          if-no-files-found: error

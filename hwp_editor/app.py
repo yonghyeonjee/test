@@ -26,7 +26,9 @@ from .hwp_doc import HwpDocument, HwpError
 from .hwpx_doc import HwpxDocument, HwpxError
 from .hwpx_template import build_hwpx
 
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+# PyInstaller 로 묶인 실행 파일이면 풀어 놓은 임시 폴더(sys._MEIPASS) 아래에 static 이 있다.
+_BASE = getattr(sys, "_MEIPASS", None)
+STATIC_DIR = os.path.join(_BASE, "hwp_editor", "static") if _BASE else os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 MAX_UPLOAD = 200 * 1024 * 1024
 DOC_TTL = 6 * 60 * 60  # 여섯 시간 안 쓴 문서는 메모리에서 지운다
 
@@ -204,13 +206,23 @@ def main(argv=None):
     ap.add_argument("--host", default="127.0.0.1", help="기본 127.0.0.1. 다른 기기에서 쓰려면 0.0.0.0 (권장하지 않음)")
     ap.add_argument("--no-browser", action="store_true", help="브라우저를 자동으로 띄우지 않는다")
     args = ap.parse_args(argv)
-    try:
-        httpd = ThreadingHTTPServer((args.host, args.port), Handler)
-    except OSError as e:
-        print(f"{args.host}:{args.port} 에 열 수 없습니다 ({e}). --port 로 다른 번호를 주세요.", file=sys.stderr)
+    httpd = None
+    # 더블클릭으로 켰는데 포트가 이미 쓰이고 있으면(앞서 켠 편집기 등) 다음 번호를 몇 개 더 시도한다.
+    for port in range(args.port, args.port + 20):
+        try:
+            httpd = ThreadingHTTPServer((args.host, port), Handler)
+            break
+        except OSError as e:
+            last = e
+    if httpd is None:
+        print(f"{args.host}:{args.port} 부터 20개 포트를 열 수 없습니다 ({last}). --port 로 다른 번호를 주세요.", file=sys.stderr)
+        if getattr(sys, "frozen", False):
+            input("아무 키나 누르면 닫힙니다...")
         return 1
-    url = f"http://{'127.0.0.1' if args.host == '0.0.0.0' else args.host}:{args.port}/"
-    print(f"HWP·HWPX 편집기: {url}  (끄려면 Ctrl+C)")
+    port = httpd.server_address[1]
+    url = f"http://{'127.0.0.1' if args.host == '0.0.0.0' else args.host}:{port}/"
+    print(f"HWP·HWPX 편집기: {url}", flush=True)
+    print("이 창을 닫거나 Ctrl+C 를 누르면 편집기가 꺼집니다. 브라우저가 안 뜨면 위 주소를 직접 여세요.", flush=True)
     if not args.no_browser:
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
     try:
