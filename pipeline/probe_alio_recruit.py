@@ -1,46 +1,62 @@
-"""알리오 공공기관 채용정보 API 를 실제로 불러 응답 모양을 본다(2026-10-17). 키 값은 찍지 않는다.
-공공데이터포털 기획재정부_공공기관 채용정보 조회서비스(1051000/recruitment) 목록·상세를 키 후보마다 시험한다.
+"""알리오 공공기관 채용정보 API(재정경제부_공공기관 채용정보 조회서비스)를 불러 응답 모양을 본다. 키 값은 찍지 않는다.
+Base opendata.alio.go.kr, POST /new/v1/recruit/list.do · /new/v1/recruit/detail.do (2026-10-17 사용자가 알려 준 명세).
+인증 칸 이름이 명세 요약에 없어 몇 가지 꼴을 차례로 시험하고, 처음 되는 꼴로 상세까지 본다.
 """
 import json
 import os
-import re
 
 import requests
 
-BASE = "https://apis.data.go.kr/1051000/recruitment"
-KEYS = [(n, os.environ.get(n, "").strip()) for n in ("ALIO_RECRUIT_KEY", "DATA_GO_KR_KEY")]
+KEY = os.environ.get("ALIO_RECRUIT_KEY", "").strip()
+BASES = ["https://opendata.alio.go.kr/new/v1/recruit", "http://opendata.alio.go.kr/new/v1/recruit"]
 
 
 def mask(s: str) -> str:
-    for _, k in KEYS:
-        if k:
-            s = s.replace(k, "***").replace(requests.utils.quote(k, safe=""), "***")
-    return s
+    return s.replace(KEY, "***").replace(requests.utils.quote(KEY, safe=""), "***") if KEY else s
 
 
-for name, key in KEYS:
-    print(f"\n== {name}: {'있음 ' + str(len(key)) + '자' if key else '없음'}")
-    if not key:
-        continue
-    for path, extra in (("list", {"numOfRows": "3", "pageNo": "1"}),):
+def variants(extra: dict):
+    yield "form X-API-AUTH-KEY", dict(data={"X-API-AUTH-KEY": KEY, **extra})
+    yield "header X-API-AUTH-KEY + form", dict(headers={"X-API-AUTH-KEY": KEY}, data=extra)
+    yield "form serviceKey", dict(data={"serviceKey": KEY, **extra})
+    yield "query serviceKey", dict(params={"serviceKey": KEY, **extra})
+    yield "json serviceKey", dict(json={"serviceKey": KEY, **extra})
+
+
+print(f"키: {'있음 ' + str(len(KEY)) + '자' if KEY else '없음'}")
+ok = None
+for base in BASES:
+    for label, kw in variants({"pageNo": "1", "numOfRows": "3", "pageSize": "3"}):
         try:
-            r = requests.get(f"{BASE}/{path}", params={"serviceKey": key, "resultType": "json", **extra}, timeout=40)
+            r = requests.post(f"{base}/list.do", timeout=40, **kw)
         except Exception as e:  # noqa: BLE001
-            print(f"   {path}: 실패 {type(e).__name__}")
+            print(f"[{base} | {label}] 실패 {type(e).__name__}: {mask(str(e))[:200]}")
             continue
-        print(f"   {path}: status {r.status_code} type {r.headers.get('content-type')}")
         body = mask(r.text)
-        print("   " + body[:3000].replace("\n", " "))
+        print(f"[{base} | {label}] status {r.status_code} {r.headers.get('content-type')}  {body[:400]!r}")
         try:
             d = r.json()
         except Exception:  # noqa: BLE001
             continue
-        items = d.get("result") or d.get("items") or (d.get("response", {}).get("body", {}).get("items"))
-        first = items[0] if isinstance(items, list) and items else None
-        if isinstance(first, dict):
-            print("   필드: " + ", ".join(first.keys()))
-            sn = next((first[k] for k in ("recrutPblntSn", "sn", "idx") if k in first), None)
-            if sn:
-                r2 = requests.get(f"{BASE}/detail", params={"serviceKey": key, "resultType": "json", "sn": sn}, timeout=40)
-                print(f"   detail sn={sn}: status {r2.status_code}")
-                print("   " + mask(r2.text)[:4000].replace("\n", " "))
+        if isinstance(d, dict) and d.get("resultCode") in (0, "0") and d.get("result"):
+            ok = (base, label, kw, d)
+            break
+    if ok:
+        break
+
+if ok:
+    base, label, kw, d = ok
+    print(f"\n== 됨: {base} | {label}  totalCount {d.get('totalCount')}")
+    first = d["result"][0]
+    print(json.dumps(first, ensure_ascii=False)[:3000])
+    sn = first.get("recrutPblntSn")
+    kw2 = json.loads(json.dumps({k: v for k, v in kw.items()}))
+    for part in ("data", "params", "json"):
+        if part in kw2:
+            kw2[part] = {k: v for k, v in kw2[part].items() if k in ("X-API-AUTH-KEY", "serviceKey")}
+            kw2[part]["recrutPblntSn"] = str(sn)
+    if "data" not in kw2 and "params" not in kw2 and "json" not in kw2:
+        kw2["data"] = {"recrutPblntSn": str(sn)}
+    r2 = requests.post(f"{base}/detail.do", timeout=40, **kw2)
+    print(f"\n== detail {sn}: status {r2.status_code}")
+    print(mask(r2.text)[:5000])
