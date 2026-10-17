@@ -14,7 +14,7 @@ from http.server import ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hwp_editor import app as app_mod  # noqa: E402
-from hwp_editor.hwp_doc import TAG_PARA_HEADER, TAG_PARA_TEXT, HwpError, parse_section  # noqa: E402
+from hwp_editor.hwp_doc import TAG_PARA_HEADER, TAG_PARA_TEXT, HwpError, decode_para_text, parse_section  # noqa: E402
 from hwp_editor.hwpx_doc import HwpxDocument, HwpxError, para_text  # noqa: E402
 from hwp_editor.hwpx_template import build_hwpx  # noqa: E402
 
@@ -287,6 +287,19 @@ class HwpTest(unittest.TestCase):
             {"text": "안녕\t탭", "depth": 0}, {"text": "", "depth": 0}, {"text": "표 뒤", "depth": 0}, {"text": "칸", "depth": 1},
         ])
 
+    def test_surrogate_pairs_and_lone_surrogates(self):
+        # 회귀: BMP 밖 글자(U+F03DA, 한글 글머리표)를 코드 단위마다 chr 로 만들어 대리 값 둘이 남았고 열기가 실패했다.
+        pua = "\U000F03DA"
+        body = utf16("가") + pua.encode("utf-16-le") + utf16("나") + struct.pack("<H", 13)
+        self.assertEqual(decode_para_text(body), "가" + pua + "나")
+        self.assertEqual(decode_para_text(struct.pack("<H", 0xDB80) + utf16("a")), "�a")  # 외톨이 상위
+        self.assertEqual(decode_para_text(utf16("a") + struct.pack("<H", 0xDFDA)), "a�")  # 외톨이 하위
+        self.assertEqual(decode_para_text(struct.pack("<HH", 0xDFDA, 0xDB80)), "��")  # 순서가 뒤집힌 쌍
+        # 쌍이 두 PARA_TEXT 레코드에 나뉘어도 문단 하나로 이어 붙인 뒤 한 글자가 된다
+        hi, lo = pua.encode("utf-16-le")[:2], pua.encode("utf-16-le")[2:]
+        sec = record(TAG_PARA_HEADER, 0, b"\x00" * 22) + record(TAG_PARA_TEXT, 1, utf16("x") + hi) + record(TAG_PARA_TEXT, 1, lo + struct.pack("<H", 13))
+        self.assertEqual(parse_section(sec), [{"text": "x" + pua, "depth": 0}])
+
     def test_long_record_size(self):
         body = utf16("가" * 3000)
         sec = record(TAG_PARA_HEADER, 0, b"\x00" * 22) + struct.pack("<I", TAG_PARA_TEXT | (1 << 10) | (0xFFF << 20)) + struct.pack("<I", len(body)) + body
@@ -382,6 +395,27 @@ class ServerTest(unittest.TestCase):
         # 두 번째 저장: 앞서 더한 문단을 다시 고칠 수 있어야 한다(서버가 고친 상태를 들고 있다)
         status, _, out = self.post("/api/save", json.dumps({"token": info["token"], "ops": [{"op": "set", "id": "n1", "text": "고친 새 문단"}], "format": "txt"}).encode())
         self.assertEqual(out.decode("utf-8"), "공고\n모집 분야: 행정\n고친 새 문단")
+
+    def test_open_hwp_with_non_bmp_and_lone_surrogate(self):
+        # 회귀: "'utf-8' codec can't encode characters ...: surrogates not allowed" 로 HWP 를 열지 못했다.
+        pua = "\U000F03DA"
+        sec = b"".join([
+            record(TAG_PARA_HEADER, 0, b"\x00" * 22),
+            record(TAG_PARA_TEXT, 1, pua.encode("utf-16-le") + utf16(" 글머리") + struct.pack("<H", 13)),
+            record(TAG_PARA_HEADER, 0, b"\x00" * 22),
+            record(TAG_PARA_TEXT, 1, utf16("깨진") + struct.pack("<H", 0xDB80) + struct.pack("<H", 13)),
+        ])
+        status, _, body = self.post("/api/open", build_hwp([sec]), {"X-Filename": "s.hwp"})
+        self.assertEqual(status, 200, body)
+        info = json.loads(body)
+        self.assertEqual([p["text"] for p in info["paragraphs"]], [pua + " 글머리", "깨진�"])
+        ops = [{"op": "set", "id": "1", "text": "고침\ud800"}]  # 브라우저가 외톨이 대리 값을 보내도
+        status, _, out = self.post("/api/save", json.dumps({"token": info["token"], "ops": ops, "format": "hwpx"}).encode())
+        self.assertEqual(status, 200, out)
+        self.assertEqual([p["text"] for p in HwpxDocument(out).paragraphs()], [pua + " 글머리", "고침�"])
+        status, _, txt = self.post("/api/save", json.dumps({"token": info["token"], "ops": [], "format": "txt"}).encode())
+        self.assertEqual(status, 200, txt)
+        self.assertEqual(txt.decode("utf-8"), pua + " 글머리\n고침�")
 
     def test_errors(self):
         status, _, body = self.post("/api/open", b"hello", {"X-Filename": "a.doc"})

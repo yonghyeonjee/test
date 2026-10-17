@@ -23,7 +23,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import quote, unquote
 
-from .hwp_doc import HwpDocument, HwpError
+from .hwp_doc import HwpDocument, HwpError, fix_surrogates
 from .hwpx_doc import HwpxDocument, HwpxError
 from .hwpx_template import build_hwpx
 
@@ -80,7 +80,9 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _json(self, status: int, obj):
-        self._send(status, json.dumps(obj, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
+        # 외톨이 대리 값 하나가 응답 전체(=파일 열기)를 막지 않게 한다.
+        body = fix_surrogates(json.dumps(obj, ensure_ascii=False))
+        self._send(status, body.encode("utf-8"), "application/json; charset=utf-8")
 
     def _error(self, status: int, msg: str):
         self._json(status, {"error": msg})
@@ -148,6 +150,9 @@ class Handler(BaseHTTPRequestHandler):
             doc, name = entry["doc"], entry["name"]
             fmt = req.get("format") or ("hwpx" if doc.kind == "hwpx" else "hwpx")
             ops = req.get("ops") or []
+            for op in ops:  # JSON 의 \ud800 같은 이스케이프로 외톨이 대리 값이 들어와도 UTF-8 로 쓸 수 있게
+                if isinstance(op, dict) and "text" in op:
+                    op["text"] = fix_surrogates(str(op["text"]))
             if doc.kind == "hwpx":
                 doc.apply(ops)
                 payload = doc.to_text().encode("utf-8") if fmt == "txt" else doc.to_bytes()

@@ -40,7 +40,19 @@ def iter_records(section: bytes):
         i += size
 
 
-def decode_para_text(body: bytes) -> str:
+def fix_surrogates(s: str) -> str:
+    """짝이 맞는 UTF-16 대리 쌍(U+D800~DFFF 둘)은 한 글자로 합치고, 외톨이 대리 값은 U+FFFD 로 바꾼다.
+
+    BMP 밖 글자(한글이 글머리표로 쓰는 U+F03DA 같은 사용자 정의 영역 글자)를 코드 단위마다 ``chr`` 로 만들면
+    대리 값 둘이 남아 UTF-8·JSON 으로 내보내지 못하고 파일 열기가 통째로 실패한다.
+    """
+    if not any("\ud800" <= ch <= "\udfff" for ch in s):
+        return s
+    return s.encode("utf-16-le", "surrogatepass").decode("utf-16-le", "replace")
+
+
+def decode_para_text(body: bytes, fix: bool = True) -> str:
+    """PARA_TEXT 몸통 → 글. ``fix=False`` 면 대리 값을 그대로 두어, 여러 레코드를 이어 붙인 뒤 한 번에 고칠 수 있다."""
     chars, j = [], 0
     while j + 2 <= len(body):
         c = int.from_bytes(body[j:j + 2], "little")
@@ -57,7 +69,8 @@ def decode_para_text(body: bytes) -> str:
             elif c in CHAR_OF:
                 chars.append(CHAR_OF[c])
             j += 2
-    return "".join(chars)
+    text = "".join(chars)
+    return fix_surrogates(text) if fix else text
 
 
 def parse_section(section: bytes) -> list[dict]:
@@ -69,9 +82,10 @@ def parse_section(section: bytes) -> list[dict]:
             cur = {"text": "", "depth": level // 2, "level": level}
             paras.append(cur)
         elif tag == TAG_PARA_TEXT and cur is not None and level == cur["level"] + 1:
-            cur["text"] += decode_para_text(body)
+            cur["text"] += decode_para_text(body, fix=False)
     for p in paras:
         del p["level"]
+        p["text"] = fix_surrogates(p["text"])
     return paras
 
 
