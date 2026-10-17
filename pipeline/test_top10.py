@@ -93,7 +93,9 @@ for key in ("civil", "orgs", "welfare-sido", "license-applicants"):
     text = json.dumps(c, ensure_ascii=False)
     ok(c["title"] != posts[key]["title"] and "순위 TOP10 |" in c["title"], f"{key}: 제목 다름 {c['title'][:40]}")
     h2 = [x["text"] for x in c["body"] if x["type"] == "h2"]
-    ok(h2[0] == "현황은?" and h2[-1] == "참고 문헌" and h2[-2] == "정리", f"{key}: 티스토리 절 {h2[:2]}…{h2[-2:]}")
+    ok(h2[0] == "현황은?" and h2[-1] == "참고 문헌" and h2[-2] == "함께 보면 좋은 사이트" and h2[-3] == "정리", f"{key}: 티스토리 절 {h2[:2]}…{h2[-3:]}")
+    ok("jeepedia.com/psy-dict" in text and "jiwon.knowhow-it.com" in text and "knowhow-it.com/english" in text, f"{key}: 운영 사이트 소개")
+    ok(("gojobs.go.kr" in text) if key in ("civil", "orgs") else ("bokjiro.go.kr" in text) if key == "welfare-sido" else ("q-net.or.kr" in text), f"{key}: 공식 사이트")
     ok(text.count("출처: [") >= len(posts[key]["stats"]["items"]) + 2, f"{key}: 출처 줄 {text.count('출처: [')}")
     orig = {x["text"] for x in posts[key]["body"] if x["type"] == "p"}
     ok(not (orig & {x["text"] for x in c["body"] if x["type"] == "p"}), f"{key}: 원문 문단 복사 없음")
@@ -103,6 +105,8 @@ for key in ("civil", "orgs", "welfare-sido", "license-applicants"):
 c = tt.compose(posts["civil"])
 ok(sum(1 for x in c["body"] if x["type"] == "p" and x["text"].startswith("**이 일이 힘든 이유.**")) == len(c["stats"]["items"]), "직렬 티스토리 글: 항목마다 힘든 이유")
 ok(any("Maslach" in i["label"] for x in c["body"] if x["type"] == "links" for i in x["items"]), "참고 문헌에 번아웃 척도")
+ok(any("jeepedia.com/psy-term/burnout" in i["href"] for x in c["body"] if x["type"] == "links" for i in x["items"]), "참고 문헌에 용어 사전(소진)")
+ok(any("용어 사전의 [" in x["text"] for x in c["body"] if x["type"] == "p"), "본문에 용어 사전 링크 줄")
 
 # 차트: 세 갈래 모두 그려진다
 import chart_top10 as ct

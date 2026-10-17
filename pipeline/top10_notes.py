@@ -7,20 +7,22 @@ top10_notes.py — 직무·직렬마다 "어려운 점"을 심리 개념과 함�
 """
 
 JEEPEDIA = "https://jeepedia.com/psychology-test/"
+TERM = "https://jeepedia.com/psy-term/"          # jeepedia 심리학 용어 사전(영문 슬러그). 2026-10-17 러너에서 200 확인한 것만 쓴다
+DICT = "https://jeepedia.com/psy-dict"
 
 PSY: dict[str, dict] = {
-    "burnout":   {"name": "번아웃(소진)", "desc": "오래 지속된 직무 스트레스가 정서적 고갈·냉소·효능감 저하로 이어지는 상태. 매슬랙 소진 척도로 잰다.", "href": f"{JEEPEDIA}burnout/", "label": "번아웃 자가진단(16문항, 2분)"},
-    "emotion":   {"name": "감정노동", "desc": "느끼는 감정과 다르게 표정·말투를 관리해야 하는 노동. 표면 연기가 길어지면 소진이 빨라진다.", "href": f"{JEEPEDIA}burnout/", "label": "번아웃 자가진단"},
-    "shift":     {"name": "교대근무와 생체리듬", "desc": "야간·교대 근무는 수면 리듬을 깨뜨려 피로·실수·기분 저하를 키운다. 내 수면 성향을 알면 회복 전략을 세울 수 있다.", "href": f"{JEEPEDIA}rank-sleep/", "label": "수면 성향 테스트"},
-    "conflict":  {"name": "대인 갈등과 민원 스트레스", "desc": "반복되는 항의·갈등 상황은 통제감을 떨어뜨린다. 내 갈등 대처 유형(회피·경쟁·협력)을 알면 소모가 줄어든다.", "href": f"{JEEPEDIA}rank-conflict/", "label": "갈등 대처 유형 테스트"},
-    "insecure":  {"name": "고용 불안정 스트레스", "desc": "계약 만료가 정해진 일은 '다음 자리' 걱정이 일 자체보다 더 큰 스트레스가 된다. 경력 연결 계획이 완충재가 된다.", "href": f"{JEEPEDIA}big-five-personality-workplace-job-satisfaction/", "label": "직장인 성격 유형·직무 만족 테스트"},
-    "ambiguity": {"name": "역할 모호성·과부하", "desc": "무엇을 어디까지 해야 하는지 불분명하거나 한 사람에게 일이 몰리면 효능감이 떨어진다.", "href": f"{JEEPEDIA}rank-work/", "label": "업무 스타일 테스트"},
-    "autonomy":  {"name": "자율성 부족(요구-통제 모델)", "desc": "요구는 높은데 결정권이 적은 일이 스트레스가 가장 크다. 작은 재량이라도 확보하는 것이 보호 요인이다.", "href": f"{JEEPEDIA}rank-work/", "label": "업무 스타일 테스트"},
-    "trauma":    {"name": "2차 외상·공감 피로", "desc": "타인의 고통을 가까이서 듣고 다루는 일은 본인에게도 외상 반응을 남긴다. 정기적인 수퍼비전과 휴식이 필요하다.", "href": f"{JEEPEDIA}burnout/", "label": "번아웃 자가진단"},
-    "monotony":  {"name": "단조로움과 지루함", "desc": "같은 동작·같은 화면이 반복되면 주의가 흩어지고 실수가 는다. 일의 의미를 찾는 재구성(잡 크래프팅)이 도움이 된다.", "href": f"{JEEPEDIA}sixteen-types/", "label": "16가지 성향 테스트"},
-    "isolation": {"name": "사회적 고립", "desc": "혼자 하는 현장 업무는 지지 자원이 적어 스트레스가 쌓인다. 동료 연결망을 의식적으로 만들어야 한다.", "href": f"{JEEPEDIA}sixteen-types/", "label": "16가지 성향 테스트"},
-    "physical":  {"name": "신체 피로와 안전 불안", "desc": "서서 하는 일·무거운 것을 드는 일은 몸의 피로가 정서로 번진다. 회복 시간이 성과보다 먼저다.", "href": f"{JEEPEDIA}rank-sleep/", "label": "수면 성향 테스트"},
-    "fit":       {"name": "적성 불일치", "desc": "성격과 일의 성격이 어긋나면 같은 일도 더 소모된다. 빅파이브로 어떤 일이 맞는지 가늠할 수 있다.", "href": f"{JEEPEDIA}big-five-personality-workplace-job-satisfaction/", "label": "직장인 성격 유형 테스트"},
+    "burnout":   {"terms": [("소진 (burnout)", TERM + "burnout"), ("이인증 (depersonalization)", TERM + "depersonalization")], "name": "번아웃(소진)", "desc": "오래 지속된 직무 스트레스가 정서적 고갈·냉소·효능감 저하로 이어지는 상태. 매슬랙 소진 척도로 잰다.", "href": f"{JEEPEDIA}burnout/", "label": "번아웃 자가진단(16문항, 2분)"},
+    "emotion":   {"terms": [("소진 (burnout)", TERM + "burnout"), ("대처 (coping)", TERM + "coping")], "name": "감정노동", "desc": "느끼는 감정과 다르게 표정·말투를 관리해야 하는 노동. 표면 연기가 길어지면 소진이 빨라진다.", "href": f"{JEEPEDIA}burnout/", "label": "번아웃 자가진단"},
+    "shift":     {"terms": [("일주기 (circadian rhythm)", TERM + "circadian-rhythm"), ("피로 (fatigue)", TERM + "fatigue")], "name": "교대근무와 생체리듬", "desc": "야간·교대 근무는 수면 리듬을 깨뜨려 피로·실수·기분 저하를 키운다. 내 수면 성향을 알면 회복 전략을 세울 수 있다.", "href": f"{JEEPEDIA}rank-sleep/", "label": "수면 성향 테스트"},
+    "conflict":  {"terms": [("분노 (anger)", TERM + "anger"), ("대처 (coping)", TERM + "coping")], "name": "대인 갈등과 민원 스트레스", "desc": "반복되는 항의·갈등 상황은 통제감을 떨어뜨린다. 내 갈등 대처 유형(회피·경쟁·협력)을 알면 소모가 줄어든다.", "href": f"{JEEPEDIA}rank-conflict/", "label": "갈등 대처 유형 테스트"},
+    "insecure":  {"terms": [("불안 (anxiety)", TERM + "anxiety"), ("디스트레스 (distress)", TERM + "distress")], "name": "고용 불안정 스트레스", "desc": "계약 만료가 정해진 일은 '다음 자리' 걱정이 일 자체보다 더 큰 스트레스가 된다. 경력 연결 계획이 완충재가 된다.", "href": f"{JEEPEDIA}big-five-personality-workplace-job-satisfaction/", "label": "직장인 성격 유형·직무 만족 테스트"},
+    "ambiguity": {"terms": [("디스트레스 (distress)", TERM + "distress"), ("대처 (coping)", TERM + "coping")], "name": "역할 모호성·과부하", "desc": "무엇을 어디까지 해야 하는지 불분명하거나 한 사람에게 일이 몰리면 효능감이 떨어진다.", "href": f"{JEEPEDIA}rank-work/", "label": "업무 스타일 테스트"},
+    "autonomy":  {"terms": [("자율성 (autonomy)", TERM + "autonomy")], "name": "자율성 부족(요구-통제 모델)", "desc": "요구는 높은데 결정권이 적은 일이 스트레스가 가장 크다. 작은 재량이라도 확보하는 것이 보호 요인이다.", "href": f"{JEEPEDIA}rank-work/", "label": "업무 스타일 테스트"},
+    "trauma":    {"terms": [("디스트레스 (distress)", TERM + "distress"), ("불안 (anxiety)", TERM + "anxiety")], "name": "2차 외상·공감 피로", "desc": "타인의 고통을 가까이서 듣고 다루는 일은 본인에게도 외상 반응을 남긴다. 정기적인 수퍼비전과 휴식이 필요하다.", "href": f"{JEEPEDIA}burnout/", "label": "번아웃 자가진단"},
+    "monotony":  {"terms": [("무감동 (apathy)", TERM + "apathy")], "name": "단조로움과 지루함", "desc": "같은 동작·같은 화면이 반복되면 주의가 흩어지고 실수가 는다. 일의 의미를 찾는 재구성(잡 크래프팅)이 도움이 된다.", "href": f"{JEEPEDIA}sixteen-types/", "label": "16가지 성향 테스트"},
+    "isolation": {"terms": [("불안 (anxiety)", TERM + "anxiety"), ("심리학 용어 사전", DICT)], "name": "사회적 고립", "desc": "혼자 하는 현장 업무는 지지 자원이 적어 스트레스가 쌓인다. 동료 연결망을 의식적으로 만들어야 한다.", "href": f"{JEEPEDIA}sixteen-types/", "label": "16가지 성향 테스트"},
+    "physical":  {"terms": [("피로 (fatigue)", TERM + "fatigue"), ("일주기 (circadian rhythm)", TERM + "circadian-rhythm")], "name": "신체 피로와 안전 불안", "desc": "서서 하는 일·무거운 것을 드는 일은 몸의 피로가 정서로 번진다. 회복 시간이 성과보다 먼저다.", "href": f"{JEEPEDIA}rank-sleep/", "label": "수면 성향 테스트"},
+    "fit":       {"terms": [("적성 (aptitude)", TERM + "aptitude"), ("적성 검사 (aptitude test)", TERM + "aptitude-test")], "name": "적성 불일치", "desc": "성격과 일의 성격이 어긋나면 같은 일도 더 소모된다. 빅파이브로 어떤 일이 맞는지 가늠할 수 있다.", "href": f"{JEEPEDIA}big-five-personality-workplace-job-satisfaction/", "label": "직장인 성격 유형 테스트"},
 }
 
 HARD: dict[str, dict[str, dict]] = {
@@ -142,4 +144,52 @@ def hard_for(topic: str, key: str) -> dict | None:
 
 
 def psy_links(keys: list[str]) -> list[dict]:
-    return [{"href": PSY[k]["href"], "label": f"{PSY[k]['name']} — {PSY[k]['label']}"} for k in keys if k in PSY]
+    """참고 문헌용: 개념마다 자가진단 + 용어 사전 글."""
+    out = []
+    for k in keys:
+        if k not in PSY:
+            continue
+        out.append({"href": PSY[k]["href"], "label": f"{PSY[k]['name']} — {PSY[k]['label']} (jeepedia)"})
+        for name, href in PSY[k].get("terms", []):
+            out.append({"href": href, "label": f"jeepedia 심리학 용어 사전: {name}"})
+    seen, uniq = set(), []
+    for x in out:
+        if x["href"] not in seen:
+            seen.add(x["href"]); uniq.append(x)
+    return uniq
+
+
+def term_links_md(keys: list[str]) -> str:
+    """본문용: '용어 사전: [소진](…), [일주기](…)' 한 줄. 같은 글은 한 번만."""
+    seen, parts = set(), []
+    for k in keys:
+        for name, href in PSY.get(k, {}).get("terms", []):
+            if href not in seen and href != DICT:
+                seen.add(href); parts.append(f"[{name}]({href})")
+    return ", ".join(parts)
+
+
+# 운영 사이트와 공식 자료 사이트 — 글 끝 "함께 보면 좋은 사이트" 절에 쓴다
+MY_SITES = [
+    {"href": "https://jiwon.knowhow-it.com", "name": "K나라지원", "desc": "조건(지역·나이·상황)을 넣으면 받을 수 있는 지원금·복지 사업과 공공기관 채용을 한 번에 찾아 준다. 이 글의 숫자는 여기서 셌다."},
+    {"href": "https://jeepedia.com/psychology-test/", "name": "jeepedia 심리 테스트", "desc": "번아웃 자가진단, 직장인 성격 유형(빅파이브), 업무 스타일, 수면 성향, 갈등 대처 유형 — 공개 척도로 2~3분."},
+    {"href": DICT, "name": "jeepedia 심리학 용어 사전", "desc": "소진·일주기·자율성·대처 같은 심리학 용어를 영문과 함께 풀이한 사전. 글에 나온 개념은 여기서 더 읽는다."},
+    {"href": "https://knowhow-it.com/english-grammar-curriculum/", "name": "knowhow-it 무료 영어 문법 커리큘럼", "desc": "처음부터 순서대로 따라가는 영어 문법. 경력채용 어학 요건 준비에."},
+    {"href": "https://knowhow-it.com/data-market/", "name": "knowhow-it 데이터·마케팅 용어", "desc": "데이터·마케팅 용어를 한자리에. 홍보직·데이터직 지원자에게."},
+]
+OFFICIAL_SITES = {
+    "jobs": [
+        {"href": "https://www.gojobs.go.kr", "name": "나라일터(인사혁신처)", "desc": "국가직·지방직·공무직·임기제 채용 공고의 원 자료."},
+        {"href": "https://job.alio.go.kr", "name": "잡알리오(기획재정부)", "desc": "공공기관(공사·공단·출연기관) 채용 공고의 원 자료."},
+        {"href": "https://www.work24.go.kr", "name": "고용24(고용노동부)", "desc": "민간 채용·직업훈련·실업급여까지 한 계정으로."},
+    ],
+    "welfare": [
+        {"href": "https://www.bokjiro.go.kr", "name": "복지로(보건복지부)", "desc": "복지 서비스 신청과 '나에게 맞는 복지' 모의계산."},
+        {"href": "https://www.gov.kr", "name": "정부24", "desc": "증명서 발급과 정부 서비스 신청 창구."},
+        {"href": "https://www.bizinfo.go.kr", "name": "기업마당(중소벤처기업부)", "desc": "중소기업·소상공인 지원사업 공고의 원 자료."},
+    ],
+    "license": [
+        {"href": "https://www.q-net.or.kr", "name": "큐넷(한국산업인력공단)", "desc": "국가기술자격 시험 일정·접수·수험자 동향의 원 자료."},
+        {"href": "https://www.hrdkorea.or.kr", "name": "한국산업인력공단", "desc": "자격·훈련·해외취업 안내."},
+    ],
+}

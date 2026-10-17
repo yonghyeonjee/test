@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import blog_daily as b  # noqa: E402
 from blog_top_roles import NOTES as ROLE_NOTES  # noqa: E402
-from top10_notes import PSY, hard_for, psy_links  # noqa: E402
+from top10_notes import MY_SITES, OFFICIAL_SITES, PSY, hard_for, psy_links, term_links_md  # noqa: E402
 from tistory_top_roles import TIPS as ROLE_TIPS  # noqa: E402
 from tistory_top_roles import compose as compose_roles_legacy  # noqa: E402
 
@@ -94,7 +94,7 @@ def compose(post: dict) -> dict:
                f"항목마다 숫자와 요건, {'어려운 점(번아웃·감정노동 같은 심리 요인)과 ' if entity == 'keyword' else ''}지금 할 수 있는 것을 적었고, 자료 출처는 {BRAND}입니다.")
 
     toc = [("now", "현황은?")] + [(f"r{i+1}", f"{i+1}위 {it['name']}") for i, it in enumerate(items)] \
-        + [("compare", f"{what} TOP10 비교"), ("wrap", "정리"), ("refs", "참고 문헌")]
+        + [("compare", f"{what} TOP10 비교"), ("wrap", "정리"), ("sites", "함께 보면 좋은 사이트"), ("refs", "참고 문헌")]
     blocks: list[dict] = []
     for line in INTRO[entity]:
         blocks.append(b.P(line.format(source=source, brand=BRAND, what=what, date=b.kdate(today.isoformat()))))
@@ -144,7 +144,9 @@ def compose(post: dict) -> dict:
             concepts = ", ".join(f"[{PSY[k]['name']}]({PSY[k]['href']})" for k in hard["psy"] if k in PSY)
             blocks.append(b.P(f"**이 일이 힘든 이유.** {hard['hard']} 심리학에서는 이를 {concepts}(으)로 설명합니다."))
             one = PSY[hard["psy"][0]]
-            blocks.append(b.P(f"**들어가기 전에 점검.** {one['desc']} [{one['label']}]({one['href']})으로 내 상태를 먼저 재 보세요."))
+            terms = term_links_md(hard["psy"])
+            blocks.append(b.P(f"**들어가기 전에 점검.** {one['desc']} [{one['label']}]({one['href']})으로 내 상태를 먼저 재 보세요."
+                              + (f" 용어가 낯설면 jeepedia 심리학 용어 사전의 {terms} 항목을 먼저 읽으면 됩니다." if terms else "")))
         # 흐름
         if it.get("n90") is not None and it["n"]:
             s90 = b.pct(it["n90"], it["n"])
@@ -173,6 +175,14 @@ def compose(post: dict) -> dict:
     blocks.append(b.LIST(WRAP[entity]))
     blocks.append(b.P(f"공고 검색과 기관별 채용 이력, 조건에 맞는 지원사업 찾기는 [{BRAND}]({SITE})에서 무료로 할 수 있습니다. "
                       f"일이 힘든 이유를 심리학으로 풀어 보고 싶다면 [jeepedia 심리 테스트]({PSY['burnout']['href'].rsplit('/', 2)[0]}/)도 함께 보세요."))
+
+    # 함께 보면 좋은 사이트 — 공식 자료 + 운영 사이트
+    blocks.append(b.H2("함께 보면 좋은 사이트", "sites"))
+    group = "jobs" if entity in ("keyword", "org", "region") else "welfare" if entity.startswith("welfare") else "license"
+    blocks.append(b.P("**공식 자료.** 이 글의 숫자가 나온 원 자료와, 실제 신청·접수를 하는 곳입니다."))
+    blocks.append(b.LIST([f"[{x['name']}]({x['href']}) — {x['desc']}" for x in OFFICIAL_SITES[group]]))
+    blocks.append(b.P("**제가 운영하는 사이트.** 숫자를 세고 글을 쓰는 데 쓴 도구들입니다. 전부 무료입니다."))
+    blocks.append(b.LIST([f"[{x['name']}]({x['href']}) — {x['desc']}" for x in MY_SITES]))
 
     # 참고 문헌
     blocks.append(b.H2("참고 문헌", "refs"))
