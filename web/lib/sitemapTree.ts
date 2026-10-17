@@ -7,7 +7,7 @@
  *
  *   pages     고정 쪽(첫 화면, 갈래 허브, 소개 …)
  *   programs  지원사업 — 시·도 쪽과 상위 400건
- *   jobs      채용 — 구분·지역·기관 목차와 최근 400건
+ *   jobs      채용 — 구분·지역·기관 목차와 접수 중 공고 전부(모자라면 최근 400건까지)
  *   licenses  자격증 종목
  *   housing   주거 지원 — 대상×종류와 시·도
  *   posts     읽을거리 — 안내 글과 이야기
@@ -82,9 +82,9 @@ async function programs(): Promise<Entry[]> {
   ];
 }
 
-/** 채용: 구분(넷뿐이라 전부)·지역·기관(공고 여덟 건 이상, 300곳) 목차와 최근 400건, 기관별 작성 가이드. */
+/** 채용: 구분(넷뿐이라 전부)·지역(시·도 고정)·기관(공고 여덟 건 이상, 300곳) 목차와 접수 중 공고 전부, 기관별 작성 가이드. */
 async function jobs(): Promise<Entry[]> {
-  const [hires, regions, orgs, ids, guides] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(400), getGuides(300)]);
+  const [hires, regions, orgs, ids, guides] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(), getGuides(300)]);
   return [
     e("/jobs/guide", "daily", 0.8),
     ...guides.map((g) => e(guidePath(g.slug), "monthly", 0.7, day(g.updated_at))),

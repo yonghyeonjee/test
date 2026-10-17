@@ -258,10 +258,11 @@ class Tistory:
         return out
 
     def publish(self, *, title: str, content: str, category: int, tags: list[str], visibility: str,
-                attachments: list[str] | None = None, update_id: str | None = None) -> tuple[str, str]:
-        """새 글을 올린다. update_id(숫자)를 주면 그 글을 통째로 고쳐 쓴다(PUT /manage/post/{id}.json)."""
+                attachments: list[str] | None = None, update_id: str | None = None, slogan: str = "") -> tuple[str, str]:
+        """새 글을 올린다. update_id(숫자)를 주면 그 글을 통째로 고쳐 쓴다(PUT /manage/post/{id}.json).
+        slogan(문자 주소 슬러그)을 비우면 서버가 제목으로 새로 만든다 — 고쳐 쓸 때는 기존 슬러그를 줘야 주소가 `-1` 로 밀리지 않는다."""
         body = {
-            "id": "0", "title": title, "content": content, "slogan": "",
+            "id": "0", "title": title, "content": content, "slogan": slogan,
             "visibility": VISIBILITY[visibility], "category": int(category),
             "tag": ",".join(t.replace(",", " ") for t in tags[:MAX_TAGS]),
             "published": 1, "password": "", "uselessMarginForEntry": 1,
@@ -377,6 +378,14 @@ def pick_posts(sb, slug: str | None, since_days: int, limit: int) -> list[dict]:
     return rows[:limit]
 
 
+def recorded_slogan(sb, slug: str) -> str:
+    """tistory_posts 에 남은 주소가 `/entry/<슬러그>` 꼴이면 그 슬러그(디코딩). 없거나 숫자 주소면 빈 문자열."""
+    from urllib.parse import unquote
+    rows = sb.table("tistory_posts").select("url").eq("slug", slug).execute().data or []
+    m = re.search(r"/entry/([^/?#]+)", rows[0]["url"]) if rows and rows[0].get("url") else None
+    return unquote(m.group(1)) if m else ""
+
+
 def record(sb, post: dict, post_id: str, url: str, mode: str, visibility: str) -> None:
     sb.table("tistory_posts").upsert({
         "slug": post["slug"], "post_id": post_id, "url": url, "mode": mode, "visibility": visibility,
@@ -462,7 +471,8 @@ def main() -> int:
                 print(f"  사진 올림: {rep[:60]}…")
             post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded]),
                                      category=a.category, tags=list(p.get("keywords") or []), visibility=a.visibility,
-                                     attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update)
+                                     attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
+                                     slogan=recorded_slogan(sb, p["slug"]) if a.update else "")
             record(sb, p, a.update or post_id, url, a.mode, a.visibility)
             print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url}")
             n += 1

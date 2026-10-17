@@ -15,6 +15,7 @@ import { YearBars } from "@/components/TrendBars";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getOrgPosts, getOrgTrend, indexWord, pctChange, titleMix, type OrgPost } from "@/lib/jobTrend";
 import { dot, getJobsByOrg, getOrgStat, getOrgStatStrict, peakMonths } from "@/lib/pubJobs";
+import { isAlioId } from "@/lib/jobTwins";
 import { jobCanonical, jobPath, jobRobots, jobRouteLabel, peekJobRoute, readJobRoute } from "@/lib/jobRoute";
 import { jobsRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
@@ -30,16 +31,16 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const org = r.org!;
   const stat = await getOrgStat(org);
   const span = stat?.firstReg && stat.lastReg
-    ? `${stat.firstReg.slice(0, 4)}년부터 ${stat.n.toLocaleString()}건`
+    ? `나라일터 공고 ${stat.firstReg.slice(0, 4)}년부터 ${stat.n.toLocaleString()}건`
     : "지금까지 올라온 공고";
   const extra = jobRouteLabel(r).filter((v) => v !== org);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
   return withOg({
     title: `${org} 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 지금까지 낸 공고와 접수 기간"}${tail}`,
     description:
-      `${org}이(가) 나라일터에 낸 채용 공고를 모았습니다. ${span}을 등록일순으로 보고, ` +
+      `${org}이(가) 나라일터·잡알리오에 낸 채용 공고를 모았습니다. ${span}을 등록일순으로 보고, ` +
       "접수 중인 공고와 접수 기간이 며칠이었는지를 함께 확인합니다.",
-    keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용", "나라일터"],
+    keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용", "나라일터", "잡알리오"],
     alternates: { canonical: jobCanonical(r) },
     robots: jobRobots(r),
   });
@@ -89,20 +90,28 @@ export default async function JobsByOrg({ params }: P) {
   ];
 
   const peak = stat ? peakMonths(stat.months) : null;
+  // 머리 숫자는 목록과 맞춘다. 통계(job_org_stats)는 나라일터만 세는 집계라, 접수 중·마지막 등록일은 목록에서
+  // 읽고 공고 수에는 목록의 잡알리오 공고를 더한다(잡알리오만 내는 기관도 이제 목록이 있다).
+  const openN = board.jobs.filter((j) => j.status !== "closed").length;
+  const alioN = board.jobs.filter((j) => isAlioId(j.id)).length;
+  const regs = board.jobs.map((j) => j.reg).filter((v): v is string => Boolean(v)).sort();
+  const firstReg = [stat?.firstReg, regs[0]].filter((v): v is string => Boolean(v)).sort()[0] ?? null;
+  const lastReg = [stat?.lastReg, regs[regs.length - 1]].filter((v): v is string => Boolean(v)).sort().pop() ?? null;
+  const totalN = (stat?.n ?? board.jobs.length - alioN) + alioN;
 
   return (
     <div className="pb-4">
       <PageBanner tone="blue"
         eyebrow="채용 · 기관별"
         title={org}
-        sub={`${org}이(가) 나라일터에 낸 채용 공고입니다. 접수 중인 것이 앞에 오고, 그 뒤로 지난 공고가 등록일순으로 이어집니다.`}
+        sub={`${org}이(가) 나라일터·잡알리오에 낸 채용 공고입니다. 접수 중인 것이 앞에 오고, 그 뒤로 지난 공고가 등록일순으로 이어집니다.`}
         art={<IllusJobs />}
       >
-        {stat && (
+        {totalN > 0 && (
           <p className="num mt-4 text-sm text-muted">
-            공고 {stat.n.toLocaleString()}건
-            {stat.openN > 0 && ` · 접수 중 ${stat.openN}건`}
-            {stat.firstReg && stat.lastReg && ` · ${dot(stat.firstReg)}~${dot(stat.lastReg)}`}
+            공고 {totalN.toLocaleString()}건
+            {openN > 0 && ` · 접수 중 ${openN}건`}
+            {firstReg && lastReg && ` · ${dot(firstReg)}~${dot(lastReg)}`}
           </p>
         )}
       </PageBanner>
@@ -111,8 +120,8 @@ export default async function JobsByOrg({ params }: P) {
         data={pageGraph({
           path: jobPath(route),
           name: `${org} 채용 공고`,
-          description: `${org}이(가) 나라일터에 낸 채용 공고${stat ? ` ${stat.n.toLocaleString()}건` : ""}. 접수 중인 공고, 연도별 공고 수, 주로 뽑는 자리, 지원서 준비.`,
-          dateModified: stat?.lastReg ?? null,
+          description: `${org}이(가) 나라일터·잡알리오에 낸 채용 공고${totalN ? ` ${totalN.toLocaleString()}건` : ""}. 접수 중인 공고, 연도별 공고 수, 주로 뽑는 자리, 지원서 준비.`,
+          dateModified: lastReg,
           collection: true,
           // 거르거나 넘긴 쪽(지역·고용형태·접수 중·2쪽 이후)은 화면 목록이 달라 적지 않는다. 기관 첫 쪽만.
           items: !route.region && !route.hire && !route.open && !route.q && route.page === 1
@@ -138,7 +147,7 @@ export default async function JobsByOrg({ params }: P) {
           <h2 className="text-[15px] font-bold">지난 공고에서 읽히는 것</h2>
           <ul className="mt-3 space-y-2 text-[14px] leading-[1.75] text-ink2">
             <li>
-              마지막 공고는 <b className="num">{dot(stat.lastReg) ?? "—"}</b>에 올라왔습니다.
+              마지막 공고는 <b className="num">{dot(lastReg) ?? "—"}</b>에 올라왔습니다.
             </li>
             {stat.avgDays != null && (
               <li>
@@ -161,8 +170,8 @@ export default async function JobsByOrg({ params }: P) {
           {stat.n >= 12 && <MonthBars months={stat.months} />}
           <p className="mt-3 text-xs leading-relaxed text-muted">
             {stat.firstReg?.slice(0, 4)}~{stat.lastReg?.slice(0, 4)}년에 모인{" "}
-            {stat.n.toLocaleString()}건을 센 것입니다. 이 기간 밖의 공고와, 나라일터에 올리지
-            않은 공고는 빠져 있습니다.
+            나라일터 공고 {stat.n.toLocaleString()}건을 센 것입니다. 잡알리오 공고는 2026년 8월부터만 모여 있어
+            접수 기간·달별 비율에는 넣지 않았습니다.
           </p>
         </section>
       )}
@@ -242,7 +251,7 @@ export default async function JobsByOrg({ params }: P) {
             지난 공고문이 제일 정확하게 알려 줍니다.
           </p>
           <p>
-            여기 있는 것이 이 기관 공고 전부는 아닙니다. 인사혁신처 나라일터에 올라온 것만
+            여기 있는 것이 이 기관 공고 전부는 아닙니다. 인사혁신처 나라일터와 잡알리오에 올라온 것만
             모으고 있어서, 기관 홈페이지 채용 게시판에만 올리는 공고는 빠집니다. 가고 싶은
             기관이 정해져 있다면 그 기관 게시판도 같이 보세요.
           </p>

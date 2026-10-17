@@ -148,7 +148,7 @@ const MONEY: Related = {
 const JOBS: Related = {
   href: "/jobs",
   title: "공공기관 채용정보",
-  desc: "나라일터 채용 공고를 지역·고용형태로 걸러 접수 중인 것부터 봅니다.",
+  desc: "나라일터·잡알리오 채용 공고를 지역·고용형태로 걸러 접수 중인 것부터 봅니다.",
 };
 
 const AGENCY: Related = {

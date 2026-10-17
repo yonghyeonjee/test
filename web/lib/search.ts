@@ -8,6 +8,7 @@ import {
 import { FREE_GROUPS } from "./freeServices";
 import { SIDO_SHORT, locate } from "./geo";
 import { jobPath } from "./jobRoute";
+import { dropAlioTwins } from "./jobTwins";
 import { tokenize } from "./keywords";
 import { describe, parseQuery, toParams, type Parsed } from "./parse";
 import { POSTS } from "./posts";
@@ -205,7 +206,7 @@ async function searchJobs(words: string[], sido?: string, sigungu?: string) {
   const also = Array.from(new Set(groups.flatMap((g) => g.slice(1))));
 
   const base = (expand: boolean) => {
-    let sel = db.from("job_posts").select("source_id,title,org,region,hire,end_date", { count: "exact" })
+    let sel = db.from("job_posts").select("source_id,title,org,region,hire,end_date,reg_date", { count: "exact" })
       .filter("source", SOURCE_OP, SOURCE_VAL);
     // 묶음마다 or 를 따로 붙이면 or= 이 여러 번 가서 PostgREST 가 500 을 낸다("수원 경비").
     // 하나의 or=(and(or(…),or(…))) 로 묶는다.
@@ -225,10 +226,12 @@ async function searchJobs(words: string[], sido?: string, sigungu?: string) {
     open = await base(true).gte("end_date", today).order("end_date", { ascending: true }).limit(PER);
     if (open.error) throw open.error;
   }
-  const items: JobHit[] = (open.data ?? []).map((r) => ({
-    id: String(r.source_id), title: String(r.title ?? ""), org: r.org ?? null, region: r.region ?? null,
-    hire: r.hire ?? null, end: r.end_date ?? null, open: true,
-  }));
+  // 나라일터·잡알리오에 같이 올라온 공고는 한 번만(lib/jobTwins).
+  const items: JobHit[] = dropAlioTwins(open.data ?? [], (r) => ({ id: String(r.source_id), title: String(r.title ?? ""), reg: r.reg_date ?? null, end: r.end_date ?? null }))
+    .map((r) => ({
+      id: String(r.source_id), title: String(r.title ?? ""), org: r.org ?? null, region: r.region ?? null,
+      hire: r.hire ?? null, end: r.end_date ?? null, open: true,
+    }));
 
   // 두 글자 낱말은 trigram 색인을 못 타서 22만 건을 훑는다(3초). 그때는
   // 접수 중만 보여 주고 지난 공고는 채용 화면으로 넘긴다. 지난 공고까지 셀
@@ -238,7 +241,7 @@ async function searchJobs(words: string[], sido?: string, sigungu?: string) {
 
   const all = await base(false).limit(items.length ? 0 : PER).order("reg_date", { ascending: false, nullsFirst: false });
   if (all.error) return { items, total: open.count ?? items.length, openOnly: true, allTotal: null, also };
-  const closed: JobHit[] = items.length ? [] : (all.data ?? []).map((r) => ({
+  const closed: JobHit[] = items.length ? [] : dropAlioTwins(all.data ?? [], (r) => ({ id: String(r.source_id), title: String(r.title ?? ""), reg: r.reg_date ?? null, end: r.end_date ?? null })).map((r) => ({
     id: String(r.source_id), title: String(r.title ?? ""), org: r.org ?? null, region: r.region ?? null,
     hire: r.hire ?? null, end: r.end_date ?? null, open: false,
   }));

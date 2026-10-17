@@ -113,6 +113,17 @@ ok("[IMG4]" in four[-1], "절보다 사진이 많으면 맨 뒤에")
 out_img = t.render(POST, "full", imgs)
 ok(out_img.index("[IMG1]") < out_img.index("<h2>새 공고</h2>"), "render 에도 끼워진다")
 
+# 고쳐 쓸 때 기존 슬러그를 slogan 으로 — 기록된 주소에서 꺼낸다
+class SB:
+    def __init__(self, url): self._u = url
+    def table(self, _): return self
+    def select(self, _): return self
+    def eq(self, *_): return self
+    def execute(self):
+        return type("R", (), {"data": [{"url": self._u}] if self._u else []})()
+ok(t.recorded_slogan(SB("https://abcfact.tistory.com/entry/%EA%B3%B5%EA%B3%B5-TOP10-1"), "x") == "공공-TOP10-1", "entry 슬러그 디코딩")
+ok(t.recorded_slogan(SB("https://abcfact.tistory.com/12"), "x") == "" and t.recorded_slogan(SB(""), "x") == "", "숫자 주소·기록 없음이면 빈 값")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 

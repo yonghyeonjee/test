@@ -208,9 +208,8 @@ export default async function JobDetail({ params }: P) {
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
-  // 기관 쪽(/jobs/org)은 나라일터 이력만 센다. 잡알리오에만 공고를 내는 기관은 그 쪽이 404 라,
-  // 잡알리오 공고는 이력이 있을 때만 기관 쪽으로 잇는다. 나라일터 공고는 예전처럼 늘 잇는다.
-  const orgLink = Boolean(job.org && (stat || !job.id.startsWith("a")));
+  // 기관 쪽(/jobs/org)은 2026-10-17 부터 잡알리오 공고도 목록에 올리므로 잡알리오에만 내는 기관도 쪽이 있다. 늘 잇는다.
+  const orgLink = Boolean(job.org);
   const role = detectRole(job.title, job.org);
   // "무도실무관 (무도실무관)" 처럼 괄호 안이 직무 이름 그대로면 두 번 적지 않는다.
   const rawDetail = detailOf(job.title);

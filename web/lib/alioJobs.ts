@@ -86,7 +86,8 @@ export async function alioStep(mode: "new" | "full", budgetMs = 40_000): Promise
     const now = new Date().toISOString();
     const put = fresh.filter((x) => !dup.has(norm(x.title))).map((x) => ({
       id: `alio:a${x.idx}`, source: "alio", source_id: `a${x.idx}`,
-      title: x.title, org: x.org, region: normSido(x.area) ?? x.area, hire: "공공", recruit: x.kind,
+      // 시·도로 읽히는 근무지만 region 에. "해외" 같은 값은 지역 칩·지역 쪽을 만들어 엉뚱한 쪽으로 이었다(원문은 raw.area).
+      title: x.title, org: x.org, region: normSido(x.area), hire: "공공", recruit: x.kind,
       reg_date: x.reg, start_date: x.reg, end_date: x.end,
       url: `${BASE}/recruitview.do?idx=${x.idx}`, raw: { from: "job.alio.go.kr", area: x.area, kind: x.kind },
       fetched_at: now,

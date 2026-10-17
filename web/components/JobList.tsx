@@ -202,7 +202,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
                     {(j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
                     {j.reg && <span className="num badge badge-quiet">{dot(j.reg)} 등록</span>}
                     {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
-                    {j.recruit && <span className="badge badge-quiet">{j.recruit}</span>}
+                    {j.recruit && <span className="badge badge-quiet">{j.recruit.replace(/\s*외\s*\d+$/, " 등")}</span>}
+                    {j.id.startsWith("a") && <span className="badge badge-quiet">잡알리오</span>}
                   </span>
                   <b className="mt-2 block text-[15px] leading-snug">{j.title}</b>
                   <span className="mt-1 block text-[13px] text-muted">
@@ -211,7 +212,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
                   </span>
                   {(j.start || j.end) && (
                     <span className="num mt-1.5 block text-xs text-muted">
-                      접수 {dot(j.start) ?? "—"} ~ {dot(j.end) ?? "—"}
+                      {/* 잡알리오는 접수 시작일을 주지 않아 시작 칸이 등록일이다. 마감만 적는다. */}
+                      {j.id.startsWith("a") ? `${dot(j.end) ?? "—"} 마감` : `접수 ${dot(j.start) ?? "—"} ~ ${dot(j.end) ?? "—"}`}
                     </span>
                   )}
                 </span>

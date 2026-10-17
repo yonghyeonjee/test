@@ -12,7 +12,7 @@ import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
-import { filterJobs, getJobOverview, getJobs } from "@/lib/pubJobs";
+import { filterJobs, getAlioCounts, getJobOverview, getJobs } from "@/lib/pubJobs";
 import { jobCanonical, jobRobots, jobRouteLabel, PER_PAGE, readJobRoute, type JobRoute } from "@/lib/jobRoute";
 import { JOBS_FAQ } from "@/lib/pageFaq";
 import { jobsRelated } from "@/lib/related";
@@ -40,7 +40,7 @@ function jobsIndexDescription(r: JobRoute) {
   return cond.length
     ? `${cond.join(" · ")} 조건에 맞는 공공기관·지자체 채용 공고입니다. 접수 중인 것이 앞에 오고 ` +
       "마감이 가까운 순서로 정렬합니다."
-    : "인사혁신처 나라일터에 올라온 공공기관·지자체 채용 공고를 지역과 기관 구분, 기관명으로 " +
+    : "인사혁신처 나라일터와 잡알리오에 올라온 공공기관·지자체 채용 공고를 지역과 기관 구분, 기관명으로 " +
       "걸러 봅니다. 접수 중인 공고를 마감 임박순으로 보여 드립니다.";
 }
 
@@ -64,8 +64,9 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
   // 미들웨어가 이미 걸렀지만, 쪽 혼자서도 옳게 답하도록 한 번 더 본다.
   const route = readJobRoute(prefix, seg);
   if (!route) notFound();
-  const [board, overview] = await Promise.all([getJobs(), getJobOverview()]);
-  const open = overview?.openN ?? board.jobs.filter((j) => j.status !== "closed").length;
+  const [board, overview, alio] = await Promise.all([getJobs(), getJobOverview(), getAlioCounts()]);
+  // 나라일터 집계(job_overview)에 잡알리오 수를 더한다. 같은 공고가 두 곳에 다 있는 것(접수 중의 2~3%)은 겹쳐 센다.
+  const open = overview ? overview.openN + (alio?.open ?? 0) : board.jobs.filter((j) => j.status !== "closed").length;
   const orgs = overview?.orgs ?? new Set(board.jobs.map((j) => j.org).filter(Boolean)).size;
 
   // 구조화 데이터. 검색어 쪽(q)은 색인하지 않으니 내지 않는다.
@@ -90,7 +91,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
           <div className="mt-7 grid grid-cols-3 gap-3">
             {[
               { n: open, label: "접수 중" },
-              { n: overview?.total ?? board.jobs.length, label: "모아 둔 공고" },
+              { n: overview ? overview.total + (alio?.total ?? 0) : board.jobs.length, label: "모아 둔 공고" },
               { n: orgs, label: "채용 기관" },
             ].map((b) => (
               <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
@@ -119,7 +120,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
       <MidAd name="detail_mid" context="job" seed="jobs" className="mt-10" />
 
       <p className="mt-3 text-xs leading-relaxed text-muted">
-        나라일터 공개 자료를 여섯 시간마다 받아 옵니다. 접수 기간과 자격 요건의 최종
+        나라일터와 잡알리오 공개 자료를 여섯 시간마다 받아 옵니다. 두 곳에 같이 올라온 공고는 한 번만 보입니다. 접수 기간과 자격 요건의 최종
         확인은 공고 원문에서 하셔야 합니다.
       </p>
 
