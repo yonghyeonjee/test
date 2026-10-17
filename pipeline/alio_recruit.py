@@ -129,7 +129,9 @@ def main():
     ap.add_argument("--days", type=int, default=90, help="접수 시작이 며칠 안인 공고까지")
     ap.add_argument("--max-pages", type=int, default=40)
     ap.add_argument("--dry", action="store_true")
-    a = ap.parse_args()
+    # probe.yml 은 인자를 한 덩어리로 넘긴다("--days 90 --dry"). 그럴 때는 나눠 읽는다.
+    argv = sys.argv[1].split() if len(sys.argv) == 2 and " " in sys.argv[1] else sys.argv[1:]
+    a = ap.parse_args(argv)
     key = os.environ.get("ALIO_RECRUIT_KEY", "").strip()
     if not key:
         sys.exit("ALIO_RECRUIT_KEY 가 없다")
@@ -156,16 +158,19 @@ def main():
     if not rows:
         return
 
-    from supabase import create_client
-    sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+    if a.dry and not os.environ.get("SUPABASE_URL"):
+        sb = None  # DB 없이 모양만 본다(probe.yml)
+    else:
+        from supabase import create_client
+        sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
     ids = [f"a{r['recrutPblntSn']}" for r in rows]
     have: set[str] = set()
-    for i in range(0, len(ids), 200):
+    for i in range(0, len(ids) if sb else 0, 200):
         have |= {x["source_id"] for x in (sb.table("job_posts").select("source_id").eq("source", "alio")
                                           .in_("source_id", ids[i:i + 200]).execute().data or [])}
     ends = sorted({ymd(r.get("pbancEndYmd")) for r in rows if ymd(r.get("pbancEndYmd"))})
     gojobs: list[dict] = []
-    for i in range(0, len(ends), 50):
+    for i in range(0, len(ends) if sb else 0, 50):
         gojobs += (sb.table("job_posts").select("title,reg_date,end_date").eq("source", "gojobs")
                    .in_("end_date", ends[i:i + 50]).limit(5000).execute().data or [])
 
