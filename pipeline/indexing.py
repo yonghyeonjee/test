@@ -37,9 +37,10 @@ def enc(x: str) -> str:
 def collect(sb, hours: int) -> dict[str, list[str]]:
     since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)).isoformat()
     yday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
-    # 1년 넘게 지난 공고는 상세 쪽이 noindex 다(web/app/jobs/[id]/page.tsx stale). 옛 공고를 한꺼번에 받아 오는
-    # 날이면 그 수천 건이 "새 공고"로 잡혀 구글 몫(190건)을 다 먹으니 처음부터 뺀다.
-    cutoff = (dt.date.today() - dt.timedelta(days=365)).isoformat()
+    # 새로 들어온 공고 가운데 아직 접수 중인 것만 알린다. 옛 공고를 한꺼번에 받아 오는 날이면 그것이 "새 공고"로
+    # 잡혀 구글 몫(190건)을 다 먹는다 — 2026-10-18 잡알리오 API 첫 수집으로 7~9월 공고 723건이 들어와 그렇게 됐다.
+    # 마감된 공고 쪽은 JobPosting 을 내지 않으니 Indexing API 대상도 아니다. (한국 날짜)
+    cutoff = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date().isoformat()
     # 잡알리오 공고는 칸별 내용(요약)이 붙은 것만 색인하니 main() 에서 google_worthy 로 한 번 더 거른다.
     jobs = (sb.table("job_posts").select("source_id").in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
             .or_(f"end_date.gte.{cutoff},end_date.is.null")
