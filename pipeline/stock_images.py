@@ -1,5 +1,5 @@
 """
-stock_images.py — 글에 넣을 스톡 사진을 Openverse(CC0·CC BY, 열쇠 없이 검색)에서 찾아 온다. GitHub 러너에서 돈다(2026-10-20).
+stock_images.py — 글에 넣을 스톡 사진을 위키미디어 공용(CC0·CC BY·CC BY-SA·퍼블릭 도메인, 열쇠 없이 검색)에서 찾아 온다. GitHub 러너에서 돈다(2026-10-20).
 
   sheets "apartment korea|bank counter"      검색어마다 후보 12장의 미리보기를 한 장(격자)으로 모아 stock/sheets/q1.jpg … 와 stock/index.json
   pick   "q1:3=jeonse-1-cover,q2:7=jeonse-2-bank"   고른 후보를 원본 크기로 받아 1600px 로 줄여 web/public/img/story/<이름>.jpg 로.
@@ -46,7 +46,7 @@ def search_commons(q: str, n: int) -> list[dict]:
     """위키미디어 공용. 열쇠가 없어도 되고 잘 죽지 않는다. 저작권 표시가 CC0·CC BY·CC BY-SA·퍼블릭 도메인인 사진만."""
     r = requests.get(COMMONS, params={
         "action": "query", "format": "json", "generator": "search", "gsrsearch": f"{q} filetype:bitmap", "gsrnamespace": 6,
-        "gsrlimit": n * 2, "prop": "imageinfo", "iiprop": "url|size|extmetadata", "iiurlwidth": 400,
+        "gsrlimit": n * 3, "prop": "imageinfo", "iiprop": "url|size|extmetadata", "iiurlwidth": 400,
     }, headers={"User-Agent": UA}, timeout=60)
     r.raise_for_status()
     out = []
@@ -70,11 +70,9 @@ def search_commons(q: str, n: int) -> list[dict]:
     return out
 
 
-def search(q: str, n: int = 12) -> list[dict]:
-    rows = search_openverse(q, n)
-    if len(rows) < 4:
-        rows += search_commons(q, n - len(rows))
-    return rows
+def search(q: str, n: int = 16) -> list[dict]:
+    """2026-10-20 Openverse 는 러너에서 자주 끊기고(429·시간 초과) 미리보기 주소도 죽어 있어 위키미디어 공용만 쓴다."""
+    return search_commons(q, n)
 
 
 def fetch(url: str) -> Image.Image | None:
@@ -103,6 +101,9 @@ def sheets(spec: str) -> None:
             time.sleep(0.3)
         index[f"q{qi}"] = [{"i": i + 1, **{k: r[k] for k in ("id", "title", "creator", "license", "source", "w", "h", "full", "from")}}
                            for i, (r, _) in enumerate(thumbs)]
+        if not thumbs:
+            print(f"  q{qi}: 쓸 사진이 없다", file=sys.stderr)
+            continue
         cols, cw, ch = 4, 400, 300
         sheet = Image.new("RGB", (cols * cw, ((len(thumbs) + cols - 1) // cols) * ch), "white")
         d = ImageDraw.Draw(sheet)
