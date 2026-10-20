@@ -132,6 +132,11 @@ ok(t.category_for({"slug": "top10-welfare-sido-2026-10", "kind": "topic"}) == t.
 ok(t.category_for({"slug": "daily-2026-10-17", "kind": "daily"}) == t.CATEGORIES["policy"], "브리핑은 policy")
 ok(all(isinstance(v, int) and v > 0 for v in t.CATEGORIES.values()), "카테고리 id 는 양의 정수")
 
+# 쿠키 이름만 뽑는다(값은 안 나온다)
+ok(t.cookie_names("_fwb=abc; TSSESSION=secret123; __T_=1") == ["_fwb", "TSSESSION", "__T_"], "쿠키 이름")
+ok("secret123" not in " ".join(t.cookie_names("TSSESSION=secret123")), "값은 안 찍는다")
+ok(t.cookie_names(t.clean_cookie("Cookie: a=1;\n b=2")) == ["a", "b"], "Cookie: 접두어·줄바꿈 정리 뒤에도 이름이 나온다")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 

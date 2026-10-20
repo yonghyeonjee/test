@@ -188,6 +188,16 @@ def clean_cookie(raw: str) -> str:
     return " ".join(s.split())    # 줄바꿈·겹친 공백 정리
 
 
+def cookie_names(cookie: str) -> list[str]:
+    """쿠키 헤더에 든 이름만(값은 절대 찍지 않는다). --check 가 TSSESSION 이 들어 있는지 보여 주는 데 쓴다."""
+    out: list[str] = []
+    for part in cookie.split(";"):
+        name = part.strip().split("=", 1)[0].strip()
+        if name and name not in out:
+            out.append(name)
+    return out
+
+
 def looks_like_login(url_or_html: str) -> bool:
     s = url_or_html[:4000]
     return "/auth/login" in s or "accounts.kakao.com" in s or "tistory.com/auth" in s
@@ -457,6 +467,10 @@ def main() -> int:
         if a.check:
             if not cookie:
                 sys.exit("TISTORY_COOKIE 가 비어 있다")
+            names = cookie_names(cookie)
+            print(f"쿠키 길이 {len(cookie)}자, 이름 {len(names)}개: " + ", ".join(names))
+            if "TSSESSION" not in names:
+                print("::warning::쿠키에 TSSESSION 이 없다 — 로그인된 abcfact.tistory.com/manage 요청의 Cookie 값 전체를 넣어야 한다")
             cats = Tistory(host, cookie).categories()
             print(f"쿠키 살아 있음: {host}")
             print("카테고리 id → 이름 (비우면 글마다 고른다: " + ", ".join(f"{k}={v}" for k, v in CATEGORIES.items()) + "):")
