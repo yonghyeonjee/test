@@ -1,0 +1,41 @@
+name: stock-images
+
+# 글에 넣을 스톡 사진을 러너에서 찾아 받아 브랜치에 커밋한다(pipeline/stock_images.py). 작업 환경에서는 사진 누리집이 막혀 있다.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "sheets(후보 미리보기) 또는 pick(고른 것 받기)"
+        default: "sheets"
+        type: string
+      arg:
+        description: "sheets: 검색어|검색어 … / pick: q1:3=이름,q2:7=이름 …"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -q requests pillow
+      - name: 받기
+        env:
+          MODE: ${{ inputs.mode }}
+          ARG: ${{ inputs.arg }}
+        run: python -u pipeline/stock_images.py "$MODE" "$ARG"
+      - name: 커밋
+        run: |
+          git config user.name yonghyeonjee
+          git config user.email yonghyeonjee@gmail.com
+          git add -A stock web/public/img/story
+          git diff --cached --quiet && echo "바뀐 것 없음" && exit 0
+          git commit -m "스톡 사진 ${{ inputs.mode }}: ${{ inputs.arg }}" -m "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_011fqhUoNW2N29bNtSknpq6g"
+          git push
