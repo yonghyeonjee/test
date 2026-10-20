@@ -77,9 +77,10 @@ export default async function StoryPage({ params }: P) {
     },
   });
 
-  // 차례와 첫 문단은 요약 상자가 보여 준다. 본문에서는 뺀다.
+  // 차례와 첫 문단은 요약 상자가 보여 준다. 첫 사진은 머리 그림으로 올린다. 본문에서는 뺀다.
   const firstP = s.body.findIndex((b) => b.type === "p");
-  const body = s.body.filter((b, i) => b.type !== "toc" && i !== firstP);
+  const cover = s.body.find((b): b is Extract<Block, { type: "img" }> => b.type === "img");
+  const body = s.body.filter((b, i) => b.type !== "toc" && i !== firstP && b !== cover);
 
   const mins = readMinutes(blocksText(s.body));
 
@@ -95,14 +96,20 @@ export default async function StoryPage({ params }: P) {
       <header className="mt-4 sm:mt-6">
         <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">{s.title}</h1>
         <p className="num mt-4 text-[13px] text-faint">
-          <span className="font-semibold text-brand">K나라지원</span> · {s.updated_at.slice(0, 10).replaceAll("-", ".")} · 읽는 데 {mins}분 · 모아 둔 자료에서 센 숫자로 씁니다
+          <span className="font-semibold text-brand">K나라지원</span> · {s.updated_at.slice(0, 10).replaceAll("-", ".")} · 읽는 데 {mins}분 · {s.kind === "case" ? "실제 사례를 정리한 글입니다" : "모아 둔 자료에서 센 숫자로 씁니다"}
         </p>
       </header>
-      {/* 사진이 있는 글은 본문 첫 사진이 머리 그림을 대신한다. */}
-      {!coverOf(s.body) && <StoryCover kind={s.kind} label={KIND_LABEL[s.kind]} band className="mt-6" />}
+      {/* 사진이 있는 글은 본문 첫 사진이 머리 그림을 대신한다(본문에서는 그 사진을 뺀다). */}
+      {cover
+        ? <figure className="mt-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={cover.src} alt={cover.alt} className="w-full rounded-card object-cover" />
+            {cover.caption && <figcaption className="mt-2 text-xs leading-relaxed text-muted">{cover.caption}</figcaption>}
+          </figure>
+        : <StoryCover kind={s.kind} label={KIND_LABEL[s.kind]} band className="mt-6" />}
 
       {/* 두괄식: 요약 상자가 먼저, 그 아래 광고 띠, 본문. */}
-      <StorySummary summary={s.summary} blocks={s.body} className="mt-6" />
+      <StorySummary summary={s.summary} blocks={s.body.filter((b) => b !== cover)} className="mt-6" />
       <TopStripAd className="mt-5" />
 
       <StoryBody blocks={body.slice(0, Math.ceil(body.length / 2))} />
