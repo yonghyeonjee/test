@@ -20,6 +20,8 @@ export type Article = {
   /** 썸네일: 갈래 색 띠(kind) 또는 직접 그린 것(art). 둘 다 없으면 글만. */
   kind?: string;
   art?: ReactNode;
+  /** 사진 썸네일(사이트 안 경로). art 보다 먼저 쓴다. */
+  cover?: string;
 };
 
 const dot = (d?: string) => (d ? d.replaceAll("-", ".") : "");
@@ -43,7 +45,10 @@ export default function ArticleList({ items, className = "" }: { items: Article[
             </span>
             {(a.art || a.kind) && (
               <span className="mt-1 h-[72px] w-[72px] shrink-0 overflow-hidden rounded-[12px] sm:h-24 sm:w-24">
-                {a.art ? <span className="flex h-full w-full items-center justify-center bg-brandSoft/50 p-2">{a.art}</span> : <StoryCover kind={a.kind!} square />}
+                {a.cover
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={a.cover} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  : a.art ? <span className="flex h-full w-full items-center justify-center bg-brandSoft/50 p-2">{a.art}</span> : <StoryCover kind={a.kind!} square />}
               </span>
             )}
           </Link>

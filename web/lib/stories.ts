@@ -14,7 +14,9 @@ export type Block =
   | { type: "table"; head: string[]; rows: string[][] }
   | { type: "bars"; items: { label: string; n: number }[]; unit?: string }
   | { type: "links"; items: { href: string; label: string }[] }
-  | { type: "note"; text: string };
+  | { type: "note"; text: string }
+  /** 사진. src 는 /img/story/… 같은 사이트 안 경로. 출처는 web/public/img/story/credits.json 에 두고 caption 에 적는다. */
+  | { type: "img"; src: string; alt: string; caption?: string };
 
 export type Story = {
   slug: string;
@@ -30,7 +32,7 @@ export type Story = {
 
 export const KIND_LABEL: Record<string, string> = {
   topic: "지원 주제", org: "기관별 채용", role: "직무별 채용", region: "지역 현황",
-  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "오늘의 채용 브리핑",
+  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "오늘의 채용 브리핑", case: "실제 사례",
 };
 
 const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated_at";
@@ -42,7 +44,8 @@ const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated
  *  - 순위 연재(top10-…)는 티스토리에 같은 틀로 따로 내는 글이라 여기서는 색인하지 않는다.
  * 쪽은 그대로 열리고 링크는 따라간다(noindex,follow).
  */
-const INDEX_KINDS = new Set(["org", "role", "license"]);
+// case: 사람이 쓴 사례 글(2026-10-20 전세대출 연재부터). 자동 글이 아니라 색인한다.
+const INDEX_KINDS = new Set(["org", "role", "license", "case"]);
 export function storyIndexable(s: Pick<Story, "kind" | "slug">): boolean {
   return INDEX_KINDS.has(s.kind) && !s.slug.startsWith("top10-");
 }
