@@ -51,6 +51,7 @@ export default async function StoryIndex() {
       date: s.published_at,
       mins: readMinutes(blocksText(s.body)),
       kind: s.kind,
+      cover: s.body.find((b) => b.type === "img")?.type === "img" ? (s.body.find((b) => b.type === "img") as { src: string }).src : undefined,
     })),
   ];
   return (
