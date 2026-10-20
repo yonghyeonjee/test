@@ -4,7 +4,7 @@ name: tistory-top10-daily
 #   1) top10.py 로 jiwon(blog_posts)에 순위 글을 쓰고(출처가 된다)
 #   2) chart_top10.py 로 자료 차트 12장 + 접수 중 공고 화면 1장을 만들고
 #   3) tistory_publish.py --composer top10 으로 티스토리용 글을 따로 써서 공개로 올린다.
-# 그날 주제가 없으면 조용히 끝난다. 쿠키가 만료되면 빨갛게 실패한다(README '티스토리' 절).
+# 기획표에 없는 날은 31개 주제를 순서대로 돌려 쓰므로 멈추지 않는다(top10.py plan_for). 쿠키가 만료되면 빨갛게 실패한다(README '티스토리' 절).
 #
 # 손으로: Run workflow → topic(기획표 대신 이 주제) 또는 date(그날 주제), visibility, dry, update(글 번호 고쳐 쓰기).
 on:
@@ -54,16 +54,11 @@ jobs:
           TOPIC: ${{ inputs.topic }}
           DATE: ${{ inputs.date }}
         run: |
-          python - <<'EOF' >> "$GITHUB_OUTPUT"
-          import json, os, datetime as dt
-          topic = os.environ.get("TOPIC") or ""
-          if not topic:
-              d = os.environ.get("DATE") or (dt.datetime.utcnow() + dt.timedelta(hours=9)).date().isoformat()
-              plan = json.load(open("pipeline/top10_plan.json", encoding="utf-8"))
-              topic = next((p["topic"] for p in plan if p["date"] == d), "")
-              print(f"date={d}")
-          print(f"topic={topic}")
-          EOF
+          d="${DATE:-$(TZ=Asia/Seoul date +%F)}"
+          topic="${TOPIC:-$(python pipeline/top10.py --pick --date "$d")}"
+          echo "date=$d" >> "$GITHUB_OUTPUT"
+          echo "topic=$topic" >> "$GITHUB_OUTPUT"
+          echo "오늘($d) 주제: ${topic:-없음}"
       - name: 주제 없음
         if: steps.pick.outputs.topic == ''
         run: echo "::notice::오늘(${{ steps.pick.outputs.date }}) 기획표에 주제가 없다. 끝."

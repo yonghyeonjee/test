@@ -124,6 +124,14 @@ class SB:
 ok(t.recorded_slogan(SB("https://abcfact.tistory.com/entry/%EA%B3%B5%EA%B3%B5-TOP10-1"), "x") == "공공-TOP10-1", "entry 슬러그 디코딩")
 ok(t.recorded_slogan(SB("https://abcfact.tistory.com/12"), "x") == "" and t.recorded_slogan(SB(""), "x") == "", "숫자 주소·기록 없음이면 빈 값")
 
+# 카테고리: 자격증 → 일상TIP, 기업지원 → B2G, 나머지(채용·공무원·복지·브리핑) → policy
+ok(t.category_for({"slug": "top10-license-hard-2026-11", "kind": "license"}) == t.CATEGORIES["일상TIP"], "자격증은 일상TIP")
+ok(t.category_for({"slug": "top10-biz-field-2026-11", "kind": "topic"}) == t.CATEGORIES["B2G"], "기업지원은 B2G")
+ok(t.category_for({"slug": "top10-civil-2026-10", "kind": "role"}) == t.CATEGORIES["policy"], "공무원은 policy")
+ok(t.category_for({"slug": "top10-welfare-sido-2026-10", "kind": "topic"}) == t.CATEGORIES["policy"], "복지는 policy")
+ok(t.category_for({"slug": "daily-2026-10-17", "kind": "daily"}) == t.CATEGORIES["policy"], "브리핑은 policy")
+ok(all(isinstance(v, int) and v > 0 for v in t.CATEGORIES.values()), "카테고리 id 는 양의 정수")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 
