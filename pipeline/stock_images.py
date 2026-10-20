@@ -19,11 +19,62 @@ UA = "NarajiwonBot/1.0 (+https://jiwon.knowhow-it.com/about; stock)"
 OUT = "web/public/img/story"
 
 
-def search(q: str, n: int = 12) -> list[dict]:
-    r = requests.get(API, params={"q": q, "license": "cc0,by,by-sa", "aspect_ratio": "wide", "size": "large,medium",
-                                  "mature": "false", "page_size": n}, headers={"User-Agent": UA}, timeout=60)
+COMMONS = "https://commons.wikimedia.org/w/api.php"
+OK_LIC = ("cc0", "cc-by", "cc by", "public domain", "pd")
+
+
+def search_openverse(q: str, n: int) -> list[dict]:
+    last = None
+    for attempt in range(3):
+        try:
+            r = requests.get(API, params={"q": q, "license": "cc0,by,by-sa", "aspect_ratio": "wide", "size": "large,medium",
+                                          "mature": "false", "page_size": n}, headers={"User-Agent": UA}, timeout=90)
+            r.raise_for_status()
+            return [{"id": x["id"], "title": x.get("title"), "creator": x.get("creator"),
+                     "license": f"{x.get('license')} {x.get('license_version') or ''}".strip().upper(),
+                     "source": x.get("foreign_landing_url"), "w": x.get("width"), "h": x.get("height"),
+                     "thumb": x.get("thumbnail") or x.get("url"), "full": x.get("url"), "from": "openverse"} for x in r.json().get("results", [])]
+        except Exception as e:  # noqa: BLE001
+            last = e
+            print(f"  openverse {attempt + 1}번째 실패: {type(e).__name__}", file=sys.stderr)
+            time.sleep(5)
+    print(f"  openverse 포기: {last}", file=sys.stderr)
+    return []
+
+
+def search_commons(q: str, n: int) -> list[dict]:
+    """위키미디어 공용. 열쇠가 없어도 되고 잘 죽지 않는다. 저작권 표시가 CC0·CC BY·CC BY-SA·퍼블릭 도메인인 사진만."""
+    r = requests.get(COMMONS, params={
+        "action": "query", "format": "json", "generator": "search", "gsrsearch": f"{q} filetype:bitmap", "gsrnamespace": 6,
+        "gsrlimit": n * 2, "prop": "imageinfo", "iiprop": "url|size|extmetadata", "iiurlwidth": 400,
+    }, headers={"User-Agent": UA}, timeout=60)
     r.raise_for_status()
-    return r.json().get("results", [])
+    out = []
+    for pg in (r.json().get("query", {}).get("pages", {}) or {}).values():
+        ii = (pg.get("imageinfo") or [{}])[0]
+        md = ii.get("extmetadata", {}) or {}
+        lic = (md.get("LicenseShortName", {}).get("value") or "").strip()
+        if not lic or not any(k in lic.lower() for k in OK_LIC):
+            continue
+        if (ii.get("width") or 0) < 1000 or (ii.get("width") or 0) < (ii.get("height") or 1):
+            continue  # 작거나 세로 사진은 머리 그림으로 못 쓴다
+        artist = md.get("Artist", {}).get("value") or ""
+        artist = " ".join(artist.replace("<", " <").split())  # 태그 섞인 이름을 대충 정리
+        import re as _re
+        artist = _re.sub(r"<[^>]+>", "", artist).strip()
+        out.append({"id": f"commons:{pg['pageid']}", "title": pg.get("title", "").replace("File:", ""), "creator": artist,
+                    "license": lic, "source": ii.get("descriptionurl"), "w": ii.get("width"), "h": ii.get("height"),
+                    "thumb": ii.get("thumburl"), "full": ii.get("url"), "from": "commons"})
+        if len(out) >= n:
+            break
+    return out
+
+
+def search(q: str, n: int = 12) -> list[dict]:
+    rows = search_openverse(q, n)
+    if len(rows) < 4:
+        rows += search_commons(q, n - len(rows))
+    return rows
 
 
 def fetch(url: str) -> Image.Image | None:
@@ -44,15 +95,13 @@ def sheets(spec: str) -> None:
         print(f"q{qi} {q!r}: {len(rows)}장")
         thumbs = []
         for r in rows:
-            im = fetch(r.get("thumbnail") or r.get("url"))
+            im = fetch(r["thumb"])
             if im is None:
                 continue
             im.thumbnail((400, 300))
             thumbs.append((r, im))
             time.sleep(0.3)
-        index[f"q{qi}"] = [{"i": i + 1, "id": r["id"], "title": r.get("title"), "creator": r.get("creator"),
-                            "license": f"{r.get('license')} {r.get('license_version') or ''}".strip(),
-                            "source": r.get("foreign_landing_url"), "w": r.get("width"), "h": r.get("height")}
+        index[f"q{qi}"] = [{"i": i + 1, **{k: r[k] for k in ("id", "title", "creator", "license", "source", "w", "h", "full", "from")}}
                            for i, (r, _) in enumerate(thumbs)]
         cols, cw, ch = 4, 400, 300
         sheet = Image.new("RGB", (cols * cw, ((len(thumbs) + cols - 1) // cols) * ch), "white")
@@ -75,8 +124,7 @@ def pick(spec: str) -> None:
         key, name = item.split("=")
         q, i = key.split(":")
         meta = next(m for m in index[q] if m["i"] == int(i))
-        r = requests.get(f"{API}{meta['id']}/", headers={"User-Agent": UA}, timeout=60).json()
-        im = fetch(r["url"])
+        im = fetch(meta["full"])
         if im is None:
             continue
         im.thumbnail((1600, 1600))
