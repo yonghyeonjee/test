@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import CalendarAdd from "@/components/CalendarAdd";
+import CalendarCond from "@/components/CalendarCond";
 import JsonLd from "@/components/JsonLd";
 import LocateButton from "@/components/LocateButton";
-import { SIDO_SHORT } from "@/lib/geo";
+import { SIDO_SHORT, sggChoices } from "@/lib/geo";
 import { addDays, deadlineDays, deadlineItems, examDays, monthRange, todayKst, type DayItem } from "@/lib/calendar";
 import type { CalEvent } from "@/lib/ical";
 import { pageGraph } from "@/lib/schema";
@@ -22,6 +23,7 @@ export const metadata: Metadata = withOg({
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);
+const many = (v: SP[string]) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
 const WD = ["일", "월", "화", "수", "목", "금", "토"];
 const SIDOS = Object.keys(SIDO_SHORT);
 
@@ -41,6 +43,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   const today = todayKst();
   const sido = one(searchParams.sido) || null;
   const sigungu = one(searchParams.sigungu) || null;
+  // 내 조건(첫 화면과 같은 이름: age·emp·hh). 지원사업만 거른다. CalendarCond 가 저장된 조건을 주소에 붙여 준다.
+  const ageRaw = Number(one(searchParams.age));
+  const age = Number.isInteger(ageRaw) && ageRaw > 0 && ageRaw < 120 ? ageRaw : null;
+  const emp = one(searchParams.emp) || null;
+  const hh = many(searchParams.hh).filter((h) => h.length <= 20).slice(0, 9);
+  const cond = { age, emp, hh };
+  const hasCond = Boolean(age || emp || hh.length);
   const dParam = one(searchParams.d);
   const mParam = one(searchParams.m);
   // 달은 지난 석 달부터 앞으로 열두 달까지만. 예전에는 지난달·다음달이 끝없이 이어져(마감 기록이
@@ -57,9 +66,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
     ? (dParam as string) : ym(today) === month ? today : from;
 
   const [days, exams, items] = await Promise.all([
-    deadlineDays(from, to, sido, sigungu),
+    deadlineDays(from, to, sido, sigungu, cond),
     examDays(from, to),
-    deadlineItems(day, sido, sigungu),
+    deadlineItems(day, sido, sigungu, cond),
   ]);
   for (const [d, list] of Object.entries(exams)) { days[d] ??= { p: 0, job: 0, exam: 0 }; days[d].exam = list.length; }
   const dayExams = exams[day] ?? [];
@@ -73,8 +82,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   const q = (patch: Record<string, string | null | undefined>) => {
     const sp = new URLSearchParams();
     // 날짜만 바꾸면 달도 그 날짜의 달로. 전날·다음날이 달을 넘으면 그 달 1일로 튀던 것.
-    const all = { m: patch.d && !("m" in patch) ? ym(patch.d) : month, d: day, sido, sigungu, ...patch };
+    const all = { m: patch.d && !("m" in patch) ? ym(patch.d) : month, d: day, sido, sigungu, age: age ? String(age) : null, emp, ...patch };
     for (const [k, v] of Object.entries(all)) if (v) sp.set(k, v);
+    for (const h of hh) sp.append("hh", h);
+    // 조건을 다 비운 채 지역만 바꿀 때도 저장된 조건이 다시 붙지 않게.
+    if (!hasCond && !sp.has("age")) sp.set("all", "1");
     return `/calendar?${sp}`;
   };
   const where = sido ? [SIDO_SHORT[sido] ?? sido, sigungu].filter(Boolean).join(" ") : "전국";
@@ -109,12 +121,21 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
           <Link key={s} href={q({ sido: s, sigungu: null })} rel="nofollow" className={`chip ${sido === s ? "chip-on" : ""}`}>{SIDO_SHORT[s]}</Link>
         ))}
       </div>
+      {/* 시·군·구: 시·도를 고르면 그 아래 시·군·구를 작은 칸으로. 상세 시까지 내려가야 내 동네 것만 남는다(2026-10-21). */}
+      {sido && sggChoices(sido).length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-1" role="group" aria-label={`${SIDO_SHORT[sido] ?? sido} 시·군·구`}>
+          <Link href={q({ sigungu: null })} rel="nofollow" className={`chip !py-1 !text-[12.5px] ${!sigungu ? "chip-on" : ""}`}>{SIDO_SHORT[sido] ?? sido} 전체</Link>
+          {sggChoices(sido).map((g) => (
+            <Link key={g} href={q({ sigungu: g })} rel="nofollow" className={`chip !py-1 !text-[12.5px] ${sigungu === g ? "chip-on" : ""}`}>{g}</Link>
+          ))}
+        </div>
+      )}
       {sigungu && (
         <p className="mt-2 text-[13px] text-muted">
-          <b className="font-semibold text-ink2">{where}</b> 기준.{" "}
-          <Link href={q({ sigungu: null })} className="underline underline-offset-4 hover:text-brand">{SIDO_SHORT[sido ?? ""] ?? sido} 전체로 보기</Link>
+          <b className="font-semibold text-ink2">{where}</b> 기준. 그 시·군·구와 {SIDO_SHORT[sido ?? ""] ?? sido} 전역, 전국 것이 남습니다.
         </p>
       )}
+      <CalendarCond applied={sido || hasCond ? { sido, sigungu, age, emp, hh } : null} month={month} day={day} />
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start">
         {/* 달력 */}
