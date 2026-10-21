@@ -218,6 +218,7 @@ def take_shots(shots: list[dict]) -> dict[str, bool]:
                     host0 = re.sub(r"^www\.", "", s["url"].split("/")[2])
                     if host0 not in page.url:                     # 배너를 닫다가 다른 사이트로 넘어갔다
                         page.goto(s["url"], wait_until="domcontentloaded", timeout=60000); page.wait_for_timeout(4000)
+                    page.evaluate(DISMISS_JS); page.wait_for_timeout(600)   # 늦게 뜨는 쿠키 배너까지 한 번 더
                     page.screenshot(path=path)
                     if os.environ.get("SHOT_PREVIEW"):              # 확인용: 작게 JPEG 로 기록에 찍는다
                         import base64
