@@ -139,7 +139,8 @@ export default function PolicyMap({ data, orgs = [], initial }: { data: MapDataL
   // 처음 자리: 주소의 kind/lat/lng(상세 쪽 "주변 더 보기") → 저장해 둔 내 위치.
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
-    if (sp.get("kind") === "jobs") setKind("jobs");
+    const k0 = sp.get("kind");
+    if (k0 === "jobs" || k0 === "orgs") setKind(k0);
     const lat = Number(sp.get("lat")), lng = Number(sp.get("lng"));
     if (lat && lng && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
       setMe([lat, lng]); setMeLabel("고른 자리"); void learnWhere([lat, lng], false); return;
