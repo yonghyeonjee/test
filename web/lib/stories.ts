@@ -1,4 +1,5 @@
-import { db, dbConfigured, dbLive } from "./db";
+import { unstable_noStore as noStore } from "next/cache";
+import { db, dbConfigured } from "./db";
 
 /**
  * 블로그 글. 두 가지가 있다.
@@ -83,8 +84,11 @@ export async function getStoryStrict(slug: string): Promise<Story | null> {
   if (data) return data as Story;
   // 없다고 나오면 캐시 없이 한 번 더 본다(2026-10-21). 예약 글(published_at 이 내일)은 공개 전에 크롤러가
   // 들르면 빈 조회 결과와 404 쪽이 한 시간씩 캐시에 남아 공개 뒤에도 404 가 나왔다(전세대출 연재 2편).
-  // no-store 조회가 섞이면 이 요청은 동적으로 그려져 404 도 캐시되지 않는다. 진짜 없는 글만 그 값을 치른다.
-  const live = await dbLive.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
+  // noStore() 로 이 요청을 동적으로 돌리면 뒤의 조회는 데이터 캐시를 거치지 않고 404 도 캐시되지 않는다.
+  // (dbLive 의 no-store fetch 는 안 된다 — Next 가 정적 생성을 멈추려 던지는 예외를 supabase-js 가 삼켜
+  //  오류로 돌려주고, 쪽이 500 이 됐다. 2026-10-21 배포에서 확인.) 진짜 없는 글만 조회 한 번을 더 치른다.
+  noStore();
+  const live = await db.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
   if (live.error) throw new Error(`[getStory ${slug}] ${live.error.message}`);
   return (live.data as Story | null) ?? null;
 }
