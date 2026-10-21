@@ -108,6 +108,8 @@ npm 의 [tistory-mcp](https://github.com/kim-se-hee/tistory-mcp) 가 쓰는 길�
    id 는 `tistory_publish.CATEGORIES`). 전부 한 카테고리로 몰고 싶을 때만 Settings → Variables → `TISTORY_CATEGORY`.
 5. 처음엔 `slug` 하나에 `visibility=private` 로 올려 보고, 티스토리 관리자에서 모양을 본 뒤 공개로 바꾼다.
 
+jiwon 자료가 아닌 단독 글(예: 전세계 인터넷 속도 TOP10)은 `pipeline/world_speed.py` 처럼 글·차트를 만드는 스크립트를 두고 워크플로 입력 `script` 로 올린다(`tistory_publish.py --post-json`). 카테고리는 글이 `category` 로 고른다(IT).
+
 쿠키가 만료되면 실행이 종료 코드 2 로 빨갛게 실패하고 "쿠키가 만료됐다" 고 찍는다. 1~3 을 다시 한다.
 어느 글을 올렸는지는 `tistory_posts` 표(`sql/015`)에 남고, 한 글은 한 번만 올라간다.
 비공식 주소라 카카오 쪽이 바꾸면 멈출 수 있다. 그때는 `--check` 부터 돌려 본다.

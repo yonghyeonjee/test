@@ -555,7 +555,7 @@ def plan_for(date: dt.date) -> dict | None:
         return hit
     order = []
     for p in plan:
-        if p["topic"] not in order:
+        if p["topic"] and p["topic"] not in order:      # topic "" 는 '그날은 연재 쉼'(다른 글이 나간다)
             order.append(p["topic"])
     order += [k for k in TOPICS if k not in order]
     if not order or date < ROTATION_START:
@@ -671,8 +671,8 @@ def main() -> int:
     if not topic:
         d = dt.date.fromisoformat(a.date) if a.date else today
         p = plan_for(d)
-        if not p:
-            print(f"{d} 에 잡힌 주제가 없다(top10_plan.json)")
+        if not p or not p.get("topic"):
+            print(f"{d} 에 잡힌 주제가 없다(top10_plan.json" + (f": {p.get('note', '')}" if p else "") + ")")
             return 3
         topic = p["topic"]
     from supabase import create_client

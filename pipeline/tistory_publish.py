@@ -47,7 +47,7 @@ VISIBILITY = {"private": 0, "protected": 15, "public": 20}   # 티스토리 post
 MAX_TAGS = 10                                                  # 티스토리 글 하나의 태그 한도
 
 # abcfact.tistory.com 의 카테고리 id(--check 가 찍는 목록, 2026-10-17). 새 카테고리를 만들면 여기도 적는다.
-CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430}
+CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430, "IT": 946764}
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
@@ -364,6 +364,8 @@ def category_for(post: dict) -> int:
     """글의 성격으로 카테고리를 고른다. 자격증 순위 → 일상TIP, 기업지원 순위 → B2G,
     채용·공무원·복지·브리핑(그 밖의 전부) → policy. TISTORY_CATEGORY 나 --category 가 있으면 그쪽이 이긴다."""
     slug = str(post.get("slug") or "")
+    if post.get("category") in CATEGORIES:        # 글이 직접 고른 카테고리(예: world_speed.py 의 IT)
+        return CATEGORIES[post["category"]]
     if slug.startswith("top10-license-") or post.get("kind") == "license":
         return CATEGORIES["일상TIP"]
     if slug.startswith("top10-biz-"):
@@ -448,6 +450,7 @@ def main() -> int:
                     help="카테고리 id. 0(기본)이면 글마다 category_for 가 고른다(정책·B2G·일상TIP)")
     ap.add_argument("--composer", choices=["top10"], help="jiwon 글을 그대로 옮기지 않고 티스토리용 글을 따로 쓴다(출처는 jiwon). top10 = pipeline/tistory_top10.py")
     ap.add_argument("--update", help="새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 --check 가 찍는 최근 글 목록에서")
+    ap.add_argument("--post-json", help="blog_posts 대신 이 JSON 파일의 글 하나를 올린다(티스토리 단독 글, 예: world_speed.py 가 만든 out/post.json)")
     ap.add_argument("--images", help="shots/manifest.json — [{\"file\": 경로, \"caption\": 설명}] 순서대로 본문에 끼운다")
     ap.add_argument("--dry", action="store_true", help="올리지 않고 HTML 만 찍는다")
     a = ap.parse_args()
@@ -487,12 +490,22 @@ def main() -> int:
                 print(f"  (최근 글 목록을 못 읽었다: {type(e).__name__}: {e})")
             return 0
 
-        sb = supabase_client()
-        posts = pick_posts(sb, a.slug, a.since, a.limit)
+        if a.post_json:
+            with open(a.post_json, encoding="utf-8") as f:
+                posts = [json.load(f)]
+            a.slug = posts[0]["slug"]
+            a.mode = "full"                  # 단독 글은 원문이 따로 없으니 요약하지 않는다
+            try:
+                sb = supabase_client()       # 기록(tistory_posts)용. 없어도 올리는 데는 지장 없다
+            except Exception as e:  # noqa: BLE001
+                print(f"  (Supabase 없이 올린다: {type(e).__name__})"); sb = None
+        else:
+            sb = supabase_client()
+            posts = pick_posts(sb, a.slug, a.since, a.limit)
         if not posts:
             print("올릴 글이 없다(이미 다 올렸거나 기간 안에 쓴 글이 없다)")
             return 0
-        if a.composer:
+        if a.composer and not a.post_json:
             # 티스토리용 글을 따로 쓴다. 원문(blog_posts)은 자료·출처로만 쓰고 slug 는 기록용으로 유지한다.
             from tistory_top10 import COMPOSERS      # top10.py 글은 generic, 옛 직무 글은 tistory_top_roles 로 넘긴다
             posts = [COMPOSERS[a.composer](p) for p in posts]
@@ -510,7 +523,7 @@ def main() -> int:
             sys.exit("TISTORY_COOKIE 가 비어 있다")
         if a.update and (len(posts) != 1 or not a.slug):
             sys.exit("--update 는 --slug 로 글 하나를 집었을 때만 쓴다")
-        if a.slug and not a.update:
+        if a.slug and not a.update and sb is not None:
             prev = recorded_post_id(sb, a.slug)
             if prev:
                 a.update = prev          # 같은 글을 두 번 만들지 않는다 — 기존 티스토리 글을 고쳐 쓴다
@@ -525,9 +538,13 @@ def main() -> int:
             post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded]),
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
-                                     slogan=recorded_slogan(sb, p["slug"]) if a.update else "")
+                                     slogan=recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "")
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
-            record(sb, p, num, url, a.mode, a.visibility)
+            if sb is not None:
+                try:
+                    record(sb, p, num, url, a.mode, a.visibility)
+                except Exception as e:  # noqa: BLE001 — 단독 글은 blog_posts 에 없어 외래키에 걸릴 수 있다. 올린 건 유효하다.
+                    print(f"  (발행 기록을 못 남겼다 — 다시 올릴 땐 --update {num} 을 쓴다: {type(e).__name__}: {str(e)[:120]})")
             print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url} (번호 {num})")
             n += 1
         print(f"{n}편 올렸다")
