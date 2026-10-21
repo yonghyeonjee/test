@@ -135,7 +135,7 @@ export function SiteFooter() {
   if (path?.startsWith("/admin")) return null;
   const cols: { h: string; items: [string, string][] }[] = [
     { h: "찾기", items: [["통합 검색", "/search"], ["정책지도", "/map"], ["내 조건으로 찾기", "/"], ["기업·창업 지원", "/business"], ["분야별", "/topic"], ["지역별", "/#areas"], ["정책 전체", "/policies"], ["저장한 공고·사업", "/saved"]] },
-    { h: "정보", items: [["공공기관 채용", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["자격증·시험 일정", "/license"], ["생활금융 금리", "/money"], ["주거 지원", "/housing"], ["공공기관 사업", "/agency"]] },
+    { h: "정보", items: [["공공기관 채용", "/jobs"], ["지역별 채용", "/jobs/region"], ["기관별 채용 이력", "/jobs/org"], ["자격증·시험 일정", "/license"], ["생활금융 금리", "/money"], ["주거 지원", "/housing"], ["공공기관 사업", "/agency"], ["공공기관 목록", "/orgs"]] },
     { h: "읽을거리", items: [["지원금 안내 글", "/blog"], ["블로그", "/story"], ["소득 기준 계산기", "/blog/income"], ["무료 서비스", "/free"], ["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"]] },
   ];
   const quick: [string, string][] = [["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"], ["통합 검색", "/search"], ["정책지도", "/map"], ["무료 서비스", "/free"]];

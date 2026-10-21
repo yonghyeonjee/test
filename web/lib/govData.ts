@@ -27,7 +27,7 @@ export type PublicOrg = {
 };
 export type PublicOrgFull = PublicOrg & {
   intro: string | null; basis: string | null; roles: string | null; history: string | null; goals: string | null;
-  head: string | null; fetched_at: string | null;
+  head: string | null; geo_src: string | null; fetched_at: string | null;
 };
 export type GovSite = { name: string; url: string; grp: string | null; sido: string | null; sigungu: string | null };
 export type RegionStat = { code: string; name: string; sido: string | null; sigungu: string | null; level: number; pop: number | null; prd: string | null };
