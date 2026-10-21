@@ -18,7 +18,9 @@ export default async function GovOffices({ sido }: { sido: string }) {
   const popOf = (sgg: string) => stats.find((s) => s.level === 2 && s.sido === sido && s.sigungu === sgg)?.pop ?? null;
   const mine = orgs.filter((o) => o.sido === sido);
   const top = offices.find((o) => o.kind === "시·도청");
-  const rest = offices.filter((o) => o.kind !== "시·도청");
+  // 시·군·구 가나다 차례로 묶고, 그 안에서 시청·군청이 구청보다 먼저(수원시청 → 권선구청 → 장안구청 …).
+  const rest = offices.filter((o) => o.kind !== "시·도청")
+    .sort((a, b) => a.sgg.localeCompare(b.sgg, "ko") || (a.kind === "구청" ? 1 : 0) - (b.kind === "구청" ? 1 : 0) || a.name.localeCompare(b.name, "ko"));
   const topSite = siteOf(sites, sido, null);
   const short = SIDO_SHORT[sido] ?? sido;
 
@@ -47,7 +49,8 @@ export default async function GovOffices({ sido }: { sido: string }) {
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {rest.map((o) => {
             const site = siteOf(sites, sido, o.sgg);
-            const pop = o.gu ? null : popOf(o.sgg);
+            // 구청은 그 구의 인구, 시청·군청은 시·군 전체 인구(주소에 구가 적혀 있어도).
+            const pop = popOf(o.kind === "구청" && o.gu ? o.gu : o.sgg);
             return (
               <li key={o.key} className="card flex items-start gap-3 p-4">
                 <div className="min-w-0 flex-1">
