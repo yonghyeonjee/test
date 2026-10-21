@@ -78,11 +78,11 @@ function pages(): Entry[] {
 }
 
 /**
- * 지원사업: 시·도 쪽과 상위 400건. 자동 생성 쪽을 한 번에 수천 개 올리면 품질 평가에서 통째로 걸릴 수 있어 단계적으로 늘린다.
+ * 지원사업: 시·도 쪽과 상위 250건(2026-10-21, 400 → 250). 자동 생성 쪽을 한 번에 수천 개 올리면 품질 평가에서 통째로 걸릴 수 있어 단계적으로 늘린다.
  * 400건은 마감되지 않았고 꼬리표뿐인 기업마당이 아닌 것에서 고른다(getTopSourceIds, 2026-10-17).
  */
 async function programs(): Promise<Entry[]> {
-  const [areas, ids] = await Promise.all([getAreas(), getTopSourceIds(400)]);
+  const [areas, ids] = await Promise.all([getAreas(), getTopSourceIds(250)]);
   return [
     ...areas.map((a) => e(`/area/${encodeURIComponent(a.sido)}`, "weekly", 0.9)),
     ...ids.map((p) => e(`/p/${encodeURIComponent(p.id)}`, "weekly", 0.7, day(p.updated))),
@@ -91,10 +91,11 @@ async function programs(): Promise<Entry[]> {
 
 /**
  * 채용: 구분(넷뿐이라 전부)·지역(시·도 고정)·기관(공고 여덟 건 이상, 300곳) 목차와 색인하는 공고(접수 중인
- * 나라일터 모집 공고, 요약 있는 것 먼저 — getTopJobIds).
+ * 나라일터 모집 공고, 요약 있는 것 먼저 — getTopJobIds). 공고는 300건만(2026-10-21, 1,200 → 300): 10/11 뒤 사이트가
+ * 통째로 "크롤링됨 - 색인 안 됨"이 되어, 같은 틀의 상세 쪽을 줄이고 목차·글·기관 쪽에 무게를 둔다.
  */
 async function jobs(): Promise<Entry[]> {
-  const [hires, regions, topOrgs, ids] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds()]);
+  const [hires, regions, topOrgs, ids] = await Promise.all([getJobHires(), getJobRegions(), getTopOrgs(300), getTopJobIds(300)]);
   // 2026-10-17 기관 쪽은 최근 365일 공고가 ORG_INDEX_MIN 건 미만이면 noindex 라 사이트맵에서도 뺀다(300곳 중 30곳쯤,
   // 이름이 바뀐 부처 등). 못 세면 그대로 둔다.
   const recent = await getOrgRecentCounts(topOrgs.map((o) => o.org)).catch(() => null);

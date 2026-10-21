@@ -23,6 +23,7 @@ import Glyph, { fileGlyph } from "@/components/Glyph";
 import CalendarAdd from "@/components/CalendarAdd";
 import TopStripAd from "@/components/TopStripAd";
 import MiniMap from "@/components/MiniMap";
+import PublicOrgCard from "@/components/PublicOrgCard";
 import { programEvents } from "@/lib/calEvents";
 import { locate } from "@/lib/geo";
 import { TOPICS } from "@/lib/topics";
@@ -43,6 +44,7 @@ export const dynamicParams = true;
 
 import { promoContextForProgram } from "@/lib/promo";
 import { programRelated } from "@/lib/related";
+import { findPublicOrg } from "@/lib/govData";
 import { SITE_URL as SITE, withOg } from "@/lib/seo";
 
 export async function generateStaticParams() {
@@ -114,7 +116,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
   // 낡은 금액을 보여 주는 것이 제일 나쁘다.
   const incomeYear = tableYear();
 
-  const related = await getRelated(p);
+  const [related, porg] = await Promise.all([getRelated(p), findPublicOrg(p.org_name)]);
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
@@ -387,6 +389,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
             : "기업마당(중소벤처기업부)"}
         입니다.
       </p>
+
+      {porg && <PublicOrgCard org={porg} heading={`이 사업을 하는 ${porg.name.replace(/^\((사|재|주|특|학)\)\s*/, "")}은 어떤 곳인가`} />}
 
       <Faq items={programFaq(p)} />
 

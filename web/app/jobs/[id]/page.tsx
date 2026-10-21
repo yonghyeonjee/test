@@ -17,9 +17,11 @@ import Glyph, { fileGlyph } from "@/components/Glyph";
 import CalendarAdd from "@/components/CalendarAdd";
 import TopStripAd from "@/components/TopStripAd";
 import MiniMap from "@/components/MiniMap";
+import PublicOrgCard from "@/components/PublicOrgCard";
 import { jobEvents } from "@/lib/calEvents";
 import { locateJob } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/db";
+import { findPublicOrg } from "@/lib/govData";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getJobSummary, getJobSummaryStrict } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
@@ -108,8 +110,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 접수 중인 나라일터 모집 공고는 요약이 없어도 색인한다 — 요약은 하루 안에 붙는데 noindex 는 사흘 캐시에 남는다.
   // 잡알리오 공고는 알리오 채용공시 API 로 칸별 내용(자격·우대·전형)이 붙은 것만 색인한다(pipeline/alio_recruit.py,
   // 2026-10-17). 나라일터와 겹치는 공고에는 요약을 쓰지 않으니 그대로 빠진다.
+  //  - 마감한 지 90일 넘은 것(2026-10-21): 요약이 있어도 지원할 수 없는 공고다. 10/11 뒤 사이트 거의 전체가 색인에서
+  //    빠져(크롤링됨 - 색인 안 됨) 색인 요청하는 쪽을 더 줄인다. 기관 쪽(/jobs/org)의 이력에는 그대로 남는다.
   const noindex = stale || (isAlioId(job.id) && !hasSummary) || stage === "final" || stage === "interview"
-    || (job.status === "closed" && !hasSummary);
+    || (job.status === "closed" && !hasSummary) || Boolean(job.status === "closed" && job.end && job.end < ymdAgo(90));
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
@@ -220,12 +224,13 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     return <JobGone />;
   }
-  const [related, stat, attach, guide, sum] = await Promise.all([
+  const [related, stat, attach, guide, sum, porg] = await Promise.all([
     getRelatedJobs(job),
     job.org ? getOrgStat(job.org) : Promise.resolve(null),
     getJobAttach(job.id),
     getGuideByOrg(job.org),
     getJobSummary(job.id),
+    findPublicOrg(job.org),
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
@@ -519,6 +524,9 @@ export default async function JobDetail({ params }: P) {
           </div>
         </section>
       )}
+
+      {/* 공공기관이면 어떤 곳인지(주무부처·유형·소재지·소개). 공고 원문에는 없는 내용이다(2026-10-21). */}
+      {porg && <PublicOrgCard org={porg} />}
 
       {/* 바깥으로 나가는 단추는 읽을 것을 다 읽은 뒤에. 위에 두면 읽기 전에 나간다. */}
       <div className="mt-8 flex flex-wrap gap-2">
