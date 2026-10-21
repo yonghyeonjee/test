@@ -160,16 +160,23 @@ def _unlink_site(blk: dict) -> dict:
     return blk
 
 
+DIGEST_MARK = "공공 채용·생활 정보 모음"
+
+
+def digest_prefix(day: dt.date) -> str:
+    return f"{day.month}월 {day.day}일 {DIGEST_MARK}"
+
+
 def digest(posts: list[dict], day: dt.date) -> dict:
     """그날 올릴 jiwon 글 여러 편을 티스토리 글 하나로 묶는다(짧은 글을 여러 개 내지 않는다).
     글마다 제목(h2) · 요지 · 절별 핵심(h3 + 본문 2블록) · 원문 링크. 원 글 slug 들은 sources 에 남겨 각각 발행 기록을 단다."""
     head = posts[0]
     lead = re.sub(r"^(\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일\s*", "", head["title"])      # 날짜가 제목에 두 번 들어가지 않게
-    title = f"{day.month}월 {day.day}일 공공 채용·생활 정보 모음 | {lead}"
+    title = f"{digest_prefix(day)} | {lead}"
     if len(posts) > 1:
         title += f" 외 {len(posts) - 1}편"
     body: list[dict] = [
-        {"type": "p", "text": f"{day.month}월 {day.day}일에 정리한 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
+        {"type": "p", "text": f"최근 정리한 공공 채용·생활 정보 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
         {"type": "list", "items": [p["title"] for p in posts]},
     ]
     for p in posts:
@@ -386,6 +393,7 @@ class Tistory:
                 date = next((str(it[k]) for k in ("published", "publishedDate", "date", "created", "regdate", "modified") if it.get(k)), "")
                 out.append({"id": str(it["id"]), "title": str(it.get("title", "")), "visibility": str(it.get("visibility", "")),
                             "url": str(it.get("permalink") or it.get("url") or it.get("entryUrl") or ""), "date": date,
+                            "slogan": str(it.get("slogan") or ""),
                             "keys": sorted(it)})
         return out
 
@@ -516,6 +524,29 @@ def published_on(items: list[dict], day: dt.date) -> int:
     """글 목록(recent_posts)에서 그날(KST) 공개된 글 수. 목록의 published 는 'YYYY-MM-DD HH:MM'(블로그 시간)."""
     d = day.isoformat()
     return sum(1 for it in items if it.get("visibility", "").upper() == "PUBLIC" and str(it.get("date", "")).startswith(d))
+
+
+def current_slogan(t: "Tistory", post_id: str) -> str:
+    """고쳐 쓸 글의 지금 주소 슬러그(글 목록의 slogan). 고쳐 써도 주소가 바뀌지 않게 그대로 돌려준다."""
+    try:
+        for pg in (1, 2):
+            for it in t.recent_posts(pg):
+                if it["id"] == str(post_id):
+                    return it.get("slogan", "")
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
+
+
+def todays_digest(t: "Tistory", day: dt.date) -> str:
+    """그날(KST) 올린 모음 글 번호. 없으면 빈 문자열."""
+    try:
+        for it in t.recent_posts():
+            if it["title"].startswith(digest_prefix(day)) and str(it.get("date", "")).startswith(day.isoformat()):
+                return it["id"]
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
 
 
 def supabase_client():
@@ -672,7 +703,16 @@ def main() -> int:
         else:
             sb = supabase_client()
             posts = pick_posts(sb, a.slug, a.since, a.limit)
-            if not a.slug and not a.composer and len(posts) > 1:
+            if not a.slug and not a.composer and posts and not a.dry and cookie:
+                # 짧은 글을 따로 내지 않는다: 그날 모음 글이 이미 있으면 거기에 더해 고쳐 쓰고, 없으면 새 모음 글 하나
+                prev_id = todays_digest(Tistory(host, cookie), today_kst())
+                if prev_id:
+                    old = [r["slug"] for r in (sb.table("tistory_posts").select("slug").eq("post_id", prev_id).execute().data or [])]
+                    have = {p["slug"] for p in posts}
+                    posts = [pick_posts(sb, s_, a.since, a.limit)[0] for s_ in old if s_ not in have] + posts
+                    a.update = prev_id
+                    print(f"오늘 모음 글(번호 {prev_id})에 더한다")
+            if not a.slug and not a.composer and posts:
                 posts = [digest(posts, today_kst())]     # 짧은 글 여러 편 대신 모음 글 하나
                 a.mode = "full"
                 print(f"모음 글 하나로 묶는다: {', '.join(p['slug'] for p in posts[0]['sources'])}")
@@ -733,7 +773,8 @@ def main() -> int:
             post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded], keyed),
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
-                                     slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else ""))
+                                     slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
+                                     or (current_slogan(t, a.update) if a.update else ""))
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
             if sb is not None:
                 try:
