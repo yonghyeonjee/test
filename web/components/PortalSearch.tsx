@@ -47,7 +47,6 @@ export default function PortalSearch({
   const [cur, setCur] = useState(-1);
   // 휴대폰에서는 긴 보기글이 잘린다. 처음 그릴 때는 서버와 같게(넓은 화면 기준) 두고
   // 붙은 뒤에 바꾼다 — 그래야 서버 HTML 과 어긋나지 않는다.
-  const [narrow, setNarrow] = useState(false);
   // 비어 있을 때 "예: 건강보험심사평가원" 처럼 많이 찾는 말이 3초마다 바뀐다. 처음 그릴 때는 서버와 같게(-1).
   const [spin, setSpin] = useState(-1);
   const box = useRef<HTMLDivElement>(null);
@@ -68,12 +67,6 @@ export default function PortalSearch({
     const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", away);
     return () => document.removeEventListener("mousedown", away);
-  }, []);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    const on = () => setNarrow(mq.matches);
-    on(); mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
   }, []);
   // 안내 글 돌리기는 첫 터치·스크롤 뒤에(lib/useAfterInteraction). 바뀌는 글자가 LCP 를 늦췄다(2026-10-21).
   const spinGo = useAfterInteraction();
@@ -112,6 +105,9 @@ export default function PortalSearch({
   const lg = size !== "md";
   const xl = size === "xl";
   const show = open && q.trim().length > 0 && (rows.length > 0 || bits.length > 0 || related.length > 0);
+  const spinText = spin >= 0 && hot[spin] && !open ? `예: ${hot[spin]}` : null;
+  const longText = placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…");
+  const shortText = placeholderNarrow ?? (placeholder ? placeholder.replace(/^.*?[—:]\s*/, "") : "경비, 신혼부부 전세, 기능사…");
 
   return (
     <div ref={box} className="relative">
@@ -120,24 +116,30 @@ export default function PortalSearch({
             className={`flex items-center gap-1.5 rounded-pill border-2 bg-white pr-1.5 transition-shadow
                         ${show ? "border-brand shadow-lift" : "border-[#D7DBE2] shadow-card hover:border-[#B9C0CA] focus-within:border-brand focus-within:shadow-lift"}
                         ${xl ? "pl-5 sm:pl-7" : lg ? "pl-5" : "pl-4"}`}>
-        <input
-          ref={input}
-          data-portal-search
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setOpen(true); setCur(-1); }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={onKey}
-          role="combobox" aria-expanded={show} aria-controls="portal-suggest" aria-autocomplete="list"
-          placeholder={spin >= 0 && hot[spin] && !open
-            ? `예: ${hot[spin]}`
-            : narrow
-            ? placeholderNarrow ?? (placeholder ? placeholder.replace(/^.*?[—:]\s*/, "") : "경비, 신혼부부 전세, 기능사…")
-            : placeholder ?? (lg ? "무엇이든 찾아보세요 — 경비 채용, 신혼부부 전세, 기능사 시험" : "경비 채용, 신혼부부 전세, 기능사…")}
-          aria-label="통합 검색"
-          enterKeyHint="search"
-          className={`w-full min-w-0 bg-transparent outline-none placeholder:text-faint ${
-            xl ? "h-[52px] text-[17px] sm:h-[58px] sm:text-[19px]" : lg ? "h-[50px] text-[16.5px]" : "h-11 text-[15px]"}`}
-        />
+        {/* 휴대폰용 짧은 안내 글은 JS 로 바꾸지 않고 CSS 로 보인다(2026-10-21). 전에는 hydration 뒤 narrow 상태로
+            placeholder 글자를 바꿨는데, 그 새 글자가 LCP 후보로 잡혀 LCP 가 hydration 끝(5초)까지 밀렸다.
+            좁은 화면은 input 의 placeholder 를 투명하게 하고 같은 자리에 서버에서 그린 span 을 둔다. */}
+        <div className="relative min-w-0 flex-1">
+          <input
+            ref={input}
+            data-portal-search
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setOpen(true); setCur(-1); }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={onKey}
+            role="combobox" aria-expanded={show} aria-controls="portal-suggest" aria-autocomplete="list"
+            placeholder={spinText ?? longText}
+            aria-label="통합 검색"
+            enterKeyHint="search"
+            className={`w-full min-w-0 bg-transparent outline-none placeholder:text-faint ${spinText ? "" : "max-sm:placeholder:text-transparent"} ${
+              xl ? "h-[52px] text-[17px] sm:h-[58px] sm:text-[19px]" : lg ? "h-[50px] text-[16.5px]" : "h-11 text-[15px]"}`}
+          />
+          {!q && !spinText && (
+            <span aria-hidden="true"
+                  className={`pointer-events-none absolute inset-y-0 left-0 flex max-w-full items-center truncate text-faint sm:hidden ${
+                    xl ? "text-[17px]" : lg ? "text-[16.5px]" : "text-[15px]"}`}>{shortText}</span>
+          )}
+        </div>
         {q && (
           <button type="button" onClick={() => { setQ(""); setCur(-1); input.current?.focus(); }} aria-label="지우기"
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-faint hover:bg-ground hover:text-ink">
