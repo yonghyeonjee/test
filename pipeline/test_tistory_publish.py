@@ -137,6 +137,25 @@ ok(t.cookie_names("_fwb=abc; TSSESSION=secret123; __T_=1") == ["_fwb", "TSSESSIO
 ok("secret123" not in " ".join(t.cookie_names("TSSESSION=secret123")), "값은 안 찍는다")
 ok(t.cookie_names(t.clean_cookie("Cookie: a=1;\n b=2")) == ["a", "b"], "Cookie: 접두어·줄바꿈 정리 뒤에도 이름이 나온다")
 
+# 하루 공개 한도: 그날(KST) PUBLIC 글만 센다
+import datetime as _dt
+_items = [{"visibility": "PUBLIC", "date": "2026-10-21 22:43"}, {"visibility": "PUBLIC", "date": "2026-10-21 09:00"},
+          {"visibility": "PRIVATE", "date": "2026-10-21 10:00"}, {"visibility": "PUBLIC", "date": "2026-10-20 23:59"}]
+ok(t.published_on(_items, _dt.date(2026, 10, 21)) == 2, "오늘 공개 글 수(비공개·어제 제외)")
+ok(t.DAILY_MAX == 3, "하루 3편 한도")
+
+# 모음 글: 여러 편을 하나로, 운영 사이트 링크는 하나만
+_P = [{"slug": "daily-2026-10-21", "kind": "daily", "title": "2026년 10월 21일 공공기관 채용 브리핑", "summary": "새 공고 110건.",
+       "keywords": ["채용"], "body": [{"type": "p", "text": "오늘 [공고](/jobs/1)"}, {"type": "h2", "text": "마감"},
+       {"type": "links", "items": [{"label": "A", "href": "/jobs/a"}]}]},
+      {"slug": "loan-1", "kind": "story", "title": "전세대출 1편", "summary": "전세가율.", "keywords": ["전세대출", "채용"],
+       "body": [{"type": "h2", "text": "전세가율"}, {"type": "p", "text": "[잡알리오](https://job.alio.go.kr) 80%"}]}]
+_d = t.digest(_P, _dt.date(2026, 10, 21))
+_h = t.render(_d, "full")
+ok(_d["title"].startswith("10월 21일") and _d["title"].count("10월 21일") == 1 and "외 1편" in _d["title"], "모음 글 제목")
+ok(_h.count(t.SITE) == 1 and "job.alio.go.kr" in _h, "운영 사이트 링크 1개, 공식 링크는 남김")
+ok("<h3>마감</h3>" in _h and _d["keywords"] == ["채용", "전세대출"] and [s["slug"] for s in _d["sources"]] == ["daily-2026-10-21", "loan-1"], "절은 h3, 태그 합침, 원 글 기록")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 

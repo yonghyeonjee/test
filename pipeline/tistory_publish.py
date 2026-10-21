@@ -52,6 +52,7 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
 EXIT_EXPIRED = 2
+DAILY_MAX = int(os.environ.get("TISTORY_DAILY_MAX", "3"))     # 하루(KST)에 새로 공개하는 글 수 한도. 넘치면 다음 날로 미룬다
 
 
 class SessionExpired(Exception):
@@ -111,19 +112,19 @@ def block_html(b: dict) -> str:
     return ""
 
 
-def summary_blocks(body: list[dict], links_cap: int = 5) -> list[dict]:
-    """요약판: 첫 절 앞 문단 하나, 절마다 제목과 첫 본문 블록 하나. 링크 목록은 앞 몇 개만."""
+def summary_blocks(body: list[dict], links_cap: int = 5, per_section: int = 1) -> list[dict]:
+    """요약판: 첫 절 앞 문단 하나, 절마다 제목과 본문 블록 per_section 개. 링크 목록은 앞 몇 개만."""
     out: list[dict] = []
     seen_h2 = False
-    took = False
+    took = 0
     for b in body:
         t = b.get("type")
         if t == "toc":
             continue
         if t == "h2":
-            out.append(b); seen_h2 = True; took = False
+            out.append(b); seen_h2 = True; took = 0
             continue
-        if took or t == "note":
+        if took >= per_section or t == "note" or (not seen_h2 and took):
             continue
         if not seen_h2 and t != "p":
             continue
@@ -131,7 +132,7 @@ def summary_blocks(body: list[dict], links_cap: int = 5) -> list[dict]:
             b = {**b, "items": b["items"][:links_cap]}
         if t == "list":
             b = {**b, "items": b["items"][:links_cap]}
-        out.append(b); took = True
+        out.append(b); took += 1
     # 절은 있는데 본문 블록이 하나도 안 붙은 제목만 남으면 뺀다.
     cleaned: list[dict] = []
     for i, b in enumerate(out):
@@ -140,6 +141,53 @@ def summary_blocks(body: list[dict], links_cap: int = 5) -> list[dict]:
             continue
         cleaned.append(b)
     return cleaned
+
+
+def _unlink_site(blk: dict) -> dict:
+    """블록 안의 운영 사이트(jiwon) 링크를 글자만 남기고 뺀다. 바깥 공식 사이트 링크는 그대로 둔다."""
+    def strip(text: str) -> str:
+        return re.sub(r"\[([^\]]+)\]\((/[^)]*|" + re.escape(SITE) + r"[^)]*)\)", r"\1", text)
+    t = blk.get("type")
+    if t == "links":
+        own = [i for i in blk["items"] if i["href"].startswith("/") or i["href"].startswith(SITE)]
+        if own:
+            return {"type": "list", "items": [i["label"] for i in blk["items"]]}
+        return blk
+    if t == "list":
+        return {**blk, "items": [strip(x) if isinstance(x, str) else x for x in blk["items"]]}
+    if isinstance(blk.get("text"), str):
+        return {**blk, "text": strip(blk["text"])}
+    return blk
+
+
+def digest(posts: list[dict], day: dt.date) -> dict:
+    """그날 올릴 jiwon 글 여러 편을 티스토리 글 하나로 묶는다(짧은 글을 여러 개 내지 않는다).
+    글마다 제목(h2) · 요지 · 절별 핵심(h3 + 본문 2블록) · 원문 링크. 원 글 slug 들은 sources 에 남겨 각각 발행 기록을 단다."""
+    head = posts[0]
+    lead = re.sub(r"^(\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일\s*", "", head["title"])      # 날짜가 제목에 두 번 들어가지 않게
+    title = f"{day.month}월 {day.day}일 공공 채용·생활 정보 모음 | {lead}"
+    if len(posts) > 1:
+        title += f" 외 {len(posts) - 1}편"
+    body: list[dict] = [
+        {"type": "p", "text": f"{day.month}월 {day.day}일에 정리한 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
+        {"type": "list", "items": [p["title"] for p in posts]},
+    ]
+    for p in posts:
+        body.append({"type": "h2", "text": p["title"]})
+        if p.get("summary"):
+            body.append({"type": "p", "text": p["summary"]})
+        for blk in summary_blocks(p["body"], links_cap=8, per_section=2):
+            body.append(_unlink_site({**blk, "type": "h3"} if blk.get("type") == "h2" else blk))
+    # 운영 사이트 링크는 글 끝 하나만(한 도메인으로 링크가 몰리지 않게)
+    body.append({"type": "p", "text": f"표와 공고 목록 전체는 [{BRAND} 블로그]({SITE}/story)에서 글마다 볼 수 있습니다."})
+    kw: list[str] = []
+    for p in posts:
+        for k in p.get("keywords") or []:
+            if k not in kw:
+                kw.append(k)
+    return {"slug": f"digest-{day.isoformat()}", "kind": head.get("kind", "daily"), "title": title[:90],
+            "summary": " ".join(p.get("summary", "") for p in posts)[:300], "keywords": kw[:10], "body": body,
+            "standalone": True, "sources": posts}
 
 
 def image_html(replacer: str, caption: str | None) -> str:
@@ -458,6 +506,12 @@ def today_kst() -> dt.date:
     return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
 
 
+def published_on(items: list[dict], day: dt.date) -> int:
+    """글 목록(recent_posts)에서 그날(KST) 공개된 글 수. 목록의 published 는 'YYYY-MM-DD HH:MM'(블로그 시간)."""
+    d = day.isoformat()
+    return sum(1 for it in items if it.get("visibility", "").upper() == "PUBLIC" and str(it.get("date", "")).startswith(d))
+
+
 def supabase_client():
     from supabase import create_client
     url, key = os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"]
@@ -598,6 +652,10 @@ def main() -> int:
         else:
             sb = supabase_client()
             posts = pick_posts(sb, a.slug, a.since, a.limit)
+            if not a.slug and not a.composer and len(posts) > 1:
+                posts = [digest(posts, today_kst())]     # 짧은 글 여러 편 대신 모음 글 하나
+                a.mode = "full"
+                print(f"모음 글 하나로 묶는다: {', '.join(p['slug'] for p in posts[0]['sources'])}")
         if not posts:
             print("올릴 글이 없다(이미 다 올렸거나 기간 안에 쓴 글이 없다)")
             return 0
@@ -633,6 +691,15 @@ def main() -> int:
                 a.update = prev          # 같은 글을 두 번 만들지 않는다 — 기존 티스토리 글을 고쳐 쓴다
                 print(f"이미 올린 글(번호 {prev})이 있어 고쳐 쓴다")
         t = Tistory(host, cookie)
+        if not a.update and a.visibility == "public":
+            used = published_on(t.recent_posts() + t.recent_posts(2), today_kst())
+            room = max(0, DAILY_MAX - used)
+            if room < len(posts):
+                print(f"오늘(KST) 이미 {used}편 공개 — 하루 {DAILY_MAX}편 한도라 {len(posts) - room}편은 내일 이후로 미룬다: "
+                      + ", ".join(p["slug"] for p in posts[room:]))
+                posts = posts[:room]
+            if not posts:
+                return 0
         n = 0
         for p in posts:
             # 사진은 글마다 다시 올린다(한 업로드를 두 글에 나눠 쓰지 않는다).
@@ -650,7 +717,8 @@ def main() -> int:
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
             if sb is not None:
                 try:
-                    record(sb, p, num, url, a.mode, a.visibility)
+                    for src in p.get("sources") or [p]:      # 모음 글은 묶인 원 글마다 기록(다음 날 다시 집지 않게)
+                        record(sb, src, num, url, a.mode, a.visibility)
                 except Exception as e:  # noqa: BLE001 — 단독 글은 blog_posts 에 없어 외래키에 걸릴 수 있다. 올린 건 유효하다.
                     print(f"  (발행 기록을 못 남겼다 — 다시 올릴 땐 --update {num} 을 쓴다: {type(e).__name__}: {str(e)[:120]})")
             print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url} (번호 {num})")
