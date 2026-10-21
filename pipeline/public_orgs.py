@@ -122,33 +122,38 @@ def sgg_of(display: str, sido: str | None) -> str | None:
     return sgg
 
 
-def geocode(s: requests.Session, addr: str) -> dict | None:
+def geocode_queries(addr: str) -> list[str]:
+    """차례로 물어볼 주소들. 번지까지 → 갈림길("117번길 95")을 큰길 번지("117")로 → 길 이름만."""
     q = addr_query(addr)
     if not q:
-        return None
-    r = s.get(NOMINATIM, params={"q": q, "format": "jsonv2", "countrycodes": "kr", "limit": 1, "accept-language": "ko"},
-              headers={"User-Agent": UA}, timeout=30)
-    time.sleep(1.1)
-    if r.status_code != 200:
-        return None
-    rows = r.json()
-    if not rows:
-        # 번지를 떼고 길 이름까지만 — OSM 에 번지가 없는 길이 많다.
-        q2 = re.sub(r"\s+\d[\d-]*$", "", q)
-        if q2 == q:
-            return None
-        r = s.get(NOMINATIM, params={"q": q2, "format": "jsonv2", "countrycodes": "kr", "limit": 1, "accept-language": "ko"},
+        return []
+    out = [q]
+    branch = re.sub(r"(\d+)번?길\s+\d+(-\d+)?$", r"\1", q)
+    if branch != q:
+        out.append(branch)
+    road = re.sub(r"\s+\d[\d-]*$", "", out[-1])
+    if road not in out:
+        out.append(road)
+    return out
+
+
+def geocode(s: requests.Session, addr: str) -> dict | None:
+    queries = geocode_queries(addr)
+    for i, q in enumerate(queries):
+        r = s.get(NOMINATIM, params={"q": q, "format": "jsonv2", "countrycodes": "kr", "limit": 1, "accept-language": "ko"},
                   headers={"User-Agent": UA}, timeout=30)
         time.sleep(1.1)
-        rows = r.json() if r.status_code == 200 else []
-        if not rows:
+        if r.status_code != 200:
             return None
-        rows[0]["_approx"] = True
-    top = rows[0]
-    disp = top.get("display_name", "")
-    sido = sido_of(disp)
-    return {"lat": round(float(top["lat"]), 5), "lng": round(float(top["lon"]), 5), "sido": sido,
-            "sigungu": sgg_of(disp, sido), "geo_src": "osm-road" if top.get("_approx") else "osm", "display": disp}
+        rows = r.json()
+        if not rows:
+            continue
+        top = rows[0]
+        disp = top.get("display_name", "")
+        sido = sido_of(disp)
+        return {"lat": round(float(top["lat"]), 5), "lng": round(float(top["lon"]), 5), "sido": sido,
+                "sigungu": sgg_of(disp, sido), "geo_src": "osm" if i == 0 else "osm-road", "display": disp}
+    return None
 
 
 def fetch_all(s: requests.Session, limit_pages: int | None = None) -> list[dict]:
