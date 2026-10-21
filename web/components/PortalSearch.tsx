@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAfterInteraction } from "@/lib/useAfterInteraction";
 import { describe, parseQuery, toParams } from "@/lib/parse";
 import { HOT_WELFARE, relatedTerms, suggest } from "@/lib/thesaurus";
 import { tokenize } from "@/lib/keywords";
@@ -74,11 +75,13 @@ export default function PortalSearch({
     on(); mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
+  // 안내 글 돌리기는 첫 터치·스크롤 뒤에(lib/useAfterInteraction). 바뀌는 글자가 LCP 를 늦췄다(2026-10-21).
+  const spinGo = useAfterInteraction();
   useEffect(() => {
-    if (!hot.length || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (!spinGo || !hot.length || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const t = setInterval(() => setSpin((k) => (k + 1) % hot.length), 3200);
     return () => clearInterval(t);
-  }, [hot]);
+  }, [hot, spinGo]);
   useEffect(() => {
     if (!autoFocus) return;
     if (window.matchMedia("(min-width: 768px) and (hover: hover)").matches) input.current?.focus({ preventScroll: true });
