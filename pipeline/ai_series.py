@@ -31,13 +31,14 @@ SERIES_NAME = "AI 활용 시리즈"
 BLOG = "abcfact.tistory.com"
 
 DISMISS_JS = """() => {
-  const words = ['accept all','accept all cookies','accept','agree','i agree','got it','allow all','ok','동의','모두 허용','확인','close','no thanks','reject all','decline'];
+  const words = ['accept all','accept all cookies','accept','agree','i agree','got it','allow all','ok','동의','모두 허용','모든 쿠키 허용','모두 수락','수락','모두 거부','확인','닫기','close','no thanks','reject all','decline'];
   for (const b of document.querySelectorAll('button')) {           // 링크(a)는 누르지 않는다 — 다른 쪽으로 가 버린다
     const t = (b.innerText || '').trim().toLowerCase();
     if (t && t.length < 25 && words.includes(t)) { try { b.click(); } catch (e) {} }
   }
   for (const e of document.querySelectorAll('body *')) {             // 화면을 덮는 고정 배너(쿠키·뉴스레터·채팅)를 숨긴다
     const s = getComputedStyle(e);
+    if (s.position === 'fixed' && /cookie|쿠키|개인정보|consent/i.test(e.innerText || '') && (e.innerText || '').length < 600) { e.style.display = 'none'; continue; }
     if ((s.position === 'fixed' || s.position === 'sticky') && parseInt(s.zIndex || '0') >= 100) {
       const r = e.getBoundingClientRect();
       if (r.top > 120 && r.height > 40) e.style.display = 'none';
