@@ -24,6 +24,8 @@ export type PublicOrg = {
   sigungu: string | null;
   lat: number | null;
   lng: number | null;
+  /** 기관소개(잡알리오). 상세·공고 쪽의 "어떤 곳인가" 카드에 쓴다(2026-10-21). */
+  intro: string | null;
 };
 export type PublicOrgFull = PublicOrg & {
   intro: string | null; basis: string | null; roles: string | null; history: string | null; goals: string | null;
@@ -37,7 +39,7 @@ export type GovOffice = {
   key: string;
 };
 
-const LITE = "id,name,ministry,kind,homepage,address,sido,sigungu,lat,lng";
+const LITE = "id,name,ministry,kind,homepage,address,sido,sigungu,lat,lng,intro";
 
 /** 기관유형의 큰 갈래. "준정부기관(위탁집행형)" → 준정부기관. */
 export function orgGroup(kind: string | null): "공기업" | "준정부기관" | "기타공공기관" | "기타" {
@@ -55,7 +57,32 @@ async function loadOrgs(): Promise<PublicOrg[]> {
   return rows;
 }
 /** 공공기관 전부(가벼운 칸만). 여섯 시간 캐시 — 주 1회 받는 자료다. */
-export const getPublicOrgs = unstable_cache(loadOrgs, ["public-orgs-v1"], { revalidate: 21600 });
+export const getPublicOrgs = unstable_cache(loadOrgs, ["public-orgs-v2"], { revalidate: 21600 });
+
+/** 이름 비교용. "(재)", 빈칸, 괄호·점을 걷는다. */
+const normName = (s: string) => s.replace(/^\((사|재|주|특|학)\)\s*/, "").replace(/[\s()·,.]/g, "");
+
+/**
+ * 공고·사업의 기관 이름에 맞는 공공기관(2026-10-21). 같은 이름이면 그것, 아니면 공고 기관 이름 안에 든 가장 긴
+ * 공공기관 이름("국립공원공단 지리산사무소" → 국립공원공단). 네 글자 미만은 들어 있어도 안 본다 — 짧은 이름은 잘 겹친다.
+ */
+export function matchPublicOrg(orgs: PublicOrg[], name: string | null | undefined): PublicOrg | null {
+  if (!name) return null;
+  const n = normName(name);
+  if (n.length < 2) return null;
+  let best: PublicOrg | null = null;
+  let bestLen = 0;
+  for (const o of orgs) {
+    const on = normName(o.name);
+    if (on === n) return o;
+    if (on.length >= 4 && on.length > bestLen && n.includes(on)) { best = o; bestLen = on.length; }
+  }
+  return best;
+}
+export async function findPublicOrg(name: string | null | undefined): Promise<PublicOrg | null> {
+  if (!name) return null;
+  return matchPublicOrg(await getPublicOrgs().catch(() => [] as PublicOrg[]), name);
+}
 
 /** 상세 쪽 전용. DB 오류는 던진다(없는 것만 null) — 404 가 굳지 않게. */
 export async function getPublicOrgStrict(id: string): Promise<PublicOrgFull | null> {
