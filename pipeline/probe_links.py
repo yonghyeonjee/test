@@ -29,13 +29,25 @@ for spec in [s.strip() for s in (sys.argv[1] if len(sys.argv) > 1 else "").split
     word, _, n = rest.partition("|")
     n = int(n or 6000)
     print(f"\n== {url}  거름말: {word!r}")
+    # "post:주소#a=b&c=d" 는 폼으로 보낸다(목록 쪽수 넘기기 같은 것). 거름말이 "raw:낱말" 이면 그 낱말 둘레의
+    # 원문(태그째)을 n 자 찍는다 — 스크립트 함수 몸통이나 표 구조를 볼 때.
+    hdr = {"User-Agent": UA, "Accept-Language": "ko-KR"}
     try:
-        r = requests.get(fill(url), timeout=60, headers={"User-Agent": UA, "Accept-Language": "ko-KR"})
+        if url.startswith("post:"):
+            u, _, form = url[5:].partition("#")
+            data = dict(kv.split("=", 1) for kv in form.split("&") if "=" in kv)
+            r = requests.post(fill(u), data=data, timeout=60, headers=hdr)
+        else:
+            r = requests.get(fill(url), timeout=60, headers=hdr)
     except Exception as e:  # noqa: BLE001
         print("   실패:", mask(str(e)))
         continue
     t = r.text
     print(f"   status {r.status_code}  len {len(t)}  type {r.headers.get('content-type','')}")
+    if word.startswith("raw:"):
+        i = t.find(word[4:])
+        print("   " + mask(t[max(0, i - 200):i + n]).replace("\n", "\n   ") if i >= 0 else "   표식 없음")
+        continue
     if "json" in r.headers.get("content-type", "") or t.lstrip().startswith(("{", "[")):
         print("   " + mask(t[:n]))
         continue
