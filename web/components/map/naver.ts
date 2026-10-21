@@ -26,7 +26,7 @@ export type NCircle = { setMap(m: NMap | null): void };
 
 export type NaverMaps = {
   LatLng: new (lat: number, lng: number) => NLatLng;
-  LatLngBounds: new (sw: NLatLng, ne: NLatLng) => unknown;
+  LatLngBounds: new (sw: NLatLng, ne: NLatLng) => { extend(p: NLatLng): void };
   Point: new (x: number, y: number) => NPoint;
   Map: new (el: HTMLElement, opts: {
     center: NLatLng; zoom: number; minZoom?: number; zoomControl?: boolean; zoomControlOptions?: { position: unknown };

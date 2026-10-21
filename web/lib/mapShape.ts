@@ -29,6 +29,12 @@ export type PinRow = [string, string | null, number, number, number, number, num
 
 export type MapDataLite = { p: PinRow[]; j: PinRow[]; nationwide: number; jobsNoPlace: number; at: string };
 
+/**
+ * 관공서·공공기관 한 줄(2026-10-21): [열쇠, 이름, 갈래, 위도, 경도, 시·도, 시·군·구, 주소, 공공기관 id(청사면 null)].
+ * 열쇠는 공공기관 "org|C0847", 청사 "office|경기도|시흥시|시흥시청". 620줄쯤이라 쪽에 그대로 싣는다.
+ */
+export type OrgRow = [string, string, string, number, number, string, string | null, string, string | null];
+
 export const keyOf = (sido: string, sigungu: string | null) => `${sido}|${sigungu ?? ""}`;
 export const labelOf = (sido: string, sigungu: string | null) =>
   sigungu ? `${SIDO_SHORT[sido] ?? sido} ${sigungu}` : (SIDO_SHORT[sido] ?? sido);

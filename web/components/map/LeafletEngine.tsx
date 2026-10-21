@@ -20,7 +20,11 @@ const TILE = VWORLD_KEY
   ? { url: `https://api.vworld.kr/req/wmts/1.0.0/${VWORLD_KEY}/Base/{z}/{y}/{x}.png`, attr: '&copy; <a href="https://www.vworld.kr">국토교통부 브이월드</a>', min: 6, max: 19 }
   : { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', min: 0, max: 18 };
 
-export type Handle = { focus(key: string): void };
+export type Handle = {
+  focus(key: string): void;
+  /** 이 점들이 다 들어오게 맞춘다(검색 결과). 하나면 그 자리로 가까이. */
+  fit(points: [number, number][]): void;
+};
 export type EngineProps = {
   pins: Pin[];
   kind: Kind;
@@ -171,9 +175,15 @@ const LeafletEngine = forwardRef<Handle, EngineProps>(function LeafletEngine(
       const m = map.current;
       const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!m || !p) return;
-      whenStill(m, () => m.setView([p.lat, p.lng], Math.max(m.getZoom(), p.level === "dong" ? 14 : 11)));
+      whenStill(m, () => m.setView([p.lat, p.lng], Math.max(m.getZoom(), p.level === "dong" || p.level === "org" ? 14 : 11)));
       // 확대가 끝나 핀이 새로 그려진 뒤 카드를 연다.
       setTimeout(() => openCard(p), 350);
+    },
+    fit(points) {
+      const lf = L.current, m = map.current;
+      if (!lf || !m || !points.length) return;
+      if (points.length === 1) { whenStill(m, () => m.setView(points[0], 14)); return; }
+      whenStill(m, () => m.fitBounds(lf.latLngBounds(points), { padding: [24, 24], maxZoom: 15 }));
     },
   }));
 

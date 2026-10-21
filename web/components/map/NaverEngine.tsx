@@ -147,9 +147,17 @@ const NaverEngine = forwardRef<Handle, EngineProps>(function NaverEngine(
       const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!n || !m || !p) return;
       m.setCenter(new n.LatLng(p.lat, p.lng));
-      const want = p.level === "dong" ? 14 : 11;
+      const want = p.level === "dong" || p.level === "org" ? 14 : 11;
       if (m.getZoom() < want) m.setZoom(want);
       setTimeout(() => openCard(p), 350);
+    },
+    fit(points) {
+      const n = N.current, m = map.current;
+      if (!n || !m || !points.length) return;
+      if (points.length === 1) { m.setCenter(new n.LatLng(points[0][0], points[0][1])); m.setZoom(14); return; }
+      const b = new n.LatLngBounds(new n.LatLng(points[0][0], points[0][1]), new n.LatLng(points[0][0], points[0][1]));
+      for (const [la, ln] of points) b.extend(new n.LatLng(la, ln));
+      m.fitBounds(b, { top: 24, right: 24, bottom: 24, left: 24 });
     },
   }));
 
