@@ -1,0 +1,877 @@
+{
+ "slug": "ai-image-top10",
+ "slogan": "AI-이미지-생성-도구-TOP10",
+ "title": "AI 이미지 생성 도구 순위 TOP10 | 2026년 무료·유료 비교",
+ "summary": "AI 이미지 생성 도구 순위 TOP10을 Arena 블라인드 투표(2026년 10월, 660만 건)로 정리했습니다. 1위 챗GPT 이미지부터 그록 이매진·MAI 이미지·나노 바나나·리브·시드림까지 점수와 쓰는 곳, 무료·유료 요금을 비교하고 미드저니·파이어플라이·캔바 같은 디자인 도구와 저작권 주의사항도 담았습니다.",
+ "keywords": [
+  "AI 이미지 생성",
+  "AI 이미지 생성 순위",
+  "AI 그림 사이트",
+  "무료 AI 이미지",
+  "나노 바나나",
+  "챗GPT 이미지",
+  "미드저니",
+  "파이어플라이",
+  "캔바 AI",
+  "이미지 생성 AI"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "블로그 썸네일, 상세페이지 이미지, 발표 자료 그림까지 이제 **AI 이미지 생성**으로 몇 초 만에 만듭니다. 문제는 도구가 너무 많다는 것. 챗GPT·제미나이·미드저니·파이어플라이 중 무엇이 실제로 더 잘 그릴까요?"
+  },
+  {
+   "type": "p",
+   "text": "이 글은 **AI 이미지 생성 도구 순위 TOP10**을 사람들이 두 그림을 이름을 가린 채 비교해 투표하는 **Arena 텍스트→이미지 순위표**(2026년 10월 7일, 투표 660만 4,125건·82개 모델)로 정리했습니다. 같은 회사 모델은 가장 높은 것 하나로 묶었고, 요금은 공식 페이지 기준(2026년 10월 21일 확인)입니다. 순위표에 없는 미드저니·파이어플라이·캔바 같은 디자인 도구는 뒤에서 따로 비교합니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "목차",
+   "id": "toc"
+  },
+  {
+   "type": "list",
+   "items": [
+    "한눈에 보는 AI 이미지 생성 순위",
+    "1위 챗GPT 이미지 ~ 10위 루마",
+    "순위표 밖 인기 도구(미드저니·파이어플라이·캔바·FLUX)",
+    "요금 비교",
+    "목적별 추천",
+    "저작권·상업적 사용 주의",
+    "자주 묻는 질문",
+    "AI 활용 시리즈"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "한눈에 보는 AI 이미지 생성 순위 TOP10",
+   "id": "now"
+  },
+  {
+   "type": "image",
+   "key": "rank"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**1위 오픈AI** — GPT-Image-2.5 가 1,425점으로 2위 회사보다 91점 앞섬, 1~3위 모델이 모두 오픈AI",
+    "**2~4위는 6점 안** — 그록 이매진 2.0(1,334점), 마이크로소프트 MAI-Image-2.6(1,332점), 구글 나노 바나나 2.1(1,328점)",
+    "**미국 7곳·중국 2곳** — 바이트댄스 시드림, 알리바바 큐웬 이미지가 7·8위",
+    "**미드저니는 순위표에 없음** — 공개 대결에 참여하지 않아 같은 기준으로 비교할 수 없음"
+   ]
+  },
+  {
+   "type": "image",
+   "key": "arena"
+  },
+  {
+   "type": "p",
+   "text": "출처: [Arena 텍스트→이미지 순위표](https://arena.ai/leaderboard/image/text-to-image) · '예비(Preliminary)' 표시 모델은 투표가 적어 점수가 크게 움직일 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "1위 챗GPT 이미지(GPT-Image-2.5) — 1,425점",
+   "id": "r1"
+  },
+  {
+   "type": "image",
+   "key": "s1"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 오픈AI(미국)",
+    "**아레나 점수** 1,425점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 챗GPT 앱의 이미지 만들기",
+    "**요금** 무료, Go 월 $8, Plus 월 $20, Pro 월 $100",
+    "**공식 사이트** [chatgpt.com/images](https://chatgpt.com/images)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 순위표 1·2위(GPT-Image-2.5 Sunburst·Flare)와 3위(GPT-Image-2, 투표 9만 3천 건)를 모두 차지했습니다. 글자를 정확히 넣고, 대화로 '배경만 바꿔 줘'처럼 고치는 데 강합니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 포스터·썸네일처럼 **한글·영문 글자가 들어간 이미지**, 대화하며 여러 번 고쳐야 하는 그림에 가장 무난합니다."
+  },
+  {
+   "type": "h2",
+   "text": "2위 그록 이매진(Grok Imagine Image 2.0) — 1,334점",
+   "id": "r2"
+  },
+  {
+   "type": "image",
+   "key": "s2"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 그록 개발사(순위표 표기 SpaceXAI)",
+    "**아레나 점수** 1,334점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 그록 앱·grok.com 의 이매진 메뉴",
+    "**요금** 무료(횟수 제한), Plus 월 $8부터",
+    "**공식 사이트** [grok.com/imagine](https://grok.com/imagine)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 투표 3,113건 예비 점수로 2위에 올랐고, 8월판(1,294점)도 8위권입니다. 상품 사진·프로필 사진·배경 바꾸기 같은 편집 메뉴를 따로 둡니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 쇼핑몰 상품 사진, 프로필 사진처럼 **용도가 정해진 편집**을 빠르게 할 때 편합니다."
+  },
+  {
+   "type": "h2",
+   "text": "3위 마이크로소프트 MAI 이미지(MAI-Image-2.6) — 1,332점",
+   "id": "r3"
+  },
+  {
+   "type": "image",
+   "key": "s3"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 마이크로소프트 AI(미국)",
+    "**아레나 점수** 1,332점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 마이크로소프트 AI 서비스(무료 이미지 도구로는 빙 이미지 크리에이터)",
+    "**요금** 빙 이미지 크리에이터 무료",
+    "**공식 사이트** [microsoft.ai](https://microsoft.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 마이크로소프트가 직접 만든 MAI 모델 계열의 최신 이미지 모델입니다. 이전 버전 MAI-Image-2.5(1,254점)보다 78점 올랐습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 무료로 써 보고 싶다면 [빙 이미지 크리에이터](https://www.bing.com/images/create)부터 시작해 보세요. 마이크로소프트 계정만 있으면 됩니다."
+  },
+  {
+   "type": "h2",
+   "text": "4위 구글 나노 바나나(Nano Banana 2.1) — 1,328점",
+   "id": "r4"
+  },
+  {
+   "type": "image",
+   "key": "s4"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 구글(미국)",
+    "**아레나 점수** 1,328점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 제미나이 앱의 이미지 만들기·편집",
+    "**요금** 무료, AI Plus 월 $4.99 · AI Pro 월 $19.99로 사용량 확대",
+    "**공식 사이트** [gemini.google](https://gemini.google/overview/image-generation/)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 구글 제미나이의 이미지 생성·편집 모델로, 공식 페이지에 '무료로 사용 가능'이라고 안내합니다. 이전 나노 바나나(2.5 Flash Image)는 투표가 89만 건 넘게 쌓일 만큼 많이 비교된 모델입니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 사진 속 인물·물건은 그대로 두고 **배경·옷·조명만 바꾸는 편집**에 강합니다. 안드로이드 폰 사용자는 접근도 가장 쉽습니다."
+  },
+  {
+   "type": "h2",
+   "text": "5위 리브(Reve 2.1) — 1,302점",
+   "id": "r5"
+  },
+  {
+   "type": "image",
+   "key": "s5"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 리브(미국)",
+    "**아레나 점수** 1,302점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 리브 웹 앱",
+    "**요금** 무료로 시작(유료 요금은 공식 사이트에서 확인)",
+    "**공식 사이트** [app.reve.com](https://app.reve.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 이미지 생성·편집·디자인을 한 화면에서 하는 신생 회사의 모델입니다. 2.1(1,302점)과 2.0(1,269점) 두 버전이 모두 상위 10위 안에 들었습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 광고 시안처럼 **구도와 디자인 완성도**가 중요한 그림을 여러 장 비교해 보고 싶을 때 써 볼 만합니다."
+  },
+  {
+   "type": "h2",
+   "text": "6위 메타 뮤즈 이미지(Muse Image) — 1,274점",
+   "id": "r6"
+  },
+  {
+   "type": "image",
+   "key": "s6"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 메타(미국)",
+    "**아레나 점수** 1,274점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 메타 AI 앱·서비스",
+    "**요금** 무료(메타 AI)",
+    "**공식 사이트** [ai.meta.com](https://ai.meta.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 페이스북·인스타그램의 메타가 만든 이미지 모델로 투표 4만 2천 건이 쌓였습니다. 메타 AI 에서 대화하듯 그림을 만들 수 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 인스타그램 게시물이나 스토리용 이미지를 메타 앱 안에서 바로 만들고 싶을 때 편합니다."
+  },
+  {
+   "type": "h2",
+   "text": "7위 바이트댄스 시드림(Seedream 5.0 Pro) — 1,255점",
+   "id": "r7"
+  },
+  {
+   "type": "image",
+   "key": "s7"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 바이트댄스(중국)",
+    "**아레나 점수** 1,255점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 드리미나(Dreamina)·캡컷",
+    "**요금** 무료로 시작(유료 요금은 공식 사이트에서 확인)",
+    "**공식 사이트** [dreamina.capcut.com](https://dreamina.capcut.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 틱톡을 만든 바이트댄스의 이미지 모델로, 투표 9만 4천 건으로 표본이 넉넉합니다. 이전 버전 시드림 4.5는 투표 30만 건이 넘습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 같은 회사의 영상 모델 시댄스(9편 참고)와 함께 **이미지 → 영상**으로 이어 만들 때 좋습니다."
+  },
+  {
+   "type": "h2",
+   "text": "8위 알리바바 큐웬 이미지(Qwen-Image-3.0-Pro) — 1,255점",
+   "id": "r8"
+  },
+  {
+   "type": "image",
+   "key": "s8"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 알리바바(중국)",
+    "**아레나 점수** 1,255점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 큐웬 채팅(chat.qwen.ai)",
+    "**요금** 무료(공식 사이트에서 사용)",
+    "**공식 사이트** [chat.qwen.ai](https://chat.qwen.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 알리바바 큐웬 계열의 이미지 모델입니다. 앞선 Qwen-Image 는 Apache 2.0 공개 모델로 풀려 개발자가 직접 내려받아 쓸 수 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 회사 서버에서 이미지 모델을 직접 돌리고 싶은 개발팀이라면 공개 버전을 함께 살펴볼 만합니다."
+  },
+  {
+   "type": "h2",
+   "text": "9위 아이디오그램(Ideogram 4.0) — 1,205점",
+   "id": "r9"
+  },
+  {
+   "type": "image",
+   "key": "s9"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 아이디오그램(캐나다)",
+    "**아레나 점수** 1,205점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 아이디오그램 웹 앱",
+    "**요금** 무료로 시작(유료 요금은 공식 사이트에서 확인)",
+    "**공식 사이트** [ideogram.ai](https://ideogram.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 그림 속 글자(타이포그래피)를 잘 넣는 것으로 이름을 알린 서비스입니다. 4.0은 투표 6만 건으로 20위, 순위표에 'Ideogram Open Model' 라이선스로 표시돼 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 로고 시안, 글자가 큰 포스터, 티셔츠 문구 디자인처럼 **글자가 주인공인 이미지**에 써 보세요."
+  },
+  {
+   "type": "h2",
+   "text": "10위 루마 UNI(UNI-1.1 Max) — 1,189점",
+   "id": "r10"
+  },
+  {
+   "type": "image",
+   "key": "s10"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 루마 AI(미국)",
+    "**아레나 점수** 1,189점(텍스트→이미지, 2026-10-07)",
+    "**어디서 쓰나** 루마 웹 앱",
+    "**요금** 무료로 시작(유료 요금은 공식 사이트에서 확인)",
+    "**공식 사이트** [lumalabs.ai](https://lumalabs.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 모델인가.** 영상 AI 로 알려진 루마의 이미지 모델입니다. 루마는 '제품을 대리석 위에 놓고 아침 햇살로 찍어 줘'처럼 말로 촬영을 맡기는 창작 에이전트를 내세웁니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 제품 사진을 여러 장면으로 찍은 것처럼 만들고 싶을 때, 영상까지 이어 만들 때 좋습니다."
+  },
+  {
+   "type": "h2",
+   "text": "순위표 밖 인기 도구 — 미드저니·파이어플라이·캔바·FLUX",
+   "id": "out"
+  },
+  {
+   "type": "image",
+   "key": "outside"
+  },
+  {
+   "type": "p",
+   "text": "점수가 없거나 10위 밖이라고 쓸모없는 도구는 아닙니다. 디자인 작업 흐름에 맞춘 기능, 상업적 사용 보장, 여러 모델을 한곳에서 쓰는 편의성이 강점인 도구도 많습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**미드저니(Midjourney)** — 예술적인 화풍으로 유명하지만 Arena 순위표에 참여하지 않아 점수 비교가 없습니다. 공식 사이트는 자동 접속을 막아 이번에 요금을 확인하지 못했습니다 — [midjourney.com](https://www.midjourney.com)",
+    "**어도비 파이어플라이(Firefly)** — 30개 이상 AI 모델을 한곳에서 쓰는 창작 스튜디오. 무료로 시작, 유료 월 $9.99·$19.99·$49.99·$199.99(월 생성 크레딧 2,000~50,000) — [firefly.adobe.com](https://firefly.adobe.com)",
+    "**캔바(Canva) AI 이미지 생성기** — 디자인 화면 안에서 바로 그림을 만듭니다. 무료로 시작, Pro·Business 는 무료보다 AI 사용량 10배·20배 — [canva.com](https://www.canva.com/ai-image-generator/)",
+    "**FLUX(블랙 포레스트 랩스)** — FLUX.2 [max] 1,162점(29위). 개발자용 API 와 공개 모델로 많이 쓰입니다 — [bfl.ai](https://bfl.ai)",
+    "**리크래프트(Recraft)** — V4.1 Utility Pro 1,169점(26위). 벡터·아이콘·브랜드 색상에 강하고 연 결제 기준 월 $10부터 — [recraft.ai](https://www.recraft.ai)",
+    "**크레아(Krea)·마그니픽(옛 프리픽)** — 나노 바나나·시드림·FLUX 등 여러 회사 모델을 한 화면에서 골라 씁니다 — [krea.ai](https://www.krea.ai) · [magnific.com](https://www.magnific.com)"
+   ]
+  },
+  {
+   "type": "image",
+   "key": "firefly"
+  },
+  {
+   "type": "image",
+   "key": "canva"
+  },
+  {
+   "type": "h2",
+   "text": "AI 이미지 생성 도구 요금 비교",
+   "id": "price"
+  },
+  {
+   "type": "image",
+   "key": "price"
+  },
+  {
+   "type": "p",
+   "text": "대부분 무료로 시작할 수 있습니다. 이미 챗GPT·제미나이·그록을 구독 중이라면 이미지 기능이 함께 들어 있어 따로 결제할 필요가 적고, 디자인 작업이 많다면 파이어플라이·캔바처럼 편집 도구와 묶인 요금제가 낫습니다."
+  },
+  {
+   "type": "h2",
+   "text": "목적별 추천",
+   "id": "pick"
+  },
+  {
+   "type": "image",
+   "key": "picker"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**글자가 들어간 썸네일·포스터** → 챗GPT 이미지, 아이디오그램",
+    "**내 사진 편집(배경·옷·조명)** → 나노 바나나(제미나이)",
+    "**무료로 많이** → 빙 이미지 크리에이터, 제미나이 무료",
+    "**상품 사진·쇼핑몰** → 그록 이매진, 루마",
+    "**디자인 작업과 함께** → 캔바, 파이어플라이",
+    "**아이콘·벡터·브랜드** → 리크래프트"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "저작권·상업적 사용 주의",
+   "id": "rights"
+  },
+  {
+   "type": "image",
+   "key": "rights"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**약관 먼저** — 무료 요금제로 만든 이미지의 상업적 사용 조건은 서비스마다 다릅니다.",
+    "**실존 인물·브랜드 피하기** — 유명인 얼굴, 남의 로고·캐릭터를 넣은 이미지는 초상권·상표권 문제가 생길 수 있습니다.",
+    "**AI 생성 표시** — 유튜브 등 플랫폼은 사실처럼 보이는 AI 생성물을 공개하도록 요구합니다(9편 참고).",
+    "**원본 파일 보관** — 언제, 어떤 도구와 프롬프트로 만들었는지 기록해 두면 문제가 생겼을 때 설명하기 쉽습니다."
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "자주 묻는 질문",
+   "id": "faq"
+  },
+  {
+   "type": "h3",
+   "text": "완전 무료로 쓸 수 있는 AI 이미지 도구는?"
+  },
+  {
+   "type": "p",
+   "text": "제미나이(나노 바나나), 챗GPT 무료, 빙 이미지 크리에이터, 메타 AI 가 무료로 이미지를 만들 수 있습니다. 다만 하루 생성 횟수나 해상도 제한이 있습니다."
+  },
+  {
+   "type": "h3",
+   "text": "한글이 들어간 이미지는 어떤 도구가 좋나요?"
+  },
+  {
+   "type": "p",
+   "text": "글자를 정확히 넣는 능력은 순위표 1위인 오픈AI GPT-Image 계열과 아이디오그램이 강한 편입니다. 그래도 받침이 틀리는 일이 있어, 긴 문장은 이미지 편집 프로그램에서 직접 넣는 것이 안전합니다."
+  },
+  {
+   "type": "h3",
+   "text": "Arena 점수는 믿을 만한가요?"
+  },
+  {
+   "type": "p",
+   "text": "660만 건이 넘는 블라인드 투표로 계산해 '사람 눈에 더 좋아 보이는 그림'을 잘 반영합니다. 다만 짧은 프롬프트 한 줄 기준이고, 편집·일관성·상업적 사용 조건은 반영하지 않습니다."
+  },
+  {
+   "type": "h2",
+   "text": "AI 활용 시리즈",
+   "id": "series"
+  },
+  {
+   "type": "p",
+   "text": "AI 를 일과 생활에 쓰는 방법을 10편으로 나눠 매일 한 편씩 올립니다."
+  },
+  {
+   "type": "series"
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[Arena 텍스트→이미지 순위표](https://arena.ai/leaderboard/image/text-to-image) (2026-10-07 갱신, 82개 모델·투표 6,604,125건)",
+    "[ChatGPT 요금제](https://chatgpt.com/pricing)",
+    "[Grok 요금제](https://grok.com/plans)",
+    "[Adobe Firefly 요금제](https://www.adobe.com/products/firefly/plans.html)",
+    "[Canva 요금제](https://www.canva.com/pricing/)",
+    "[Recraft 요금제](https://www.recraft.ai/pricing)",
+    "[Microsoft AI 모델](https://microsoft.ai)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "hero",
+   "kind": "hero",
+   "file": "ai-image-generator-ranking-top10-2026.png",
+   "title": "AI 이미지 생성 도구 순위 TOP10",
+   "sub": "Arena 블라인드 투표 660만 건 · 무료·유료 요금 비교",
+   "date": "2026년 10월",
+   "kicker": "AI 활용 시리즈 5편",
+   "caption": "AI 이미지 생성 도구 순위 TOP10 (2026년 10월)",
+   "alt": "AI 이미지 생성 도구 순위 TOP10 2026 표지"
+  },
+  {
+   "key": "rank",
+   "kind": "dot",
+   "file": "text-to-image-arena-score-by-company-2026-10.png",
+   "title": "회사별 최고 이미지 모델 Arena 점수",
+   "sub": "같은 회사 모델은 가장 높은 것 하나 · 2026년 10월 7일",
+   "labels": [
+    "1 GPT-Image-2.5(오픈AI)",
+    "2 그록 이매진 2.0",
+    "3 MAI-Image-2.6(MS)",
+    "4 나노 바나나 2.1(구글)",
+    "5 리브 2.1",
+    "6 메타 뮤즈 이미지",
+    "7 시드림 5.0 Pro",
+    "8 큐웬 이미지 3.0 Pro",
+    "9 아이디오그램 4.0",
+    "10 루마 UNI-1.1 Max"
+   ],
+   "values": [
+    1425,
+    1334,
+    1332,
+    1328,
+    1302,
+    1274,
+    1255,
+    1255,
+    1205,
+    1189
+   ],
+   "xmin": 1150,
+   "highlight": [
+    0
+   ],
+   "left": 0.31,
+   "source": "출처: Arena 텍스트→이미지 순위표(2026-10-07, 투표 6,604,125건)",
+   "caption": "AI 이미지 생성 모델 회사별 Arena 점수 순위",
+   "alt": "AI 이미지 생성 순위 GPT-Image 나노 바나나 그록 MAI 점수"
+  },
+  {
+   "key": "outside",
+   "kind": "dot",
+   "file": "flux-recraft-imagen-krea-arena-score.png",
+   "title": "TOP10 밖 이미지 모델 점수",
+   "sub": "1위 GPT-Image-2.5(1,425점)와 비교",
+   "labels": [
+    "GPT-Image-2.5(1위)",
+    "리크래프트 V4.1 Utility Pro(26위)",
+    "FLUX.2 [max](29위)",
+    "구글 Imagen 4 Ultra(37위)",
+    "크레아 2 Turbo"
+   ],
+   "values": [
+    1425,
+    1169,
+    1162,
+    1148,
+    1113
+   ],
+   "xmin": 1080,
+   "highlight": [
+    0
+   ],
+   "left": 0.34,
+   "source": "출처: Arena 텍스트→이미지 순위표(2026-10-07, 투표 6,604,125건)",
+   "caption": "FLUX·리크래프트·Imagen·크레아 Arena 점수",
+   "alt": "FLUX 리크래프트 이미지 생성 모델 점수 비교"
+  },
+  {
+   "key": "price",
+   "kind": "price",
+   "file": "ai-image-tool-price-2026-10.png",
+   "title": "AI 이미지 도구 유료 요금(월, 달러)",
+   "sub": "공식 요금 페이지 · 리크래프트는 연 결제 기준 · 2026년 10월 21일",
+   "labels": [
+    "챗GPT Plus",
+    "파이어플라이 Pro",
+    "구글 AI Pro",
+    "리크래프트 Basic(연 결제)",
+    "파이어플라이 첫 단계",
+    "챗GPT Go",
+    "그록 Plus",
+    "구글 AI Plus"
+   ],
+   "values": [
+    20,
+    19.99,
+    19.99,
+    10,
+    9.99,
+    8,
+    8,
+    4.99
+   ],
+   "value_labels": [
+    "$20",
+    "$19.99",
+    "$19.99",
+    "$10",
+    "$9.99",
+    "$8",
+    "$8",
+    "$4.99"
+   ],
+   "highlight": [],
+   "left": 0.3,
+   "source": "출처: 각 서비스 공식 요금 페이지",
+   "caption": "AI 이미지 생성 도구 유료 요금 비교",
+   "alt": "AI 이미지 생성 도구 가격 비교 챗GPT 파이어플라이 제미나이 그록"
+  },
+  {
+   "key": "picker",
+   "kind": "matrix",
+   "file": "ai-image-tool-picker.png",
+   "title": "목적별 AI 이미지 도구",
+   "sub": "abcfact 정리 · 첫 추천은 ◎",
+   "rows": [
+    "글자 들어간 썸네일",
+    "내 사진 편집",
+    "무료로 많이",
+    "상품 사진",
+    "디자인 작업",
+    "아이콘·벡터"
+   ],
+   "cols": [
+    "첫 추천",
+    "함께 쓰면 좋은 것"
+   ],
+   "cells": [
+    [
+     "◎ 챗GPT 이미지",
+     "아이디오그램"
+    ],
+    [
+     "◎ 나노 바나나",
+     "챗GPT 이미지"
+    ],
+    [
+     "◎ 빙 이미지 크리에이터",
+     "제미나이 무료"
+    ],
+    [
+     "◎ 그록 이매진",
+     "루마"
+    ],
+    [
+     "◎ 캔바",
+     "파이어플라이"
+    ],
+    [
+     "◎ 리크래프트",
+     "캔바"
+    ]
+   ],
+   "source": "abcfact 정리",
+   "caption": "목적별로 고르는 AI 이미지 생성 도구",
+   "alt": "목적별 AI 이미지 생성 도구 추천표"
+  },
+  {
+   "key": "rights",
+   "kind": "card",
+   "file": "ai-image-copyright-checklist.png",
+   "title": "AI 이미지 쓰기 전 4가지",
+   "lines": [
+    "① 상업적 사용 약관 확인",
+    "② 실존 인물 · 남의 로고 피하기",
+    "③ AI 생성 사실 공개",
+    "④ 도구 · 프롬프트 기록 보관"
+   ],
+   "source": "abcfact 정리",
+   "caption": "AI 이미지 저작권·상업적 사용 체크리스트",
+   "alt": "AI 이미지 저작권 상업적 사용 주의사항"
+  },
+  {
+   "key": "s9",
+   "kind": "card",
+   "file": "ideogram-4-summary.png",
+   "title": "아이디오그램 4.0",
+   "url": "https://ideogram.ai",
+   "lines": [
+    "Arena 텍스트→이미지 1,205점(20위)",
+    "투표 60,591건",
+    "그림 속 글자(타이포그래피)에 강점",
+    "라이선스 Ideogram Open Model"
+   ],
+   "source": "출처: Arena 텍스트→이미지 순위표(2026-10-07, 투표 6,604,125건)",
+   "caption": "아이디오그램 4.0 요약 (공식 사이트 ideogram.ai)",
+   "alt": "아이디오그램 AI 이미지 생성 순위 요약"
+  }
+ ],
+ "shots": [
+  {
+   "key": "arena",
+   "url": "https://arena.ai/leaderboard/image/text-to-image",
+   "file": "arena-text-to-image-leaderboard.png",
+   "caption": "Arena 텍스트→이미지 순위표 화면 (arena.ai)",
+   "alt": "아레나 AI 이미지 생성 모델 순위표 화면",
+   "name": "Arena 이미지 순위표",
+   "fallback": {
+    "title": "Arena 이미지 순위표",
+    "lines": [
+     "블라인드 투표 6,604,125건",
+     "82개 모델",
+     "2026-10-07 갱신"
+    ]
+   }
+  },
+  {
+   "key": "s1",
+   "url": "https://chatgpt.com/images",
+   "file": "chatgpt-images-create.png",
+   "caption": "챗GPT 이미지 만들기 화면 (chatgpt.com)",
+   "alt": "챗GPT 이미지 생성 화면",
+   "name": "챗GPT 이미지",
+   "fallback": {
+    "title": "챗GPT 이미지",
+    "lines": [
+     "GPT-Image-2.5 1,425점(1위)",
+     "무료 · Plus 월 $20"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s2",
+   "url": "https://grok.com/imagine",
+   "file": "grok-imagine-image.png",
+   "caption": "그록 이매진 화면 (grok.com)",
+   "alt": "그록 이매진 AI 이미지 생성 화면",
+   "name": "그록 이매진",
+   "fallback": {
+    "title": "그록 이매진",
+    "lines": [
+     "1,334점(예비)",
+     "Plus 월 $8부터"
+    ]
+   }
+  },
+  {
+   "key": "s3",
+   "url": "https://microsoft.ai",
+   "file": "microsoft-ai-mai-image.png",
+   "caption": "마이크로소프트 AI 공식 사이트 — MAI 모델 목록 (microsoft.ai)",
+   "alt": "마이크로소프트 AI MAI 이미지 모델 공식 사이트",
+   "name": "MAI-Image-2.6",
+   "fallback": {
+    "title": "MAI-Image-2.6",
+    "lines": [
+     "1,332점",
+     "마이크로소프트 자체 모델"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s4",
+   "url": "https://gemini.google/overview/image-generation/",
+   "file": "gemini-nano-banana-image-generation.png",
+   "caption": "구글 제미나이 나노 바나나 안내 화면",
+   "alt": "구글 제미나이 나노 바나나 이미지 생성 공식 안내",
+   "name": "나노 바나나",
+   "fallback": {
+    "title": "나노 바나나",
+    "lines": [
+     "1,328점(예비)",
+     "무료로 사용 가능"
+    ]
+   }
+  },
+  {
+   "key": "s5",
+   "url": "https://app.reve.com",
+   "file": "reve-image-app.png",
+   "caption": "리브 이미지 앱 화면 (app.reve.com)",
+   "alt": "리브 AI 이미지 생성 앱 화면",
+   "name": "리브",
+   "fallback": {
+    "title": "리브",
+    "lines": [
+     "Reve 2.1 1,302점",
+     "생성 · 편집 · 디자인"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s6",
+   "url": "https://ai.meta.com",
+   "file": "meta-ai-muse.png",
+   "caption": "메타 AI 공식 사이트 화면 (ai.meta.com)",
+   "alt": "메타 AI 뮤즈 공식 사이트",
+   "name": "메타 뮤즈",
+   "fallback": {
+    "title": "메타 뮤즈",
+    "lines": [
+     "Muse Image 1,274점",
+     "메타 AI 무료"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s7",
+   "url": "https://dreamina.capcut.com",
+   "file": "dreamina-seedream-image.png",
+   "caption": "드리미나 화면 (dreamina.capcut.com)",
+   "alt": "바이트댄스 드리미나 AI 이미지 생성 화면",
+   "name": "드리미나 시드림",
+   "fallback": {
+    "title": "드리미나 시드림",
+    "lines": [
+     "Seedream 5.0 Pro 1,255점",
+     "이미지 → 영상"
+    ]
+   }
+  },
+  {
+   "key": "s8",
+   "url": "https://chat.qwen.ai",
+   "file": "qwen-chat-image.png",
+   "caption": "큐웬 채팅 화면 (chat.qwen.ai)",
+   "alt": "알리바바 큐웬 AI 채팅 이미지 생성 화면",
+   "name": "큐웬",
+   "fallback": {
+    "title": "큐웬",
+    "lines": [
+     "Qwen-Image-3.0-Pro 1,255점",
+     "무료"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s10",
+   "url": "https://lumalabs.ai",
+   "file": "luma-ai-creative-agent.png",
+   "caption": "루마 공식 사이트 화면 (lumalabs.ai)",
+   "alt": "루마 AI 창작 에이전트 공식 화면",
+   "name": "루마",
+   "fallback": {
+    "title": "루마",
+    "lines": [
+     "UNI-1.1 Max 1,189점",
+     "제품 촬영 에이전트"
+    ]
+   }
+  },
+  {
+   "key": "firefly",
+   "url": "https://firefly.adobe.com",
+   "file": "adobe-firefly-ai-studio.png",
+   "caption": "어도비 파이어플라이 화면 (firefly.adobe.com)",
+   "alt": "어도비 파이어플라이 AI 창작 스튜디오 화면",
+   "name": "어도비 파이어플라이",
+   "fallback": {
+    "title": "어도비 파이어플라이",
+    "lines": [
+     "30개 이상 AI 모델",
+     "월 $9.99부터"
+    ]
+   }
+  },
+  {
+   "key": "canva",
+   "url": "https://www.canva.com/ai-image-generator/",
+   "file": "canva-ai-image-generator.png",
+   "caption": "캔바 AI 이미지 생성기 화면 (canva.com)",
+   "alt": "캔바 AI 이미지 생성기 화면",
+   "name": "캔바 AI 이미지",
+   "fallback": {
+    "title": "캔바 AI 이미지",
+    "lines": [
+     "디자인 안에서 바로 생성",
+     "무료로 시작"
+    ]
+   }
+  }
+ ]
+}
