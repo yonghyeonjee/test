@@ -335,9 +335,19 @@ class Tistory:
         out = []
         for it in items or []:
             if isinstance(it, dict) and it.get("id") is not None:
+                date = next((str(it[k]) for k in ("published", "publishedDate", "date", "created", "regdate", "modified") if it.get(k)), "")
                 out.append({"id": str(it["id"]), "title": str(it.get("title", "")), "visibility": str(it.get("visibility", "")),
-                            "url": str(it.get("permalink") or it.get("url") or it.get("entryUrl") or "")})
+                            "url": str(it.get("permalink") or it.get("url") or it.get("entryUrl") or ""), "date": date,
+                            "keys": sorted(it)})
         return out
+
+    def post_detail(self, post_id: str) -> dict:
+        """관리자 글 하나(`GET /manage/post/{id}.json`). 본문 길이·발행 시각을 보는 데 쓴다."""
+        r = self._req("GET", f"/manage/post/{post_id}.json")
+        if looks_like_login(r.text):
+            raise SessionExpired("post.json 이 로그인 화면을 돌려줬다")
+        data = r.json()
+        return data.get("post", data) if isinstance(data, dict) else {}
 
     def publish(self, *, title: str, content: str, category: int, tags: list[str], visibility: str,
                 attachments: list[str] | None = None, update_id: str | None = None, slogan: str = "") -> tuple[str, str]:
@@ -553,10 +563,21 @@ def main() -> int:
             if not cats:
                 print("  (카테고리 없음 — 0 으로 올라간다)")
             try:
-                recent = Tistory(host, cookie).recent_posts()
-                print("최근 글 (id · 공개 · 제목) — --update 에 쓰는 번호:")
-                for it in recent[:15]:
-                    print(f"  {it['id']:>8}  {it['visibility']:<9} {it['title'][:70]}")
+                t = Tistory(host, cookie)
+                recent = t.recent_posts() + t.recent_posts(2)
+                if recent:
+                    print("글 목록 항목 이름:", ", ".join(recent[0]["keys"]))
+                print("최근 글 (id · 공개 · 발행 시각 · 본문 글자 수 · 제목) — --update 에 쓰는 번호:")
+                for it in recent[:25]:
+                    n = "?"
+                    try:
+                        d = t.post_detail(it["id"])
+                        body = re.sub(r"<[^>]+>|\[##_[^\]]*_##\]", "", str(d.get("content", "")))
+                        n = str(len(re.sub(r"\s+", "", body)))
+                        it["date"] = it["date"] or str(d.get("published") or d.get("date") or "")
+                    except Exception:  # noqa: BLE001
+                        pass
+                    print(f"  {it['id']:>8}  {it['visibility']:<9} {it['date'][:19]:<19} {n:>6}자  {it['title'][:60]}")
             except Exception as e:  # noqa: BLE001 — 목록은 덤이다. 실패해도 check 는 성공
                 print(f"  (최근 글 목록을 못 읽었다: {type(e).__name__}: {e})")
             return 0
