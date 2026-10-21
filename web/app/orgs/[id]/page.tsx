@@ -121,7 +121,7 @@ export default async function OrgPage({ params }: P) {
             <dt className="text-muted">기관장</dt><dd>{o.head?.replace(/\s+/g, "") ?? "—"}</dd>
             <dt className="text-muted">소재지</dt>
             <dd>
-              {o.address ? <>{where && <span className="text-ink2">{where} </span>}{o.address}</> : "—"}
+              {o.address ? <>{o.sido && !o.address.includes(SIDO_SHORT[o.sido] ?? o.sido) && !o.address.includes(o.sido) && <span className="text-ink2">{SIDO_SHORT[o.sido] ?? o.sido} </span>}{o.address}</> : "—"}
               {o.address && (
                 <span className="ml-2 inline-flex gap-1.5 align-middle">
                   <a href={links.kakao} target="_blank" rel="noopener noreferrer" className="chip !py-0.5 !text-[12px]">카카오맵</a>
