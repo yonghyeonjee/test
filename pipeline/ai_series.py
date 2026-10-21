@@ -201,6 +201,11 @@ def take_shots(shots: list[dict]) -> dict[str, bool]:
                     if host0 not in page.url:                     # 배너를 닫다가 다른 사이트로 넘어갔다
                         page.goto(s["url"], wait_until="domcontentloaded", timeout=60000); page.wait_for_timeout(4000)
                     page.screenshot(path=path)
+                    if os.environ.get("SHOT_PREVIEW"):              # 확인용: 작게 JPEG 로 기록에 찍는다
+                        import base64
+                        jpg = page.screenshot(type="jpeg", quality=30)
+                        b = base64.b64encode(jpg).decode()
+                        print(f"--B64 {s['key']}--"); print("\n".join(b[i:i + 200] for i in range(0, len(b), 200))); print("--END--")
                 ok[s["key"]] = not blocked
                 print(f"  화면 {'찍음' if not blocked else '막힘'}: {s['url']} → {page.url} ({title[:60]})")
                 ctx.close()
