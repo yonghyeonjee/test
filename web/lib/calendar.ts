@@ -6,7 +6,7 @@ import { getExamRounds } from "./qnetExam";
 
 /**
  * 마감 달력(/calendar)의 자료. 지원사업 마감(programs_public.apply_end), 채용 마감(job_posts.end_date),
- * 자격시험 일정(exam_rounds)을 날짜별로 센다. 세는 함수는 sql/013_deadline_calendar.sql.
+ * 자격시험 일정(exam_rounds)을 날짜별로 센다. 세는 함수는 sql/016_deadline_calendar_conditions.sql(_v2, 내 조건까지).
  *
  * 지역을 고르면 그 시·도(와 시·군·구) 것과 전국 것만 남는다. 채용 공고의 지역은 자유 글("경기도 수원시")이라
  * 짧은 이름("경기")이 들어 있는지로 거른다. 시험 일정은 전국 공통이라 지역과 상관없다.
@@ -33,12 +33,18 @@ export function monthRange(ym: string): { from: string; to: string } {
 
 const short = (sido?: string | null) => (sido ? SIDO_SHORT[sido] ?? sido.slice(0, 2) : null);
 
-export async function deadlineDays(from: string, to: string, sido?: string | null, sigungu?: string | null): Promise<Record<string, DayCount>> {
+/** 내 조건(첫 화면과 같은 것). 지원사업에만 건다 — 채용은 나이·가구 조건이 없다. */
+export type CalCond = { age?: number | null; emp?: string | null; hh?: string[] };
+const condArgs = (c?: CalCond) => ({
+  p_age: c?.age ?? null, p_employment: c?.emp || null, p_household: c?.hh?.length ? c.hh : null,
+});
+
+export async function deadlineDays(from: string, to: string, sido?: string | null, sigungu?: string | null, cond?: CalCond): Promise<Record<string, DayCount>> {
   const out: Record<string, DayCount> = {};
   if (!dbConfigured) return out;
   try {
-    const { data, error } = await db.rpc("deadline_days", {
-      p_from: from, p_to: to, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null,
+    const { data, error } = await db.rpc("deadline_days_v2", {
+      p_from: from, p_to: to, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null, ...condArgs(cond),
     });
     if (error) throw error;
     for (const r of (data ?? []) as { d: string; kind: "p" | "job"; n: number }[]) {
@@ -51,11 +57,11 @@ export async function deadlineDays(from: string, to: string, sido?: string | nul
   return out;
 }
 
-export async function deadlineItems(day: string, sido?: string | null, sigungu?: string | null): Promise<DayItem[]> {
+export async function deadlineItems(day: string, sido?: string | null, sigungu?: string | null, cond?: CalCond): Promise<DayItem[]> {
   if (!dbConfigured) return [];
   try {
-    const { data, error } = await db.rpc("deadline_items", {
-      p_day: day, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null, p_limit: 150,
+    const { data, error } = await db.rpc("deadline_items_v2", {
+      p_day: day, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null, p_limit: 150, ...condArgs(cond),
     });
     if (error) throw error;
     type Row = { kind: "p" | "job"; id: string; title: string; org: string | null; place: string; start_date: string | null };
