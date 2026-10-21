@@ -1,4 +1,4 @@
-import { db, dbConfigured } from "./db";
+import { db, dbConfigured, dbLive } from "./db";
 
 /**
  * 블로그 글. 두 가지가 있다.
@@ -80,7 +80,13 @@ export async function getStoryStrict(slug: string): Promise<Story | null> {
   if (!dbConfigured) return null;
   const { data, error } = await db.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
   if (error) throw new Error(`[getStory ${slug}] ${error.message}`);
-  return (data as Story | null) ?? null;
+  if (data) return data as Story;
+  // 없다고 나오면 캐시 없이 한 번 더 본다(2026-10-21). 예약 글(published_at 이 내일)은 공개 전에 크롤러가
+  // 들르면 빈 조회 결과와 404 쪽이 한 시간씩 캐시에 남아 공개 뒤에도 404 가 나왔다(전세대출 연재 2편).
+  // no-store 조회가 섞이면 이 요청은 동적으로 그려져 404 도 캐시되지 않는다. 진짜 없는 글만 그 값을 치른다.
+  const live = await dbLive.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
+  if (live.error) throw new Error(`[getStory ${slug}] ${live.error.message}`);
+  return (live.data as Story | null) ?? null;
 }
 
 /** 통합 검색용. 제목·요약에 낱말이 든 글. */
