@@ -1,0 +1,82 @@
+[
+ {
+  "no": 1,
+  "date": "2026-10-21",
+  "slug": "vibe-coding-top10",
+  "kind": "TOP10",
+  "title": "바이브 코딩 AI 순위 TOP10 | 2026년 클로드 코드·코덱스·커서 가격과 고르는 법",
+  "slogan": "바이브-코딩-AI-순위-TOP10"
+ },
+ {
+  "no": 2,
+  "date": "2026-10-22",
+  "slug": "ai-apps-top10",
+  "kind": "TOP10",
+  "title": "AI 앱 순위 TOP10 | 2026년 9월 한국인이 가장 많이 쓴 생성형 AI 서비스",
+  "slogan": "AI-앱-순위-TOP10"
+ },
+ {
+  "no": 3,
+  "date": "2026-10-23",
+  "slug": "claude-gpt-gemini",
+  "kind": "상세",
+  "title": "클로드 vs GPT vs 제미나이 | 2026년 역할별 비교와 요금제 고르는 법",
+  "slogan": "클로드-GPT-제미나이-비교"
+ },
+ {
+  "no": 4,
+  "date": "2026-10-24",
+  "slug": "vibe-coding-start",
+  "kind": "상세",
+  "title": "바이브 코딩 시작하기 | 코드 몰라도 첫 웹페이지 만드는 5단계",
+  "slogan": "바이브-코딩-시작하기"
+ },
+ {
+  "no": 5,
+  "date": "2026-10-25",
+  "slug": "ai-image-top10",
+  "kind": "TOP10",
+  "title": "AI 이미지 생성 도구 순위 TOP10 | 2026년 무료·유료 비교",
+  "slogan": "AI-이미지-생성-도구-TOP10"
+ },
+ {
+  "no": 6,
+  "date": "2026-10-26",
+  "slug": "prompt-guide",
+  "kind": "상세",
+  "title": "프롬프트 잘 쓰는 법 | AI 답이 달라지는 7가지 원칙과 예시",
+  "slogan": "프롬프트-잘-쓰는-법"
+ },
+ {
+  "no": 7,
+  "date": "2026-10-27",
+  "slug": "ai-search-top10",
+  "kind": "TOP10",
+  "title": "AI 검색 서비스 순위 TOP10 | 퍼플렉시티·챗GPT 검색·구글 AI 모드 비교",
+  "slogan": "AI-검색-서비스-TOP10"
+ },
+ {
+  "no": 8,
+  "date": "2026-10-28",
+  "slug": "ai-work-automation",
+  "kind": "상세",
+  "title": "AI 업무 자동화 활용법 | 엑셀·메일·보고서·회의록 실전 예시",
+  "slogan": "AI-업무-자동화-활용법"
+ },
+ {
+  "no": 9,
+  "date": "2026-10-29",
+  "slug": "ai-video-audio-top10",
+  "kind": "TOP10",
+  "title": "AI 영상·음성 생성 도구 순위 TOP10 | 2026년 기능과 가격 비교",
+  "slogan": "AI-영상-음성-생성-TOP10"
+ },
+ {
+  "no": 10,
+  "date": "2026-10-30",
+  "slug": "ai-job-prep",
+  "kind": "상세",
+  "title": "취업 준비에 AI 쓰는 법 | 공고 분석·자기소개서·면접 연습",
+  "slogan": "취업-준비-AI-활용법"
+ }
+]

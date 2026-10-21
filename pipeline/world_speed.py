@@ -169,6 +169,7 @@ def build(d: dict, today: dt.date) -> dict:
              "items": items, "korea": {"fixed": kor_f, "mobile": kor_m, "seoul": cities["Seoul"], "busan": cities["Busan"]},
              "mobile_top": d["mobile"][:10], "today": today.isoformat()}
     return {"slug": slug, "kind": "world", "subject": "world-internet-speed", "category": "IT", "title": title, "summary": summary,
+            "slogan": "전세계-인터넷-속도-순위-TOP10-2026년-9월-Ookla-기준-국가별-다운로드-속도와-한국-순위",   # 첫 발행 때 생긴 주소(고쳐 쓸 때 -1 로 밀리지 않게)
             "keywords": keywords, "body": B, "stats": stats, "published_at": today.isoformat()}
 
 

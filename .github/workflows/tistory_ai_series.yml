@@ -1,0 +1,72 @@
+name: tistory-ai-series
+
+# AI 활용 시리즈(10편)를 매일 19:00 KST(10:00 UTC)에 한 편씩 티스토리에 올린다.
+#   pipeline/data/ai_series/plan.json 에서 그날(KST) 글을 고르고, ai_series.py 가 글·차트·공식 사이트 화면을 만들고,
+#   tistory_publish.py --post-json 이 올린다(같은 제목·주소의 글이 있으면 고쳐 쓴다). 카테고리 IT.
+# 손으로: Run workflow → slug(그 글), visibility, dry.
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "글 slug(비우면 오늘 기획표의 글). 예: ai-apps-top10"
+        required: false
+        type: string
+      visibility:
+        default: "public"
+        type: choice
+        options: ["public", "private", "protected"]
+      dry:
+        description: "티스토리에 올리지 않고 글·사진만 만든다"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 10 * * *"    # UTC 10:00 = KST 19:00
+
+concurrency:
+  group: tistory-ai-series
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt matplotlib
+      - run: python pipeline/test_tistory_publish.py && python pipeline/ai_series.py --check
+      - name: 오늘 글 고르기
+        id: pick
+        env:
+          SLUG: ${{ inputs.slug }}
+        run: |
+          s="${SLUG:-$(python pipeline/ai_series.py --pick)}"
+          echo "slug=$s" >> "$GITHUB_OUTPUT"
+          echo "오늘 글: ${s:-없음}"
+      - name: 글·차트·화면 만들기
+        if: steps.pick.outputs.slug != ''
+        env:
+          SLUG: ${{ steps.pick.outputs.slug }}
+        run: |
+          sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패"
+          fc-cache -f >/dev/null 2>&1 || true
+          python -u pipeline/ai_series.py --slug "$SLUG"
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.pick.outputs.slug != ''
+        with:
+          name: shots
+          path: shots/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: 티스토리에 올리기
+        if: steps.pick.outputs.slug != '' && !inputs.dry
+        env:
+          TISTORY_COOKIE:       ${{ secrets.TISTORY_COOKIE }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VISIBILITY: ${{ inputs.visibility || 'public' }}
+        run: |
+          [ -n "$TISTORY_COOKIE" ] || { echo "::error::TISTORY_COOKIE 가 없다"; exit 1; }
+          python -u pipeline/tistory_publish.py --post-json out/post.json --images shots/manifest.json --visibility "$VISIBILITY"

@@ -62,7 +62,11 @@ on:
         description: "티스토리 단독 글: pipeline/ 의 글 생성기(out/post.json + shots/)를 돌려 올린다. 예: world_speed.py(전세계 인터넷 속도 TOP10)"
         default: ""
         type: choice
-        options: ["", "world_speed.py"]
+        options: ["", "world_speed.py", "ai_series.py"]
+      script_arg:
+        description: "script 에 넘길 글 slug(ai_series.py 일 때, 예: vibe-coding-top10)"
+        required: false
+        type: string
   schedule:
     - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00. blog_daily(00:30) 가 몇 시간 늦어도 끝난 뒤.
 
@@ -103,11 +107,12 @@ jobs:
         if: inputs.script != ''
         env:
           SCRIPT: ${{ inputs.script }}
+          SCRIPT_ARG: ${{ inputs.script_arg }}
         run: |
           sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패"
           fc-cache -f >/dev/null 2>&1 || true
           pip install -q matplotlib
-          python -u "pipeline/$SCRIPT"
+          if [ -n "$SCRIPT_ARG" ]; then python -u "pipeline/$SCRIPT" --slug "$SCRIPT_ARG"; else python -u "pipeline/$SCRIPT"; fi
       - name: 화면 사진 찍기
         if: inputs.shots != ''
         env:

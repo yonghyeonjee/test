@@ -77,7 +77,8 @@ def inline_html(text: str) -> str:
         if m.group(1) is not None:
             return f"<b>{m.group(1)}</b>"
         return f'<a href="{html.escape(abs_url(m.group(3)), quote=True)}">{m.group(2)}</a>'
-    return _INLINE.sub(sub, s)
+    s = _INLINE.sub(sub, s)
+    return re.sub(r"`([^`]+)`", r"<code>\1</code>", s)
 
 
 # ── 블록 → HTML ───────────────────────────────────────────
@@ -89,6 +90,8 @@ def block_html(b: dict) -> str:
         return f"<p>{inline_html(b['text'])}</p>"
     if t == "h2":
         return f"<h2>{inline_html(b['text'])}</h2>"
+    if t == "h3":
+        return f"<h3>{inline_html(b['text'])}</h3>"
     if t == "list":
         return "<ul>" + "".join(f"<li>{inline_html(x)}</li>" for x in b["items"]) + "</ul>"
     if t == "table":
@@ -166,18 +169,83 @@ def weave_images(body: list[dict], images: list[tuple[str, str | None]]) -> list
     return out
 
 
-def render(post: dict, mode: str = "summary", images: list[tuple[str, str | None]] | None = None) -> str:
+def place_images(body: list[dict], images: dict[str, tuple[str, str | None]]) -> list[str]:
+    """본문에 {"type": "image", "key": …} 블록이 있으면 그 자리에 그 사진을 넣는다(사진 없는 키는 건너뛴다)."""
+    out: list[str] = []
+    for b in body:
+        if b.get("type") == "image":
+            im = images.get(b.get("key", ""))
+            if im:
+                out.append(image_html(*im))
+            continue
+        out.append(block_html(b))
+    return out
+
+
+def render(post: dict, mode: str = "summary", images: list[tuple[str, str | None]] | None = None,
+           keyed: dict[str, tuple[str, str | None]] | None = None) -> str:
     url = f"{SITE}/story/{post['slug']}"
-    body = post["body"] if mode == "full" else summary_blocks(post["body"])
+    standalone = bool(post.get("standalone"))          # 티스토리 단독 글: jiwon 원문이 없다
+    body = post["body"] if (mode == "full" or standalone) else summary_blocks(post["body"])
     parts = [f"<p>{html.escape(post['summary'], quote=False)}</p>"]
-    if mode != "full":
+    if mode != "full" and not standalone:
         parts.append(f'<p>이 글은 요약입니다. 표와 공고 목록 전체는 <a href="{url}">{BRAND} 원문</a>에 있습니다.</p>')
-    parts += weave_images(body, images or [])
-    parts.append(
-        f'<p>원문: <a href="{url}">{html.escape(post["title"], quote=False)}</a> · '
-        f'조건에 맞는 지원사업·채용은 <a href="{SITE}">{BRAND}</a>에서 찾습니다.</p>'
-    )
+    if keyed is not None or any(b.get("type") == "image" for b in body):
+        parts += place_images(body, keyed or {})
+    else:
+        parts += weave_images(body, images or [])
+    if not standalone:
+        parts.append(
+            f'<p>원문: <a href="{url}">{html.escape(post["title"], quote=False)}</a> · '
+            f'조건에 맞는 지원사업·채용은 <a href="{SITE}">{BRAND}</a>에서 찾습니다.</p>'
+        )
     return "\n".join(p for p in parts if p)
+
+
+def find_existing(t: "Tistory", title: str, slogan: str = "", pages: int = 3) -> str:
+    """같은 글이 이미 있으면 그 번호(제목이 같거나 주소가 /entry/<slogan>). 단독 글은 발행 기록 표에 못 남으니 이걸로 중복을 막는다."""
+    from urllib.parse import quote, unquote
+    want = {quote(slogan), slogan} if slogan else set()
+    try:
+        for pg in range(1, pages + 1):
+            items = t.recent_posts(pg)
+            if not items:
+                break
+            for it in items:
+                tail = unquote(it["url"].rstrip("/").rsplit("/", 1)[-1]) if it.get("url") else ""
+                if it["title"].strip() == title.strip() or (want and (tail in want or tail.rstrip("-1") in want)):
+                    return it["id"]
+    except Exception:  # noqa: BLE001
+        pass
+    return ""
+
+
+def series_links(t: "Tistory | None", series: list[dict], me: str) -> dict:
+    """시리즈 다른 편 중 이미 올라간 것만 링크로(제목·주소로 찾는다). 아직 안 나간 편은 글자로만 둔다."""
+    found: dict[str, str] = {}
+    if t is not None:
+        try:
+            from urllib.parse import unquote
+            items = t.recent_posts(1) + t.recent_posts(2)
+            for s_ in series:
+                for it in items:
+                    tail = unquote(it.get("url", "").rstrip("/").rsplit("/", 1)[-1])
+                    if it["title"].strip() == s_["title"].strip() or (s_.get("slogan") and tail.startswith(s_["slogan"])):
+                        found[s_["slogan"]] = it.get("url") or f"/{it['id']}"
+                        break
+        except Exception:  # noqa: BLE001
+            pass
+    rows = []
+    for s_ in series:
+        if s_.get("slogan") == me:
+            rows.append(f"**{s_['no']}편 {s_['title']}** (지금 읽는 글)")
+        elif s_.get("slogan") in found:
+            href = found[s_["slogan"]]
+            href = href if href.startswith("http") else f"https://{DEFAULT_HOST}{href}"
+            rows.append(f"{s_['no']}편 [{s_['title']}]({href})")
+        else:
+            rows.append(f"{s_['no']}편 {s_['title']} (곧 공개)")
+    return {"type": "list", "items": rows}
 
 
 # ── 티스토리 관리자 호출 ──────────────────────────────────
@@ -241,7 +309,7 @@ class Tistory:
         walk(root)
         return out
 
-    def upload_image(self, path: str, caption: str | None = None) -> tuple[str, str, str | None]:
+    def upload_image(self, path: str, caption: str | None = None, alt: str = "") -> tuple[str, str, str | None]:
         """이미지 올리기 → (본문 치환자, attachments 용 ref, 캡션). docs: tistory-mcp api.md §5."""
         with open(path, "rb") as f:
             data = f.read()
@@ -258,7 +326,7 @@ class Tistory:
             raise TistoryError(f"attach.json 응답이 JSON 이 아니다: {text[:300]!r}") from e
         ref = attachment_ref(up)
         w, h = png_size(data)
-        return image_replacer(ref, w, h), ref, caption
+        return image_replacer(ref, w, h, alt=alt or (caption or "")), ref, caption
 
     def recent_posts(self, page: int = 1) -> list[dict]:
         """관리자 글 목록(`GET /manage/posts.json`) → [{id, title, visibility, url}]. --update 에 쓸 숫자 id 를 여기서 본다."""
@@ -321,10 +389,13 @@ def attachment_ref(up: dict) -> str:
     return f"kage@{key}/{filename}{search.replace('&', '&amp;')}"
 
 
-def image_replacer(ref: str, width: int, height: int, style: str = "alignCenter") -> str:
+def image_replacer(ref: str, width: int, height: int, style: str = "alignCenter", alt: str = "") -> str:
     if not width or not height:
         style = "widthOrigin"
-    meta = json.dumps({"originWidth": width, "originHeight": height, "style": style}, separators=(",", ":"))
+    m = {"originWidth": width, "originHeight": height, "style": style}
+    if alt:
+        m["alt"] = alt[:120]                     # 검색엔진이 읽는 대체 글. 티스토리가 모르면 무시한다
+    meta = json.dumps(m, separators=(",", ":"), ensure_ascii=False)
     return f"[##_Image|{ref}|CDM|1.3|{meta}_##]"
 
 
@@ -494,6 +565,7 @@ def main() -> int:
             with open(a.post_json, encoding="utf-8") as f:
                 posts = [json.load(f)]
             a.slug = posts[0]["slug"]
+            posts[0]["standalone"] = True
             a.mode = "full"                  # 단독 글은 원문이 따로 없으니 요약하지 않는다
             try:
                 sb = supabase_client()       # 기록(tistory_posts)용. 없어도 올리는 데는 지장 없다
@@ -514,15 +586,23 @@ def main() -> int:
 
         if a.dry:
             fake = [(f"[이미지 {i+1}: {m['file']}]", m.get("caption")) for i, m in enumerate(manifest)]
+            fkeyed = {m["key"]: f for m, f in zip(manifest, fake) if m.get("key")} or None
             for p in posts:
                 print(f"\n===== [{p['kind']}] {p['slug']} · {p['title']}  (mode={a.mode}, visibility={a.visibility}, category={a.category or category_for(p)})")
-                print(render(p, a.mode, fake))
+                if p.get("series"):
+                    p = {**p, "body": [series_links(None, p["series"], p.get("slogan", "")) if b.get("type") == "series" else b for b in p["body"]]}
+                print(render(p, a.mode, fake, fkeyed))
             return 0
 
         if not cookie:
             sys.exit("TISTORY_COOKIE 가 비어 있다")
         if a.update and (len(posts) != 1 or not a.slug):
             sys.exit("--update 는 --slug 로 글 하나를 집었을 때만 쓴다")
+        if a.post_json and not a.update:
+            prev = find_existing(Tistory(host, cookie), posts[0]["title"], posts[0].get("slogan", ""))
+            if prev:
+                a.update = prev
+                print(f"같은 글(번호 {prev})이 이미 있어 고쳐 쓴다")
         if a.slug and not a.update and sb is not None:
             prev = recorded_post_id(sb, a.slug)
             if prev:
@@ -532,13 +612,17 @@ def main() -> int:
         n = 0
         for p in posts:
             # 사진은 글마다 다시 올린다(한 업로드를 두 글에 나눠 쓰지 않는다).
-            uploaded = [t.upload_image(m["file"], m.get("caption")) for m in manifest]
+            present = [m for m in manifest if os.path.exists(m["file"])]
+            uploaded = [t.upload_image(m["file"], m.get("caption"), m.get("alt", "")) for m in present]
             for rep, _ref, _cap in uploaded:
                 print(f"  사진 올림: {rep[:60]}…")
-            post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded]),
+            keyed = {m["key"]: (rep, cap) for m, (rep, _r, cap) in zip(present, uploaded) if m.get("key")} if any(m.get("key") for m in present) else None
+            if p.get("series"):
+                p = {**p, "body": [series_links(t, p["series"], p.get("slogan", "")) if b.get("type") == "series" else b for b in p["body"]]}
+            post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded], keyed),
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
-                                     slogan=recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "")
+                                     slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else ""))
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
             if sb is not None:
                 try:
