@@ -52,13 +52,28 @@ def run(url: str, desktop: bool) -> None:
             if k in au and au[k].get("displayValue")]
     if diag:
         print("  진단: " + ", ".join(diag))
+    def top(audit: str, n: int, keys: tuple) -> None:
+        items = au.get(audit, {}).get("details", {}).get("items", [])
+        if not items:
+            return
+        rows = []
+        for it in items[:n]:
+            rows.append(" / ".join(str(it.get(k, ""))[:70] for k in keys if it.get(k) not in (None, "")))
+        print(f"  {audit}: " + " | ".join(rows))
+    top("bootup-time", 6, ("url", "total", "scripting"))
+    top("third-party-summary", 6, ("entity", "blockingTime", "transferSize", "mainThreadTime"))
+    top("render-blocking-resources", 5, ("url", "wastedMs"))
+    top("unused-javascript", 5, ("url", "wastedBytes"))
+    top("network-requests", 0, ())
     lcp = au.get("largest-contentful-paint-element", {}).get("details", {}).get("items", [])
     if lcp and lcp[0].get("items"):
         print("  LCP 요소: " + str(lcp[0]["items"][0].get("node", {}).get("snippet", ""))[:160])
 
 
-for u in [x.strip() for x in (sys.argv[1] if len(sys.argv) > 1 else "https://jiwon.knowhow-it.com/").split(",") if x.strip()]:
-    for desktop in (False, True):
+arg = sys.argv[1] if len(sys.argv) > 1 else "https://jiwon.knowhow-it.com/"
+mobile_only = arg.startswith("mobile,")
+for u in [x.strip() for x in arg.removeprefix("mobile,").split(",") if x.strip()]:
+    for desktop in ((False,) if mobile_only else (False, True)):
         print(f"\n== {u} [{'PC' if desktop else '휴대폰'}]")
         try:
             run(u, desktop)
