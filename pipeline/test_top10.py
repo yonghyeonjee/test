@@ -2,6 +2,7 @@
    python pipeline/test_top10.py"""
 import datetime as dt
 import json
+import re
 import os
 import random
 import sys
@@ -97,6 +98,11 @@ for key in ("civil", "orgs", "welfare-sido", "license-applicants"):
     ok("jeepedia.com/psy-dict" in text and "jiwon.knowhow-it.com" in text and "knowhow-it.com/english" in text, f"{key}: 운영 사이트 소개")
     ok(("gojobs.go.kr" in text) if key in ("civil", "orgs") else ("bokjiro.go.kr" in text) if key == "welfare-sido" else ("q-net.or.kr" in text), f"{key}: 공식 사이트")
     ok(text.count("출처: [") >= len(posts[key]["stats"]["items"]) + 2, f"{key}: 출처 줄 {text.count('출처: [')}")
+    _links = re.findall(r"\]\((/[^)]*|https?://[^)]+)\)", text) + [i["href"] for x in c["body"] if x["type"] == "links" for i in x["items"]]
+    _mine = [h for h in _links if h.startswith("/") or "jiwon.knowhow-it.com" in h]
+    ok(len(_mine) <= 2, f"{key}: 운영 사이트(jiwon) 링크는 2개 이하 — 지금 {len(_mine)}개 {_mine[:4]}")
+    ok(not re.search(r"\]\(/jobs|\]\(/license|\]\(/story", text), f"{key}: 항목·표에 jiwon 링크 없음")
+    ok("K나라지원 자료로 본" not in c["title"], f"{key}: 제목에 운영 사이트 이름 없음")
     orig = {x["text"] for x in posts[key]["body"] if x["type"] == "p"}
     ok(not (orig & {x["text"] for x in c["body"] if x["type"] == "p"}), f"{key}: 원문 문단 복사 없음")
     imgs = [(f"[IMG{i}]", None) for i in range(1, 14)]

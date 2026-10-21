@@ -59,9 +59,17 @@ TIPS: dict[str, str] = {
 }
 
 
+GOJOBS_URL, ALIO_URL = "https://www.gojobs.go.kr", "https://job.alio.go.kr"
+
+
 def src(label: str, href: str) -> dict:
     """출처 한 줄. 사이트 안 주소는 tistory_publish 가 절대 주소로 바꾼다."""
-    return b.P(f"출처: [{label}]({href}) · {BRAND}")
+    return b.P(f"출처: [{label}]({href})")
+
+
+def src_official(tail: str = "") -> dict:
+    """출처는 원 자료(나라일터·잡알리오)로 링크하고 집계한 쪽은 글자로만 — 한 도메인으로 링크가 몰리지 않게."""
+    return b.P(f"출처: [나라일터]({GOJOBS_URL}) · [잡알리오]({ALIO_URL}){tail} · 집계 {BRAND}")
 
 
 def compose(post: dict) -> dict:
@@ -90,9 +98,9 @@ def compose(post: dict) -> dict:
 
     # 들머리 — 짧은 줄 몇 개
     blocks.append(b.P("공공기관 취업 준비를 시작하면 \"어느 직무로 가야 하나\"부터 막힙니다. 정규직 공채만 떠올리기 쉬운데, 실제 공고의 대부분은 공무직·임기제·기간제 같은 수시 채용입니다."))
-    blocks.append(b.P(f"그래서 공고가 **실제로 많이 나오는 직무**를 세어 봤습니다. 자료는 복지·채용 정보를 모아 보여 주는 {BRAND}이 나라일터와 잡알리오 공고를 매일 수집해 분석한 "
-                      f"[최근 1년 직무별 공고 분석]({origin})입니다. 기준일은 {b.kdate(today.isoformat())}입니다."))
-    blocks.append(b.P("순위마다 공고 수, 접수 중인 자리, 자주 뽑는 기관, 접수 기간, 필요한 자격과 준비 방법을 적었습니다. 직무 이름 링크를 누르면 지금 올라와 있는 공고를 바로 볼 수 있습니다."))
+    blocks.append(b.P(f"그래서 공고가 **실제로 많이 나오는 직무**를 세어 봤습니다. 자료는 인사혁신처 나라일터와 기획재정부 잡알리오에 올라온 공고 1년치를 {BRAND}이 매일 모아 센 것입니다. "
+                      f"기준일은 {b.kdate(today.isoformat())}입니다."))
+    blocks.append(b.P("순위마다 공고 수, 접수 중인 자리, 자주 뽑는 기관, 접수 기간, 필요한 자격과 준비 방법을 적었습니다. 원 자료 사이트는 절마다 출처 줄에 있고, 표와 숫자 전체는 참고 문헌의 원문에 있습니다."))
     blocks.append(b.P("채용 인원이 아니라 공고 건수이고, 공고 제목의 낱말로 직무를 나눈 것이라 한 공고가 두 직무에 들 수 있습니다. 그래도 어느 직무가 꾸준히 열리는지 보기에는 충분합니다."))
 
     # 현황
@@ -110,7 +118,7 @@ def compose(post: dict) -> dict:
                       + " 연초와 하반기 초에 공고가 늘어나니, 그 전에 서류 틀을 만들어 두면 접수 기간이 짧은 공고에도 바로 낼 수 있습니다."))
     if months:
         blocks.append(b.BARS([{"label": f"{int(x['m'].split('-')[1])}월", "n": x["n"]} for x in months]))
-    blocks.append(src("지금 접수 중인 공공기관 채용 공고", "/jobs/status/open"))
+    blocks.append(src_official(f" · {b.kdate(today.isoformat())} 기준"))
 
     # 1위 … 10위
     for i, r in enumerate(roles):
@@ -140,17 +148,17 @@ def compose(post: dict) -> dict:
                  f"최근 석 달에는 {b.n(r['n90'])}건({share90}%)으로 뜸한 편이라, 지난해 공고가 몰린 달을 보고 기다리는 편이 낫습니다.")
         blocks.append(b.P(f"**요즘 흐름.** {trend}"))
         blocks.append(b.P(f"**이렇게 준비하세요.** {TIPS.get(key, '공고 본문의 응시 자격과 우대 사항을 먼저 확인하고, 같은 기관의 지난 공고로 전형 방식을 파악하세요.')}"))
-        blocks.append(src(f"{r['name']} 채용 공고 검색 결과", q_url(key)))
+        blocks.append(src_official())
 
     # 비교
     blocks.append(b.H2("직무 TOP10 비교", "compare"))
     blocks.append(b.P("한눈에 비교하면 이렇습니다. 공고 수가 많은 직무일수록 접수 기간은 짧은 편이고, 면허·자격이 필요한 직무일수록 공고 수는 적지만 경쟁이 덜합니다."))
     blocks.append(b.TABLE(["순위", "직무", "최근 1년 공고", "접수 중", "접수 기간", "자격 요건"],
-                          [[f"{i+1}위", f"[{r['name']}]({q_url(r['key'])})", f"{b.n(r['n12'])}건", f"{b.n(r['n_open'])}건",
+                          [[f"{i+1}위", r["name"], f"{b.n(r['n12'])}건", f"{b.n(r['n_open'])}건",
                             f"{int(r['win_med'])}일" if r.get("win_med") is not None else "-",
                             (NOTES.get(r["key"], "").split(". ")[1].rstrip(".") if NOTES.get(r["key"], "").count(". ") >= 1 else "-")]
                            for i, r in enumerate(roles)]))
-    blocks.append(src("직무별 공고 분석 원문", origin))
+    blocks.append(src_official(" · 표의 숫자 전체는 참고 문헌의 원문에"))
 
     # 정리
     blocks.append(b.H2("정리 — 어떤 직무를 노릴까", "wrap"))
@@ -162,15 +170,12 @@ def compose(post: dict) -> dict:
          "**접수 기간**은 직무마다 다르니 마감일보다 하루 먼저 내는 것을 원칙으로 하세요."),
         f"**기관별 주기**를 보면 다음 공고를 예측할 수 있습니다. 공공기관은 같은 자리를 해마다 비슷한 시기에 다시 뽑습니다.",
     ]))
-    blocks.append(b.P(f"공고 검색과 기관별 채용 이력, 자기소개서 작성 가이드는 [{BRAND}]({SITE})에서 무료로 볼 수 있습니다. 조건을 넣으면 받을 수 있는 지원금도 함께 찾아 줍니다."))
+    blocks.append(b.P("실제 지원은 공고를 낸 기관의 접수 창구에서 하고, 공고 원문은 나라일터·잡알리오에서 봅니다. 기관별 채용 이력과 자기소개서 항목 정리는 참고 문헌의 원문 글에 같이 있습니다."))
 
     # 참고 문헌
     blocks.append(b.H2("참고 문헌", "refs"))
     blocks.append(b.LINKS([
-        {"href": origin, "label": f"{BRAND}, 「{post['title']}」 ({today.isoformat()})"},
-        {"href": "/jobs/status/open", "label": f"{BRAND}, 접수 중인 공공기관 채용 공고 (매일 갱신)"},
-        {"href": "/jobs/org", "label": f"{BRAND}, 기관별 채용 이력"},
-        {"href": "/story", "label": f"{BRAND}, 오늘의 공공기관 채용 브리핑"},
+        {"href": origin, "label": f"{BRAND}, 「{post['title']}」 — 표·숫자 전체 ({today.isoformat()})"},
         {"href": GOJOBS, "label": "인사혁신처 나라일터 (원 자료)"},
         {"href": ALIO, "label": "기획재정부 잡알리오 (원 자료)"},
     ]))

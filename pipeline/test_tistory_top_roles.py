@@ -32,6 +32,12 @@ ok(p["summary"] != origin["summary"] and "K나라지원" in p["summary"], "요�
 h2 = [x["text"] for x in p["body"] if x["type"] == "h2"]
 ok(h2[0] == "공공기관 채용 현황은?" and h2[1].startswith("1위 공무직 — 최근 1년 공고 6건") and h2[-1] == "참고 문헌", h2)
 ok(text.count("출처: [") >= 5, f"절마다 출처 줄: {text.count('출처: [')}")
+# 바깥 링크 정책: 출처는 원 자료(나라일터·잡알리오)로, 운영 사이트(jiwon) 링크는 글 전체에 2개 이하 (한 도메인으로 몰리면 검색 점수가 떨어진다)
+import re as _re
+_links = _re.findall(r"\]\((/[^)]*|https?://[^)]+)\)", text)
+_mine = [h for h in _links if h.startswith("/") or "jiwon.knowhow-it.com" in h]
+ok(len(_mine) <= 2, f"jiwon 링크 {len(_mine)}개: {_mine[:5]}")
+ok(sum("gojobs.go.kr" in h for h in _links) >= 5 and sum("alio.go.kr" in h for h in _links) >= 5, "원 자료 사이트로 출처 링크")
 ok("/story/jobs-top10-roles-2026-10" in text and "gojobs.go.kr" in text and "alio.go.kr" in text, "참고 문헌에 원문·원 자료")
 ok("어떤 일인가요?" in text and "이렇게 준비하세요." in text and "요즘 흐름." in text, "항목마다 설명·흐름·준비")
 ok("자격 요건: 시설·청소·조리·사무 보조처럼 하는 일은 공고마다 다르고" in text, "요건 줄은 NOTES 두 번째 문장")

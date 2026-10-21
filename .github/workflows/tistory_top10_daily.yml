@@ -30,6 +30,10 @@ on:
         description: "새 글 대신 이 티스토리 글 번호를 고쳐 쓴다"
         required: false
         type: string
+      topics:
+        description: "여러 주제를 한 실행에서 차례로(쉼표). 밀린 편 따라잡기·고쳐 쓰기용. 같은 달 slug 는 기존 글을 고쳐 쓴다. 이게 있으면 topic/date 는 무시"
+        required: false
+        type: string
   schedule:
     - cron: "0 4 * * *"    # UTC 04:00 = KST 13:00
 
@@ -53,15 +57,42 @@ jobs:
         env:
           TOPIC: ${{ inputs.topic }}
           DATE: ${{ inputs.date }}
+          TOPICS: ${{ inputs.topics }}
         run: |
           d="${DATE:-$(TZ=Asia/Seoul date +%F)}"
-          topic="${TOPIC:-$(python pipeline/top10.py --pick --date "$d")}"
+          if [ -n "$TOPICS" ]; then topic=""; else topic="${TOPIC:-$(python pipeline/top10.py --pick --date "$d")}"; fi
           echo "date=$d" >> "$GITHUB_OUTPUT"
           echo "topic=$topic" >> "$GITHUB_OUTPUT"
           echo "오늘($d) 주제: ${topic:-없음}"
       - name: 주제 없음
-        if: steps.pick.outputs.topic == ''
+        if: steps.pick.outputs.topic == '' && inputs.topics == ''
         run: echo "::notice::오늘(${{ steps.pick.outputs.date }}) 기획표에 주제가 없다. 끝."
+      - name: 여러 주제 차례로(topics)
+        if: inputs.topics != ''
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TISTORY_COOKIE:       ${{ secrets.TISTORY_COOKIE }}
+          TISTORY_CATEGORY:     ${{ vars.TISTORY_CATEGORY }}
+          TOPICS: ${{ inputs.topics }}
+          VISIBILITY: ${{ inputs.visibility || 'public' }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패"
+          fc-cache -f >/dev/null 2>&1 || true
+          [ -f shots/open.png ] || python -u pipeline/shot_pages.py "/jobs/status/open|open|지금 접수 중인 공공기관 채용 공고 (출처: K나라지원)|" || echo "::warning::화면 사진 실패 — 차트만 넣는다"
+          cp shots/open.png /tmp/open.png 2>/dev/null || true
+          for topic in $(echo "$TOPICS" | tr ',' ' '); do
+            echo "::group::$topic"
+            rm -rf shots; mkdir -p shots; cp /tmp/open.png shots/open.png 2>/dev/null || true
+            python -u pipeline/top10.py --topic "$topic" | tee out.txt
+            slug="$(grep '^SLUG=' out.txt | cut -d= -f2-)"
+            python -u pipeline/chart_top10.py --slug "$slug"
+            if [ "$DRY" != "true" ]; then
+              python -u pipeline/tistory_publish.py --slug "$slug" --mode full --visibility "$VISIBILITY" --composer top10 --images shots/manifest.json
+            fi
+            echo "::endgroup::"
+          done
       - name: jiwon 에 순위 글 쓰기
         if: steps.pick.outputs.topic != ''
         id: write

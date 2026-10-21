@@ -68,8 +68,25 @@ WRAP = {
 }
 
 
+BIZINFO = "https://www.bizinfo.go.kr"
+OFFICIAL = [("나라일터", GOJOBS, ("나라일터",)), ("잡알리오", ALIO, ("잡알리오",)), ("큐넷", QNET, ("큐넷",)),
+            ("복지로", BOKJIRO, ("지원사업", "복지")), ("기업마당", BIZINFO, ("기업마당", "기업지원"))]
+
+
+def official_links(source: str) -> list[tuple[str, str]]:
+    """자료 설명 문자열(예: '나라일터·잡알리오 공고')에서 원 자료 사이트를 고른다. 글의 출처 줄은 이 사이트들로 간다."""
+    out = [(name, href) for name, href, keys in OFFICIAL if any(k in source for k in keys)]
+    return out or [("나라일터", GOJOBS), ("잡알리오", ALIO)]
+
+
 def src(label: str, href: str) -> dict:
-    return b.P(f"출처: [{label}]({href}) · {BRAND}")
+    return b.P(f"출처: [{label}]({href})")
+
+
+def src_official(source: str, tail: str = "") -> dict:
+    """출처 줄은 원 자료(공공 사이트)로 하이퍼링크한다. 집계한 쪽(K나라지원)은 글자로만 적는다 — 한 도메인으로 링크가 몰리지 않게."""
+    links = " · ".join(f"[{n}]({h})" for n, h in official_links(source))
+    return b.P(f"출처: {links}{tail} · 집계 {BRAND}")
 
 
 def compose(post: dict) -> dict:
@@ -89,9 +106,9 @@ def compose(post: dict) -> dict:
     tips = {"roles": ROLE_TIPS, "short-window": ROLE_TIPS, "long-window": ROLE_TIPS}.get(topic, {})
 
     title = st["name"].replace("TOP10", "").strip()
-    title = f"{title} 순위 TOP10 | {BRAND} 자료로 본 {today.year}년 현황과 {'직무별 어려운 점·준비 방법' if entity == 'keyword' else '지금 할 수 있는 것'}"
+    title = f"{title} 순위 TOP10 | {today.year}년 현황과 {'직무별 어려운 점·준비 방법' if entity == 'keyword' else '지금 할 수 있는 것'}"
     summary = (f"{source}를 바탕으로 {what} 10개를 순위로 정리했습니다. 1위는 {top['name']} {b.n(top['n'])}{unit}. "
-               f"항목마다 숫자와 요건, {'어려운 점(번아웃·감정노동 같은 심리 요인)과 ' if entity == 'keyword' else ''}지금 할 수 있는 것을 적었고, 자료 출처는 {BRAND}입니다.")
+               f"항목마다 숫자와 요건, {'어려운 점(번아웃·감정노동 같은 심리 요인)과 ' if entity == 'keyword' else ''}지금 할 수 있는 것을 적었습니다. 원 자료는 {' · '.join(n for n, _ in official_links(source))}입니다.")
 
     toc = [("now", "현황은?")] + [(f"r{i+1}", f"{i+1}위 {it['name']}") for i, it in enumerate(items)] \
         + [("compare", f"{what} TOP10 비교"), ("wrap", "정리"), ("sites", "함께 보면 좋은 사이트"), ("refs", "참고 문헌")]
@@ -101,7 +118,7 @@ def compose(post: dict) -> dict:
     if entity == "keyword":
         blocks.append(b.P("순위마다 공고 수와 접수 중인 자리, 자주 뽑는 기관, 접수 기간, 자격 요건을 적었습니다. 그리고 하나 더, **그 일이 왜 힘든지**를 번아웃·감정노동·교대근무 같은 심리학 개념으로 풀었습니다. 들어가기 전에 알면 버티는 방법이 달라집니다."))
     blocks.append(b.P("순위는 " + ("채용 인원이 아니라 공고 건수" if entity in ("keyword", "org", "region") else "지원 금액이 아니라 사업 수" if entity.startswith("welfare") else "최근 연도 필기 응시자 수")
-                      + " 기준입니다. 항목 이름을 누르면 지금 올라와 있는 것을 바로 볼 수 있습니다."))
+                      + " 기준입니다. 원 자료 사이트는 절마다 출처 줄에, 전체 표와 숫자는 참고 문헌에 적었습니다."))
 
     # 현황
     blocks.append(b.H2("현황은?", "now"))
@@ -113,9 +130,7 @@ def compose(post: dict) -> dict:
         blocks.append(b.BARS([{"label": f"{int(x['m'].split('-')[1])}월", "n": x["n"]} for x in months], unit=unit))
     elif ov.get("bars", {}).get("items"):
         blocks.append(b.BARS(ov["bars"]["items"], unit=unit))
-    blocks.append(src({"keyword": "지금 접수 중인 공공기관 채용 공고", "org": "기관별 채용 이력", "region": "지역별 채용 공고",
-                       "welfare_region": "조건으로 찾는 지원사업", "welfare_topic": "분야별 지원사업", "license": "자격증 시험 일정·합격률"}[entity],
-                      {"keyword": "/jobs/status/open", "org": "/jobs/org", "region": "/jobs", "welfare_region": "/", "welfare_topic": "/", "license": "/license"}[entity]))
+    blocks.append(src_official(source, f" · {b.kdate(today.isoformat())} 기준"))
 
     # 1위 … 10위
     for i, it in enumerate(items):
@@ -154,27 +169,27 @@ def compose(post: dict) -> dict:
                                               f"최근 석 달에 {b.n(it['n90'])}건({s90}%)으로 한 해 내내 꾸준히 열립니다." if s90 >= 20 else
                                               f"최근 석 달에는 {b.n(it['n90'])}건({s90}%)으로 뜸한 편이라 몰리는 달을 기다리는 편이 낫습니다.")))
         blocks.append(b.P(f"**이렇게 준비하세요.** {tips.get(it['key'], PREP[entity])}"))
-        blocks.append(src(it["link_label"], it["link"]))
+        blocks.append(src_official(source))
 
     # 비교
     blocks.append(b.H2(f"{what} TOP10 비교", "compare"))
     blocks.append(b.P(f"한눈에 보면 이렇습니다. 상위 세 항목이 전체의 **{b.pct(sum(i['n'] for i in items[:3]), total)}%**입니다." if total else "한눈에 보면 이렇습니다."))
     if entity in ("keyword", "org", "region"):
         blocks.append(b.TABLE(["순위", what, "최근 1년 공고", "접수 중", "접수 기간"],
-                              [[f"{i+1}위", f"[{it['name']}]({it['link']})", f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{int(it['win_med'])}일" if it.get("win_med") is not None else "-"] for i, it in enumerate(items)]))
+                              [[f"{i+1}위", it["name"], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{int(it['win_med'])}일" if it.get("win_med") is not None else "-"] for i, it in enumerate(items)]))
     elif entity.startswith("welfare"):
         blocks.append(b.TABLE(["순위", what, "사업 수", "신청 가능", "상시", "현금"],
-                              [[f"{i+1}위", f"[{it['name']}]({it['link']})", f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{b.n(it['always'])}건", f"{b.n(it['cash'])}건"] for i, it in enumerate(items)]))
+                              [[f"{i+1}위", it["name"], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{b.n(it['always'])}건", f"{b.n(it['cash'])}건"] for i, it in enumerate(items)]))
     else:
         blocks.append(b.TABLE(["순위", "종목", "필기 응시자", "필기 합격률", "실기 합격률"],
-                              [[f"{i+1}위", f"[{it['name']}]({it['link']})", f"{b.n(it['n'])}명", f"{int(it['w_rate'])}%" if it.get("w_rate") is not None else "-", f"{int(it['p_rate'])}%" if it.get("p_rate") is not None else "-"] for i, it in enumerate(items)]))
-    blocks.append(src("순위 원문(표·숫자 전체)", origin))
+                              [[f"{i+1}위", it["name"], f"{b.n(it['n'])}명", f"{int(it['w_rate'])}%" if it.get("w_rate") is not None else "-", f"{int(it['p_rate'])}%" if it.get("p_rate") is not None else "-"] for i, it in enumerate(items)]))
+    blocks.append(src_official(source, " · 표의 숫자 전체는 참고 문헌의 원문에"))
 
     # 정리
     blocks.append(b.H2("정리", "wrap"))
     blocks.append(b.LIST(WRAP[entity]))
-    blocks.append(b.P(f"공고 검색과 기관별 채용 이력, 조건에 맞는 지원사업 찾기는 [{BRAND}]({SITE})에서 무료로 할 수 있습니다. "
-                      f"일이 힘든 이유를 심리학으로 풀어 보고 싶다면 [jeepedia 심리 테스트]({PSY['burnout']['href'].rsplit('/', 2)[0]}/)도 함께 보세요."))
+    blocks.append(b.P("실제 지원·신청은 아래 공식 사이트에서 하고, 일이 힘든 이유를 심리학으로 풀어 보고 싶다면 "
+                      f"[jeepedia 심리 테스트]({PSY['burnout']['href'].rsplit('/', 2)[0]}/)도 함께 보세요."))
 
     # 함께 보면 좋은 사이트 — 공식 자료 + 운영 사이트
     blocks.append(b.H2("함께 보면 좋은 사이트", "sites"))
@@ -186,16 +201,13 @@ def compose(post: dict) -> dict:
 
     # 참고 문헌
     blocks.append(b.H2("참고 문헌", "refs"))
-    refs = [{"href": origin, "label": f"{BRAND}, 「{post['title']}」 ({today.isoformat()})"}]
+    refs = [{"href": origin, "label": f"{BRAND}, 「{post['title']}」 — 표·숫자 전체 ({today.isoformat()})"}]   # 운영 사이트 링크는 여기 한 번
     if entity in ("keyword", "org", "region"):
-        refs += [{"href": "/jobs/status/open", "label": f"{BRAND}, 접수 중인 공공기관 채용 공고 (매일 갱신)"},
-                 {"href": "/jobs/org", "label": f"{BRAND}, 기관별 채용 이력"},
-                 {"href": GOJOBS, "label": "인사혁신처 나라일터 (원 자료)"}, {"href": ALIO, "label": "기획재정부 잡알리오 (원 자료)"}]
+        refs += [{"href": GOJOBS, "label": "인사혁신처 나라일터 (원 자료)"}, {"href": ALIO, "label": "기획재정부 잡알리오 (원 자료)"}]
     elif entity.startswith("welfare"):
-        refs += [{"href": SITE, "label": f"{BRAND}, 조건으로 찾는 지원사업"}, {"href": BOKJIRO, "label": "보건복지부 복지로 (원 자료)"},
-                 {"href": "https://www.bizinfo.go.kr", "label": "중소벤처기업부 기업마당 (원 자료)"}]
+        refs += [{"href": BOKJIRO, "label": "보건복지부 복지로 (원 자료)"}, {"href": BIZINFO, "label": "중소벤처기업부 기업마당 (원 자료)"}]
     else:
-        refs += [{"href": "/license", "label": f"{BRAND}, 자격증 시험 일정·합격률"}, {"href": QNET, "label": "한국산업인력공단 큐넷 수험자 동향 (원 자료)"}]
+        refs += [{"href": QNET, "label": "한국산업인력공단 큐넷 수험자 동향 (원 자료)"}]
     used = sorted({k for it in items for k in ((hard_for(topic, it["key"]) or {}).get("psy") or [])})
     refs += psy_links(used)
     if entity == "keyword":
