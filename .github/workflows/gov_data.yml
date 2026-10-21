@@ -1,0 +1,73 @@
+name: gov-data
+
+# 공공기관 정보(잡알리오)·정부/지자체 누리집(정부24)·지역 인구(KOSIS)를 받아 DB 에 쓰고,
+# 시·군·구청 청사 좌표(web/lib/govOfficeData.ts)는 브랜치에 커밋한다.
+# 필요한 secret: SUPABASE_URL, SUPABASE_SERVICE_KEY, KOSIS_KEY
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "orgs(공공기관) | sites(누리집) | kosis(인구) | offices(청사 좌표 → 커밋) | all"
+        default: "all"
+        type: string
+      arg:
+        description: "스크립트 인자(--dry 등)"
+        required: false
+        type: string
+  schedule:
+    - cron: "40 20 * * 0"    # 매주 일 20:40 UTC(월 05:40 KST): orgs·sites·kosis
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: gov-data
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      KOSIS_KEY:            ${{ secrets.KOSIS_KEY }}
+      MODE: ${{ inputs.mode || 'all' }}
+      ARG: ${{ inputs.arg }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python pipeline/test_public_orgs.py && python pipeline/test_gov_data.py
+      - name: 공공기관 정보
+        if: env.MODE == 'orgs' || env.MODE == 'all'
+        run: python -u pipeline/public_orgs.py $ARG
+      - name: 정부/지자체 누리집
+        if: env.MODE == 'sites' || env.MODE == 'all'
+        run: python -u pipeline/gov_sites.py $ARG
+      - name: 지역 인구(KOSIS)
+        if: env.MODE == 'kosis' || env.MODE == 'all'
+        run: python -u pipeline/kosis_stats.py $ARG
+      - name: 청사 좌표
+        if: env.MODE == 'offices'
+        run: python -u pipeline/geocode_offices.py $ARG
+      - name: 커밋(청사 좌표)
+        if: env.MODE == 'offices'
+        run: |
+          git config user.name yonghyeonjee
+          git config user.email yonghyeonjee@gmail.com
+          git add -A web/lib/govOfficeData.ts
+          git diff --cached --quiet && echo "바뀐 것 없음" && exit 0
+          git commit -m "시·군·구청 청사 좌표 갱신(pipeline/geocode_offices.py)" -m "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_011fqhUoNW2N29bNtSknpq6g"
+          # 좌표를 찾는 몇 분 사이 main 이 움직였을 수 있다(2026-10-21 첫 실행이 그래서 밀렸다).
+          git pull --rebase origin "${GITHUB_REF_NAME:-main}"
+          git push
+      # GITHUB_TOKEN 으로 민 커밋은 다른 워크플로를 깨우지 않는다 — 배포를 직접 부른다(2026-10-21).
+      - name: 배포 부르기(청사 좌표)
+        if: env.MODE == 'offices'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy_aws.yml --ref "${GITHUB_REF_NAME:-main}" || echo "배포를 못 불렀다 — Actions 에서 deploy-aws 를 손으로 실행할 것"

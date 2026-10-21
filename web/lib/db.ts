@@ -72,6 +72,18 @@ export const dbLive = dbConfigured
     })
   : db;
 
+/**
+ * 데이터 캐시를 60초만 쓰는 같은 클라이언트(2026-10-21). revalidate 쪽에서 "없음" 결과를 다시 읽을 때 쓴다.
+ * 이 조회가 섞인 렌더는 쪽 캐시도 60초로 짧아진다(Next 는 fetch 의 next.revalidate 가 쪽보다 짧으면 쪽을 거기에
+ * 맞춘다). no-store 는 쓸 수 없다 — ISR 쪽은 실행 중에 동적으로 바뀌지 못해 "static to dynamic" 500 이 난다.
+ */
+export const dbShort = dbConfigured
+  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+      global: { fetch: buildWithoutDb ? emptyDbFetch : (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...withTimeout(init), next: { revalidate: 60 } }) },
+    })
+  : db;
+
 export type Program = {
   id: number;
   kind: "welfare" | "business" | "event";

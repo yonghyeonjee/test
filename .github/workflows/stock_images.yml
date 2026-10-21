@@ -35,6 +35,7 @@ jobs:
         run: |
           git config user.name yonghyeonjee
           git config user.email yonghyeonjee@gmail.com
+          mkdir -p web/public/img/story
           git add -A stock web/public/img/story
           git diff --cached --quiet && echo "바뀐 것 없음" && exit 0
           git commit -m "스톡 사진 ${{ inputs.mode }}: ${{ inputs.arg }}" -m "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_011fqhUoNW2N29bNtSknpq6g"

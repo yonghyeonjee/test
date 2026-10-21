@@ -120,14 +120,19 @@ for key in ("civil", "welfare-sido", "license-applicants"):
 # 기획표: 30일, 날짜 연속, 주제가 전부 등록돼 있다
 plan = json.loads(t.PLAN_FILE.read_text(encoding="utf-8"))
 dates = [dt.date.fromisoformat(p["date"]) for p in plan]
-ok(len(plan) == 31 and all((dates[i+1] - dates[i]).days == 1 for i in range(30)), "31일 연속(10-21 은 연재 쉼)")
+ok(len(plan) == 30 and all((dates[i+1] - dates[i]).days == 1 for i in range(29)), "30일 연속")
 ok(all(p["topic"] in t.TOPICS or p["topic"] == "" for p in plan), f"미등록 주제: {[p['topic'] for p in plan if p['topic'] not in t.TOPICS]}")
 ok(plan[0] == {"date": "2026-10-18", "topic": "civil"}, "첫날은 공무 직군")
-ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "" and t.plan_for(dt.date(2026, 10, 22))["topic"] == "regions", "10-21 은 쉼(전세계 인터넷 속도 글), regions 는 10-22 로")
-ok(sum(1 for p in plan if p["topic"]) == 30 and len({p["topic"] for p in plan if p["topic"]}) == 30, "주제 30개는 그대로 하루씩 밀렸다")
-# 기획표가 끝난 뒤: 순환 (쉼 날은 순환 순서에 들어가지 않는다)
-ok(t.plan_for(dt.date(2026, 11, 18))["topic"] == "civil" and t.plan_for(dt.date(2027, 1, 1))["topic"] in t.TOPICS, f"기획표 뒤는 순환: {t.plan_for(dt.date(2026, 11, 18))}")
-ok("" not in [t.plan_for(dt.date(2026, 11, 18) + dt.timedelta(days=i))["topic"] for i in range(40)], "순환에 빈 주제는 없다")
+ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "regions" and len({p["topic"] for p in plan}) == 30, "주제 30개, 10-21 은 regions")
+# 기획표가 끝난 뒤: 순환. 기획표에 topic "" 인 날(연재 쉼)이 있어도 순환 순서에는 들어가지 않는다
+ok(t.plan_for(dt.date(2026, 11, 17)) == {"date": "2026-11-17", "topic": "orgs", "rotation": True}, f"31일째는 기획표에 없던 orgs: {t.plan_for(dt.date(2026, 11, 17))}")
+ok(t.plan_for(dt.date(2026, 11, 18))["topic"] == "civil" and t.plan_for(dt.date(2027, 1, 1))["topic"] in t.TOPICS, "그다음은 civil 부터 다시, 끝없이")
+_orig = t.PLAN_FILE.read_text(encoding="utf-8")
+try:
+    _p = json.loads(_orig); _p.insert(3, {"date": "2026-10-21", "topic": ""}); t.PLAN_FILE.write_text(json.dumps(_p), encoding="utf-8")
+    ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "" and "" not in [t.plan_for(dt.date(2026, 11, 18) + dt.timedelta(days=i))["topic"] for i in range(40)], "쉼 날은 빈 주제, 순환엔 안 들어간다")
+finally:
+    t.PLAN_FILE.write_text(_orig, encoding="utf-8")
 ok(t.plan_for(dt.date(2026, 10, 1)) is None, "기획표 시작 전엔 없음")
 
 print("실패 %d" % bad if bad else "모두 통과")

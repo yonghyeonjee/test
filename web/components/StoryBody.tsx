@@ -21,6 +21,15 @@ export default function StoryBody({ blocks }: { blocks: Block[] }) {
             return <p key={i} className="mt-4 text-[16px] leading-[1.9] text-ink2 sm:text-[16.5px]"><Inline text={b.text} /></p>;
           case "note":
             return <p key={i} className="mt-6 text-xs leading-relaxed text-muted"><Inline text={b.text} /></p>;
+          case "img":
+            // 사진은 글 폭에 맞춰 둥글게. 출처가 있으면 아래 작은 글씨로(CC 사진은 표시가 조건이다).
+            return (
+              <figure key={i} className="mt-6">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={b.src} alt={b.alt} loading="lazy" className="w-full rounded-card object-cover" />
+                {b.caption && <figcaption className="mt-2 text-xs leading-relaxed text-muted">{b.caption}</figcaption>}
+              </figure>
+            );
           case "list":
             return (
               <ul key={i} className="mt-4 space-y-2 text-[16px] leading-[1.85] text-ink2">

@@ -1,4 +1,4 @@
-import { db, dbConfigured } from "./db";
+import { db, dbConfigured, dbShort } from "./db";
 
 /**
  * 블로그 글. 두 가지가 있다.
@@ -14,7 +14,9 @@ export type Block =
   | { type: "table"; head: string[]; rows: string[][] }
   | { type: "bars"; items: { label: string; n: number }[]; unit?: string }
   | { type: "links"; items: { href: string; label: string }[] }
-  | { type: "note"; text: string };
+  | { type: "note"; text: string }
+  /** 사진. src 는 /img/story/… 같은 사이트 안 경로. 출처는 web/public/img/story/credits.json 에 두고 caption 에 적는다. */
+  | { type: "img"; src: string; alt: string; caption?: string };
 
 export type Story = {
   slug: string;
@@ -30,7 +32,7 @@ export type Story = {
 
 export const KIND_LABEL: Record<string, string> = {
   topic: "지원 주제", org: "기관별 채용", role: "직무별 채용", region: "지역 현황",
-  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "오늘의 채용 브리핑",
+  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "오늘의 채용 브리핑", case: "실제 사례",
 };
 
 const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated_at";
@@ -42,7 +44,8 @@ const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated
  *  - 순위 연재(top10-…)는 티스토리에 같은 틀로 따로 내는 글이라 여기서는 색인하지 않는다.
  * 쪽은 그대로 열리고 링크는 따라간다(noindex,follow).
  */
-const INDEX_KINDS = new Set(["org", "role", "license"]);
+// case: 사람이 쓴 사례 글(2026-10-20 전세대출 연재부터). 자동 글이 아니라 색인한다.
+const INDEX_KINDS = new Set(["org", "role", "license", "case"]);
 export function storyIndexable(s: Pick<Story, "kind" | "slug">): boolean {
   return INDEX_KINDS.has(s.kind) && !s.slug.startsWith("top10-");
 }
@@ -77,7 +80,14 @@ export async function getStoryStrict(slug: string): Promise<Story | null> {
   if (!dbConfigured) return null;
   const { data, error } = await db.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
   if (error) throw new Error(`[getStory ${slug}] ${error.message}`);
-  return (data as Story | null) ?? null;
+  if (data) return data as Story;
+  // 없다고 나오면 60초짜리 캐시로 한 번 더 본다(2026-10-21). 예약 글(published_at 이 내일)은 공개 전에 크롤러가
+  // 들르면 빈 조회 결과와 404 쪽이 한 시간씩 캐시에 남아 공개 뒤에도 404 가 나왔다(전세대출 연재 2편).
+  // 이 조회가 섞이면 이 렌더의 쪽 캐시도 60초로 짧아져 404 가 오래 굳지 않는다. no-store 나 noStore() 는
+  // 안 된다 — ISR 쪽은 실행 중에 동적으로 못 바뀌어 "static to dynamic" 500 이 났다(#257, #258).
+  const live = await dbShort.from("blog_public").select(COLS).eq("slug", slug).limit(1).maybeSingle();
+  if (live.error) throw new Error(`[getStory ${slug}] ${live.error.message}`);
+  return (live.data as Story | null) ?? null;
 }
 
 /** 통합 검색용. 제목·요약에 낱말이 든 글. */

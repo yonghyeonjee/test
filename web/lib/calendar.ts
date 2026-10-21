@@ -6,13 +6,13 @@ import { getExamRounds } from "./qnetExam";
 
 /**
  * 마감 달력(/calendar)의 자료. 지원사업 마감(programs_public.apply_end), 채용 마감(job_posts.end_date),
- * 자격시험 일정(exam_rounds)을 날짜별로 센다. 세는 함수는 sql/013_deadline_calendar.sql.
+ * 자격시험 일정(exam_rounds)을 날짜별로 센다. 세는 함수는 sql/016_deadline_calendar_conditions.sql(_v3, 내 조건·갈래까지).
  *
  * 지역을 고르면 그 시·도(와 시·군·구) 것과 전국 것만 남는다. 채용 공고의 지역은 자유 글("경기도 수원시")이라
  * 짧은 이름("경기")이 들어 있는지로 거른다. 시험 일정은 전국 공통이라 지역과 상관없다.
  */
 export type DayCount = { p: number; job: number; exam: number };
-export type DayItem = { kind: "p" | "job"; id: string; title: string; org: string | null; place: string; start: string | null };
+export type DayItem = { kind: "p" | "job"; id: string; title: string; org: string | null; place: string; start: string | null; /** 지원사업 갈래. */ pkind?: "welfare" | "business" | null };
 export type ExamItem = { title: string; start: string; end: string | null; url?: string };
 
 export const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -33,12 +33,19 @@ export function monthRange(ym: string): { from: string; to: string } {
 
 const short = (sido?: string | null) => (sido ? SIDO_SHORT[sido] ?? sido.slice(0, 2) : null);
 
-export async function deadlineDays(from: string, to: string, sido?: string | null, sigungu?: string | null): Promise<Record<string, DayCount>> {
+/** 내 조건(첫 화면과 같은 것). 지원사업에만 건다 — 채용은 나이·가구 조건이 없다. */
+export type CalCond = { age?: number | null; emp?: string | null; hh?: string[]; /** 지원사업 갈래(welfare·business). 비우면 둘 다. */ kinds?: ("welfare" | "business")[] };
+const condArgs = (c?: CalCond) => ({
+  p_age: c?.age ?? null, p_employment: c?.emp || null, p_household: c?.hh?.length ? c.hh : null,
+  p_kinds: c?.kinds?.length ? c.kinds : null,
+});
+
+export async function deadlineDays(from: string, to: string, sido?: string | null, sigungu?: string | null, cond?: CalCond): Promise<Record<string, DayCount>> {
   const out: Record<string, DayCount> = {};
   if (!dbConfigured) return out;
   try {
-    const { data, error } = await db.rpc("deadline_days", {
-      p_from: from, p_to: to, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null,
+    const { data, error } = await db.rpc("deadline_days_v3", {
+      p_from: from, p_to: to, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null, ...condArgs(cond),
     });
     if (error) throw error;
     for (const r of (data ?? []) as { d: string; kind: "p" | "job"; n: number }[]) {
@@ -51,19 +58,19 @@ export async function deadlineDays(from: string, to: string, sido?: string | nul
   return out;
 }
 
-export async function deadlineItems(day: string, sido?: string | null, sigungu?: string | null): Promise<DayItem[]> {
+export async function deadlineItems(day: string, sido?: string | null, sigungu?: string | null, cond?: CalCond): Promise<DayItem[]> {
   if (!dbConfigured) return [];
   try {
-    const { data, error } = await db.rpc("deadline_items", {
-      p_day: day, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null, p_limit: 150,
+    const { data, error } = await db.rpc("deadline_items_v3", {
+      p_day: day, p_sido: sido ?? null, p_sido_short: short(sido), p_sigungu: sigungu ?? null, p_limit: 150, ...condArgs(cond),
     });
     if (error) throw error;
-    type Row = { kind: "p" | "job"; id: string; title: string; org: string | null; place: string; start_date: string | null };
+    type Row = { kind: "p" | "job"; id: string; title: string; org: string | null; place: string; start_date: string | null; pkind: "welfare" | "business" | null };
     // 채용은 공고 번호(source_id)로 잇는다. sql/013 판은 job_posts.id("gojobs:305694")를 돌려줘 달력의 채용
     // 링크가 전부 "내려간 공고"로 갔다(2026-10-17, sql/014 로 고침). DB 함수가 어느 판이든 맞게 나오도록
     // 앞머리를 떼고, 상세 쪽이 없는 해외채용(worldjob) 줄은 뺀다.
     return ((data ?? []) as Row[]).flatMap((r): DayItem[] => {
-      if (r.kind !== "job") return [{ kind: r.kind, id: r.id, title: r.title, org: r.org, place: r.place, start: r.start_date }];
+      if (r.kind !== "job") return [{ kind: r.kind, id: r.id, title: r.title, org: r.org, place: r.place, start: r.start_date, pkind: r.pkind }];
       const m = /^(gojobs|alio|worldjob):(.+)$/.exec(r.id);
       if (m?.[1] === "worldjob") return [];
       return [{ kind: r.kind, id: m ? m[2] : r.id, title: r.title, org: r.org, place: r.place, start: r.start_date }];

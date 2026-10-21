@@ -18,6 +18,7 @@
 import { getAreas, getTopSourceIds } from "./db";
 import { KIND_KEYS, SIDO_SITEMAP_MIN, WHO_KEYS, housingCounts, housingPath, sidosFor } from "./housing";
 import { POSTS } from "./posts";
+import { getPublicOrgs } from "./govData";
 import { getStories, storyIndexable } from "./stories";
 import { ORG_INDEX_MIN, getJobHires, getJobRegions, getOrgRecentCounts, getTopJobIds, getTopOrgs } from "./pubJobs";
 import { LICENSE_DEMAND_MIN, getLicenses, licenseApplicants, licenseIndexable } from "./qnet";
@@ -28,7 +29,7 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://jiwon.knowhow-it.com";
 export type Freq = "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 export type Entry = { url: string; lastModified?: Date; changeFrequency?: Freq; priority?: number };
 
-export const SITEMAP_SECTIONS = ["pages", "programs", "jobs", "licenses", "housing", "posts"] as const;
+export const SITEMAP_SECTIONS = ["pages", "programs", "jobs", "licenses", "housing", "posts", "orgs"] as const;
 export type Section = (typeof SITEMAP_SECTIONS)[number];
 
 /** <lastmod> 에 넣을 날짜. 값이 없거나 이상하면 아예 안 적는다 — 틀린 날짜는 없는 것만 못하다. */
@@ -63,6 +64,7 @@ function pages(): Entry[] {
     e("/agency", "daily", 0.8),
     e("/agency/events", "daily", 0.7),
     e("/agency/facilities", "weekly", 0.7),
+    e("/orgs", "weekly", 0.8),
     e("/free", "monthly", 0.7),
     e("/business/search", "weekly", 0.8),
     e("/map", "daily", 0.8),
@@ -148,7 +150,12 @@ async function posts(): Promise<Entry[]> {
   ];
 }
 
-const BUILDERS: Record<Section, () => Entry[] | Promise<Entry[]>> = { pages, programs, jobs, licenses, housing, posts };
+/** 공공기관 상세(2026-10-21). 잡알리오 지정 공공기관 342곳 — 손으로 고른 자료가 아니라 전부 올린다. */
+async function orgs(): Promise<Entry[]> {
+  return (await getPublicOrgs()).map((o) => e(`/orgs/${o.id}`, "monthly", 0.6));
+}
+
+const BUILDERS: Record<Section, () => Entry[] | Promise<Entry[]>> = { pages, programs, jobs, licenses, housing, posts, orgs };
 
 /** 한 갈래의 주소 목록. DB 를 못 읽으면 빈 목록 — 사이트맵 하나 때문에 전체가 깨지지 않게. */
 export async function sectionEntries(name: Section): Promise<Entry[]> {

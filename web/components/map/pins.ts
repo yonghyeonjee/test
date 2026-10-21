@@ -14,7 +14,7 @@ import type { MapItem, MapPointLite } from "@/lib/mapData";
  * 어느 단계든 이름표는 화면에서 서로 겹치지 않는 것만 단다(pickLabels) — 건수 많은
  * 곳부터 자리를 잡고, 자리가 없는 곳은 작은 동그라미가 된다. 지도를 움직이면 다시 고른다.
  */
-export type Kind = "programs" | "jobs";
+export type Kind = "programs" | "jobs" | "orgs";
 export type Tier = "far" | "near" | "dong";
 
 export type Pin = {
@@ -30,7 +30,8 @@ export type Pin = {
   nB: number;
   approx: boolean;
   kind: Kind;
-  level: "sido" | "sgg" | "dong";
+  /** org: 관공서·공공기관의 실제 위치(2026-10-21). 시·군·구 가운데가 아니라 청사·사무실 좌표다. */
+  level: "sido" | "sgg" | "dong" | "org";
   sido: string;
   sigungu: string | null;
   more: string;
@@ -44,6 +45,10 @@ export type Pin = {
   office?: boolean;
   /** 동 핀이 속한 시·군·구의 공고 수(카드의 "○○시 공고 N건 보기"). */
   sggN?: number;
+  /** 검색 결과 번호. 왼쪽 목록의 번호와 핀의 번호가 같다(1부터). */
+  num?: number;
+  /** 관공서·공공기관 핀: 갈래(공기업·준정부기관·기타공공기관·시청·구청…), 주소, 공공기관이면 id(/orgs/<id>). */
+  org?: { group: string; address: string; id: string | null };
 };
 
 /** 전국(제주 포함, 울릉도 빼고) 범위: [남서, 북동]. 첫 화면의 작은 지도가 이만큼을 담는다. */
@@ -58,9 +63,13 @@ export const tierOfLevel = (lv: number): Tier => (lv >= 11 ? "far" : lv >= 9 ? "
 
 /** 이 단계에서 그릴 핀. 동네 단계에서는 시·군·구 핀 위에 동 핀(extra)을 더한다. */
 export function visiblePins(pins: Pin[], extra: Pin[], tier: Tier): Pin[] {
-  if (tier === "far" && pins.length > 1) return sidoPins(pins);
-  if (tier === "dong") return [...pins, ...extra];
-  return pins;
+  // 관공서·공공기관 핀(org)은 부르는 쪽(PolicyMap)이 이미 "지금 보여도 되는 것"만 넘긴다 — 검색 결과거나
+  // 보이는 범위 안이 많지 않을 때. 어느 단계든 그대로 그린다. 동·센터 핀은 동네 단계에서만.
+  const orgs = extra.filter((e) => e.level === "org");
+  const rest = extra.filter((e) => e.level !== "org");
+  if (tier === "far") return [...(pins.length > 1 ? sidoPins(pins) : pins), ...orgs];
+  if (tier === "dong") return [...pins, ...rest, ...orgs];
+  return [...pins, ...orgs];
 }
 
 /** 화면에 보이는 범위. 엔진이 움직임이 멎을 때마다 알린다. */
@@ -73,8 +82,10 @@ type Box = { l: number; r: number; t: number; b: number };
 
 /** 이름표 상자(px). 글꼴 12.5px 기준 한글 한 자 ≈ 12.5px. k 는 작은 이름표(첫 화면 지도) 배율. */
 function labelBox(p: Pin, xy: XY, pos: Pos, k = 1): Box {
-  const w = (24 + p.short.length * (p.level === "dong" ? 12.4 : 13.4) + (p.level === "dong" ? 14 : 0)
-    + (p.n > 0 ? 12 + String(p.n).length * 7.8 : 0)) * k;
+  const small = p.level === "dong" || p.level === "org";
+  const w = (24 + p.short.length * (small ? 12.4 : 13.4) + (p.level === "dong" ? 14 : 0)
+    + (p.num ? 10 + String(p.num).length * 8 : 0)
+    + (p.n > 0 && p.level !== "org" ? 12 + String(p.n).length * 7.8 : 0)) * k;
   const h = 26 * k, g = 6;
   switch (pos) {
     case "tip": return { l: xy.x - w / 2, r: xy.x + w / 2, t: xy.y - h - 9, b: xy.y };
@@ -102,7 +113,8 @@ export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { 
   // 화면 가운데에 선 동(고른 동·내 위치의 동)은 시·군·구 이름표보다도 먼저 — 시·군·구 이름표가 그 자리를 덮었다.
   let mid: string | null = null, midD = 60 * 60;
   for (const p of pins) if (p.level === "dong" && far(p) < midD) { mid = p.key; midD = far(p); }
-  const rank = (p: Pin) => (p.key === mid ? -1 : p.level === "dong" ? (p.n > 0 ? 1 : 2) : 0);
+  // 번호 있는 핀(검색 결과)은 어떤 핀보다 먼저 이름표를 받는다 — 목록의 번호와 지도의 번호가 맞아야 한다.
+  const rank = (p: Pin) => (p.num ? -2 : p.key === mid ? -1 : p.level === "dong" ? (p.n > 0 ? 1 : 2) : p.level === "org" ? 1 : 0);
   const order = [...pins].sort((a, b) =>
     a.key === selected ? -1 : b.key === selected ? 1 : rank(a) - rank(b) || (rank(a) === 2 ? far(a) - far(b) : b.n - a.n));
   const taken: Box[] = [];
@@ -133,6 +145,9 @@ export function pickLabels(pins: Pin[], project: (p: Pin) => XY | null, size: { 
  */
 export const drawnPins = (list: Pin[], show: Map<string, Pos>, selected: string | null, onlyLabeled = false) =>
   list.filter((p) => (onlyLabeled ? show.has(p.key) : p.level !== "dong" || show.has(p.key) || p.n > 0) || p.key === selected);
+
+/** 번호 배지(검색 결과). 핀 왼쪽에 검은 네모 숫자 — 왼쪽 목록의 번호와 같다. */
+const numHtml = (p: Pin) => (p.num ? `<em class="pm-num">${p.num}</em>` : "");
 
 /** 첫 화면의 작은 전국 지도(overview): 이름표를 줄여(OV_K) 더 많이 세우고, 이름표 못 단 핀은 그리지 않는다. */
 export const OV_K = 0.84;
@@ -171,6 +186,14 @@ const fmtN = (n: number) => n.toLocaleString("ko-KR");
  */
 export function pinHtml(p: Pin, tier: Tier, pos: Pos | undefined, selected = false): string {
   const labeled = pos !== undefined;
+  if (p.level === "org") {
+    // 관공서·공공기관의 실제 위치. 이름표 자리가 없으면 남색 점(번호가 있으면 번호만).
+    const office = /청$/.test(p.org?.group ?? "");
+    const cls = ["pm-pin", "pm-org", office ? "pm-org-office" : "", labeled ? "pm-at-tip" : "pm-orgdot", selected ? "pm-sel" : ""].filter(Boolean).join(" ");
+    const title = esc(`${p.label}${p.org?.address ? ` · ${p.org.address}` : ""}`);
+    if (!labeled) return `<div class="${cls}" title="${title}">${numHtml(p)}</div>`;
+    return `<div class="${cls}" title="${title}">${numHtml(p)}<b>${esc(p.short)}</b></div>`;
+  }
   if (p.level === "dong") {
     // 동네 단계의 동·센터·청사 핀. 이름표 자리가 없으면 작은 회색 점.
     const cls = ["pm-pin", "pm-dong", p.office ? "pm-office" : "", p.n > 0 ? "pm-dong-has" : "",
@@ -191,7 +214,7 @@ export function pinHtml(p: Pin, tier: Tier, pos: Pos | undefined, selected = fal
 
 /** 카드가 핀을 가리지 않게 핀 위로 띄우는 거리(px). */
 export const cardLift = (p: Pin, tier: Tier, labeled: boolean) =>
-  tier === "far" || p.level === "sido" || !labeled ? 18 : p.level === "dong" ? 34 : 40;
+  tier === "far" || p.level === "sido" || !labeled ? 18 : p.level === "dong" || p.level === "org" ? 34 : 40;
 
 /**
  * 동·센터·청사 핀의 카드. 공고 목록이 아니라 "찾아가는 곳" 카드다 — 이름, 어느 동인지,
@@ -228,8 +251,30 @@ function dongCardHtml(p: Pin, items: MapItem[] | null, opts: { close?: boolean }
     btn + `</div>`;
 }
 
+/**
+ * 관공서·공공기관 핀의 카드(2026-10-21). 이름, 갈래, 주소, 기준에서 거리, 길찾기. 공공기관은 상세(/orgs/<id>)와
+ * 채용 이력(/jobs/org/<이름>)로, 청사는 그 시·도 지원금 쪽으로 잇는다.
+ */
+function orgCardHtml(p: Pin, opts: { close?: boolean }): string {
+  const o = p.org ?? { group: "", address: "", id: null };
+  const links = mapLinks(o.address ? `${p.label} ${o.address}` : p.label);
+  const dist = p.km !== null && p.km >= 0.05 ? `<div class="pm-dist">기준에서 <b>${fmtKm(p.km)}</b> (직선거리)</div>` : "";
+  const where = [SIDO_SHORT[p.sido] ?? p.sido, p.sigungu].filter(Boolean).join(" ");
+  const btns = o.id
+    ? `<a class="pm-btn pm-btn-primary" href="/orgs/${encodeURIComponent(o.id)}">기관 정보 →</a><a class="pm-btn" href="/jobs/org/${encodeURIComponent(p.label)}">채용 이력</a>`
+    : `<a class="pm-btn pm-btn-primary" href="/area/${encodeURIComponent(p.sido)}">${esc(SIDO_SHORT[p.sido] ?? p.sido)} 지원금 보기 →</a>`;
+  return `<div class="pm-card pm-dcard">` +
+    (opts.close ? '<button type="button" class="pm-close" data-close aria-label="닫기">×</button>' : "") +
+    `<b class="pm-title">${p.num ? `<em class="pm-num">${p.num}</em> ` : ""}${esc(p.label)}</b>` +
+    `<div class="pm-meta">${esc([o.group, where].filter(Boolean).join(" · "))}</div>` +
+    (o.address ? `<div class="pm-meta">${esc(o.address)}</div>` : "") + dist +
+    `<div class="pm-nav"><a href="${links.naver}" target="_blank" rel="noopener">네이버지도로 길찾기</a><a href="${links.kakao}" target="_blank" rel="noopener">카카오맵으로 길찾기</a></div>` +
+    `<div class="pm-btns">${btns}</div></div>`;
+}
+
 /** 점 하나를 눌렀을 때의 카드. items 가 null 이면 아직 받는 중. */
 export function cardHtml(p: Pin, items: MapItem[] | null, opts: { close?: boolean } = {}): string {
+  if (p.level === "org") return orgCardHtml(p, opts);
   if (p.level === "dong") return dongCardHtml(p, items, opts);
   const list = items === null
     ? '<li class="pm-wait">불러오는 중…</li>'
