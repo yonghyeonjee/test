@@ -89,11 +89,17 @@ def parse_detail(page_html: str) -> dict:
 
 
 def addr_query(addr: str) -> str:
-    """지오코더에 보낼 주소. 호수·층·괄호는 뗀다."""
+    """지오코더에 보낼 주소. 괄호·호수·층·건물 이름은 떼고 "구 길 번지"까지만. "대학로57" 은 "대학로 57" 로.
+    "서구 둔산대로 117번길 95 제6층 …" → "서구 둔산대로 117번길 95"."""
     a = re.sub(r"\([^)]*\)", " ", addr)
-    a = re.split(r",", a)[0]
+    a = a.split(",")[0]
+    a = re.sub(r"(로|길)(\d)", r"\1 \2", a)
+    a = re.sub(r"\s+", " ", a).strip()
+    m = re.match(r"^(.*?(?:[가-힣0-9]+(?:로|길)\s+)+\d+(?:-\d+)?)", a)
+    if m:
+        return m.group(1).strip()
     a = re.sub(r"\s*\d+(층|호)\b.*$", "", a)
-    return re.sub(r"\s+", " ", a).strip()
+    return a.strip()
 
 
 def sido_of(text: str) -> str | None:
