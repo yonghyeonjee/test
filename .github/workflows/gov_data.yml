@@ -61,4 +61,6 @@ jobs:
           git add -A web/lib/govOfficeData.ts
           git diff --cached --quiet && echo "바뀐 것 없음" && exit 0
           git commit -m "시·군·구청 청사 좌표 갱신(pipeline/geocode_offices.py)" -m "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_011fqhUoNW2N29bNtSknpq6g"
+          # 좌표를 찾는 몇 분 사이 main 이 움직였을 수 있다(2026-10-21 첫 실행이 그래서 밀렸다).
+          git pull --rebase origin "${GITHUB_REF_NAME:-main}"
           git push
