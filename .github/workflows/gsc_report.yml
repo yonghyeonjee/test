@@ -1,7 +1,7 @@
 name: gsc-report
 
 # 서치 콘솔 자료를 API 로 뽑아 기록에 찍는다(pipeline/gsc_report.py) — 날짜별 실적, 두 기간 비교(쪽 종류·쪽·검색어·
-# 노출 유형), 노출 많던 쪽의 URL 검사, 사이트맵 상태. 읽기 전용.
+# 노출 유형), 노출 많던 쪽의 URL 검사, 사이트맵 상태. 읽기 전용 — sitemaps 모드(pipeline/gsc_sitemaps.py)만 사이트맵을 지우고 다시 제출한다.
 # 인증: GOOGLE_INDEXING_SA(서비스 계정 JSON) 또는 GOOGLE_OAUTH_CLIENT_ID·SECRET·REFRESH_TOKEN(계정 로그인).
 on:
   workflow_dispatch:
@@ -19,10 +19,13 @@ on:
         description: "속성(비우면 자동으로 고름). 예: sc-domain:knowhow-it.com"
         default: ""
       mode:
-        description: "report=기간 비교 보고서, sites=속성별 날짜별 노출, sample=사이트맵 묶음별 색인 표본"
+        description: "report=기간 비교 보고서, sites=속성별 날짜별 노출, sample=사이트맵 묶음별 색인 표본, sitemaps=사이트맵 지우고 재제출(쓰기)"
         default: "report"
         type: choice
-        options: [report, sites, sample]
+        options: [report, sites, sample, sitemaps]
+      arg:
+        description: "sitemaps 모드 인자(--dry, --only …)"
+        default: ""
 
 jobs:
   report:
@@ -45,6 +48,8 @@ jobs:
           B: ${{ inputs.b }}
           N: ${{ inputs.inspect }}
           MODE: ${{ inputs.mode || 'report' }}
+          ARG: ${{ inputs.arg }}
         run: |
           if [ "$MODE" = "report" ]; then python -u pipeline/gsc_report.py --a "$A" --b "$B" --inspect "$N"
+          elif [ "$MODE" = "sitemaps" ]; then python -u pipeline/gsc_sitemaps.py $ARG
           else python -u pipeline/gsc_probe.py "$MODE" --k "$N"; fi
