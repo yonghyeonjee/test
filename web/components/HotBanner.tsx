@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useId } from "react";
+import { useAfterInteraction } from "@/lib/useAfterInteraction";
 import { dueLabel, type HotKind, type Slide } from "@/lib/hotShared";
 
 /**
@@ -123,15 +124,17 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
   const [still, setStill] = useState(false);
   useEffect(() => { setStill(!!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches); }, []);
 
+  // 자동 넘김은 첫 터치·스크롤 뒤에(lib/useAfterInteraction). 넘어간 장의 큰 글자가 LCP 를 늦췄다(2026-10-21).
+  const autoGo = useAfterInteraction();
   // 손으로 넘기면 그때부터 다시 6초. i 가 바뀔 때마다 시계를 새로 건다.
   useEffect(() => {
-    if (n < 2 || hold) return;
+    if (!autoGo || n < 2 || hold) return;
     const t = setTimeout(() => {
       // 다른 탭을 보고 있으면 넘기지 않는다. 돌아왔을 때 엉뚱한 장이 떠 있다.
       if (!document.hidden) setI((p) => (p + 1) % n);
     }, EVERY);
     return () => clearTimeout(t);
-  }, [n, hold, i]);
+  }, [n, hold, i, autoGo]);
 
   if (!n) return null;
 
