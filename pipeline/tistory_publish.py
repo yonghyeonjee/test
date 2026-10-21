@@ -570,14 +570,17 @@ def main() -> int:
                 print("최근 글 (id · 공개 · 발행 시각 · 본문 글자 수 · 제목) — --update 에 쓰는 번호:")
                 for it in recent[:25]:
                     n = "?"
-                    try:
-                        d = t.post_detail(it["id"])
-                        body = re.sub(r"<[^>]+>|\[##_[^\]]*_##\]", "", str(d.get("content", "")))
-                        n = str(len(re.sub(r"\s+", "", body)))
-                        it["date"] = it["date"] or str(d.get("published") or d.get("date") or "")
-                    except Exception:  # noqa: BLE001
-                        pass
-                    print(f"  {it['id']:>8}  {it['visibility']:<9} {it['date'][:19]:<19} {n:>6}자  {it['title'][:60]}")
+                    try:                       # 공개 글 쪽을 읽어 본문 글자 수·사진 수를 센다(관리자 글 읽기 주소는 아직 모른다)
+                        if it["visibility"].upper() == "PUBLIC":
+                            pg = requests.get(f"https://{host}/{it['id']}", timeout=20, headers={"User-Agent": UA}).text
+                            m = re.search(r'<div[^>]+class="[^"]*(?:tt_article_useless_p_margin|contents_style|entry-content)[^"]*"[^>]*>(.*?)<div[^>]+class="[^"]*(?:another_category|container_postbtn|tt-plugin)', pg, re.S)
+                            art = m.group(1) if m else pg
+                            imgs = len(re.findall(r"<img\b", art))
+                            txt = re.sub(r"\s+", "", html.unescape(re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>", " ", art, flags=re.S)))
+                            n = f"{len(txt)}{'' if m else '(쪽 전체)'}·사진{imgs}"
+                    except Exception as e:  # noqa: BLE001
+                        n = f"?({type(e).__name__})"
+                    print(f"  {it['id']:>8}  {it['visibility']:<9} {it['date'][:19]:<19} {n:>14}  {it['title'][:60]}")
             except Exception as e:  # noqa: BLE001 — 목록은 덤이다. 실패해도 check 는 성공
                 print(f"  (최근 글 목록을 못 읽었다: {type(e).__name__}: {e})")
             return 0
