@@ -23,7 +23,7 @@ import Glyph, { fileGlyph } from "@/components/Glyph";
 import CalendarAdd from "@/components/CalendarAdd";
 import TopStripAd from "@/components/TopStripAd";
 import MiniMap from "@/components/MiniMap";
-import PublicOrgCard from "@/components/PublicOrgCard";
+import PublicOrgCard, { eunNeun } from "@/components/PublicOrgCard";
 import { programEvents } from "@/lib/calEvents";
 import { locate } from "@/lib/geo";
 import { TOPICS } from "@/lib/topics";
@@ -390,7 +390,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         입니다.
       </p>
 
-      {porg && <PublicOrgCard org={porg} heading={`이 사업을 하는 ${porg.name.replace(/^\((사|재|주|특|학)\)\s*/, "")}은 어떤 곳인가`} />}
+      {porg && <PublicOrgCard org={porg} heading={`이 사업을 하는 ${porg.name.replace(/^\((사|재|주|특|학)\)\s*/, "")}${eunNeun(porg.name)} 어떤 곳인가`} />}
 
       <Faq items={programFaq(p)} />
 

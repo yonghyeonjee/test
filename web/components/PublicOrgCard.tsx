@@ -5,6 +5,13 @@ import { orgGroup, sidoShort, type PublicOrg } from "@/lib/govData";
  * 공고·지원사업 상세에 붙는 "이 기관은 어떤 곳인가" 카드(2026-10-21). 공고 원문을 그대로 실은 사이트에는 없는
  * 내용(주무부처·유형·소재지·소개)이라 쪽마다 우리 것이 하나 더 생긴다. 공공기관 정보(잡알리오)에서 받은 것이다.
  */
+/** 토씨 은/는. 마지막 글자에 받침이 있으면 은("공단은"), 없으면 는("적십자사는"). 한글이 아니면 은(는). */
+export const eunNeun = (w: string) => {
+  const c = w.charCodeAt(w.length - 1);
+  if (c < 0xac00 || c > 0xd7a3) return "은(는)";
+  return (c - 0xac00) % 28 === 0 ? "는" : "은";
+};
+
 export default function PublicOrgCard({ org, heading }: { org: PublicOrg; heading?: string }) {
   const bare = org.name.replace(/^\((사|재|주|특|학)\)\s*/, "").trim();
   const intro = (org.intro ?? "").replace(/\s+/g, " ").trim();
@@ -13,7 +20,7 @@ export default function PublicOrgCard({ org, heading }: { org: PublicOrg; headin
   const addr = org.address ? (org.sido && org.address.includes(org.sido.slice(0, 2)) ? org.address : `${where} ${org.address}`.trim()) : null;
   return (
     <section className="mt-12" aria-labelledby="org-card-h">
-      <h2 id="org-card-h" className="sec-title text-[1.0625rem] font-extrabold">{heading ?? `${bare}은 어떤 곳인가`}</h2>
+      <h2 id="org-card-h" className="sec-title text-[1.0625rem] font-extrabold">{heading ?? `${bare}${eunNeun(bare)} 어떤 곳인가`}</h2>
       <div className="card mt-4 p-5">
         <p className="text-[13px] text-muted">
           {orgGroup(org.kind)}{org.kind && org.kind !== orgGroup(org.kind) ? ` · ${org.kind}` : ""}{org.ministry ? ` · 주무부처 ${org.ministry}` : ""}
