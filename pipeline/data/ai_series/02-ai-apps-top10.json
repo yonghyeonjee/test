@@ -295,7 +295,7 @@
     "**만든 곳** 구글(미국)",
     "**쓰는 AI 모델** 자체 모델(제미나이)",
     "**요금** 무료(자료 수 제한), 구글 AI 요금제에 따라 한도 상향",
-    "**공식 사이트** [notebooklm.google.com](https://notebooklm.google.com)"
+    "**공식 사이트** [notebook.google.com](https://notebook.google.com)"
    ]
   },
   {
@@ -708,8 +708,8 @@
    "key": "adot",
    "url": "https://adot.ai",
    "file": "adot-ai-app-homepage.png",
-   "caption": "에이닷 공식 사이트 화면 (adot.ai)",
-   "alt": "SK텔레콤 에이닷 공식 화면",
+   "caption": "에이닷 웹 화면 — 녹음을 받아쓰고 요약하는 에이닷 노트 (adot.ai)",
+   "alt": "SK텔레콤 에이닷 노트 웹 화면 실시간 요약 받아쓰기",
    "name": "에이닷(A.)",
    "fallback": {
     "title": "에이닷",
@@ -723,9 +723,9 @@
   },
   {
    "key": "notebook",
-   "url": "https://notebooklm.google.com",
+   "url": "https://notebook.google.com",
    "file": "notebook-ai-app-homepage.png",
-   "caption": "제미나이 노트북 공식 사이트 화면 (notebooklm.google.com)",
+   "caption": "제미나이 노트북 공식 사이트 화면 (notebook.google.com)",
    "alt": "제미나이 노트북(옛 노트북LM) 공식 화면",
    "name": "제미나이 노트북(Gemini Notebook, 옛 노트북LM)",
    "fallback": {
@@ -735,7 +735,7 @@
      "내가 올린 자료만 근거로 답",
      "국내 월 사용자 54만 명"
     ],
-    "caption": "제미나이 노트북 요약 (공식 사이트 notebooklm.google.com)"
+    "caption": "제미나이 노트북 요약 (공식 사이트 notebook.google.com)"
    }
   },
   {

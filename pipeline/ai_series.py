@@ -193,7 +193,7 @@ def take_shots(shots: list[dict]) -> dict[str, bool]:
                 page.wait_for_timeout(5000)
                 title = page.title()
                 blocked = (r is not None and r.status >= 400) or "just a moment" in title.lower() or "attention required" in title.lower() \
-                    or "access denied" in title.lower()
+                    or "access denied" in title.lower() or "404" in title or "not found" in title.lower() or "페이지를 찾을 수 없" in title
                 if not blocked:
                     page.evaluate(DISMISS_JS); page.wait_for_timeout(1200)
                     if s.get("scroll"):

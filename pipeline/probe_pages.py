@@ -6,6 +6,7 @@
     text:URL   쪽 글자 앞 7,000자
     shot:URL   1280×800 첫 화면을 JPEG 로 줄여 base64 로 찍는다(화면 품질 확인용, 쿠키 배너 닫기 시도 포함)
     json:URL   JSON API 응답 앞 3,000자(브라우저 없이 requests)
+    head:URL   상태·최종 주소·제목과 글자 앞 300자(링크가 살아 있는지 확인용)
 여러 개는 빈칸으로 나눈다. 값은 바깥 공개 쪽 그대로이고 꾸미지 않는다.
 """
 import base64
@@ -71,7 +72,9 @@ def main() -> None:
                 print("--END--")
             else:
                 txt = page.evaluate("() => document.body.innerText")
-                if mode == "price":
+                if mode == "head":
+                    print(re.sub(r"\s+", " ", txt)[:300])
+                elif mode == "price":
                     lines = [ln.strip() for ln in txt.split("\n") if ln.strip() and len(ln.strip()) < 220 and PRICE.search(ln)]
                     out = "\n".join(lines)
                     print(out[:4000])
