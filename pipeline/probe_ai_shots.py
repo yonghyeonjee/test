@@ -7,6 +7,6 @@ import sys
 
 slug = (sys.argv[1] if len(sys.argv) > 1 else "").strip()
 os.environ["SHOT_PREVIEW"] = "1"
-subprocess.run([sys.executable, "-m", "pip", "install", "-q", "matplotlib"], check=True)
+subprocess.run([sys.executable, "-m", "pip", "install", "-q", "matplotlib", "-r", "requirements.txt"], check=True)
 subprocess.run(["sudo", "apt-get", "install", "-y", "-qq", "fonts-nanum"], check=False)
 sys.exit(subprocess.run([sys.executable, "-u", os.path.join(os.path.dirname(__file__), "ai_series.py"), "--slug", slug]).returncode)
