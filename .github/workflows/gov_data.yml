@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: gov-data
@@ -64,3 +65,9 @@ jobs:
           # 좌표를 찾는 몇 분 사이 main 이 움직였을 수 있다(2026-10-21 첫 실행이 그래서 밀렸다).
           git pull --rebase origin "${GITHUB_REF_NAME:-main}"
           git push
+      # GITHUB_TOKEN 으로 민 커밋은 다른 워크플로를 깨우지 않는다 — 배포를 직접 부른다(2026-10-21).
+      - name: 배포 부르기(청사 좌표)
+        if: env.MODE == 'offices'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy_aws.yml --ref "${GITHUB_REF_NAME:-main}" || echo "배포를 못 불렀다 — Actions 에서 deploy-aws 를 손으로 실행할 것"
