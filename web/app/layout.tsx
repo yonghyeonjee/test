@@ -111,17 +111,20 @@ const cachedIndex = unstable_cache(
   { revalidate: 3600 },
 );
 
+const FONT_CSS = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const index = await cachedIndex();
   return (
     <html lang="ko">
       <head>
-        {/* @import 로 넣으면 렌더가 막힌다. 미리 연결해두고 따로 받는다. */}
+        {/* 글꼴 CSS 를 렌더를 막지 않게 받는다(2026-10-21). <link rel="stylesheet"> 로 두면 휴대폰에서 첫 그리기가
+            0.8초 멈췄다(Lighthouse). preload 로 먼저 받고, 스크립트로 stylesheet 를 단다 — 받는 동안은 시스템 고딕으로
+            보이고(Pretendard CSS 가 font-display: swap) 받는 즉시 바뀐다. 스크립트가 꺼진 브라우저는 noscript 로. */}
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
-        />
+        <link rel="preload" as="style" href={FONT_CSS} />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href=${JSON.stringify(FONT_CSS)};document.head.appendChild(l)})()` }} />
+        <noscript><link rel="stylesheet" href={FONT_CSS} /></noscript>
         {/* 큰 화면 보기 설정을 첫 페인트 전에 적용한다. 없으면 글자가
             커졌다 작아지는 깜빡임이 보인다. */}
         <script

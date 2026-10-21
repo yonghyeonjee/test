@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fmtKm, haversineKm, mapLinks, type LatLng } from "@/lib/geo";
 import MapCanvas from "./map/MapCanvas";
 import type { Pin } from "./map/pins";
@@ -25,6 +25,18 @@ export default function MiniMap({
 }) {
   const [km, setKm] = useState<number | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  // 지도는 화면에 들어올 때 그린다(2026-10-21). 상세 쪽마다 지도 SDK 와 타일 500KB 를 바로 받던 것을 미룬다.
+  // IntersectionObserver 가 없는 옛 브라우저는 바로 그린다.
+  const box = useRef<HTMLDivElement>(null);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setShow(true); return; }
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { setShow(true); io.disconnect(); } },
+                                        { rootMargin: "300px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const pins = useMemo<Pin[]>(() => [{
     key: "here", lat, lng, label, short: label, n: 0, nW: 0, nB: 0, approx, kind, level: "sgg", sido: "", sigungu: null, more: "", km: null,
   }], [lat, lng, label, approx, kind]);
@@ -53,9 +65,11 @@ export default function MiniMap({
   const links = mapLinks(query);
 
   return (
-    <div className="card overflow-hidden">
-      <MapCanvas pins={pins} kind={kind} me={null} meLabel="" radius={0} selected={null} onSelect={() => {}}
-                 loadItems={async () => []} interactive={false} className="h-44 w-full bg-ground" />
+    <div className="card overflow-hidden" ref={box}>
+      {show
+        ? <MapCanvas pins={pins} kind={kind} me={null} meLabel="" radius={0} selected={null} onSelect={() => {}}
+                     loadItems={async () => []} interactive={false} className="h-44 w-full bg-ground" />
+        : <div className="h-44 w-full bg-ground" aria-hidden="true" />}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 text-[13px]">
         <b className="text-[14px]">{label}</b>
         {approx && <span className="text-faint">시·도 가운데 기준</span>}

@@ -1,11 +1,15 @@
 "use client";
 
-import { forwardRef, useState } from "react";
+import { Suspense, forwardRef, lazy, useState } from "react";
 import { KAKAO_KEY } from "./kakao";
-import KakaoEngine from "./KakaoEngine";
-import LeafletEngine, { type EngineProps, type Handle } from "./LeafletEngine";
+import type { EngineProps, Handle } from "./LeafletEngine";
 import { NAVER_KEY } from "./naver";
-import NaverEngine from "./NaverEngine";
+
+// 엔진 셋을 따로 받는다(2026-10-21). 전에는 셋 다 상세 쪽 묶음에 들어가 Leaflet 까지 매 상세 쪽이 받았다.
+// next/dynamic 은 ref 를 안 넘기므로(함수 컴포넌트로 감싼다) React.lazy 를 쓴다 — forwardRef 로 그대로 간다.
+const KakaoEngine = lazy(() => import("./KakaoEngine"));
+const NaverEngine = lazy(() => import("./NaverEngine"));
+const LeafletEngine = lazy(() => import("./LeafletEngine"));
 
 /**
  * 지도 한 장. 넣어 둔 키에 따라 고른다.
@@ -19,11 +23,11 @@ let kakaoFailed = false;
 
 const MapCanvas = forwardRef<Handle, EngineProps>(function MapCanvas(props, ref) {
   const [failed, setFailed] = useState(kakaoFailed);
-  if (KAKAO_KEY && !failed) {
-    return <KakaoEngine ref={ref} {...props} onFail={() => { kakaoFailed = true; setFailed(true); }} />;
-  }
-  if (NAVER_KEY) return <NaverEngine ref={ref} {...props} />;
-  return <LeafletEngine ref={ref} {...props} />;
+  const engine = KAKAO_KEY && !failed
+    ? <KakaoEngine ref={ref} {...props} onFail={() => { kakaoFailed = true; setFailed(true); }} />
+    : NAVER_KEY ? <NaverEngine ref={ref} {...props} /> : <LeafletEngine ref={ref} {...props} />;
+  // 받는 동안 지도 자리는 같은 크기의 빈 칸 — 자리가 흔들리지 않게.
+  return <Suspense fallback={<div className={props.className} />}>{engine}</Suspense>;
 });
 
 export default MapCanvas;
