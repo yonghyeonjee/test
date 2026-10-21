@@ -132,6 +132,23 @@ def draw(spec: dict, path: str) -> None:
         ax.set_xlim(0, vmax * 1.2)
         _foot(fig, spec.get("source", ""))
         fig.savefig(path); plt.close(fig); return
+    if k == "dot":                                   # 점수처럼 0 에서 시작하면 차이가 안 보이는 값: 점 그림
+        labels, vals = spec["labels"], spec["values"]
+        hl = set(spec.get("highlight", []))
+        fig, ax = plt.subplots(figsize=(W / DPI, H / DPI), dpi=DPI)
+        fig.subplots_adjust(left=spec.get("left", 0.3), right=0.95, top=0.79, bottom=0.14)
+        _head(fig, spec["title"], spec.get("sub", ""))
+        ys = np.arange(len(labels))[::-1]
+        lo, hi = spec["xmin"], spec.get("xmax", max(vals) + (max(vals) - spec["xmin"]) * 0.15)
+        for y, v, i in zip(ys, vals, range(len(vals))):
+            c = BLUE_DARK if i in hl else BLUE
+            ax.hlines(y, lo, v, color=GRID, linewidth=1.2)
+            ax.plot([v], [y], "o", color=c, markersize=9)
+            ax.text(v + (hi - lo) * 0.015, y, f"{v:,}", va="center", fontsize=9.5, color=INK)
+        ax.set_yticks(ys, labels, fontsize=10); ax.set_xlim(lo, hi)
+        ax.tick_params(axis="x", labelsize=9, colors=INK2); strip(ax, bottom=True)
+        _foot(fig, spec.get("source", ""))
+        fig.savefig(path); plt.close(fig); return
     if k == "pair":                                  # 두 시점·두 계열 묶음 막대
         cats, a, b_ = spec["labels"], spec["a"], spec["b"]
         fig, ax = plt.subplots(figsize=(W / DPI, H / DPI), dpi=DPI)

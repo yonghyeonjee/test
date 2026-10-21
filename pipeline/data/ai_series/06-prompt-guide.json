@@ -60,7 +60,7 @@
   },
   {
    "type": "p",
-   "text": "세 회사 공식 가이드([앤트로픽](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [오픈AI](https://developers.openai.com/api/docs/guides/prompt-engineering) · [구글](https://ai.google.dev/gemini-api/docs/prompting-strategies))는 표현은 달라도 같은 이야기를 합니다. **분명하고 구체적으로, 맥락과 예시를 주고, 형식을 정하고, 복잡한 일은 나눠라.**"
+   "text": "세 회사 공식 가이드([앤트로픽](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [오픈AI](https://developers.openai.com/api/docs/guides/prompt-engineering) · [구글](https://ai.google.dev/gemini-api/docs/prompting-strategies))는 표현은 달라도 같은 이야기를 합니다. **분명하고 구체적으로, 맥락과 예시를 주고, 형식을 정하고, 복잡한 일은 나눠라.** 여러 기법을 한국어로 모아 둔 자료로는 [프롬프트 엔지니어링 가이드 한국어판](https://www.promptingguide.ai/kr)이 있습니다."
   },
   {
    "type": "h2",
@@ -331,7 +331,8 @@
     "[Anthropic, Prompt engineering overview](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview)",
     "[OpenAI, Prompt engineering guide](https://developers.openai.com/api/docs/guides/prompt-engineering)",
     "[Google, Prompt design strategies](https://ai.google.dev/gemini-api/docs/prompting-strategies)",
-    "예시는 필자가 만든 것으로, 실제 결과는 모델과 대화 맥락에 따라 달라집니다."
+    "예시는 필자가 만든 것으로, 실제 결과는 모델과 대화 맥락에 따라 달라집니다.",
+    "[DAIR.AI, 프롬프트 엔지니어링 가이드(한국어판)](https://www.promptingguide.ai/kr)"
    ]
   }
  ],
