@@ -389,6 +389,12 @@ class Tistory:
                             "keys": sorted(it)})
         return out
 
+    def delete_post(self, post_id: str) -> None:
+        """글 삭제(`DELETE /manage/post/{id}.json`). 되돌릴 수 없다 — --replace 로 모음 글이 올라간 뒤에만 부른다."""
+        r = self._req("DELETE", f"/manage/post/{post_id}.json")
+        if looks_like_login(r.text):
+            raise SessionExpired("post.json 이 로그인 화면을 돌려줬다")
+
     def post_detail(self, post_id: str) -> dict:
         """관리자 글 하나(`GET /manage/post/{id}.json`). 본문 길이·발행 시각을 보는 데 쓴다."""
         r = self._req("GET", f"/manage/post/{post_id}.json")
@@ -585,10 +591,12 @@ def main() -> int:
                     help="카테고리 id. 0(기본)이면 글마다 category_for 가 고른다(정책·B2G·일상TIP)")
     ap.add_argument("--composer", choices=["top10"], help="jiwon 글을 그대로 옮기지 않고 티스토리용 글을 따로 쓴다(출처는 jiwon). top10 = pipeline/tistory_top10.py")
     ap.add_argument("--update", help="새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 --check 가 찍는 최근 글 목록에서")
+    ap.add_argument("--replace", help="이미 올린 짧은 글 번호들(쉼표)을 모음 글 하나로 합쳐 새로 올린 뒤 원래 글들은 지운다")
     ap.add_argument("--post-json", help="blog_posts 대신 이 JSON 파일의 글 하나를 올린다(티스토리 단독 글, 예: world_speed.py 가 만든 out/post.json)")
     ap.add_argument("--images", help="shots/manifest.json — [{\"file\": 경로, \"caption\": 설명}] 순서대로 본문에 끼운다")
     ap.add_argument("--dry", action="store_true", help="올리지 않고 HTML 만 찍는다")
     a = ap.parse_args()
+    replace_ids: list[str] = []
     manifest: list[dict] = []
     if a.images:
         with open(a.images, encoding="utf-8") as f:
@@ -649,6 +657,18 @@ def main() -> int:
                 sb = supabase_client()       # 기록(tistory_posts)용. 없어도 올리는 데는 지장 없다
             except Exception as e:  # noqa: BLE001
                 print(f"  (Supabase 없이 올린다: {type(e).__name__})"); sb = None
+        elif a.replace:
+            sb = supabase_client()
+            replace_ids = [x for x in re.split(r"[,\s]+", a.replace) if x.isdigit()]
+            rows = sb.table("tistory_posts").select("slug,post_id").in_("post_id", replace_ids).execute().data or []
+            by_id = {str(r["post_id"]): r["slug"] for r in rows}
+            missing = [i for i in replace_ids if i not in by_id]
+            if missing:
+                sys.exit(f"발행 기록에 없는 글 번호: {', '.join(missing)} — 합칠 원 글을 찾지 못해 멈춘다(아무것도 지우지 않았다)")
+            posts = [pick_posts(sb, by_id[i], a.since, a.limit)[0] for i in replace_ids]
+            posts = [digest(posts, today_kst())]
+            a.mode = "full"
+            print(f"{', '.join(replace_ids)}번을 모음 글 하나로 합친다: {posts[0]['title']}")
         else:
             sb = supabase_client()
             posts = pick_posts(sb, a.slug, a.since, a.limit)
@@ -692,7 +712,7 @@ def main() -> int:
                 print(f"이미 올린 글(번호 {prev})이 있어 고쳐 쓴다")
         t = Tistory(host, cookie)
         if not a.update and a.visibility == "public":
-            used = published_on(t.recent_posts() + t.recent_posts(2), today_kst())
+            used = published_on([it for it in t.recent_posts() + t.recent_posts(2) if it["id"] not in replace_ids], today_kst())
             room = max(0, DAILY_MAX - used)
             if room < len(posts):
                 print(f"오늘(KST) 이미 {used}편 공개 — 하루 {DAILY_MAX}편 한도라 {len(posts) - room}편은 내일 이후로 미룬다: "
@@ -723,6 +743,10 @@ def main() -> int:
                     print(f"  (발행 기록을 못 남겼다 — 다시 올릴 땐 --update {num} 을 쓴다: {type(e).__name__}: {str(e)[:120]})")
             print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url} (번호 {num})")
             n += 1
+        if replace_ids and n:
+            for i in replace_ids:                       # 모음 글이 올라간 뒤에만 지운다
+                t.delete_post(i)
+                print(f"지움: {i}번")
         print(f"{n}편 올렸다")
         return 0
     except SessionExpired as e:

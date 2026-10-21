@@ -45,6 +45,10 @@ on:
         description: "새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 check=true 가 찍는 최근 글 목록에서"
         required: false
         type: string
+      replace:
+        description: "짧은 글 번호들(쉼표)을 모음 글 하나로 합쳐 새로 올리고 원래 글은 지운다(예: 168,169,170,171)"
+        required: false
+        type: string
       composer:
         description: "티스토리용 글을 따로 쓴다(jiwon 글은 출처). top10 = 많이 뽑는 직무 순위"
         default: ""
@@ -155,6 +159,7 @@ jobs:
           DRY: ${{ inputs.dry }}
           SHOTS: ${{ inputs.shots }}
           UPDATE: ${{ inputs.update }}
+          REPLACE: ${{ inputs.replace }}
           COMPOSER: ${{ inputs.composer }}
           TOP10_SLUG: ${{ steps.top10.outputs.SLUG }}
           SCRIPT: ${{ inputs.script }}
@@ -171,6 +176,7 @@ jobs:
           [ "$DRY" = "true" ] && args="$args --dry"
           [ -f shots/manifest.json ] && args="$args --images shots/manifest.json"
           [ -n "$UPDATE" ] && args="$args --update \"$UPDATE\""
+          [ -n "$REPLACE" ] && args="$args --replace \"$REPLACE\""
           [ -n "$COMPOSER" ] && args="$args --composer $COMPOSER"
           [ -n "$SCRIPT" ] && args="$args --post-json out/post.json"
           eval python -u pipeline/tistory_publish.py $args
