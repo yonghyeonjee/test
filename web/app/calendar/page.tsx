@@ -48,8 +48,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   const age = Number.isInteger(ageRaw) && ageRaw > 0 && ageRaw < 120 ? ageRaw : null;
   const emp = one(searchParams.emp) || null;
   const hh = many(searchParams.hh).filter((h) => h.length <= 20).slice(0, 9);
-  const cond = { age, emp, hh };
   const hasCond = Boolean(age || emp || hh.length);
+  // 갈래(?k=): w 복지, b 기업, j 채용, x 시험. 비우면 전부 — 단, 내 조건(나이·가구)이 걸려 있으면 기업 지원은 뺀다.
+  // 달력의 마감은 기업 지원(924건/석 달)과 채용이 대부분이라, 조건을 넣은 사람에게 그것까지 세어 주면 조건이 먹지 않는 것처럼 보인다.
+  // 자영업이면 기업 지원도 남긴다.
+  const kRaw = (one(searchParams.k) ?? "").replace(/[^wbjx]/g, "");
+  const kinds = new Set<"w" | "b" | "j" | "x">(kRaw ? (kRaw.split("") as ("w" | "b" | "j" | "x")[]) : hasCond && emp !== "자영업" ? ["w", "j", "x"] : ["w", "b", "j", "x"]);
+  const pKinds = (["welfare", "business"] as const).filter((k) => kinds.has(k === "welfare" ? "w" : "b"));
+  const cond = { age, emp, hh, kinds: pKinds.length === 2 ? undefined : pKinds };
   const dParam = one(searchParams.d);
   const mParam = one(searchParams.m);
   // 달은 지난 석 달부터 앞으로 열두 달까지만. 예전에는 지난달·다음달이 끝없이 이어져(마감 기록이
@@ -65,13 +71,21 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   const day = okD(dParam) && (dParam as string) >= from && (dParam as string) <= to
     ? (dParam as string) : ym(today) === month ? today : from;
 
-  const [days, exams, items] = await Promise.all([
-    deadlineDays(from, to, sido, sigungu, cond),
-    examDays(from, to),
+  const [days, exams, itemsAll] = await Promise.all([
+    pKinds.length ? deadlineDays(from, to, sido, sigungu, cond) : deadlineDays(from, to, sido, sigungu, { ...cond, kinds: ["welfare"] }).then((d) => { for (const v of Object.values(d)) v.p = 0; return d; }),
+    kinds.has("x") ? examDays(from, to) : Promise.resolve({} as Awaited<ReturnType<typeof examDays>>),
     deadlineItems(day, sido, sigungu, cond),
   ]);
+  if (!kinds.has("j")) for (const v of Object.values(days)) v.job = 0;
   for (const [d, list] of Object.entries(exams)) { days[d] ??= { p: 0, job: 0, exam: 0 }; days[d].exam = list.length; }
+  const items = itemsAll.filter((i) => (i.kind === "job" ? kinds.has("j") : pKinds.length > 0));
   const dayExams = exams[day] ?? [];
+  const kLabel: Record<string, string> = { w: "복지", b: "기업 지원", j: "채용", x: "자격시험" };
+  const kHref = (k: "w" | "b" | "j" | "x") => {
+    const next = new Set(kinds);
+    if (next.has(k)) next.delete(k); else next.add(k);
+    return ["w", "b", "j", "x"].filter((x) => next.has(x as "w")).join("") || "w";
+  };
 
   // 달력 칸. 첫 주는 일요일부터 비워 둔다.
   const firstWd = new Date(`${from}T00:00:00Z`).getUTCDay();
@@ -82,7 +96,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
   const q = (patch: Record<string, string | null | undefined>) => {
     const sp = new URLSearchParams();
     // 날짜만 바꾸면 달도 그 날짜의 달로. 전날·다음날이 달을 넘으면 그 달 1일로 튀던 것.
-    const all = { m: patch.d && !("m" in patch) ? ym(patch.d) : month, d: day, sido, sigungu, age: age ? String(age) : null, emp, ...patch };
+    const all = { m: patch.d && !("m" in patch) ? ym(patch.d) : month, d: day, sido, sigungu, age: age ? String(age) : null, emp, k: kRaw || null, ...patch };
     for (const [k, v] of Object.entries(all)) if (v) sp.set(k, v);
     for (const h of hh) sp.append("hh", h);
     // 조건을 다 비운 채 지역만 바꿀 때도 저장된 조건이 다시 붙지 않게.
@@ -136,6 +150,16 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
         </p>
       )}
       <CalendarCond applied={sido || hasCond ? { sido, sigungu, age, emp, hh } : null} month={month} day={day} />
+      {/* 갈래 켜고 끄기. 조건을 넣은 사람은 기업 지원이 꺼진 채 시작한다. */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="갈래">
+        {(["w", "b", "j", "x"] as const).map((k) => (
+          <Link key={k} href={q({ k: kHref(k) })} rel="nofollow" aria-pressed={kinds.has(k)}
+                className={`chip !py-1 !text-[12.5px] ${kinds.has(k) ? "chip-on" : "opacity-60"}`}>
+            {kinds.has(k) ? "✓ " : ""}{kLabel[k]}
+          </Link>
+        ))}
+        {hasCond && !kinds.has("b") && <span className="text-[12px] text-faint">기업 지원은 내 조건과 무관해 꺼 두었습니다. 사업자라면 켜세요.</span>}
+      </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-start">
         {/* 달력 */}
