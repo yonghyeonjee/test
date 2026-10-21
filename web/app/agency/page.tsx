@@ -84,6 +84,10 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
         art={<IllusAgency />}
       />
       {note && <p className="mt-4 rounded-card bg-goldSoft px-4 py-3 text-[13.5px] text-gold">{note}</p>}
+      <p className="mt-4 text-[13.5px] text-muted">
+        기관 자체가 궁금하면 <Link href="/orgs" className="font-semibold text-brand underline underline-offset-4">공공기관 목록</Link>에서
+        342곳의 주무부처·소재지·홈페이지·채용 이력을 봅니다.
+      </p>
       <AgencyList
         base="/agency" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[

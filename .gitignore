@@ -9,3 +9,6 @@ __pycache__/
 node_modules/
 .next/
 .DS_Store
+
+# 작업자(subagent) 작업 사본
+.claude/worktrees/

@@ -54,11 +54,15 @@ def read_src() -> list[dict]:
     return rows
 
 
-def osm_offices() -> dict[str, tuple[float, float]]:
-    """dongData.ts 의 OFFICE 표: 이름 → 좌표."""
+def osm_offices() -> dict[tuple[str, str], tuple[float, float]]:
+    """dongData.ts 의 OFFICE 표: (시·도, 이름) → 좌표. 같은 이름(중구청)이 여러 시·도에 있어 시·도로 가른다."""
     s = DONG.read_text(encoding="utf-8")
     i = s.find("export const OFFICE")
-    return {n: (float(a), float(b)) for n, a, b in re.findall(r'\["([^"]+)",\s*([\d.]+),\s*([\d.]+)\]', s[i:])}
+    out = {}
+    for sido, body in re.findall(r'\n  "([^"]+)": \{(.*?)\n  \},', s[i:], flags=re.S):
+        for n, a, b in re.findall(r'\["([^"]+)",\s*([\d.]+),\s*([\d.]+)\]', body):
+            out[(sido, n)] = (float(a), float(b))
+    return out
 
 
 def have_coords() -> dict[str, tuple[float, float]]:
@@ -84,6 +88,7 @@ def geocode(s: requests.Session, q: str) -> tuple[float, float] | None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--offline", action="store_true", help="Nominatim 없이 OSM 청사 표만으로(나머지는 0)")
     a = ap.parse_args([x for x in sys.argv[1:] if x] or [])
     rows = read_src()
     print(f"청사 {len(rows)}곳")
@@ -99,10 +104,12 @@ def main() -> None:
         key = r["name"]
         # OSM 표의 이름은 "시흥시청"·"원미구청" 꼴. 우리 이름에서 시·도 접두("부산 중구청")를 떼고 견준다.
         short = re.sub(r"^(서울|부산|대구|인천|광주|대전|울산|경남|경북|전남|전북|충남|충북|강원|경기|제주|포항)\s+", "", key)
-        if key in old:
+        if key in old and old[key] != (0.0, 0.0):
             r["lat"], r["lng"] = old[key]; found["old"] += 1
-        elif short in osm and short.endswith(("시청", "구청", "군청")) and " " not in short:
-            r["lat"], r["lng"] = osm[short]; found["osm"] += 1
+        elif (r["sido"], short) in osm and short.endswith(("시청", "구청", "군청")) and " " not in short:
+            r["lat"], r["lng"] = osm[(r["sido"], short)]; found["osm"] += 1
+        elif a.offline:
+            r["lat"], r["lng"] = 0, 0; found["none"] += 1
         else:
             g = geocode(s, r["address"]) or geocode(s, key)
             if g:

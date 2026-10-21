@@ -8,7 +8,9 @@ import PageBanner from "@/components/PageBanner";
 import PolicyMap from "@/components/PolicyMap";
 import RelatedLinks from "@/components/RelatedLinks";
 import { SIDO_SHORT } from "@/lib/geo";
+import { getPublicOrgs, govOffices, orgGroup } from "@/lib/govData";
 import { EMPTY_MAP, getMapData, listItems, liteOf } from "@/lib/mapData";
+import type { OrgRow } from "@/lib/mapShape";
 import { blogIndexRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
@@ -38,7 +40,13 @@ export const metadata: Metadata = withOg({
 });
 
 export default async function MapPage() {
-  const data = await getMapData().catch(() => EMPTY_MAP);
+  const [data, pubOrgs] = await Promise.all([getMapData().catch(() => EMPTY_MAP), getPublicOrgs().catch(() => [])]);
+  // 관공서·공공기관 핀(2026-10-21): 공공기관(잡알리오 공공기관 정보, 좌표 있는 것)과 시·군·구청 청사. 실제 위치다.
+  const orgs: OrgRow[] = [
+    ...pubOrgs.filter((o) => o.lat && o.lng && o.sido).map((o): OrgRow =>
+      [`org|${o.id}`, o.name, orgGroup(o.kind), +o.lat!.toFixed(5), +o.lng!.toFixed(5), o.sido!, o.sigungu, o.address ?? "", o.id]),
+    ...govOffices().map((o): OrgRow => [o.key, o.name, o.kind, o.lat, o.lng, o.sido, o.sgg || null, o.address, null]),
+  ];
   // 시·도별 묶음 — 자바스크립트 없이도 읽을 수 있는 본문이고, 검색엔진이 읽는 것도 이것이다.
   const bySido = new Map<string, { w: number; b: number; j: number; places: number }>();
   for (const p of data.programs) {
@@ -71,7 +79,7 @@ export default async function MapPage() {
         art={<IllusMap />}
       />
 
-      <PolicyMap data={liteOf(data)} initial={listItems(data, "programs", { sort: "end", limit: 20 })} />
+      <PolicyMap data={liteOf(data)} orgs={orgs} initial={listItems(data, "programs", { sort: "end", limit: 20 })} />
 
       <section className="mt-14">
         <h2 className="sec-title text-[1.0625rem] font-extrabold">시·도별로 보기</h2>

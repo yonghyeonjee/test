@@ -145,9 +145,17 @@ const KakaoEngine = forwardRef<Handle, EngineProps & { onFail?: () => void }>(fu
       const p = latest.current.pins.find((x) => x.key === key) ?? latest.current.extra?.find((x) => x.key === key);
       if (!k || !m || !p) return;
       m.setCenter(new k.LatLng(p.lat, p.lng));
-      const want = p.level === "dong" ? 5 : 7;
+      const want = p.level === "dong" || p.level === "org" ? 5 : 7;
       if (m.getLevel() > want) m.setLevel(want);
       setTimeout(() => openCard(p), 350);
+    },
+    fit(points) {
+      const k = K.current, m = map.current;
+      if (!k || !m || !points.length) return;
+      if (points.length === 1) { m.setCenter(new k.LatLng(points[0][0], points[0][1])); m.setLevel(5); return; }
+      const b = new k.LatLngBounds();
+      for (const [la, ln] of points) b.extend(new k.LatLng(la, ln));
+      m.setBounds(b);
     },
   }));
 

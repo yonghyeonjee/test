@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AreaChart from "@/components/AreaChart";
 import AdSlot from "@/components/AdSlot";
+import GovOffices from "@/components/GovOffices";
 import GuideBanner from "@/components/GuideBanner";
 import JsonLd from "@/components/JsonLd";
 import Faq from "@/components/Faq";
@@ -265,6 +266,8 @@ export default async function AreaPage({ params }: { params: { sido: string } })
           ))}
         </dl>
       </section>
+
+      <GovOffices sido={sido} />
 
       <h2 className="mt-16 border-b-2 border-line2 pb-2 text-sm font-bold">
         {sido} 지원사업 목록

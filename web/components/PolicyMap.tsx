@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SIDO_POINT } from "@/lib/geoData";
-import { SIDO_SHORT, fmtKm, haversineKm, locate, mapLinks, sggChoices, type LatLng } from "@/lib/geo";
+import { SIDO_SHORT, fmtKm, haversineKm, mapLinks, sggChoices, type LatLng } from "@/lib/geo";
 import type { ListItem, MapItem } from "@/lib/mapData";
-import { fromRows, moreOf, type MapDataLite } from "@/lib/mapShape";
+import { fromRows, keyOf, labelOf, moreOf, type MapDataLite, type MapPointLite, type OrgRow } from "@/lib/mapShape";
+import { locate } from "@/lib/geo";
 import MapCanvas, { type Handle } from "./map/MapCanvas";
 import { DONG_ZOOM, itemHref, toPin, type Kind, type Pin, type View } from "./map/pins";
 import { track } from "./Gtm";
@@ -43,6 +44,19 @@ function statusOf(it: MapItem, today: string): { label: string; cls: string } {
 }
 
 const KIND_LABEL: Record<MapItem["kind"], string> = { welfare: "복지", business: "기업", job: "채용" };
+/** 검색 결과·보이는 범위에서 한 번에 그리는 관공서·공공기관 핀 수. 더 많으면 시·군·구 묶음으로 보인다. */
+const ORG_SEARCH_MAX = 60;
+const ORG_VIEW_MAX = 120;
+/** 관공서·공공기관 한 줄(OrgRow)을 핀으로. 실제 위치라 level 은 org. */
+function orgPin(r: OrgRow, me: LatLng | null, num?: number): Pin {
+  const [key, name, group, lat, lng, sido, sgg, address, id] = r;
+  return {
+    key, lat, lng, label: name, short: name.length > 14 ? `${name.slice(0, 13)}…` : name, n: 0, nW: 0, nB: 0, approx: false,
+    kind: "orgs", level: "org", sido, sigungu: sgg, more: id ? `/orgs/${encodeURIComponent(id)}` : `/area/${encodeURIComponent(sido)}`,
+    km: me ? haversineKm(me, [lat, lng]) : null, org: { group, address, id }, ...(num ? { num } : {}),
+  };
+}
+const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 
 /**
  * 정책지도 — kjebi "Smart 기업 입찰 지도"처럼 왼쪽은 공고 카드, 오른쪽은 지도.
@@ -58,7 +72,7 @@ const KIND_LABEL: Record<MapItem["kind"], string> = { welfare: "복지", busines
  * 지도는 components/map/MapCanvas — 카카오맵 키가 있으면 카카오맵(kjebi 와 같은 기술),
  * 없으면 네이버·Leaflet.
  */
-export default function PolicyMap({ data, initial }: { data: MapDataLite; initial?: { total: number; items: ListItem[] } }) {
+export default function PolicyMap({ data, orgs = [], initial }: { data: MapDataLite; orgs?: OrgRow[]; initial?: { total: number; items: ListItem[] } }) {
   const [kind, setKind] = useState<Kind>("programs");
   const [me, setMe] = useState<LatLng | null>(null);
   const [meLabel, setMeLabel] = useState("");
@@ -72,6 +86,11 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   const [list, setList] = useState<{ total: number; items: ListItem[] }>(initial ?? { total: 0, items: [] });
   const [loading, setLoading] = useState(false);
   const [today, setToday] = useState("");
+  // 기관명·주소 검색(관공서·공공기관 탭). 입력은 바로, 거르기는 250ms 뒤에.
+  const [q, setQ] = useState("");
+  const [qd, setQd] = useState("");
+  // 관공서 목록 쪽 넘기기(공고 목록은 서버가 쪽을 주지만, 관공서는 다 들고 있어 여기서 자른다).
+  const [orgShown, setOrgShown] = useState(PAGE);
   const [items, setItems] = useState<Record<string, MapItem[]>>({});
   // 동네 단계: 보이는 범위(엔진이 알림)와 그 안의 읍·면·동 행정복지센터·청사.
   const [view, setView] = useState<View | null>(null);
@@ -100,6 +119,8 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   /** 핀 하나의 요약(지도 카드에 쓰는 것). 한 번 받으면 둔다. */
   const dongNRef = useRef<Map<string, number>>(new Map());
   const loadItems = useCallback(async (k: Kind, key: string): Promise<MapItem[]> => {
+    // 관공서·공공기관 핀에는 공고를 꽂지 않는다 — 카드는 이름·주소·길찾기뿐.
+    if (k === "orgs" || key.startsWith("org|")) return [];
     if ((key.startsWith("dong|") || key.startsWith("office|")) && !dongNRef.current.get(key)) return [];
     const ik = itemKey(k, key);
     const have = itemsRef.current[ik];
@@ -118,7 +139,8 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   // 처음 자리: 주소의 kind/lat/lng(상세 쪽 "주변 더 보기") → 저장해 둔 내 위치.
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
-    if (sp.get("kind") === "jobs") setKind("jobs");
+    const k0 = sp.get("kind");
+    if (k0 === "jobs" || k0 === "orgs") setKind(k0);
     const lat = Number(sp.get("lat")), lng = Number(sp.get("lng"));
     if (lat && lng && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
       setMe([lat, lng]); setMeLabel("고른 자리"); void learnWhere([lat, lng], false); return;
@@ -139,28 +161,70 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
 
   const programs = useMemo(() => fromRows("programs", data.p), [data.p]);
   const jobs = useMemo(() => fromRows("jobs", data.j), [data.j]);
-  const points = kind === "jobs" ? jobs : programs;
+  useEffect(() => { const t = setTimeout(() => setQd(q.trim()), 250); return () => clearTimeout(t); }, [q]);
+  /** 관공서·공공기관을 시·군·구마다 하나로 묶은 점(멀리서 볼 때). 공고 점과 같은 모양이라 같은 핀 틀을 쓴다. */
+  const orgPoints = useMemo<MapPointLite[]>(() => {
+    const m = new Map<string, MapPointLite>();
+    for (const r of orgs) {
+      const at = locate(r[5], r[6]);
+      if (!at) continue;
+      const key = keyOf(at.sido, at.sigungu);
+      const cur = m.get(key) ?? { key, sido: at.sido, sigungu: at.sigungu, label: labelOf(at.sido, at.sigungu), lat: at.lat, lng: at.lng,
+                                   approx: at.approx, n: 0, nW: 0, nB: 0, more: `/area/${encodeURIComponent(at.sido)}` };
+      cur.n++;
+      m.set(key, cur);
+    }
+    return [...m.values()];
+  }, [orgs]);
+  /** 검색 결과(번호 붙여서). 이름·주소에 낱말이 들어가면. 빈 검색어면 null. */
+  const found = useMemo<OrgRow[] | null>(() => {
+    if (!qd) return null;
+    const words = qd.split(/\s+/).map(norm).filter(Boolean);
+    const hit = orgs.filter((r) => { const hay = norm(`${r[1]} ${r[7]} ${SIDO_SHORT[r[5]] ?? ""} ${r[6] ?? ""}`); return words.every((w) => hay.includes(w)); });
+    // 이름이 검색어로 시작하는 것, 그다음 이름에 든 것, 그다음 주소에 든 것.
+    const w0 = words[0] ?? "";
+    const rank = (r: OrgRow) => (norm(r[1]).startsWith(w0) ? 0 : norm(r[1]).includes(w0) ? 1 : 2);
+    return hit.sort((a, b) => rank(a) - rank(b) || a[1].localeCompare(b[1], "ko"));
+  }, [orgs, qd]);
+  const points = kind === "jobs" ? jobs : kind === "orgs" ? orgPoints : programs;
   const rows = useMemo(() => {
     const withD = points.map((p) => ({ p, km: me ? haversineKm(me, [p.lat, p.lng]) : null }));
     const inR = me && radius > 0 ? withD.filter((x) => (x.km ?? 0) <= radius) : withD;
     return inR.sort((a, b) => (me ? (a.km ?? 0) - (b.km ?? 0) : b.p.n - a.p.n));
   }, [points, me, radius]);
   const kmOf = useMemo(() => new Map(rows.map((x) => [x.p.key, x.km])), [rows]);
+  /** 관공서·공공기관의 실제 위치 핀. 검색 중이면 결과에 번호를 달아 전부, 아니면 보이는 범위 안이 많지 않을 때만. */
+  const orgExtra = useMemo<Pin[]>(() => {
+    if (kind !== "orgs") return [];
+    if (found) return found.slice(0, ORG_SEARCH_MAX).map((r, i) => orgPin(r, me, i + 1));
+    if (!view || view.zoom < 10) return [];
+    const inView = orgs.filter((r) => r[3] >= view.s && r[3] <= view.n && r[4] >= view.w && r[4] <= view.e);
+    if (inView.length > ORG_VIEW_MAX) return [];
+    return inView.map((r) => orgPin(r, me));
+  }, [kind, found, view, orgs, me]);
+  // 목록에서 누른 기관은 범위 밖이거나 묶여 있어도 핀이 있어야 카드가 열린다.
+  const orgExtraSel = useMemo<Pin[]>(() => {
+    if (kind !== "orgs" || !sel || orgExtra.some((p) => p.key === sel)) return orgExtra;
+    const r = orgs.find((x) => x[0] === sel);
+    return r ? [...orgExtra, orgPin(r, me)] : orgExtra;
+  }, [kind, sel, orgExtra, orgs, me]);
   const pins = useMemo(() => {
+    // 실제 위치 핀을 그리는 동안은 시·군·구 묶음 핀을 숨긴다 — 같은 곳이 두 번 보이지 않게.
+    if (kind === "orgs" && orgExtra.length) return [];
     const out = rows.map(({ p, km }) => toPin(p, kind, km));
     // 반경을 작게(3km) 잡으면 내 시·군·구 핀(구역 가운데)이 반경 밖일 수 있다. 내 시·군·구는 늘 보인다.
     const hp = home ? points.find((p) => p.key === home) : undefined;
     if (hp && !out.some((x) => x.key === hp.key)) out.push(toPin(hp, kind, me ? haversineKm(me, [hp.lat, hp.lng]) : null));
     return out;
-  }, [rows, kind, home, points, me]);
+  }, [rows, kind, home, points, me, orgExtra]);
   const byKey = useMemo(() => new Map(points.map((p) => [p.key, p])), [points]);
   /** 동네 단계 핀: 읍·면·동 행정복지센터(없으면 동 가운데)와 시청·구청. */
-  const dongPins = useMemo<Pin[]>(() => dongRows.map(([key, sido, sgg, gu, dong, lat, lng, hall, office, n]) => {
+  const dongPins = useMemo<Pin[]>(() => (kind === "orgs" ? [] : dongRows).map(([key, sido, sgg, gu, dong, lat, lng, hall, office, n]) => {
     const sp = byKey.get(`${sido}|${sgg}`);
     return {
       key, lat, lng, label: [SIDO_SHORT[sido] ?? sido, sgg, gu, dong].filter(Boolean).join(" "),
       short: office ? hall : dong, n, nW: 0, nB: 0, approx: false, kind, level: "dong", sido, sigungu: sgg,
-      more: sp?.more ?? moreOf(kind, sido, sgg), km: me ? haversineKm(me, [lat, lng]) : null,
+      more: sp?.more ?? moreOf(kind === "jobs" ? "jobs" : "programs", sido, sgg), km: me ? haversineKm(me, [lat, lng]) : null,
       hall: hall || null, dong, gu, office: office === 1, sggN: sp?.n ?? 0,
     };
   }), [dongRows, byKey, kind, me]);
@@ -174,7 +238,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
   // 넓혀 반올림해, 조금 움직일 때마다 다시 받지 않는다.
   const onView = useCallback((v: View) => setView(v), []);
   useEffect(() => {
-    if (!view || view.zoom < DONG_ZOOM) return;
+    if (!view || view.zoom < DONG_ZOOM || kind === "orgs") return;
     const g = 0.05;
     const box = [Math.floor(view.s / g) * g, Math.floor(view.w / g) * g, Math.ceil(view.n / g) * g, Math.ceil(view.e / g) * g]
       .map((x) => x.toFixed(2)).join(",");
@@ -190,14 +254,34 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     }, 250);
     return () => clearTimeout(t);
   }, [view, kind]);
-  const allN = (k: Kind) => (k === "jobs" ? data.j : data.p).reduce((a, r) => a + r[4], 0);
+  const allN = (k: Kind) => (k === "orgs" ? orgs.length : (k === "jobs" ? data.j : data.p).reduce((a, r) => a + r[4], 0));
   const regionPoint = region ? points.find((p) => p.key === region) : undefined;
   const regionLabel = regionPoint?.label ?? "";
   const sortEff: Sort = me ? sort : "end";
   dongNRef.current = dongN;
 
   /** 카드 목록 받기. 자리(가까운 순)·상태·정렬이 바뀌면 처음부터, "더 보기"는 이어서. */
+  /** 관공서·공공기관 목록(여기서 거른다): 검색 결과 → 고른 자리 → 내 위치 반경 → 전부(가나다). */
+  const orgList = useMemo<Pin[]>(() => {
+    if (kind !== "orgs") return [];
+    if (found) return found.map((r, i) => orgPin(r, me, i + 1));
+    let list = orgs.map((r) => orgPin(r, me));
+    if (region) {
+      const [sd, sg] = region.split("|");
+      list = list.filter((p) => p.sido === sd && (sg ? p.sigungu === sg : true));
+    } else if (me && radius > 0) list = list.filter((p) => (p.km ?? 0) <= radius);
+    return list.sort((a, b) => (me ? (a.km ?? 0) - (b.km ?? 0) : a.label.localeCompare(b.label, "ko")));
+  }, [kind, found, orgs, me, region, radius]);
+  useEffect(() => setOrgShown(PAGE), [kind, found, region, me, radius]);
+  // 검색 결과가 바뀌면 지도를 결과에 맞춘다.
+  useEffect(() => {
+    if (kind !== "orgs" || !found) return;
+    const pts = found.slice(0, ORG_SEARCH_MAX).map((r): [number, number] => [r[3], r[4]]);
+    if (pts.length) canvas.current?.fit(pts);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [found, kind]);
   const fetchList = useCallback(async (offset: number) => {
+    if (kind === "orgs") { setLoading(false); return; }
     const id = ++reqId.current;
     setLoading(true);
     const qs = new URLSearchParams({ kind, status, sort: sortEff, offset: String(offset), limit: String(PAGE) });
@@ -334,8 +418,10 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
     setSel(key);
     if (!key || Date.now() - fromCardAt.current < 1500) return;
     // 동·청사 핀: 왼쪽 목록은 그 시·군·구의 공고로(동에는 공고를 꽂지 않는다).
+    if (key.startsWith("org|")) return;
     if (key.startsWith("dong|") || key.startsWith("office|")) {
       const [, sido, sgg] = key.split("|");
+      if (kindRef.current === "orgs") return;
       setRegion(`${sido}|${sgg}`);
     } else setRegion(key);
     track("map_point", { kind: kindRef.current, from: key.startsWith("dong|") || key.startsWith("office|") ? "dong" : "pin" });
@@ -346,12 +432,12 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
       <div className="card mt-6 p-3 sm:p-4">
         {/* 갈래는 탭처럼 맨 위 한 줄. 위치·지역 고르기와 섞여 있으면 "무엇을 보고 있는지" 가 묻힌다(2026-10-07). */}
         <div role="tablist" aria-label="갈래" className="-mx-3 -mt-3 mb-3 flex border-b border-line px-3 sm:-mx-4 sm:-mt-4 sm:px-4">
-          {(["programs", "jobs"] as Kind[]).map((k) => (
+          {(["programs", "jobs", "orgs"] as Kind[]).map((k) => (
             <button key={k} role="tab" type="button" aria-selected={kind === k}
                     onClick={() => { setKind(k); setSel(null); setRegion(null); }}
-                    className={`-mb-px border-b-2 px-4 py-3 text-[14.5px] font-bold transition-colors ${
+                    className={`-mb-px border-b-2 px-3 py-3 text-[14.5px] font-bold transition-colors sm:px-4 ${
                       kind === k ? "border-brand text-brand" : "border-transparent text-muted hover:text-ink2"}`}>
-              {k === "programs" ? "지원사업" : "채용"} <span className="num ml-1 text-[13px] font-semibold opacity-80">{allN(k).toLocaleString("ko-KR")}</span>
+              {k === "programs" ? "지원사업" : k === "jobs" ? "채용" : "관공서·공공기관"} <span className="num ml-1 text-[13px] font-semibold opacity-80">{allN(k).toLocaleString("ko-KR")}</span>
             </button>
           ))}
         </div>
@@ -362,29 +448,62 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
             </svg>
             {busy ? "위치 읽는 중…" : "내 위치로 보기"}
           </button>
-          {/* 지역 고르기: 시·도 → 시·군·구 → 읍·면·동. 고를수록 지도가 가까워진다. */}
-          {/* 휴대폰은 세 칸 한 줄. 아직 시·도를 안 골랐으면 한 칸뿐이라 넓게 — 좁으면 "지역 고르기"가 잘렸다. */}
-          <div className="grid w-full grid-cols-3 gap-1.5 sm:flex sm:w-auto sm:flex-wrap sm:items-center"
-               role="group" aria-label="지역 고르기">
-            <select value={pickSidoV} onChange={(e) => e.target.value && pickSido(e.target.value)} aria-label="시·도"
-                    className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand">
-              <option value="">시·도</option>
-              {Object.keys(SIDO_POINT).map((s) => <option key={s} value={s}>{SIDO_SHORT[s]}</option>)}
-            </select>
-            {/* 세 칸을 늘 보인다. 윗 칸을 고르기 전에는 잠가 두고, 무엇을 더 고를 수 있는지는 보이게. */}
-            <select value={pickSggV} onChange={(e) => e.target.value && void pickSgg(e.target.value)} aria-label="시·군·구"
-                    disabled={!pickSidoV || sggOpts.length === 0}
-                    className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand disabled:opacity-50">
-              <option value="">시·군·구</option>
-              {sggOpts.map((g) => <option key={g} value={g}>{g}</option>)}
-            </select>
-            <select value={pickDongV} onChange={(e) => e.target.value && pickDong(e.target.value)} aria-label="읍·면·동"
-                    disabled={!pickSggV || !dongOpts || dongOpts.length === 0}
-                    className="h-9 min-w-0 rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand disabled:opacity-50">
-              <option value="">{pickSggV && !dongOpts ? "불러오는 중…" : "읍·면·동"}</option>
-              {(dongOpts ?? []).map((d) => <option key={d[0]} value={d[0]}>{d[3] ? `${d[3]} ${d[4]}` : d[4]}</option>)}
-            </select>
-          </div>
+          {/* 기관명·주소 검색(관공서·공공기관). 치면 그 탭으로 넘어가고, 결과에 번호가 붙어 지도의 번호와 맞는다. */}
+          <form role="search" onSubmit={(e) => { e.preventDefault(); setQd(q.trim()); }}
+                className="relative w-full sm:w-auto sm:min-w-[260px] sm:flex-1 sm:max-w-[380px]">
+            <input type="search" value={q} enterKeyHint="search" aria-label="기관명 또는 주소"
+                   placeholder="기관명 또는 주소 (예: 시흥시청, 공단)"
+                   onChange={(e) => { setQ(e.target.value); if (e.target.value.trim() && kind !== "orgs") { setKind("orgs"); setRegion(null); setSel(null); } }}
+                   className="h-9 w-full rounded-pill border border-line bg-surface pl-3.5 pr-16 text-[13.5px] text-ink2 outline-none focus:border-brand" />
+            {q && (
+              <button type="button" onClick={() => { setQ(""); setQd(""); }} aria-label="검색어 지우기"
+                      className="absolute right-9 top-1/2 -translate-y-1/2 text-[16px] leading-none text-muted hover:text-ink2">×</button>
+            )}
+            <button type="submit" aria-label="검색" className="absolute right-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-ink2 hover:bg-ground">
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><circle cx="9" cy="9" r="5.5" /><path d="M13.5 13.5 17 17" /></svg>
+            </button>
+          </form>
+        </div>
+        {/* 지역 고르기: 시·도 격자 → 시·군·구 격자 → 읍·면·동. 누르는 대로 지도가 가까워진다(2026-10-21, 매장찾기 식). */}
+        <div className="mt-2.5" role="group" aria-label="지역 고르기">
+          {!pickSidoV ? (
+            <>
+              <p className="mb-1.5 text-[12.5px] text-muted">지역을 골라 주세요</p>
+              <ul className="grid grid-cols-4 gap-1 sm:grid-cols-8">
+                {Object.keys(SIDO_POINT).map((s) => (
+                  <li key={s}><button type="button" onClick={() => pickSido(s)} className="pm-cell">{SIDO_SHORT[s]}</button></li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px]">
+                <button type="button" onClick={() => { setPickSidoV(""); setPickSggV(""); setPickDongV(""); setDongOpts(null); }}
+                        className="font-bold text-brand">‹ {SIDO_SHORT[pickSidoV]}</button>
+                {pickSggV && (
+                  <>
+                    <span className="text-faint">/</span>
+                    <button type="button" onClick={() => { setPickSggV(""); setPickDongV(""); setDongOpts(null); }} className="font-bold text-brand">{pickSggV}</button>
+                  </>
+                )}
+                <span className="text-muted">{pickSggV ? "읍·면·동을 고르면 동네 단계로" : "시·군·구를 고르세요"}</span>
+              </div>
+              {!pickSggV ? (
+                <ul className="grid max-h-44 grid-cols-3 gap-1 overflow-y-auto sm:grid-cols-6 sm:max-h-none">
+                  {sggOpts.map((g) => (
+                    <li key={g}><button type="button" onClick={() => void pickSgg(g)} className="pm-cell">{g}</button></li>
+                  ))}
+                </ul>
+              ) : (
+                <select value={pickDongV} onChange={(e) => e.target.value && pickDong(e.target.value)} aria-label="읍·면·동"
+                        disabled={!dongOpts || dongOpts.length === 0}
+                        className="h-9 w-full rounded-pill border border-line bg-surface px-3 text-[13.5px] text-ink2 outline-none focus:border-brand disabled:opacity-50 sm:w-auto sm:min-w-[200px]">
+                  <option value="">{!dongOpts ? "불러오는 중…" : "읍·면·동 (선택)"}</option>
+                  {(dongOpts ?? []).map((d) => <option key={d[0]} value={d[0]}>{d[3] ? `${d[3]} ${d[4]}` : d[4]}</option>)}
+                </select>
+              )}
+            </>
+          )}
         </div>
         {me && (
           <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
@@ -424,7 +543,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
         <div className="lg:order-2">
           <div ref={mapBox} className="isolate overflow-hidden rounded-card border border-line bg-ground">
             <MapCanvas ref={canvas} pins={pins} kind={kind} me={me} meLabel={meLabel} radius={radius}
-                       selected={sel} onSelect={onSelect} loadItems={loadItems} extra={dongPins} onView={onView}
+                       selected={sel} onSelect={onSelect} loadItems={loadItems} extra={kind === "orgs" ? orgExtraSel : dongPins} onView={onView}
                        className="h-[52vh] max-h-[520px] min-h-[320px] w-full lg:h-[680px] lg:max-h-none" />
           </div>
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-faint">
@@ -432,6 +551,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
             <span><i className="pm-legend pm-legend-j" /> 채용 자리</span>
             <span className="flex items-center gap-1"><i className="pm-legend pm-legend-t1" /><i className="pm-legend pm-legend-t2" /><i className="pm-legend pm-legend-t3" /> 건수 많음·보통·적음</span>
             <span><i className="pm-legend pm-legend-d" /> 읍·면·동 행정복지센터·청사(가까이 확대)</span>
+            <span><i className="pm-legend pm-legend-o" /> 관공서·공공기관 실제 위치(검색하거나 가까이 확대)</span>
             <span>멀리서는 시·도, 가까이는 시·군·구, 더 가까이는 읍·면·동. 거리는 직선거리.</span>
             <span>동·센터 위치 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">OpenStreetMap</a> 기여자</span>
           </p>
@@ -441,16 +561,18 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
           <div className="pb-2 lg:border-b lg:border-line lg:px-4 lg:pb-3 lg:pt-3">
             <div className="flex items-baseline justify-between gap-2">
               <h2 className="text-[1.0625rem] font-bold">
-                총 <span className="num text-brand">{list.total.toLocaleString("ko-KR")}</span>건
+                {kind === "orgs"
+                  ? <>{found ? "검색 결과" : "관공서·공공기관"} <span className="num text-brand">{orgList.length.toLocaleString("ko-KR")}</span>곳</>
+                  : <>총 <span className="num text-brand">{list.total.toLocaleString("ko-KR")}</span>건</>}
               </h2>
-              <select value={sortEff} onChange={(e) => setSort(e.target.value as Sort)} aria-label="정렬" disabled={!me}
+              {kind !== "orgs" && <select value={sortEff} onChange={(e) => setSort(e.target.value as Sort)} aria-label="정렬" disabled={!me}
                       className="h-8 rounded-pill border border-line bg-surface px-2.5 text-[12.5px] text-ink2 outline-none focus:border-brand disabled:opacity-60">
                 <option value="near">가까운 순</option>
                 <option value="end">마감 임박 순</option>
-              </select>
+              </select>}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5" role="group" aria-label="상태">
-              {([["all", "전체"], ["soon", "7일 안 마감"], ["always", "상시"]] as [Status, string][]).map(([v, l]) => (
+              {kind !== "orgs" && ([["all", "전체"], ["soon", "7일 안 마감"], ["always", "상시"]] as [Status, string][]).map(([v, l]) => (
                 <button key={v} type="button" aria-pressed={status === v} onClick={() => setStatus(v)}
                         className={`pm-filter ${status === v ? `pm-filter-on pm-filter-${v}` : ""}`}>{l}</button>
               ))}
@@ -461,10 +583,61 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
                 </button>
               )}
             </div>
-            {!me && <p className="mt-1.5 text-[12px] text-faint">전국 마감 임박 순입니다. 내 위치를 켜면 가까운 순으로 바뀝니다.</p>}
+            {kind !== "orgs" && !me && <p className="mt-1.5 text-[12px] text-faint">전국 마감 임박 순입니다. 내 위치를 켜면 가까운 순으로 바뀝니다.</p>}
+            {kind === "orgs" && <p className="mt-1.5 text-[12px] text-faint">{found ? "번호는 지도의 번호와 같습니다." : me ? "가까운 순입니다. 기관명이나 주소로 찾을 수도 있습니다." : "전국 342개 공공기관과 시·군·구청 청사입니다. 기관명이나 주소로 찾거나 지역을 고르세요."}</p>}
           </div>
 
-          {list.items.length === 0 ? (
+          {kind === "orgs" ? (
+            orgList.length === 0 ? (
+              <div className="card p-8 text-center text-[14px] text-muted lg:m-3">
+                {found ? "찾는 기관이 없습니다. 다른 낱말로 찾아보세요." : "이 조건에는 없습니다. 반경을 넓히거나 지역을 바꿔 보세요."}
+              </div>
+            ) : (
+              <ol ref={listBox} className="grid gap-2 lg:flex-1 lg:content-start lg:overflow-y-auto lg:p-3">
+                {orgList.slice(0, orgShown).map((p) => (
+                  <li key={p.key}>
+                    <div role="button" tabIndex={0} onClick={() => focus(p.key)}
+                         onKeyDown={(e) => { if (e.key === "Enter") focus(p.key); }}
+                         className={`pm-lcard ${sel === p.key ? "pm-lcard-on" : ""}`}>
+                      <div className="flex items-start gap-2">
+                        {p.num ? <em className="pm-num mt-0.5">{p.num}</em> : (
+                          <svg viewBox="0 0 24 24" className={`mt-0.5 h-5 w-5 shrink-0 ${p.org?.id ? "text-[#1E3A8A]" : "text-[#3B5BDB]"}`} aria-hidden>
+                            <path fill="currentColor" d="M12 2C7.6 2 4 5.5 4 9.9 4 15.6 12 22 12 22s8-6.4 8-12.1C20 5.5 16.4 2 12 2z" />
+                            <circle cx="12" cy="9.8" r="3.1" fill="#fff" />
+                          </svg>
+                        )}
+                        {p.org?.id ? (
+                          <Link href={p.more} onClick={(e) => e.stopPropagation()} className="min-w-0 flex-1 text-[14.5px] font-bold leading-snug text-ink hover:text-brand">
+                            <span className="line-clamp-2">{p.label}</span>
+                          </Link>
+                        ) : <b className="min-w-0 flex-1 text-[14.5px] font-bold leading-snug text-ink"><span className="line-clamp-2">{p.label}</span></b>}
+                        <span className={`pm-st ${p.org?.id ? "pm-st-org" : "pm-st-office"}`}>{p.org?.group}</span>
+                      </div>
+                      <dl className="pm-ldl">
+                        <div><dt>주소</dt><dd>{p.org?.address || `${SIDO_SHORT[p.sido] ?? p.sido} ${p.sigungu ?? ""}`}</dd></div>
+                        <div><dt>지역</dt><dd>{[SIDO_SHORT[p.sido] ?? p.sido, p.sigungu].filter(Boolean).join(" ")}{p.km != null && <b className="ml-1.5 text-brand">{fmtKm(p.km)}</b>}</dd></div>
+                        <div><dt>보기</dt>
+                          <dd className="flex flex-wrap gap-x-2.5">
+                            {p.org?.id && <Link href={p.more} onClick={(e) => e.stopPropagation()} className="font-semibold text-brand">기관 정보</Link>}
+                            {p.org?.id && <Link href={`/jobs/org/${encodeURIComponent(p.label)}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-ink2 hover:text-brand">채용 이력</Link>}
+                            {!p.org?.id && <Link href={`/area/${encodeURIComponent(p.sido)}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-brand">{SIDO_SHORT[p.sido] ?? p.sido} 지원금</Link>}
+                            <a href={mapLinks(`${p.label} ${p.org?.address ?? ""}`.trim()).kakao} target="_blank" rel="noopener noreferrer"
+                               onClick={(e) => e.stopPropagation()} className="text-muted hover:text-brand">길찾기</a>
+                          </dd></div>
+                      </dl>
+                    </div>
+                  </li>
+                ))}
+                {orgList.length > orgShown && (
+                  <li>
+                    <button type="button" onClick={() => setOrgShown((n) => n + PAGE)} className="btn btn-ghost w-full">
+                      더 보기 <span className="num ml-1 text-muted">{(orgList.length - orgShown).toLocaleString("ko-KR")}곳</span>
+                    </button>
+                  </li>
+                )}
+              </ol>
+            )
+          ) : list.items.length === 0 ? (
             <div className="card p-8 text-center text-[14px] text-muted lg:m-3">
               {loading ? "불러오는 중…" : me && radius ? "이 반경 안에는 없습니다. 반경을 넓히거나 상태를 '전체'로 바꿔 보세요." : "조건에 맞는 공고가 없습니다."}
             </div>
@@ -511,7 +684,7 @@ export default function PolicyMap({ data, initial }: { data: MapDataLite; initia
           )}
           {regionPoint && (
             <div className="mt-2 px-1 text-[12.5px] lg:mt-0 lg:border-t lg:border-line lg:px-4 lg:py-2">
-              <Link href={regionPoint.more} className="font-semibold text-brand">{regionLabel} 공고 모두 보기 →</Link>
+              <Link href={regionPoint.more} className="font-semibold text-brand">{regionLabel} {kind === "orgs" ? "지원금 보기" : "공고 모두 보기"} →</Link>
               <a href={mapLinks(`${regionPoint.sigungu ?? regionLabel}청`).kakao} target="_blank" rel="noopener noreferrer"
                  className="ml-3 text-muted hover:text-brand">카카오맵 길찾기</a>
             </div>

@@ -477,3 +477,25 @@ main .ad-slot:not(.ad-tall):not(.ad-band) .ad-html { line-height: 0; }
 .pm-filter-on.pm-filter-soon { background: #DC2626; }
 .pm-filter-on.pm-filter-always { background: #2563EB; }
 .pm-filter-on.pm-filter-region { background: #E0242B; }
+
+/* 관공서·공공기관 실제 위치 핀(2026-10-21): 남색. 청사(시청·구청·군청)는 파랑 테두리 */
+.pm-pin.pm-org { gap: 5px; padding: 3px 8px 3px 6px; border: 1.5px solid #1E3A8A; color: #1E3A8A; font-size: 12px; font-weight: 700;
+  box-shadow: 0 4px 12px -6px rgba(17,24,39,.45); }
+.pm-pin.pm-org::after { border-color: #1E3A8A; bottom: -6px; width: 8px; height: 8px; }
+.pm-pin.pm-org.pm-org-office { border-color: #3B5BDB; color: #3B5BDB; } .pm-pin.pm-org.pm-org-office::after { border-color: #3B5BDB; }
+.pm-pin.pm-org:hover, .pm-pin.pm-org.pm-sel { background: #EDF2FF; }
+.pm-pin.pm-orgdot { width: 12px; height: 12px; min-width: 0; padding: 0; border-radius: 50%; border: 2px solid #fff; background: #1E3A8A;
+  transform: translate(-50%, -50%); box-shadow: 0 1px 4px rgba(17,24,39,.4); }
+.pm-pin.pm-orgdot::after { display: none; }
+.pm-pin.pm-orgdot.pm-org-office { background: #3B5BDB; }
+/* 번호 배지(검색 결과): 검은 네모에 흰 숫자 — 목록의 번호와 같다. 점 핀은 번호만 보인다. */
+.pm-num { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 4px;
+  background: #191F28; color: #fff; font-style: normal; font-size: 11.5px; font-weight: 800; line-height: 1; flex: none; }
+.pm-pin.pm-orgdot .pm-num { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.pm-legend-o { border-radius: 3px; background: #fff; border: 1.5px solid #1E3A8A; }
+.pm-st-org { background: #E0E7FF; color: #1E3A8A; }
+.pm-st-office { background: #EDF2FF; color: #3B5BDB; }
+/* 지역 고르기 격자 칸 */
+.pm-cell { display: block; width: 100%; padding: 7px 4px; border-radius: 10px; border: 1px solid #E5E8EC; background: #fff; color: #333D4B;
+  font-size: 13px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-cell:hover { border-color: #5A4BE0; color: #5A4BE0; }
