@@ -7,6 +7,7 @@
     shot:URL   1280×800 첫 화면을 JPEG 로 줄여 base64 로 찍는다(화면 품질 확인용, 쿠키 배너 닫기 시도 포함)
     json:URL   JSON API 응답 앞 3,000자(브라우저 없이 requests)
     head:URL   상태·최종 주소·제목과 글자 앞 300자(링크가 살아 있는지 확인용)
+    links:URL  쪽 안의 링크(글자 | 주소) 앞 120개 — 공식 사이트 안의 정확한 하위 쪽 주소를 찾을 때
 여러 개는 빈칸으로 나눈다. 값은 바깥 공개 쪽 그대로이고 꾸미지 않는다.
 """
 import base64
@@ -72,7 +73,10 @@ def main() -> None:
                 print("--END--")
             else:
                 txt = page.evaluate("() => document.body.innerText")
-                if mode == "head":
+                if mode == "links":
+                    ls = page.evaluate("() => [...document.querySelectorAll('a[href]')].map(a => (a.innerText||'').trim().replace(/\\s+/g,' ').slice(0,40) + ' | ' + a.href)")
+                    print("\n".join(x for x in ls if not x.startswith(' |'))[:9000])
+                elif mode == "head":
                     print(re.sub(r"\s+", " ", txt)[:300])
                 elif mode == "price":
                     lines = [ln.strip() for ln in txt.split("\n") if ln.strip() and len(ln.strip()) < 220 and PRICE.search(ln)]
