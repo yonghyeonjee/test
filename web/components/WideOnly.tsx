@@ -16,7 +16,12 @@ import { useEffect, useState } from "react";
  * 검색엔진은 휴대폰 화면으로 보니(mobile-first) 전과 같다. big(글자 크게) 검사는 광고 때문에 둔 것이라
  * min 으로 쓸 때는 보지 않는다.
  */
-export default function WideOnly({ query, min, children }: { query?: string; min?: "sm" | "lg"; children: React.ReactNode }) {
+export default function WideOnly({ query, min, placeholder = null, children }: {
+  query?: string; min?: "sm" | "lg";
+  /** 그리기 전에 둘 자리(서버에서도 나간다). PC 에서 늦게 나타나며 아래를 미는 것(CLS)을 막는다 — 2026-10-22 첫 화면 CLS 0.46. */
+  placeholder?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   const [ok, setOk] = useState(false);
   const q = query ?? (min === "sm" ? "(min-width: 640px)" : "(min-width: 1024px)");
   const adMode = Boolean(query);
@@ -30,5 +35,5 @@ export default function WideOnly({ query, min, children }: { query?: string; min
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => { mq.removeEventListener("change", on); mo.disconnect(); };
   }, [q, adMode]);
-  return ok ? <>{children}</> : null;
+  return ok ? <>{children}</> : <>{placeholder}</>;
 }
