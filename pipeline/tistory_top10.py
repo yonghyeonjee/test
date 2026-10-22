@@ -108,7 +108,7 @@ def item_prep(entity: str, it: dict, name: str) -> str | None:
     """기관·지역 항목의 '이렇게 준비하세요'를 그 항목의 숫자로 쓴다(몰리는 달·많이 뽑는 직무)."""
     months = [m for m in (it.get("by_month") or [])[:-1] if m.get("n")]
     jobs = [x["label"] for x in (it.get("bars") or {}).get("items", [])[:2]]
-    if not months or entity not in ("org", "region"):
+    if not months or entity not in ("org", "region", "keyword"):
         return None
     peak = max(months, key=lambda m: m["n"])
     pm = int(peak["m"].split("-")[1])
@@ -118,6 +118,9 @@ def item_prep(entity: str, it: dict, name: str) -> str | None:
         what = f" 자리는 {'·'.join(jobs)} 쪽이 많습니다." if jobs else ""
         return f"{lead}{what} {prev}월까지 지난 공고의 자격 요건과 자기소개서 항목을 모아 두면 {pm}월 공고에 바로 낼 수 있습니다."
     what = f" 공고는 {'·'.join(jobs)}에서 많이 나왔습니다." if jobs else ""
+    if entity == "keyword":
+        return (f"{name} 공고는 지난 1년 **{pm}월**({b.n(peak['n'])}건)에 가장 많았고," + (f" {'·'.join(jobs)}에서 자주 냈습니다." if jobs else " 여러 기관이 고르게 냈습니다.")
+                + f" {prev}월까지 이 기관들의 지난 공고에서 응시 자격·우대 사항·전형 순서를 정리해 두면 {pm}월 공고에 바로 낼 수 있습니다.")
     return f"{lead}{what} 이 지역에서 일할 수 있다면 {prev}월부터 매일 새 공고를 확인하는 편이 좋습니다."
 
 
@@ -205,7 +208,8 @@ def compose(post: dict) -> dict:
         hard = hard_for(topic, it["key"])
         if hard:
             concepts = ", ".join(f"[{PSY[k]['name']}]({PSY[k]['href']})" for k in hard["psy"] if k in PSY)
-            blocks.append(b.P(f"**이 일이 힘든 이유.** {hard['hard']} 심리학에서는 이를 {concepts}(으)로 설명합니다."))
+            last = next((PSY[k]["name"] for k in reversed(hard["psy"]) if k in PSY), "")
+            blocks.append(b.P(f"**이 일이 힘든 이유.** {hard['hard']} 심리학에서는 이를 {concepts}{josa(last, '으로/로')[len(last):]} 설명합니다."))
             one = PSY[hard["psy"][0]]
             terms = term_links_md(hard["psy"])
             blocks.append(b.P(f"**들어가기 전에 점검.** {one['desc']} [{one['label']}]({one['href']})으로 내 상태를 먼저 재 보세요."

@@ -155,6 +155,7 @@ ok(tt.josa("외교부", "은/는") == "외교부는" and tt.josa("조달청", "�
 _it = {"name": "외교부", "n": 172, "by_month": [{"m": "2026-02", "n": 5}, {"m": "2026-03", "n": 25}, {"m": "2026-10", "n": 9}],
        "bars": {"items": [{"label": "공무직", "n": 45}, {"label": "행정·사무", "n": 43}]}}
 ok(tt.item_prep("org", _it, "외교부") == "외교부는 지난 1년 **3월**에 25건으로 공고가 가장 많았습니다. 자리는 공무직·행정·사무 쪽이 많습니다. 2월까지 지난 공고의 자격 요건과 자기소개서 항목을 모아 두면 3월 공고에 바로 낼 수 있습니다.", "기관 준비 문장은 그 기관 숫자로")
+ok(tt.item_prep("keyword", _it, "행정직").startswith("행정직 공고는 지난 1년 **3월**(25건)에 가장 많았고, 공무직·행정·사무에서 자주 냈습니다. 2월까지"), "직무 준비 문장도 그 직무 숫자로")
 from top10_links import for_item
 ok(for_item("org", "orgs-national", {"name": "국방부 국군조직", "full_name": "국방부 국군조직 육군 육군본부"})[0][1] == "https://www.army.mil.kr", "긴 기관 이름부터 맞춘다")
 ok(for_item("region", "regions", {"name": "강원", "full_name": "강원특별자치도"})[0][1] == "https://state.gwd.go.kr" and for_item("keyword", "medical", {"key": "nurse"})[0][1] == "https://www.kuksiwon.or.kr", "지역·직종 공식 사이트")
@@ -165,7 +166,7 @@ if _on:
     _its[0]["win_med"] = 0; _its[0]["facts"] = _its[0]["facts"] + ["접수 기간: 보통 **0일**"]
     _c = json.dumps(tt.compose(_on)["body"], ensure_ascii=False)
     ok(_its[0]["full_name"] in _c and _its[1]["full_name"] in _c, "이름이 겹치면 정식 이름으로 가른다")
-    ok("보통 **0일**" not in _c and "보통 0일" not in _c and "은(는)" not in _c, "0일·'은(는)'은 쓰지 않는다")
+    ok("보통 **0일**" not in _c and "보통 0일" not in _c and "은(는)" not in _c and "(으)로" not in _c, "0일·'은(는)'·'(으)로'는 쓰지 않는다")
 
 print("실패 %d" % bad if bad else "모두 통과")
 sys.exit(1 if bad else 0)
