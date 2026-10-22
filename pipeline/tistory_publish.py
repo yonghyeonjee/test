@@ -659,6 +659,7 @@ def main() -> int:
                     help="카테고리 id. 0(기본)이면 글마다 category_for 가 고른다(정책·B2G·일상TIP)")
     ap.add_argument("--composer", choices=["top10"], help="jiwon 글을 그대로 옮기지 않고 티스토리용 글을 따로 쓴다(출처는 jiwon). top10 = pipeline/tistory_top10.py")
     ap.add_argument("--update", help="새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 --check 가 찍는 최근 글 목록에서")
+    ap.add_argument("--redigest", help="이 모음 글 번호를 지금 기준(원 자료 화면·근거 링크·1,250자)으로 다시 쓴다")
     ap.add_argument("--replace", help="이미 올린 짧은 글 번호들(쉼표)을 모음 글 하나로 합쳐 새로 올린 뒤 원래 글들은 지운다")
     ap.add_argument("--post-json", help="blog_posts 대신 이 JSON 파일의 글 하나를 올린다(티스토리 단독 글, 예: world_speed.py 가 만든 out/post.json)")
     ap.add_argument("--images", help="shots/manifest.json — [{\"file\": 경로, \"caption\": 설명}] 순서대로 본문에 끼운다")
@@ -725,6 +726,14 @@ def main() -> int:
                 sb = supabase_client()       # 기록(tistory_posts)용. 없어도 올리는 데는 지장 없다
             except Exception as e:  # noqa: BLE001
                 print(f"  (Supabase 없이 올린다: {type(e).__name__})"); sb = None
+        elif a.redigest:
+            sb = supabase_client()
+            srcs = [r["slug"] for r in (sb.table("tistory_posts").select("slug").eq("post_id", a.redigest).execute().data or [])]
+            if not srcs:
+                sys.exit(f"{a.redigest}번에 묶인 원 글 기록이 없다")
+            posts = [digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst())]
+            a.update, a.mode = a.redigest, "full"
+            print(f"{a.redigest}번 모음 글을 다시 쓴다: {', '.join(srcs)}")
         elif a.replace:
             sb = supabase_client()
             replace_ids = [x for x in re.split(r"[,\s]+", a.replace) if x.isdigit()]
