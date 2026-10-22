@@ -354,13 +354,12 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           오른쪽 기둥으로 줄여 옮겼다. */}
       {/* 맨 위 롤링 띠. 넓은 화면은 아래 두 기둥과 같은 폭으로 나눠 오른쪽에 광고 지면(비면 우리 배너). */}
       {/* 휴대폰용·PC용을 둘 다 HTML 에 싣지 않는다(WideOnly, 2026-10-22). 휴대폰 HTML 에는 휴대폰 것만. */}
-      <HotBanner slides={hot} className="mt-3 lg:hidden" />
-      <WideOnly>
-        <div className="mt-4 hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
-          <HotBanner slides={hot} className="" />
-          <HomeTopAd brief={hot.find((s) => s.kind === "brief") ?? null} />
-        </div>
-      </WideOnly>
+      {/* 띠는 하나만 싣는다. 넓은 화면은 같은 띠 오른쪽에 광고 지면(비면 우리 배너)을 켜진 뒤 붙인다 — 띠 높이가 줄을
+          잡고 있어 늦게 붙어도 아래가 밀리지 않는다. */}
+      <div className="mt-3 grid gap-6 lg:mt-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <HotBanner slides={hot} className="" />
+        <WideOnly><HomeTopAd brief={hot.find((s) => s.kind === "brief") ?? null} /></WideOnly>
+      </div>
       <PortalTop
         index={sggIndex} hot={hotTerms.welfare}
         h1="K나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
@@ -449,7 +448,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           <div className="cv"><PromoBanner placement="home" /></div>
         </>}
         aside={<>
-          <WideOnly>
+          <WideOnly placeholder={<div className="hidden lg:block lg:h-[560px]" aria-hidden="true" />}>
             <HomeMap areas={areas} total={areaTotal} className="hidden lg:block" />
             <HomeCalendar className="hidden lg:block" />
           </WideOnly>

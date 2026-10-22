@@ -68,6 +68,9 @@ def run(url: str, desktop: bool) -> None:
     lcp = au.get("largest-contentful-paint-element", {}).get("details", {}).get("items", [])
     if lcp and lcp[0].get("items"):
         print("  LCP 요소: " + str(lcp[0]["items"][0].get("node", {}).get("snippet", ""))[:160])
+    # LCP 단계(TTFB·불러오기 지연·불러오기·그리기 지연). 글자면 "그리기 지연"이 거의 전부다.
+    if len(lcp) > 1 and lcp[1].get("items"):
+        print("  LCP 단계: " + ", ".join(f"{it.get('phase')} {it.get('timing', 0):.0f}ms" for it in lcp[1]["items"]))
 
 
 arg = sys.argv[1] if len(sys.argv) > 1 else "https://jiwon.knowhow-it.com/"
