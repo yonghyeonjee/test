@@ -174,7 +174,7 @@ def digest_prefix(day: dt.date) -> str:
 
 
 # 묶을 때 빼는 절: 연재 길잡이(티스토리에 없는 글 제목만 남는다)와 운영 사이트 사용법.
-DIGEST_SKIP = re.compile(r"^(다음 편|이전 편|함께 보면|함께 보기|관련 글|이어서 읽기|놓치지 않으려면)")
+DIGEST_SKIP = re.compile(r"^(다음 편|이전 편|함께 보면|함께 보기|관련 글|이어서 읽기|놓치지 않으려면|이렇게 찾으세요)")
 
 
 def _past_deadline(item, day: dt.date) -> bool:
