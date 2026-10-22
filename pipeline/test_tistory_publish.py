@@ -171,7 +171,7 @@ _B = lambda d, n: {"slug": f"jobs-2026-10-{d}", "kind": "daily", "title": f"2026
                             {"type": "p", "text": "**서울** 27건 · [서울 채용 전체](/jobs/region/서울)"},
                             {"type": "list", "items": ["A — 기관 · 10월 29일 마감"]},
                             {"type": "h2", "text": "사흘 안에 마감"}, {"type": "p", "text": "오늘부터 모레까지"},
-                            {"type": "list", "items": [f"B — 기관 · 10월 {d}일 마감"]}, {"type": "p", "text": "그 밖에 200건"},
+                            {"type": "links", "items": [{"label": f"B — 기관 · 10월 {d}일 마감", "href": "/jobs/b"}]}, {"type": "p", "text": "그 밖에 200건"},
                             {"type": "h2", "text": "놓치지 않으려면"}, {"type": "list", "items": ["저장 단추"]},
                             {"type": "h2", "text": "어떤 자리인가"}, {"type": "p", "text": "오늘 공고를 많이 낸 기관: 甲 3건"}]}
 _S = {**_P[1], "slug": "jeonse-loan-listing-1", "title": "전세대출 가능 매물, 믿어도 될까 — 전세가율 80%와 90% (1편)",

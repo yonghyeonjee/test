@@ -259,8 +259,9 @@ def digest(posts: list[dict], day: dt.date) -> dict:
             body.append({"type": "image", "key": f"d{i}_{name}"})
         if p.get("summary"):
             body.append({"type": "p", "text": p["summary"]})
-        for blk in digest_sections(summary_blocks(p["body"], links_cap=8, per_section=3), day, seen):
-            body.append(_unlink_site({**blk, "type": "h3"} if blk.get("type") == "h2" else blk))
+        blocks = [_unlink_site(b) for b in summary_blocks(p["body"], links_cap=8, per_section=3)]   # 공고 링크 목록 → 글자 목록 먼저
+        for blk in digest_sections(blocks, day, seen):
+            body.append({**blk, "type": "h3"} if blk.get("type") == "h2" else blk)
         for u, name, cap in sh[1:]:              # 둘째 화면은 절 끝 근거 자료 앞
             shots.append({"url": u, "key": f"d{i}_{name}", "caption": cap})
             body.append({"type": "image", "key": f"d{i}_{name}"})
