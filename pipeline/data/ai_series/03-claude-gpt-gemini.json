@@ -177,6 +177,10 @@
    ]
   },
   {
+   "type": "p",
+   "text": "공식 요금 페이지: [클로드 요금](https://claude.com/pricing) · [챗GPT 요금](https://chatgpt.com/pricing) · [구글 AI 요금제](https://gemini.google/subscriptions/). 가격은 2026년 10월 21일 확인 값이며 환율·세금에 따라 실제 결제액은 다를 수 있습니다."
+  },
+  {
    "type": "h2",
    "text": "숫자로 본 세 AI — 많이 쓰는 AI 와 일하는 AI",
    "id": "numbers"
@@ -286,6 +290,10 @@
    ]
   },
   {
+   "type": "p",
+   "text": "각 역할의 근거가 된 공식 기능 안내: [클로드 제품 소개](https://claude.com/product/overview) · [클로드 코드](https://claude.com/product/claude-code) · [챗GPT 웹 검색 도움말](https://help.openai.com/en/articles/9237897-searching-the-web-with-chatgpt) · [제미나이 이미지 만들기](https://gemini.google/overview/image-generation/) · [제미나이 영상 만들기](https://gemini.google/overview/video-generation/) · [지메일의 제미나이](https://support.google.com/mail/answer/14355636?hl=ko)."
+  },
+  {
    "type": "h2",
    "text": "하나만 구독한다면?",
    "id": "one"
@@ -302,6 +310,14 @@
   {
    "type": "p",
    "text": "셋 다 무료 요금제가 있으니 **같은 질문을 세 곳에 던져 보고** 마음에 드는 쪽을 구독하는 것이 가장 확실합니다."
+  },
+  {
+   "type": "image",
+   "key": "one"
+  },
+  {
+   "type": "p",
+   "text": "결제 전에는 세 서비스 모두 무료로 같은 질문을 던져 비교해 보세요: [클로드](https://claude.com) · [챗GPT](https://chatgpt.com) · [제미나이](https://gemini.google.com). 업무용으로 고민된다면 [지피터스 업무 사례 집계](https://www.gpters.org/news/post/ai-ranking-october-2026-t17YE1JiZBDlJxh) 의 쓰임새 비교도 참고할 만합니다."
   },
   {
    "type": "h2",
@@ -630,6 +646,21 @@
    "source": "abcfact 정리",
    "caption": "작업별로 고르는 AI 추천표",
    "alt": "작업별 AI 추천 클로드 챗GPT 제미나이"
+  },
+  {
+   "key": "one",
+   "kind": "card",
+   "file": "which-one-ai-subscription.png",
+   "title": "하나만 구독한다면?",
+   "lines": [
+    "글쓰기·업무 자동화·코딩 → 클로드 Pro",
+    "검색·이미지·음성 등 두루 → 챗GPT Plus",
+    "지메일·드라이브·안드로이드 → 구글 AI Pro",
+    "가볍게 → 세 서비스 무료로 비교"
+   ],
+   "source": "abcfact 정리",
+   "caption": "하나만 구독할 때 고르는 기준",
+   "alt": "클로드 챗GPT 제미나이 하나만 구독 추천"
   }
  ],
  "shots": [

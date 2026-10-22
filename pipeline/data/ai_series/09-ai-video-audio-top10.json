@@ -258,6 +258,10 @@
    "text": "**이럴 때 쓰세요.** 인스타그램 릴스 같은 메타 플랫폼용 영상을 만드는 사람이라면 지켜볼 모델입니다. 한국에서 쓸 수 있는 범위는 아직 공식 안내를 확인해야 합니다."
   },
   {
+   "type": "p",
+   "text": "메타의 AI 제품·모델 소개: [AI at Meta](https://ai.meta.com) · 순위 근거: [Arena 텍스트→영상 순위표](https://arena.ai/leaderboard/video/text-to-video)"
+  },
+  {
    "type": "h2",
    "text": "8위 해피호스 1.0(HappyHorse) — 1,427점",
    "id": "r8"
@@ -283,6 +287,10 @@
    "text": "**이럴 때 쓰세요.** 아직 일반 사용자가 쓰기 쉬운 서비스가 정리되지 않았다면, 순위표 안의 대결 모드에서 결과물만 비교해 보는 것도 방법입니다."
   },
   {
+   "type": "p",
+   "text": "순위 근거: [Arena 텍스트→영상 순위표](https://arena.ai/leaderboard/video/text-to-video) — 같은 알리바바 계열 모델 [완(Wan)](https://wan.video) 공식 사이트도 함께 보세요."
+  },
+  {
    "type": "h2",
    "text": "9위 오픈AI 소라 2 프로(Sora 2 Pro) — 1,368점",
    "id": "r9"
@@ -306,6 +314,10 @@
   {
    "type": "p",
    "text": "**이럴 때 쓰세요.** 대사·효과음이 함께 붙은 짧은 장면을 만들 때 써 볼 만합니다. 쓸 수 있는 요금제와 국가는 오픈AI 공식 안내를 먼저 확인하세요."
+  },
+  {
+   "type": "p",
+   "text": "오픈AI 공식 안내: [챗GPT 요금(소라 포함 여부는 플랜별 안내 확인)](https://chatgpt.com/pricing) · 순위 근거: [Arena 텍스트→영상 순위표](https://arena.ai/leaderboard/video/text-to-video)"
   },
   {
    "type": "h2",
@@ -451,6 +463,10 @@
     "**배경음악** → 수노·유디오 무료로 시험 후 결정",
     "**강의·사내 교육 영상** → 헤이젠·신세시아 아바타"
    ]
+  },
+  {
+   "type": "p",
+   "text": "바로 써 보기: [제미나이 영상 만들기](https://gemini.google/overview/video-generation/) · [캡컷 요금](https://www.capcut.com/pricing) · [그록 이매진](https://grok.com/imagine) · [타입캐스트](https://typecast.ai/kr) · [일레븐랩스](https://elevenlabs.io) · [수노](https://suno.com) · [헤이젠](https://www.heygen.com)"
   },
   {
    "type": "h2",

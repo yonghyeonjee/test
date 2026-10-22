@@ -105,9 +105,15 @@ for key in ("civil", "orgs", "welfare-sido", "license-applicants"):
     ok("K나라지원 자료로 본" not in c["title"], f"{key}: 제목에 운영 사이트 이름 없음")
     orig = {x["text"] for x in posts[key]["body"] if x["type"] == "p"}
     ok(not (orig & {x["text"] for x in c["body"] if x["type"] == "p"}), f"{key}: 원문 문단 복사 없음")
-    imgs = [(f"[IMG{i}]", None) for i in range(1, 14)]
-    html = tp.render(c, "full", imgs)
-    ok(all(f"[IMG{i}]" in html for i in range(1, 14)), f"{key}: 사진 13장 모두 들어감")
+    _n = len(posts[key]["stats"]["items"][:10])
+    _keys = ["open", "overview", "top10"] + tt.WRAP_SHOTS[posts[key]["stats"]["entity"]] + [f"item_{i}" for i in range(1, _n + 1)] + [f"live_{i}" for i in range(1, _n + 1)]
+    html = tp.render(c, "full", None, {k: (f"[IMG:{k}]", None) for k in _keys})
+    ok(all(f"[IMG:{k}]" in html for k in _keys), f"{key}: 사진 25장(차트·항목 화면·원 자료 화면) 모두 제자리에")
+    _secs = re.split(r"<h2", html)
+    ok(all(f"[IMG:item_{i}]" in _secs_i and f"[IMG:live_{i}]" in _secs_i and "](" not in _secs_i[:0] for i, _secs_i in
+           ((i, next(x for x in _secs if f"{i}위 " in x[:80])) for i in range(1, _n + 1))), f"{key}: 순위 절마다 차트와 실제 화면")
+    ok(all(re.search(r'href="https?://(?!jiwon)', x) for x in _secs[1:] if 'id="refs"' not in x[:60] and 'id="sites"' not in x[:60]),
+       f"{key}: 소제목마다 바깥(공식) 링크")
 c = tt.compose(posts["civil"])
 ok(sum(1 for x in c["body"] if x["type"] == "p" and x["text"].startswith("**이 일이 힘든 이유.**")) == len(c["stats"]["items"]), "직렬 티스토리 글: 항목마다 힘든 이유")
 ok(any("Maslach" in i["label"] for x in c["body"] if x["type"] == "links" for i in x["items"]), "참고 문헌에 번아웃 척도")

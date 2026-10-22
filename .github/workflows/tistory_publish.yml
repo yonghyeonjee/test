@@ -135,6 +135,7 @@ jobs:
           pip install -q matplotlib
           if [ -n "$TOP10" ]; then
             [ -f shots/open.png ] || python -u pipeline/shot_pages.py "/jobs/status/open|open|지금 접수 중인 공공기관 채용 공고 (출처: K나라지원)|" || echo "::warning::화면 사진 실패 — 차트만 넣는다"
+            python -u pipeline/shot_top10.py --slug "$SLUG" || echo "::warning::항목 화면 일부 실패 — 차트만 넣는다"
             python -u pipeline/chart_top10.py --slug "$SLUG"
           else
             python -u pipeline/chart_top_roles.py --slug "$SLUG"

@@ -237,6 +237,8 @@ def take_shots(shots: list[dict]) -> dict[str, bool]:
 
 # ---------- 검사 ----------
 LINK = re.compile(r"\]\((https?://[^)]+)\)")
+MIN_CHARS = 1250                                       # 글 하나의 최소 분량(본문 글자)
+SECTION_EXEMPT = {"toc", "faq", "series", "refs"}      # 사진·링크 검사에서 빼는 소제목
 
 
 def check(post: dict) -> list[str]:
@@ -274,8 +276,28 @@ def check(post: dict) -> list[str]:
         errs.append("jiwon 링크는 1개 이하")
     if len(set(hosts)) < 4:
         errs.append(f"바깥 링크 도메인 4곳 이상(지금 {len(set(hosts))})")
-    if not any(b["type"] == "series" for b in body):
+    if post.get("series", True) and not any(b["type"] == "series" for b in body):
         errs.append("시리즈 목록 블록 필요")
+    # 분량: 본문 글자(공백·기호 링크 주소 제외) 1,250자 이상
+    plain = re.sub(r"\]\([^)]*\)", "]", text)
+    n = len(re.sub(r"[\s\"{}\[\]:,]|\btype\b|\btext\b|\bitems\b|\bkey\b|\bimage\b|\bh2\b|\bh3\b|\bp\b|\blist\b|\bid\b", "", plain))
+    if n < MIN_CHARS:
+        errs.append(f"본문 {n}자(최소 {MIN_CHARS}자)")
+    # 소제목(h2)마다 사진 1장 이상과 바깥 링크 1개 이상(목차·묻고 답하기·시리즈·참고 자료 제외)
+    sec, cur = [], None
+    for b_ in body:
+        if b_["type"] == "h2":
+            cur = {"h": b_, "img": 0, "link": 0}; sec.append(cur)
+        elif cur is not None:
+            cur["img"] += b_["type"] == "image"
+            cur["link"] += len(LINK.findall(json.dumps(b_, ensure_ascii=False)))
+    for c in sec:
+        if c["h"].get("id") in SECTION_EXEMPT:
+            continue
+        if not c["img"]:
+            errs.append(f"소제목 '{c['h']['text'][:20]}' 에 사진 없음")
+        if not c["link"]:
+            errs.append(f"소제목 '{c['h']['text'][:20]}' 에 바깥 링크 없음")
     first = post["summary"]
     if not any(k.split()[0] in first for k in post["keywords"][:3]):
         errs.append("요약 첫 문단에 핵심 키워드")

@@ -89,6 +89,14 @@
    ]
   },
   {
+   "type": "image",
+   "key": "c_role"
+  },
+  {
+   "type": "p",
+   "text": "더 보기: [앤트로픽 가이드](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [오픈AI 가이드](https://developers.openai.com/api/docs/guides/prompt-engineering)"
+  },
+  {
    "type": "h2",
    "text": "2. 결과물의 모양을 정한다",
    "id": "format"
@@ -113,6 +121,14 @@
      "1,500자 블로그 글. 소제목 4개, 각 소제목 아래 2~3문단, 마지막에 세 줄 요약"
     ]
    ]
+  },
+  {
+   "type": "image",
+   "key": "c_format"
+  },
+  {
+   "type": "p",
+   "text": "더 보기: [구글 프롬프트 전략](https://ai.google.dev/gemini-api/docs/prompting-strategies) · [오픈AI 가이드](https://developers.openai.com/api/docs/guides/prompt-engineering)"
   },
   {
    "type": "h2",
@@ -145,6 +161,10 @@
    "key": "anthropic"
   },
   {
+   "type": "p",
+   "text": "더 보기: [앤트로픽, 긴 자료 다루기 안내](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [프롬프트 엔지니어링 가이드 한국어판](https://www.promptingguide.ai/kr)"
+  },
+  {
    "type": "h2",
    "text": "4. 예시를 보여 준다",
    "id": "example"
@@ -165,6 +185,14 @@
      "아래 예시처럼 짧고 숫자가 들어간 문구로 5개 써 줘.\n예) '하루 3분, 거북목이 펴집니다'\n예) '1리터 텀블러, 출근부터 퇴근까지'"
     ]
    ]
+  },
+  {
+   "type": "image",
+   "key": "c_example"
+  },
+  {
+   "type": "p",
+   "text": "더 보기: [구글, 예시 포함하기](https://ai.google.dev/gemini-api/docs/prompting-strategies) · [가이드 한국어판, 퓨샷](https://www.promptingguide.ai/kr)"
   },
   {
    "type": "h2",
@@ -191,6 +219,10 @@
   {
    "type": "image",
    "key": "openai"
+  },
+  {
+   "type": "p",
+   "text": "더 보기: [오픈AI, 복잡한 일은 나누기](https://developers.openai.com/api/docs/guides/prompt-engineering) · [앤트로픽, 단계 나누기](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview)"
   },
   {
    "type": "h2",
@@ -223,6 +255,10 @@
    "key": "google"
   },
   {
+   "type": "p",
+   "text": "더 보기: [구글, 제약 조건 적기](https://ai.google.dev/gemini-api/docs/prompting-strategies) · [오픈AI 가이드](https://developers.openai.com/api/docs/guides/prompt-engineering)"
+  },
+  {
    "type": "h2",
    "text": "7. 검토시키고 다듬는다",
    "id": "review"
@@ -249,6 +285,14 @@
    ]
   },
   {
+   "type": "image",
+   "key": "c_review"
+  },
+  {
+   "type": "p",
+   "text": "더 보기: [앤트로픽 가이드](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [구글 프롬프트 전략](https://ai.google.dev/gemini-api/docs/prompting-strategies)"
+  },
+  {
    "type": "h2",
    "text": "복사해 쓰는 프롬프트 틀",
    "id": "template"
@@ -266,6 +310,10 @@
    "text": "매번 다 채울 필요는 없습니다. 답이 마음에 안 들 때 **빠진 칸이 무엇인지** 보는 점검표로 쓰면 됩니다."
   },
   {
+   "type": "p",
+   "text": "더 보기: [세 회사 공식 가이드: 앤트로픽](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [오픈AI](https://developers.openai.com/api/docs/guides/prompt-engineering) · [구글](https://ai.google.dev/gemini-api/docs/prompting-strategies)"
+  },
+  {
    "type": "h2",
    "text": "자주 하는 실수 4가지",
    "id": "mistakes"
@@ -278,6 +326,14 @@
     "**출처 없이 숫자 믿기** — 통계·법·의학 정보는 원문 링크를 열어 확인하세요.",
     "**개인정보·회사 기밀 붙여 넣기** — 주민번호·고객 연락처·내부 문서는 넣기 전에 회사 규정과 데이터 설정을 확인하세요."
    ]
+  },
+  {
+   "type": "image",
+   "key": "c_mistakes"
+  },
+  {
+   "type": "p",
+   "text": "더 보기: [가이드 한국어판](https://www.promptingguide.ai/kr) · [오픈AI 가이드](https://developers.openai.com/api/docs/guides/prompt-engineering)"
   },
   {
    "type": "h2",
@@ -418,6 +474,81 @@
    "source": "abcfact 정리",
    "caption": "상황·목적·자료·형식·조건·순서 6칸 프롬프트 틀",
    "alt": "프롬프트 템플릿 6칸 복사해서 쓰기"
+  },
+  {
+   "key": "c_role",
+   "kind": "card",
+   "file": "prompt-role-context-example.png",
+   "title": "1. 역할과 상황",
+   "lines": [
+    "나쁜 예: 자기소개서 써 줘",
+    "좋은 예: 너는 공공기관 인사 담당자야.",
+    "  행정직 신입 자기소개서를 검토해 줘",
+    "→ 관점이 정해져 답이 구체적"
+   ],
+   "source": "abcfact 정리",
+   "caption": "역할과 상황을 알려 주는 프롬프트 예시",
+   "alt": "프롬프트 역할 지정 예시"
+  },
+  {
+   "key": "c_format",
+   "kind": "card",
+   "file": "prompt-output-format-example.png",
+   "title": "2. 결과물의 모양",
+   "lines": [
+    "표 · 목록 · 글자 수 · 말투를 정한다",
+    "예: 3열 표(항목·장점·단점)로",
+    "예: 500자 안팎, 존댓말",
+    "→ 다시 고칠 일이 줄어든다"
+   ],
+   "source": "abcfact 정리",
+   "caption": "결과물 형식을 정하는 프롬프트 예시",
+   "alt": "프롬프트 출력 형식 지정 예시"
+  },
+  {
+   "key": "c_example",
+   "kind": "card",
+   "file": "prompt-few-shot-example.png",
+   "title": "4. 예시 보여 주기",
+   "lines": [
+    "원하는 답 1~3개를 먼저 보여 준다",
+    "예: '입력 → 출력' 쌍 두 개",
+    "AI 가 형식과 말투를 따라 한다",
+    "예시가 많을수록 결과가 비슷해진다"
+   ],
+   "source": "abcfact 정리",
+   "caption": "예시를 보여 주는 퓨샷 프롬프트",
+   "alt": "퓨샷 프롬프트 예시"
+  },
+  {
+   "key": "c_review",
+   "kind": "card",
+   "file": "prompt-self-review-example.png",
+   "title": "7. 검토시키고 다듬기",
+   "lines": [
+    "① 초안을 받는다",
+    "② '틀린 사실·빠진 점을 찾아 줘'",
+    "③ 고친 판을 다시 받는다",
+    "→ 한 번에 완벽을 바라지 않는다"
+   ],
+   "source": "abcfact 정리",
+   "caption": "AI 에게 스스로 검토시키는 순서",
+   "alt": "AI 자기 검토 프롬프트 순서"
+  },
+  {
+   "key": "c_mistakes",
+   "kind": "card",
+   "file": "prompt-common-mistakes.png",
+   "title": "자주 하는 실수 4가지",
+   "lines": [
+    "① 한 줄로 모든 걸 시킨다",
+    "② 자료 없이 사실을 묻는다",
+    "③ 형식을 안 정한다",
+    "④ 첫 답을 그대로 쓴다"
+   ],
+   "source": "abcfact 정리",
+   "caption": "프롬프트 자주 하는 실수",
+   "alt": "프롬프트 실수 4가지"
   }
  ],
  "shots": [

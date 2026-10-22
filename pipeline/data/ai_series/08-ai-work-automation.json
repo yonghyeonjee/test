@@ -61,6 +61,10 @@
    "text": "기준은 하나입니다. **자료가 이미 있는 곳의 AI 를 먼저 쓰세요.** 메일이 지메일에 있으면 제미나이, 문서가 워드·엑셀에 있으면 코파일럿, 회의 기록이 노션에 있으면 노션 AI 가 가장 빠릅니다. 자료를 옮겨 붙여 넣어야 한다면 긴 글을 잘 다루는 범용 AI 가 낫습니다."
   },
   {
+   "type": "p",
+   "text": "각 도구 공식 안내: [엑셀의 코파일럿 시작하기](https://support.microsoft.com/ko-kr/excel/copilot/get-started-with-copilot-in-excel) · [지메일의 제미나이](https://support.google.com/mail/answer/14355636?hl=ko) · [노션 AI 도움말](https://www.notion.com/help/guides/category/ai) · [슬랙 AI](https://slack.com/features/ai) · [n8n](https://n8n.io) · [재피어 AI](https://zapier.com/ai)"
+  },
+  {
    "type": "h2",
    "text": "1. 엑셀·스프레드시트 — 수식과 데이터 정리",
    "id": "excel"
@@ -198,6 +202,10 @@
     "**숫자는 원자료와 대조** — AI 가 정리한 표의 합계·비율은 반드시 다시 계산합니다.",
     "**최종 책임은 사람** — 보내는 메일, 올리는 보고서는 내가 읽고 고친 뒤 내 이름으로 냅니다."
    ]
+  },
+  {
+   "type": "p",
+   "text": "회사 자료를 넣기 전 확인할 곳: [개인정보보호위원회](https://www.pipc.go.kr) 의 생성형 AI 개인정보 안내, 쓰는 서비스의 데이터 설정([챗GPT 요금·플랜별 데이터 정책](https://chatgpt.com/pricing) · [클로드 요금·플랜](https://claude.com/pricing) · [구글 워크스페이스 AI](https://workspace.google.com/solutions/ai/))."
   },
   {
    "type": "h2",

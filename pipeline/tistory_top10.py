@@ -21,6 +21,7 @@ from tistory_top_roles import compose as compose_roles_legacy  # noqa: E402
 
 SITE, BRAND = b.SITE, b.BRAND
 GOJOBS, ALIO, QNET, BOKJIRO = "https://www.gojobs.go.kr", "https://job.alio.go.kr", "https://www.q-net.or.kr", "https://www.bokjiro.go.kr"
+BIZINFO = "https://www.bizinfo.go.kr"
 
 # 항목 종류별 말투 재료
 INTRO = {
@@ -68,9 +69,20 @@ WRAP = {
 }
 
 
-BIZINFO = "https://www.bizinfo.go.kr"
 OFFICIAL = [("나라일터", GOJOBS, ("나라일터",)), ("잡알리오", ALIO, ("잡알리오",)), ("큐넷", QNET, ("큐넷",)),
             ("복지로", BOKJIRO, ("지원사업", "복지")), ("기업마당", BIZINFO, ("기업마당", "기업지원"))]
+
+
+# 정리 절에 넣는 원 자료 사이트 화면(shot_top10.py 가 찍는 key)과 안내 문장
+WRAP_SHOTS = {"keyword": ["gojobs", "alio"], "org": ["gojobs", "alio"], "region": ["gojobs", "alio"],
+              "welfare_region": ["bokjiro", "bizinfo"], "welfare_topic": ["bokjiro", "bizinfo"], "license": ["qnet"]}
+WRAP_LINE = {
+    **{e: f"공고 원문은 [인사혁신처 나라일터]({GOJOBS})(국가·지자체)와 [잡알리오]({ALIO})(공공기관)에서 확인하고 접수합니다. 마감 시각과 제출 서류는 공고 본문이 기준입니다."
+       for e in ("keyword", "org", "region")},
+    **{e: f"신청은 [복지로]({BOKJIRO})(복지 서비스)와 [기업마당]({BIZINFO})(기업 지원사업)에서 합니다. 조건과 금액은 사업 안내문이 기준입니다."
+       for e in ("welfare_region", "welfare_topic")},
+    "license": f"시험 일정과 원서 접수는 [큐넷]({QNET})에서 합니다. 합격 기준과 응시 자격은 종목별 시행 공고가 기준입니다.",
+}
 
 
 def official_links(source: str) -> list[tuple[str, str]]:
@@ -122,6 +134,7 @@ def compose(post: dict) -> dict:
 
     # 현황
     blocks.append(b.H2("현황은?", "now"))
+    blocks.append({"type": "image", "key": "open"})
     blocks.append(b.LIST(ov["facts"]))
     if ov.get("by_month"):
         months = ov["by_month"]
@@ -130,12 +143,14 @@ def compose(post: dict) -> dict:
         blocks.append(b.BARS([{"label": f"{int(x['m'].split('-')[1])}월", "n": x["n"]} for x in months], unit=unit))
     elif ov.get("bars", {}).get("items"):
         blocks.append(b.BARS(ov["bars"]["items"], unit=unit))
+    blocks.append({"type": "image", "key": "overview"})
     blocks.append(src_official(source, f" · {b.kdate(today.isoformat())} 기준"))
 
     # 1위 … 10위
     for i, it in enumerate(items):
         unit_lbl = f"{b.n(it['n'])}{unit}"
         blocks.append(b.H2(f"{i+1}위 {it['name']} — {'최근 1년 공고' if entity in ('keyword','org','region') else '사업' if entity.startswith('welfare') else '필기 응시자'} {unit_lbl}", f"r{i+1}"))
+        blocks.append({"type": "image", "key": f"item_{i+1}"})
         blocks.append(b.LIST(it["facts"]))
         desc = it.get("desc") or notes.get(it["key"], "")
         if desc:
@@ -168,12 +183,14 @@ def compose(post: dict) -> dict:
             blocks.append(b.P("**요즘 흐름.** " + (f"최근 석 달에만 {b.n(it['n90'])}건({s90}%)이 나와 지금이 지원하기 좋은 시기입니다." if s90 >= 30 else
                                               f"최근 석 달에 {b.n(it['n90'])}건({s90}%)으로 한 해 내내 꾸준히 열립니다." if s90 >= 20 else
                                               f"최근 석 달에는 {b.n(it['n90'])}건({s90}%)으로 뜸한 편이라 몰리는 달을 기다리는 편이 낫습니다.")))
+        blocks.append({"type": "image", "key": f"live_{i+1}"})
         blocks.append(b.P(f"**이렇게 준비하세요.** {tips.get(it['key'], PREP[entity])}"))
         blocks.append(src_official(source))
 
     # 비교
     blocks.append(b.H2(f"{what} TOP10 비교", "compare"))
     blocks.append(b.P(f"한눈에 보면 이렇습니다. 상위 세 항목이 전체의 **{b.pct(sum(i['n'] for i in items[:3]), total)}%**입니다." if total else "한눈에 보면 이렇습니다."))
+    blocks.append({"type": "image", "key": "top10"})
     if entity in ("keyword", "org", "region"):
         blocks.append(b.TABLE(["순위", what, "최근 1년 공고", "접수 중", "접수 기간"],
                               [[f"{i+1}위", it["name"], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{int(it['win_med'])}일" if it.get("win_med") is not None else "-"] for i, it in enumerate(items)]))
@@ -188,6 +205,11 @@ def compose(post: dict) -> dict:
     # 정리
     blocks.append(b.H2("정리", "wrap"))
     blocks.append(b.LIST(WRAP[entity]))
+    ws = WRAP_SHOTS[entity]
+    blocks.append({"type": "image", "key": ws[0]})
+    blocks.append(b.P(WRAP_LINE[entity]))
+    for k in ws[1:]:
+        blocks.append({"type": "image", "key": k})
     blocks.append(b.P("실제 지원·신청은 아래 공식 사이트에서 하고, 일이 힘든 이유를 심리학으로 풀어 보고 싶다면 "
                       f"[jeepedia 심리 테스트]({PSY['burnout']['href'].rsplit('/', 2)[0]}/)도 함께 보세요."))
 

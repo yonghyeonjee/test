@@ -99,6 +99,10 @@
    "key": "total"
   },
   {
+   "type": "p",
+   "text": "출처: [와이즈앱·리테일 9월 생성형 AI 앱 조사(ZDNet Korea 보도)](https://zdnet.co.kr/view/?no=20261013163218) · [지피터스, AI 순위 2026년 10월 — 4월 조사 비교](https://www.gpters.org/news/post/ai-ranking-october-2026-t17YE1JiZBDlJxh) · [플래텀 보도](https://platum.kr/archives/296143)"
+  },
+  {
    "type": "h2",
    "text": "1위 챗GPT(ChatGPT) — 월 2,470만 명",
    "id": "rchatgpt"
@@ -376,6 +380,10 @@
    "text": "기존 AI 를 활용한 서비스의 강점은 **한 곳에서 여러 AI 를 비교**하거나, 검색·통화·문서 같은 **특정 일에 맞춘 화면**을 준다는 점입니다. 대신 바탕 모델이 바뀌면 품질도 함께 흔들리고, 최신 기능은 원래 회사 앱에 먼저 들어오는 일이 많습니다."
   },
   {
+   "type": "p",
+   "text": "모델 출처는 각 서비스 공식 안내 기준입니다: [퍼플렉시티](https://www.perplexity.ai/hub) · [뤼튼](https://wrtn.ai) · [젠스파크](https://www.genspark.ai) · [에이닷](https://adot.ai) · [마이크로소프트 코파일럿](https://www.microsoft.com/ko-kr/copilot)."
+  },
+  {
    "type": "h2",
    "text": "어떤 앱을 고를까 — 목적별 정리",
    "id": "pick"
@@ -395,6 +403,14 @@
   {
    "type": "p",
    "text": "지피터스 집계처럼 실제로는 **두 개 이상을 나눠 쓰는 사람**이 많습니다. 와이즈앱 자료로 계산하면 사용자 한 명이 평균 1.48개의 AI 앱을 씁니다."
+  },
+  {
+   "type": "image",
+   "key": "pick"
+  },
+  {
+   "type": "p",
+   "text": "요금과 기능은 공식 페이지에서 최신 내용을 확인하세요: [챗GPT 요금](https://chatgpt.com/pricing) · [구글 AI 요금제](https://gemini.google/subscriptions/) · [클로드 요금](https://claude.com/pricing) · [그록 요금](https://grok.com/plans) · [제미나이 노트북](https://notebook.google.com)."
   },
   {
    "type": "h2",
@@ -599,6 +615,54 @@
    "source": "각 서비스 공개 정보 정리",
    "caption": "TOP10 앱을 AI 모델 출처로 나눈 표",
    "alt": "자체 AI 모델 앱과 기존 AI 활용 서비스 분류표"
+  },
+  {
+   "key": "pick",
+   "kind": "matrix",
+   "file": "ai-app-picker-by-purpose.png",
+   "title": "목적별로 고르는 AI 앱",
+   "sub": "abcfact 정리 · 첫 추천은 ◎",
+   "rows": [
+    "처음 써 보기",
+    "구글 서비스 연결",
+    "보고서·긴 글",
+    "출처 있는 조사",
+    "내 자료로 정리",
+    "통화 요약"
+   ],
+   "cols": [
+    "첫 추천",
+    "함께 쓰면 좋은 것"
+   ],
+   "cells": [
+    [
+     "◎ 챗GPT",
+     "제미나이"
+    ],
+    [
+     "◎ 제미나이",
+     "제미나이 노트북"
+    ],
+    [
+     "◎ 클로드",
+     "챗GPT"
+    ],
+    [
+     "◎ 퍼플렉시티",
+     "젠스파크"
+    ],
+    [
+     "◎ 제미나이 노트북",
+     "클로드"
+    ],
+    [
+     "◎ 에이닷",
+     "—"
+    ]
+   ],
+   "source": "abcfact 정리",
+   "caption": "목적별 AI 앱 추천표",
+   "alt": "목적별 AI 앱 추천 챗GPT 제미나이 클로드 퍼플렉시티"
   }
  ],
  "shots": [

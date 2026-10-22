@@ -129,15 +129,23 @@ def main() -> int:
     setup_font()
     os.makedirs(a.out, exist_ok=True)
     manifest = []
-    if os.path.exists(os.path.join(a.out, "open.png")):
-        manifest.append({"file": "open.png", "caption": f"지금 접수 중인 공공기관 채용 공고 (출처: {b.BRAND})"})
+    have = lambda f: os.path.exists(os.path.join(a.out, f))   # noqa: E731 — shot_pages·shot_top10 이 먼저 찍어 둔 화면
+    alt = st["name"].replace("TOP10", "").strip()
+    if have("open.png"):
+        manifest.append({"key": "open", "file": "open.png", "caption": f"지금 접수 중인 공공기관 채용 공고 화면 (출처: {b.BRAND})", "alt": "지금 접수 중인 공공기관 채용 공고 목록 화면"})
     draw_overview(st, os.path.join(a.out, "overview.png"))
-    manifest.append({"file": "overview.png", "caption": f"현황 (출처: {b.BRAND})"})
+    manifest.append({"key": "overview", "file": "overview.png", "caption": f"현황 (출처: {b.BRAND})", "alt": f"{alt} 현황 차트"})
     for i, it in enumerate(st["items"][:10], 1):
         draw_item(i, it, st, os.path.join(a.out, f"item_{i}.png"))
-        manifest.append({"file": f"item_{i}.png", "caption": f"{i}위 {it['name']} (출처: {b.BRAND})"})
+        manifest.append({"key": f"item_{i}", "file": f"item_{i}.png", "caption": f"{i}위 {it['name']} (출처: {b.BRAND})", "alt": f"{alt} {i}위 {it['name']} 차트"})
+        if have(f"live_{i}.png"):
+            manifest.append({"key": f"live_{i}", "file": f"live_{i}.png", "caption": f"{i}위 {it['name']} — 지금 올라와 있는 공고 목록 화면", "alt": f"{it['name']} 채용 공고 목록 화면"})
     draw_top10(st, os.path.join(a.out, "top10.png"))
-    manifest.append({"file": "top10.png", "caption": f"{st['name']} 비교 (출처: {b.BRAND})"})
+    manifest.append({"key": "top10", "file": "top10.png", "caption": f"{st['name']} 비교 (출처: {b.BRAND})", "alt": f"{alt} 순위 비교 차트"})
+    from shot_top10 import SITES
+    for k, (_u, cap) in SITES.items():
+        if have(f"{k}.png"):
+            manifest.append({"key": k, "file": f"{k}.png", "caption": cap, "alt": cap.split(" — ")[0] + " 화면"})
     with open(os.path.join(a.out, "manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=1)
     print(f"{len(manifest)}장 → {a.out}/manifest.json")

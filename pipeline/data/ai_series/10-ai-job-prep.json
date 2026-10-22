@@ -67,6 +67,10 @@
    ]
   },
   {
+   "type": "p",
+   "text": "공식 채용 사이트: [고용24](https://www.work24.go.kr) · [나라일터](https://www.gojobs.go.kr) · [잡알리오](https://job.alio.go.kr) · [NCS 국가직무능력표준](https://www.ncs.go.kr)"
+  },
+  {
    "type": "h2",
    "text": "1단계 공식 사이트에서 공고 찾기",
    "id": "find"
@@ -162,6 +166,10 @@
    ]
   },
   {
+   "type": "p",
+   "text": "경험 정리에 도움이 되는 공식 자료: [커리어넷 직업흥미검사·직업 정보](https://www.career.go.kr) · [고용24 직업·진로 정보](https://www.work24.go.kr)"
+  },
+  {
    "type": "h2",
    "text": "4단계 자기소개서 다듬기",
    "id": "write"
@@ -181,6 +189,10 @@
   {
    "type": "p",
    "text": "공공기관은 대부분 **블라인드 채용**이라 출신 학교·가족·고향처럼 직무와 관계없는 정보를 쓰면 감점되거나 불이익을 받을 수 있습니다. 공고문의 작성 유의 사항을 AI 에게 함께 붙여 넣고 '유의 사항 위반이 있는지'도 확인시키면 실수를 줄일 수 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "작성 기준 확인: [NCS 공정채용 안내(블라인드 채용)](https://www.ncs.go.kr) · 기관별 공고 원문은 [잡알리오](https://job.alio.go.kr) · [나라일터](https://www.gojobs.go.kr)"
   },
   {
    "type": "h2",
@@ -208,6 +220,10 @@
    ]
   },
   {
+   "type": "p",
+   "text": "모의 면접에 쓰는 AI: [챗GPT](https://chatgpt.com) · [제미나이](https://gemini.google.com) · [클로드](https://claude.com) — 음성 대화 기능은 각 앱에서 켤 수 있습니다. 직무 질문 준비에는 [NCS 직무기술서](https://www.ncs.go.kr)가 기준이 됩니다."
+  },
+  {
    "type": "h2",
    "text": "꼭 지켜야 할 주의사항",
    "id": "caution"
@@ -220,6 +236,14 @@
     "**공고·마감일은 원문으로 확인합니다** — AI 가 정리한 날짜와 자격을 그대로 믿지 마세요.",
     "**AI 활용 규정을 확인합니다** — 일부 기업·기관은 AI 로 쓴 자기소개서에 대한 안내를 공고에 따로 적습니다."
    ]
+  },
+  {
+   "type": "image",
+   "key": "caution"
+  },
+  {
+   "type": "p",
+   "text": "관련 공식 안내: [개인정보보호위원회](https://www.pipc.go.kr) · [NCS 공정채용](https://www.ncs.go.kr) · [고용24](https://www.work24.go.kr)"
   },
   {
    "type": "h2",
@@ -393,6 +417,21 @@
    "source": "abcfact 정리",
    "caption": "음성 대화로 하는 AI 모의 면접 프롬프트",
    "alt": "AI 모의 면접 연습 프롬프트 예시"
+  },
+  {
+   "key": "caution",
+   "kind": "card",
+   "file": "job-prep-ai-caution.png",
+   "title": "AI 로 취업 준비할 때 4가지",
+   "lines": [
+    "① 개인정보는 지우고 붙여 넣기",
+    "② 없는 경력은 쓰지 않기",
+    "③ 공고·마감일은 원문으로 확인",
+    "④ 기관의 AI 활용 안내 확인"
+   ],
+   "source": "abcfact 정리",
+   "caption": "AI 취업 준비 주의사항",
+   "alt": "AI 자기소개서 취업 준비 주의사항"
   }
  ],
  "shots": [
