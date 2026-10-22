@@ -158,6 +158,9 @@ def _unlink_site(blk: dict) -> dict:
         return blk
     if t == "list":
         return {**blk, "items": [strip(x) if isinstance(x, str) else x for x in blk["items"]]}
+    if t == "table":                                  # 표 칸의 기관·공고 링크도 글자만
+        return {**blk, "head": [strip(c) if isinstance(c, str) else c for c in blk.get("head", [])],
+                "rows": [[strip(c) if isinstance(c, str) else c for c in r] for r in blk.get("rows", [])]}
     if isinstance(blk.get("text"), str):
         return {**blk, "text": strip(blk["text"])}
     return blk

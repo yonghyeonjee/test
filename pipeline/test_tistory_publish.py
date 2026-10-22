@@ -188,6 +188,9 @@ ok("경기도" not in _h3, "목록 없이 남은 '경기도 19건' 줄은 뺀다
 ok("오늘 공고를" not in _h3 and _h3.count("그날 공고를 많이 낸") == 1, "같은 절은 한 번만, '오늘'은 '그날'로")
 ok(_d3["summary"] == "10월 20일 새 공고 113건을 모았습니다. 10월 21일 새 공고 110건을 모았습니다. 은행 지점이 심사조차 받지 않았습니다.", "첫 문단은 글마다 첫 문장: " + _d3["summary"])
 
+_tb = t._unlink_site({"type": "table", "head": ["기관", "공고"], "rows": [["[병무청](/jobs/org/병무청)", "25건"], ["[KOSIS](https://kosis.kr)", "1건"]]})
+ok(_tb["rows"][0][0] == "병무청" and _tb["rows"][1][0] == "[KOSIS](https://kosis.kr)", "표 칸의 운영 사이트 링크는 글자만, 바깥 링크는 둔다")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 
