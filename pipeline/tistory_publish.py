@@ -803,6 +803,14 @@ def main() -> int:
             srcs = [r["slug"] for r in (sb.table("tistory_posts").select("slug").eq("post_id", a.redigest).execute().data or [])]
             if not srcs:
                 sys.exit(f"{a.redigest}번에 묶인 원 글 기록이 없다")
+            if a.replace:                    # --redigest 174 --replace 175,176: 그 글들을 모음 글에 더해 고쳐 쓴 뒤 지운다
+                replace_ids = [x for x in re.split(r"[,\s]+", a.replace) if x.isdigit()]
+                rows = sb.table("tistory_posts").select("slug,post_id").in_("post_id", replace_ids).execute().data or []
+                by_id = {str(r["post_id"]): r["slug"] for r in rows}
+                missing = [i for i in replace_ids if i not in by_id]
+                if missing:
+                    sys.exit(f"발행 기록에 없는 글 번호: {', '.join(missing)} — 아무것도 고치거나 지우지 않았다")
+                srcs += [by_id[i] for i in replace_ids if by_id[i] not in srcs]
             posts = [digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst())]
             a.update, a.mode = a.redigest, "full"
             print(f"{a.redigest}번 모음 글을 다시 쓴다: {', '.join(srcs)}")
