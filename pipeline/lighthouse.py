@@ -64,6 +64,12 @@ def run(url: str, desktop: bool) -> None:
         for it in items[:n]:
             rows.append(" / ".join(str(it.get(k, ""))[:70] for k in keys if it.get(k) not in (None, "")))
         print(f"  {audit}: " + " | ".join(rows))
+    # 자리 흔들림(CLS)을 일으킨 요소. LH12 는 layout-shifts, 그 전은 layout-shift-elements.
+    for k in ("layout-shifts", "layout-shift-elements"):
+        items = au.get(k, {}).get("details", {}).get("items", [])
+        if items:
+            print(f"  {k}: " + " | ".join(f"{it.get('score', 0):.3f} {str((it.get('node') or {}).get('snippet', ''))[:90]}" for it in items[:5]))
+            break
     top("bootup-time", 6, ("url", "total", "scripting"))
     top("third-party-summary", 6, ("entity", "blockingTime", "transferSize", "mainThreadTime"))
     top("render-blocking-resources", 5, ("url", "wastedMs"))
