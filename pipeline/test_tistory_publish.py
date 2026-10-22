@@ -170,6 +170,7 @@ _B = lambda d, n: {"slug": f"jobs-2026-10-{d}", "kind": "daily", "title": f"2026
                    "body": [{"type": "p", "text": f"{n}건"}, {"type": "h2", "text": "새로 올라온 공고"},
                             {"type": "p", "text": "**서울** 27건 · [서울 채용 전체](/jobs/region/서울)"},
                             {"type": "list", "items": ["A — 기관 · 10월 29일 마감"]},
+                            {"type": "p", "text": "**경기도** 19건 · [경기도 채용 전체](/jobs/region/경기)"},
                             {"type": "h2", "text": "사흘 안에 마감"}, {"type": "p", "text": "오늘부터 모레까지"},
                             {"type": "links", "items": [{"label": f"B — 기관 · 10월 {d}일 마감", "href": "/jobs/b"}]}, {"type": "p", "text": "그 밖에 200건"},
                             {"type": "h2", "text": "놓치지 않으려면"}, {"type": "list", "items": ["저장 단추"]},
@@ -183,6 +184,7 @@ ok(_d3["title"] == "10월 22일 공공 채용·생활 정보 모음 | 전세대�
 ok("10월 20일 마감" not in _h3 and "10월 21일 마감" not in _h3 and "사흘 안에 마감" not in _h3 and "10월 29일 마감" in _h3, "지난 마감 목록 절은 빠지고 남은 마감은 둔다")
 ok("놓치지 않으려면" not in _h3 and "다음 편" not in _h3 and "2편: 금리" not in _h3, "길잡이 절은 뺀다")
 ok("서울 채용 전체" not in _h3 and "<b>서울</b> 27건" in _h3, "운영 사이트 길잡이 링크는 글자째 뺀다")
+ok("경기도" not in _h3, "목록 없이 남은 '경기도 19건' 줄은 뺀다")
 ok("오늘 공고를" not in _h3 and _h3.count("그날 공고를 많이 낸") == 1, "같은 절은 한 번만, '오늘'은 '그날'로")
 ok(_d3["summary"] == "10월 20일 새 공고 113건을 모았습니다. 10월 21일 새 공고 110건을 모았습니다. 은행 지점이 심사조차 받지 않았습니다.", "첫 문단은 글마다 첫 문장: " + _d3["summary"])
 

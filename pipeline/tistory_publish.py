@@ -212,6 +212,8 @@ def digest_sections(blocks: list[dict], day: dt.date, seen: set[str]) -> list[di
             if isinstance(b.get("text"), str):
                 b = {**b, "text": b["text"].replace("오늘 공고를 많이 낸", "그날 공고를 많이 낸")}
             rest.append(b)
+        while rest and rest[-1].get("type") == "p" and re.fullmatch(r"\*\*[^*]+\*\*\s*[\d,]+건", rest[-1]["text"].strip()):
+            rest.pop()                            # 목록이 잘려 '경기도 19건' 머리만 남은 줄
         if dropped and not any(b.get("type") in ("list", "table", "bars") for b in rest):
             continue
         key = json.dumps([h and h["text"]] + rest, ensure_ascii=False, sort_keys=True)
