@@ -106,6 +106,8 @@ def main() -> None:
     ap.add_argument("--b", default="2026-10-11:")
     ap.add_argument("--since", default="2026-09-01")
     ap.add_argument("--inspect", type=int, default=40)
+    ap.add_argument("--hubs", action="store_true", help="목차·허브 쪽과 최근 글을 URL 검사한다(리치 결과까지)")
+    ap.add_argument("--urls", default="", help="따로 검사할 주소(쉼표)")
     a = ap.parse_args()
     if not mode():
         raise SystemExit("인증 정보가 없습니다: GOOGLE_INDEXING_SA 또는 GOOGLE_OAUTH_CLIENT_ID·SECRET·REFRESH_TOKEN")
@@ -151,24 +153,89 @@ def main() -> None:
     except RuntimeError as e:
         print(f"\n검색 노출 유형: 건너뜀 {e}")
 
+    # B 기간에 노출은 있는데 클릭이 없는 검색어 — 제목·설명문을 손볼 후보. 순위 10 안인데 클릭 0 이면 제목이 문제.
+    print("\n== B 기간: 노출 있고 클릭 없는 검색어(제목·설명문 손볼 후보)")
+    noclick = sorted((q for q in qb if qb[q]["clicks"] == 0 and qb[q]["impressions"] >= 3), key=lambda q: -qb[q]["impressions"])[:20]
+    table([(q, int(qb[q]["impressions"]), f"{qb[q]['position']:.1f}") for q in noclick], ("검색어", "B 노출", "B 순위")) if noclick else print("  없음")
+
+    actions: list[str] = []
+
+    def inspect_one(u: str) -> None:
+        try:
+            res = g.post("/v1/urlInspection/index:inspect", {"inspectionUrl": u, "siteUrl": site, "languageCode": "ko"})
+        except RuntimeError as e:
+            print(f"  {u}: 실패 {e}")
+            raise
+        ir = res.get("inspectionResult", {})
+        x = ir.get("indexStatusResult", {})
+        rr = ir.get("richResultsResult", {})
+        canon = x.get("googleCanonical") or ""
+        short = u.replace(f"https://{HOST}", "") or "/"
+        rich = ""
+        if rr:
+            items = rr.get("detectedItems", [])
+            kinds = []
+            for it in items:
+                issues = [i for sub in it.get("items", []) for i in sub.get("issues", [])]
+                bad = [i for i in issues if i.get("severity") == "ERROR"]
+                kinds.append(f"{it.get('richResultType')}{'(오류 ' + str(len(bad)) + ')' if bad else ''}")
+                for i in bad[:2]:
+                    actions.append(f"리치 결과 오류 {short}: {it.get('richResultType')} — {i.get('issueMessage')}")
+            rich = f" | 리치 {rr.get('verdict')} {', '.join(kinds)}"
+        print(f"  {short} | {x.get('verdict')} | {x.get('coverageState')} | 색인 {x.get('indexingState')}"
+              f" | 크롤 {(x.get('lastCrawlTime') or '-')[:16]} | {x.get('pageFetchState')} | robots {x.get('robotsTxtState')}"
+              + (f" | 구글 정본 {canon}" if canon and canon != u else "") + rich)
+        cs = x.get("coverageState") or ""
+        if "색인이 생성되지 않음" in cs or "not indexed" in cs.lower():
+            actions.append(f"색인 안 됨 {short}: {cs}")
+        if x.get("indexingState") not in (None, "INDEXING_ALLOWED"):
+            actions.append(f"색인 막힘 {short}: {x.get('indexingState')}")
+        if canon and canon != u:
+            actions.append(f"정본 다름 {short} → {canon}")
+        return x
+
+    if a.hubs or a.urls:
+        hubs = [f"https://{HOST}{p}" for p in ("/", "/jobs", "/policies", "/orgs", "/map", "/calendar", "/story", "/blog", "/license",
+                                              "/housing", "/business", "/jobs/region/경기도", "/jobs/region/서울특별시", "/area/경기도", "/area/서울특별시")] if a.hubs else []
+        extra = [u.strip() for u in a.urls.split(",") if u.strip()]
+        if a.hubs:
+            # 최근 글 셋: 사이트맵 posts 갈래의 /story/ 가운데 앞쪽.
+            try:
+                xml = requests.get(f"https://{HOST}/sitemap/posts.xml", timeout=30).text
+                stories = [m for m in re.findall(r"<loc>(.*?)</loc>", xml) if "/story/" in m]
+                hubs += stories[-3:]
+            except Exception:  # noqa: BLE001
+                pass
+        print(f"\n== URL 검사: 허브·글 {len(hubs) + len(extra)}쪽(리치 결과 포함)")
+        tally = collections.Counter()
+        for u in hubs + extra:
+            try:
+                x = inspect_one(u)
+            except RuntimeError as e:
+                if "429" in str(e) or "403" in str(e):
+                    break
+                continue
+            tally[x.get("coverageState", "?")] += 1
+        print("  요약: " + ", ".join(f"{k} {v}" for k, v in tally.most_common()))
+
     print(f"\n== URL 검사: A 기간 노출 상위 {a.inspect}쪽")
     top = sorted(pa, key=lambda u: -pa[u]["impressions"])[: a.inspect]
     tally = collections.Counter()
     for u in top:
         try:
-            res = g.post("/v1/urlInspection/index:inspect", {"inspectionUrl": u, "siteUrl": site, "languageCode": "ko"})
+            x = inspect_one(u)
         except RuntimeError as e:
-            print(f"  {u}: 실패 {e}")
             if "429" in str(e) or "403" in str(e):
                 break
             continue
-        x = res.get("inspectionResult", {}).get("indexStatusResult", {})
         tally[x.get("coverageState", "?")] += 1
-        canon = x.get("googleCanonical") or ""
-        print(f"  {u.replace(f'https://{HOST}', '')} | {x.get('verdict')} | {x.get('coverageState')} | 색인 {x.get('indexingState')}"
-              f" | 크롤 {(x.get('lastCrawlTime') or '-')[:16]} | {x.get('pageFetchState')} | robots {x.get('robotsTxtState')}"
-              + (f" | 구글 정본 {canon}" if canon and canon != u else ""))
     print("  요약: " + ", ".join(f"{k} {v}" for k, v in tally.most_common()))
+
+    print("\n== 손볼 것(자동 추림)")
+    if noclick:
+        actions.append("클릭 없는 검색어 " + ", ".join(noclick[:5]) + " — 해당 쪽 제목·설명문에 검색어를 앞세울 것")
+    for ln in actions[:40] or ["없음"]:
+        print("  - " + ln)
 
     print("\n== 사이트맵")
     try:

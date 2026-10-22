@@ -32,6 +32,10 @@ for spec in [s.strip() for s in (sys.argv[1] if len(sys.argv) > 1 else "").split
     # "post:주소#a=b&c=d" 는 폼으로 보낸다(목록 쪽수 넘기기 같은 것). 거름말이 "raw:낱말" 이면 그 낱말 둘레의
     # 원문(태그째)을 n 자 찍는다 — 스크립트 함수 몸통이나 표 구조를 볼 때.
     hdr = {"User-Agent": UA, "Accept-Language": "ko-KR"}
+    # "gb:주소" 는 구글봇 이름표로 받는다 — 검색엔진에만 다른 내용을 보이는지(클로킹) 볼 때(2026-10-22).
+    if url.startswith("gb:"):
+        url = url[3:]
+        hdr["User-Agent"] = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
     try:
         if url.startswith("post:"):
             u, _, form = url[5:].partition("#")

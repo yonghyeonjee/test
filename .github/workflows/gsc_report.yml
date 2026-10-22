@@ -50,6 +50,6 @@ jobs:
           MODE: ${{ inputs.mode || 'report' }}
           ARG: ${{ inputs.arg }}
         run: |
-          if [ "$MODE" = "report" ]; then python -u pipeline/gsc_report.py --a "$A" --b "$B" --inspect "$N"
+          if [ "$MODE" = "report" ]; then python -u pipeline/gsc_report.py --a "$A" --b "$B" --inspect "$N" $ARG
           elif [ "$MODE" = "sitemaps" ]; then python -u pipeline/gsc_sitemaps.py $ARG
           else python -u pipeline/gsc_probe.py "$MODE" --k "$N"; fi
