@@ -11,7 +11,18 @@ from probe_browser import CHROME, setup  # noqa: E402
 
 JS = """
 () => new Promise((res) => {
-  const out = { lcp: [], errors: window.__errs || [] };
+  const out = { lcp: [], cls: [], errors: window.__errs || [] };
+  // 자리 흔들림: 언제, 무엇이, 얼마나. 글꼴이 바뀐 시각과 견준다.
+  const pc = new PerformanceObserver((l) => {
+    for (const e of l.getEntries()) {
+      if (e.hadRecentInput) continue;
+      out.cls.push({ t: Math.round(e.startTime), v: +e.value.toFixed(4),
+        src: (e.sources || []).slice(0, 3).map((s) => { const n = s.node; const pr = s.previousRect, cr = s.currentRect;
+          return `${n ? n.tagName + '.' + String(n.className).slice(0, 30) : '?'} y${Math.round(pr.y)}→${Math.round(cr.y)} h${Math.round(pr.height)}→${Math.round(cr.height)}`; }) });
+    }
+  });
+  pc.observe({ type: 'layout-shift', buffered: true });
+  document.fonts.ready.then(() => { out.fontsReady = Math.round(performance.now()); });
   const po = new PerformanceObserver((l) => {
     for (const e of l.getEntries()) {
       const el = e.element;
@@ -21,7 +32,7 @@ JS = """
     }
   });
   po.observe({ type: 'largest-contentful-paint', buffered: true });
-  setTimeout(() => { po.disconnect(); out.fcp = Math.round(performance.getEntriesByName('first-contentful-paint')[0]?.startTime || 0); res(out); }, 9000);
+  setTimeout(() => { po.disconnect(); pc.disconnect(); out.fcp = Math.round(performance.getEntriesByName('first-contentful-paint')[0]?.startTime || 0); res(out); }, 9000);
 })
 """
 
@@ -50,6 +61,9 @@ def main() -> None:
             for c in r["lcp"]:
                 print(f"  LCP 후보 {c['t']}ms size {c['size']} <{c['tag']}> {c['cls']!r} {c['text']!r} {c['url'] or ''}")
             react = [e for e in errs if "Minified React error" in e or "hydrat" in e.lower() or "Hydration" in e]
+            print(f"  글꼴 준비 {r.get('fontsReady')}ms, 흔들림 합계 {sum(c['v'] for c in r['cls']):.3f}")
+            for c in r["cls"]:
+                print(f"  흔들림 {c['t']}ms {c['v']}: " + " | ".join(c["src"]))
             print(f"  콘솔 오류 {len(errs)}개, React/hydration 관련 {len(react)}개")
             for e in (react or errs)[:8]:
                 print("   ", e)
