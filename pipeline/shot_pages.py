@@ -8,6 +8,8 @@ shot_pages.py — 운영 사이트 화면을 찍어 블로그 글에 붙일 사�
   파일이름  shots/<파일이름>.png 로 저장
   설명      사진 밑에 붙는 한 줄(비워도 된다)
   선택자    있으면 그 요소만, 없으면 첫 화면(1280×900)을 찍는다. `full` 이라고 쓰면 쪽 전체.
+            `top:선택자` 는 그 요소를 화면 맨 위로 올린 뒤 한 화면을 찍는다(공고 목록처럼 아래에 있는 부분).
+우리 사이트 화면에서는 광고 칸을 숨기고 찍는다.
 
 결과는 shots/*.png 와 shots/manifest.json([{"file","caption"}]). tistory_publish.py --images 가 읽는다.
 Playwright 는 여기서 깐다(probe_browser.py 와 같은 방식 — 러너의 크롬이 있으면 그것을 쓴다).
@@ -21,6 +23,7 @@ import subprocess
 import sys
 
 BASE = "https://jiwon.knowhow-it.com"
+HIDE_ADS = ".ad-slot, .ad-band, .ad-tag, ins.adsbygoogle, iframe[id^=aswift] { display: none !important; }"
 OUT = "shots"
 CHROME = next((c for c in ("/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium")
                if os.path.exists(c)), None)
@@ -64,7 +67,15 @@ def main() -> int:
                 except Exception:  # noqa: BLE001 — 광고·분석 요청이 오래 붙어 있으면 그냥 간다
                     pass
                 page.wait_for_timeout(1200)
-                if s["selector"] and s["selector"] != "full":
+                if s["url"].startswith(BASE):
+                    page.add_style_tag(content=HIDE_ADS)
+                if s["selector"].startswith("top:"):
+                    el = page.locator(s["selector"][4:]).first
+                    if el.count():          # 못 찾으면 첫 화면 그대로
+                        el.evaluate("e => { e.scrollIntoView({block: 'start'}); window.scrollBy(0, -96); }")
+                        page.wait_for_timeout(500)
+                    page.screenshot(path=file)
+                elif s["selector"] and s["selector"] != "full":
                     el = page.locator(s["selector"]).first
                     el.scroll_into_view_if_needed()
                     page.wait_for_timeout(300)

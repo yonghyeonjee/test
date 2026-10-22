@@ -27,12 +27,15 @@ SITES = {"gojobs": ("https://www.gojobs.go.kr", "인사혁신처 나라일터 �
          "qnet": ("https://www.q-net.or.kr", "한국산업인력공단 큐넷 — 국가자격 시험 원 자료 (q-net.or.kr)")}
 
 
+LIST = "top:div.mt-8.items-baseline > h2"   # JobList 의 '조건에 맞는 공고' 제목 — 소개 칸이 아니라 그 항목의 공고 목록이 보이게
+
+
 def specs(st: dict) -> list[str]:
     out = []
     for i, it in enumerate(st["items"][:10], 1):
         link = (it.get("link") or "").strip()
         if link:
-            out.append(f"{link}|live_{i}|{i}위 {it['name']} — 지금 올라와 있는 공고 목록 화면|")
+            out.append(f"{link}|live_{i}|{i}위 {it['name']} — 지금 올라와 있는 공고 목록 화면|{LIST}")
     from tistory_top10 import WRAP_SHOTS
     for k in WRAP_SHOTS.get(st.get("entity"), []):
         u, c = SITES[k]
