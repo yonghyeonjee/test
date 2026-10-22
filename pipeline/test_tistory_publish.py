@@ -156,6 +156,14 @@ ok(_d["title"].startswith("10월 21일") and _d["title"].count("10월 21일") ==
 ok(_h.count(t.SITE) == 1 and "job.alio.go.kr" in _h, "운영 사이트 링크 1개, 공식 링크는 남김")
 ok("<h3>마감</h3>" in _h and _d["keywords"] == ["채용", "전세대출"] and [s["slug"] for s in _d["sources"]] == ["daily-2026-10-21", "loan-1"], "절은 h3, 태그 합침, 원 글 기록")
 
+# 모음 글: 묶인 글마다 원 자료 화면 key 와 근거 링크, 분량 재기
+ok([x["key"] for x in _d["shots"]] == ["d1_gojobs", "d1_alio", "d2_hf_jeonse", "d2_nhuf_youth"] and "근거 자료: [인사혁신처 나라일터]" in _h, "채용 브리핑 절: 나라일터·잡알리오 화면과 근거 링크")
+_P2 = [{**_P[1], "slug": "jeonse-loan-1", "title": "전세대출 가능 매물 1편"}]
+_d2 = t.digest(_P2, _dt.date(2026, 10, 22))
+ok([x["key"] for x in _d2["shots"]] == ["d1_hf_jeonse", "d1_nhuf_youth"] and "nhuf.molit.go.kr" in t.render(_d2, "full"), "전세 글 절: 주택금융공사·주택도시기금 화면과 링크")
+ok([m["key"] for m in t.take_shots(_d["shots"], dry=True)][:2] == ["d1_gojobs", "d1_alio"], "화면 찍기(dry)는 key 를 그대로")
+ok(t.text_len("<p>가 나</p>[##_Image|kage@x|CDM|1.3|{}_##]<b>a&amp;b</b>") == 5 and t.MIN_CHARS == 1250, "본문 글자 수(태그·사진·공백 제외), 최소 1,250자")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 

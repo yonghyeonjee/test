@@ -52,6 +52,7 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
 EXIT_EXPIRED = 2
+MIN_CHARS = 1250                                              # 글 하나의 최소 분량(본문 글자, 공백 제외)
 DAILY_MAX = int(os.environ.get("TISTORY_DAILY_MAX", "3"))     # 하루(KST)에 새로 공개하는 글 수 한도. 넘치면 다음 날로 미룬다
 
 
@@ -179,12 +180,24 @@ def digest(posts: list[dict], day: dt.date) -> dict:
         {"type": "p", "text": f"최근 정리한 공공 채용·생활 정보 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
         {"type": "list", "items": [p["title"] for p in posts]},
     ]
-    for p in posts:
+    from digest_refs import refs_for
+    shots: list[dict] = []
+    for i, p in enumerate(posts, 1):
         body.append({"type": "h2", "text": p["title"]})
+        sh, links = refs_for(p)
+        if sh:                                   # 절 첫머리에 원 자료 사이트 화면
+            u, name, cap = sh[0]
+            shots.append({"url": u, "key": f"d{i}_{name}", "caption": cap})
+            body.append({"type": "image", "key": f"d{i}_{name}"})
         if p.get("summary"):
             body.append({"type": "p", "text": p["summary"]})
-        for blk in summary_blocks(p["body"], links_cap=8, per_section=2):
+        for blk in summary_blocks(p["body"], links_cap=8, per_section=3):
             body.append(_unlink_site({**blk, "type": "h3"} if blk.get("type") == "h2" else blk))
+        for u, name, cap in sh[1:]:              # 둘째 화면은 절 끝 근거 자료 앞
+            shots.append({"url": u, "key": f"d{i}_{name}", "caption": cap})
+            body.append({"type": "image", "key": f"d{i}_{name}"})
+        if links:
+            body.append({"type": "p", "text": "근거 자료: " + " · ".join(f"[{n}]({u})" for n, u in links)})
     # 운영 사이트 링크는 글 끝 하나만(한 도메인으로 링크가 몰리지 않게)
     body.append({"type": "p", "text": f"표와 공고 목록 전체는 [{BRAND} 블로그]({SITE}/story)에서 글마다 볼 수 있습니다."})
     kw: list[str] = []
@@ -194,7 +207,7 @@ def digest(posts: list[dict], day: dt.date) -> dict:
                 kw.append(k)
     return {"slug": f"digest-{day.isoformat()}", "kind": head.get("kind", "daily"), "title": title[:90],
             "summary": " ".join(p.get("summary", "") for p in posts)[:300], "keywords": kw[:10], "body": body,
-            "standalone": True, "sources": posts}
+            "standalone": True, "sources": posts, "shots": shots}
 
 
 def image_html(replacer: str, caption: str | None) -> str:
@@ -520,6 +533,30 @@ def today_kst() -> dt.date:
     return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
 
 
+def take_shots(shots: list[dict], dry: bool = False, out: str = "shots") -> list[dict]:
+    """[{url, key, caption}] 을 shot_pages.py 로 찍어 manifest 항목([{key, file, caption, alt}])으로 돌려준다."""
+    if not shots:
+        return []
+    if not dry:
+        import subprocess
+        spec = ", ".join(f"{s['url']}|{s['key']}|{s['caption'].replace(',', ' ')}|" for s in shots)
+        subprocess.run([sys.executable, "-u", os.path.join(os.path.dirname(os.path.abspath(__file__)), "shot_pages.py"), spec], check=False)
+    got = []
+    for s in shots:
+        f = os.path.join(out, f"{s['key']}.png")
+        if dry or os.path.exists(f):
+            got.append({"key": s["key"], "file": f, "caption": s["caption"], "alt": s["caption"].split(" (")[0]})
+        else:
+            print(f"  (화면 못 찍음: {s['url']})")
+    return got
+
+
+def text_len(content: str) -> int:
+    """본문 HTML 의 글자 수(태그·사진 치환자·공백 제외). 1,250자 기준을 잰다."""
+    t = re.sub(r"\[##_[^\]]*_##\]|<[^>]+>", "", content)
+    return len(re.sub(r"\s+", "", html.unescape(t)))
+
+
 def published_on(items: list[dict], day: dt.date) -> int:
     """글 목록(recent_posts)에서 그날(KST) 공개된 글 수. 목록의 published 는 'YYYY-MM-DD HH:MM'(블로그 시간)."""
     d = day.isoformat()
@@ -726,6 +763,9 @@ def main() -> int:
             if a.mode != "full":
                 a.mode = "full"          # 작성기가 쓴 글은 요약하지 않는다(요약 안내문도 안 붙는다)
 
+        if posts and posts[0].get("shots"):          # 모음 글: 절마다 원 자료 사이트 화면을 지금 찍는다
+            manifest += take_shots(posts[0]["shots"], dry=a.dry)
+
         if a.dry:
             fake = [(f"[이미지 {i+1}: {m['file']}]", m.get("caption")) for i, m in enumerate(manifest)]
             fkeyed = {m["key"]: f for m, f in zip(manifest, fake) if m.get("key")} or None
@@ -770,7 +810,11 @@ def main() -> int:
             keyed = {m["key"]: (rep, cap) for m, (rep, _r, cap) in zip(present, uploaded) if m.get("key")} if any(m.get("key") for m in present) else None
             if p.get("series"):
                 p = {**p, "body": [series_links(t, p["series"], p.get("slogan", "")) if b.get("type") == "series" else b for b in p["body"]]}
-            post_id, url = t.publish(title=p["title"], content=render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded], keyed),
+            content = render(p, a.mode, [(rep, cap) for rep, _r, cap in uploaded], keyed)
+            if text_len(content) < MIN_CHARS:          # 짧은 글은 내지 않는다(사용자 기준 1,250자)
+                print(f"::error::{p['slug']}: 본문 {text_len(content)}자 — {MIN_CHARS}자 미만이라 올리지 않는다")
+                continue
+            post_id, url = t.publish(title=p["title"], content=content,
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
                                      slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
