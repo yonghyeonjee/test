@@ -3,6 +3,7 @@ import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
+import VisitChart, { type VisitPoint } from "@/components/VisitChart";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
 import CollectPanel, { type SourceStat } from "./CollectPanel";
 import { COLLECT_KEYS, type CollectKey } from "@/lib/collectorMeta";
@@ -143,12 +144,15 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   // 건수 7개와 수집 대상 8개의 집계는 DB 함수 하나씩으로 묶어 한 번에 받는다(sql/010).
   // 전에는 질의 31개를 다섯 차례로 나눠 보내 왕복만 1초가 넘었고, "마지막 수집 시각"은
   // 24만 건을 통째로 훑어 질의 하나에 300ms 가 걸렸다(fetched_at 색인도 같이 만들었다).
-  const [countsR, sourcesR, lastRuns, health] = await Promise.all([
+  const [countsR, sourcesR, lastRuns, health, seriesR] = await Promise.all([
     db.rpc("admin_counts", { p_since: since, p_today: todayStart, p_since7: since7Iso }),
     db.rpc("admin_source_stats"),
     readLastRuns(),
     checkSchema(db as never),
+    // 유입 그래프는 표본이 아니라 DB 집계(sql/017, 2026-10-22). 함수가 없으면 빈 그래프.
+    db.rpc("admin_visit_series", { p_days: 370 }),
   ]);
+  const series = (Array.isArray(seriesR.data) ? seriesR.data : []) as VisitPoint[];
   const cnt = (countsR.data ?? {}) as Record<string, number | null>;
   const n0 = (k: string) => Number(cnt[k] ?? 0);
   let [nSearch30, nSearchToday, nZero30, nSaved, nVisit30, nVisitToday, nVisit7] =
@@ -208,12 +212,6 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   const visitsToday = visitRows.filter((r) => kst(r.at) === todayK).length;
   const since7 = Date.now() - 7 * 86400_000;
   const visits7 = visitRows.filter((r) => new Date(String(r.at)).getTime() >= since7).length;
-  // 최근 30일 일별. 없는 날도 0으로 채워 막대가 빠지지 않게.
-  const byDay = new Map<string, number>();
-  for (let i = 29; i >= 0; i--) byDay.set(kst(new Date(Date.now() - i * 86400_000)), 0);
-  for (const r of visitRows) { const d = kst(r.at); if (byDay.has(d)) byDay.set(d, (byDay.get(d) ?? 0) + 1); }
-  const daily = [...byDay.entries()].map(([d, n]) => ({ d, n }));
-  const dailyMax = Math.max(1, ...daily.map((x) => x.n));
   const campaigns = tally(
     visitRows.filter((r) => r.utm_campaign),
     "utm_campaign"
@@ -340,23 +338,8 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           ` 아래 순위와 그래프는 최근 ${SAMPLE.toLocaleString()}건을 표본으로 합니다.`}
       </p>
 
-      <Panel id="a-visit" title="일별 유입자" note="최근 30일 · 탭당 한 번, 사이트 안 이동은 세지 않음">
-        <div className="flex h-28 items-end gap-[3px]">
-          {daily.map((x) => (
-            <div key={x.d} className="group relative flex-1">
-              <div className="w-full rounded-t-[3px] bg-brand/70 transition-colors group-hover:bg-brand"
-                   style={{ height: `${Math.max(2, (x.n / dailyMax) * 100)}%` }} />
-              <span className="pointer-events-none absolute -top-6 left-1/2 hidden -translate-x-1/2 whitespace-nowrap
-                               rounded bg-ink px-1.5 py-0.5 text-[10px] text-white group-hover:block">
-                {x.d.slice(5).replace("-", ".")} · {x.n}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="mt-1 flex justify-between text-[10px] text-faint">
-          <span>{daily[0]?.d.slice(5).replace("-", ".")}</span>
-          <span>오늘</span>
-        </div>
+      <Panel id="a-visit" title="유입자" note="일·주·월 · 채널별 · 탭당 한 번, 사이트 안 이동은 세지 않음">
+        {series.length ? <VisitChart points={series} /> : <p className="text-xs text-muted">집계 함수(admin_visit_series)가 없거나 자료가 없습니다.</p>}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <p className="mb-1 text-xs font-bold text-muted">처음 도착한 화면</p>
