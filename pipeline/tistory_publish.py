@@ -861,8 +861,8 @@ def main() -> int:
 
         if not cookie:
             sys.exit("TISTORY_COOKIE 가 비어 있다")
-        if a.update and (len(posts) != 1 or not a.slug):
-            sys.exit("--update 는 --slug 로 글 하나를 집었을 때만 쓴다")
+        if a.update and (len(posts) != 1 or not (a.slug or posts[0].get("sources"))):
+            sys.exit("--update 는 글 하나(--slug 로 집은 글 또는 모음 글)일 때만 쓴다")
         if a.post_json and not a.update:
             prev = find_existing(Tistory(host, cookie), posts[0]["title"], posts[0].get("slogan", ""))
             if prev:
