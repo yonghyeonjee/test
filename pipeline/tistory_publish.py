@@ -853,7 +853,10 @@ def main() -> int:
                 print(f"\n===== [{p['kind']}] {p['slug']} · {p['title']}  (mode={a.mode}, visibility={a.visibility}, category={a.category or category_for(p)})")
                 if p.get("series"):
                     p = {**p, "body": [series_links(None, p["series"], p.get("slogan", "")) if b.get("type") == "series" else b for b in p["body"]]}
-                print(render(p, a.mode, fake, fkeyed))
+                out = render(p, a.mode, fake, fkeyed)
+                print(out)
+                print(f"----- 본문 {text_len(out)}자 · 사진 {out.count('[이미지 ')}장 · 바깥 링크 {len(set(re.findall(r'href="(https?://(?!' + re.escape(SITE.split('//')[1]) + r')[^"/]+)', out)))}개 도메인"
+                      + ("" if text_len(out) >= MIN_CHARS else f" — {MIN_CHARS}자 미만이라 실제로는 올리지 않는다"))
             return 0
 
         if not cookie:

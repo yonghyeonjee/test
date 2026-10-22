@@ -93,9 +93,8 @@ jobs:
             slug="$(grep '^SLUG=' out.txt | cut -d= -f2-)"
             python -u pipeline/shot_top10.py --slug "$slug" || echo "::warning::$topic 항목 화면 일부 실패 — 차트만 넣는다"
             python -u pipeline/chart_top10.py --slug "$slug"
-            if [ "$DRY" != "true" ]; then
-              python -u pipeline/tistory_publish.py --slug "$slug" --mode full --visibility "$VISIBILITY" --composer top10 --images shots/manifest.json ${upd:+--update "$upd"}
-            fi
+            dry=""; [ "$DRY" = "true" ] && dry="--dry"        # dry 는 올리지 않고 본문만 찍어 본다
+            python -u pipeline/tistory_publish.py --slug "$slug" --mode full --visibility "$VISIBILITY" --composer top10 --images shots/manifest.json ${upd:+--update "$upd"} $dry
             echo "::endgroup::"
           done
       - name: jiwon 에 순위 글 쓰기
