@@ -18,6 +18,7 @@ from blog_top_roles import NOTES as ROLE_NOTES  # noqa: E402
 from top10_notes import MY_SITES, OFFICIAL_SITES, PSY, hard_for, psy_links, term_links_md  # noqa: E402
 from tistory_top_roles import TIPS as ROLE_TIPS  # noqa: E402
 from tistory_top_roles import compose as compose_roles_legacy  # noqa: E402
+from top10_links import for_item  # noqa: E402
 
 SITE, BRAND = b.SITE, b.BRAND
 GOJOBS, ALIO, QNET, BOKJIRO = "https://www.gojobs.go.kr", "https://job.alio.go.kr", "https://www.q-net.or.kr", "https://www.bokjiro.go.kr"
@@ -91,6 +92,35 @@ def official_links(source: str) -> list[tuple[str, str]]:
     return out or [("나라일터", GOJOBS), ("잡알리오", ALIO)]
 
 
+def josa(word: str, pair: str) -> str:
+    """'외교부'+'은/는' → '외교부는'. 한글로 끝나지 않으면 뒤 것을 쓴다."""
+    a, b_ = pair.split("/")
+    ch = (word or " ")[-1]
+    if "가" <= ch <= "힣":
+        has = (ord(ch) - 0xAC00) % 28 != 0
+        if pair == "으로/로" and (ord(ch) - 0xAC00) % 28 == 8:      # ㄹ 받침은 '로'
+            has = False
+        return word + (a if has else b_)
+    return word + b_
+
+
+def item_prep(entity: str, it: dict, name: str) -> str | None:
+    """기관·지역 항목의 '이렇게 준비하세요'를 그 항목의 숫자로 쓴다(몰리는 달·많이 뽑는 직무)."""
+    months = [m for m in (it.get("by_month") or [])[:-1] if m.get("n")]
+    jobs = [x["label"] for x in (it.get("bars") or {}).get("items", [])[:2]]
+    if not months or entity not in ("org", "region"):
+        return None
+    peak = max(months, key=lambda m: m["n"])
+    pm = int(peak["m"].split("-")[1])
+    prev = 12 if pm == 1 else pm - 1
+    lead = f"{josa(name, '은/는')} 지난 1년 **{pm}월**에 {b.n(peak['n'])}건으로 공고가 가장 많았습니다."
+    if entity == "org":
+        what = f" 자리는 {'·'.join(jobs)} 쪽이 많습니다." if jobs else ""
+        return f"{lead}{what} {prev}월까지 지난 공고의 자격 요건과 자기소개서 항목을 모아 두면 {pm}월 공고에 바로 낼 수 있습니다."
+    what = f" 공고는 {'·'.join(jobs)}에서 많이 나왔습니다." if jobs else ""
+    return f"{lead}{what} 이 지역에서 일할 수 있다면 {prev}월부터 매일 새 공고를 확인하는 편이 좋습니다."
+
+
 def src(label: str, href: str) -> dict:
     return b.P(f"출처: [{label}]({href})")
 
@@ -122,7 +152,9 @@ def compose(post: dict) -> dict:
     summary = (f"{source}를 바탕으로 {what} 10개를 순위로 정리했습니다. 1위는 {top['name']} {b.n(top['n'])}{unit}. "
                f"항목마다 숫자와 요건, {'어려운 점(번아웃·감정노동 같은 심리 요인)과 ' if entity == 'keyword' else ''}지금 할 수 있는 것을 적었습니다. 원 자료는 {' · '.join(n for n, _ in official_links(source))}입니다.")
 
-    toc = [("now", "현황은?")] + [(f"r{i+1}", f"{i+1}위 {it['name']}") for i, it in enumerate(items)] \
+    short = [it["name"] for it in items]
+    disp = {id(it): (it.get("full_name") or it["name"]) if short.count(it["name"]) > 1 else it["name"] for it in items}   # 이름이 겹치면 정식 이름
+    toc = [("now", "현황은?")] + [(f"r{i+1}", f"{i+1}위 {disp[id(it)]}") for i, it in enumerate(items)] \
         + [("compare", f"{what} TOP10 비교"), ("wrap", "정리"), ("sites", "함께 보면 좋은 사이트"), ("refs", "참고 문헌")]
     blocks: list[dict] = []
     for line in INTRO[entity]:
@@ -149,19 +181,20 @@ def compose(post: dict) -> dict:
     # 1위 … 10위
     for i, it in enumerate(items):
         unit_lbl = f"{b.n(it['n'])}{unit}"
-        blocks.append(b.H2(f"{i+1}위 {it['name']} — {'최근 1년 공고' if entity in ('keyword','org','region') else '사업' if entity.startswith('welfare') else '필기 응시자'} {unit_lbl}", f"r{i+1}"))
+        name = disp[id(it)]
+        blocks.append(b.H2(f"{i+1}위 {name} — {'최근 1년 공고' if entity in ('keyword','org','region') else '사업' if entity.startswith('welfare') else '필기 응시자'} {unit_lbl}", f"r{i+1}"))
         blocks.append({"type": "image", "key": f"item_{i+1}"})
-        blocks.append(b.LIST(it["facts"]))
+        blocks.append(b.LIST([f for f in it["facts"] if "보통 **0일**" not in f and "보통 0일" not in f]))   # 접수 기간 0일은 자료 빈칸
         desc = it.get("desc") or notes.get(it["key"], "")
         if desc:
             blocks.append(b.P(f"**어떤 {'일' if entity in ('keyword',) else '곳' if entity in ('org', 'region', 'welfare_region') else '것'}인가요?** {desc}"))
         elif entity == "org":
             first = it["bars"]["items"][0]["label"] if it["bars"]["items"] else None
-            blocks.append(b.P(f"**어떤 곳인가요?** {it.get('full_name', it['name'])}은(는) 최근 1년 공고 {b.n(it['n'])}건을 냈고, " + (f"그중 **{first}** 직무가 가장 많습니다." if first else "직무가 고르게 섞여 있습니다.")
-                              + (f" 접수 기간은 보통 {int(it['win_med'])}일입니다." if it.get("win_med") is not None else "")))
+            blocks.append(b.P(f"**어떤 곳인가요?** {josa(it.get('full_name') or it['name'], '은/는')} 최근 1년 공고 {b.n(it['n'])}건을 냈고, " + (f"그중 **{first}** 직무가 가장 많습니다." if first else "직무가 고르게 섞여 있습니다.")
+                              + (f" 접수 기간은 보통 {int(it['win_med'])}일입니다." if it.get("win_med") else "")))
         elif entity == "region":
             first = it["bars"]["items"][0]["label"] if it["bars"]["items"] else None
-            blocks.append(b.P(f"**어떤 곳인가요?** {it['name']}에서 최근 1년 {b.n(it['n'])}건이 올라왔고, " + (f"**{first}**이 가장 많이 냈습니다." if first else "여러 기관이 고르게 냈습니다.")))
+            blocks.append(b.P(f"**어떤 곳인가요?** {it['name']}에서 최근 1년 {b.n(it['n'])}건이 올라왔고, " + (f"**{josa(first, '이/가')}** 가장 많이 냈습니다." if first else "여러 기관이 고르게 냈습니다.")))
         elif entity.startswith("welfare"):
             first = it["bars"]["items"][0]["label"] if it["bars"]["items"] else None
             blocks.append(b.P(f"**어떤 것인가요?** {it['name']}의 사업 {b.n(it['n'])}건 가운데 지금 신청할 수 있는 것은 {b.n(it['n_open'])}건이고, " + (f"**{first}** 쪽이 가장 많습니다." if first else "분야가 고르게 섞여 있습니다.")))
@@ -184,8 +217,13 @@ def compose(post: dict) -> dict:
                                               f"최근 석 달에 {b.n(it['n90'])}건({s90}%)으로 한 해 내내 꾸준히 열립니다." if s90 >= 20 else
                                               f"최근 석 달에는 {b.n(it['n90'])}건({s90}%)으로 뜸한 편이라 몰리는 달을 기다리는 편이 낫습니다.")))
         blocks.append({"type": "image", "key": f"live_{i+1}"})
-        blocks.append(b.P(f"**이렇게 준비하세요.** {tips.get(it['key'], PREP[entity])}"))
-        blocks.append(src_official(source))
+        blocks.append(b.P(f"**이렇게 준비하세요.** {tips.get(it['key']) or item_prep(entity, it, name) or PREP[entity]}"))
+        own = for_item(entity, topic, it)
+        if own:                                  # 절마다 그 항목의 공식 사이트(면허 시험·협회·부처·시도청) — 같은 링크만 반복하지 않게
+            blocks.append(b.P("**공식 사이트.** " + " · ".join(f"[{n}]({h})" for n, h in own)))
+            blocks.append(b.P(f"출처: {' · '.join(n for n, _ in official_links(source))} 공고 · 집계 {BRAND}"))
+        else:
+            blocks.append(src_official(source))
 
     # 비교
     blocks.append(b.H2(f"{what} TOP10 비교", "compare"))
@@ -193,10 +231,10 @@ def compose(post: dict) -> dict:
     blocks.append({"type": "image", "key": "top10"})
     if entity in ("keyword", "org", "region"):
         blocks.append(b.TABLE(["순위", what, "최근 1년 공고", "접수 중", "접수 기간"],
-                              [[f"{i+1}위", it["name"], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{int(it['win_med'])}일" if it.get("win_med") is not None else "-"] for i, it in enumerate(items)]))
+                              [[f"{i+1}위", disp[id(it)], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{int(it['win_med'])}일" if it.get("win_med") else "-"] for i, it in enumerate(items)]))
     elif entity.startswith("welfare"):
         blocks.append(b.TABLE(["순위", what, "사업 수", "신청 가능", "상시", "현금"],
-                              [[f"{i+1}위", it["name"], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{b.n(it['always'])}건", f"{b.n(it['cash'])}건"] for i, it in enumerate(items)]))
+                              [[f"{i+1}위", disp[id(it)], f"{b.n(it['n'])}건", f"{b.n(it['n_open'])}건", f"{b.n(it['always'])}건", f"{b.n(it['cash'])}건"] for i, it in enumerate(items)]))
     else:
         blocks.append(b.TABLE(["순위", "종목", "필기 응시자", "필기 합격률", "실기 합격률"],
                               [[f"{i+1}위", it["name"], f"{b.n(it['n'])}명", f"{int(it['w_rate'])}%" if it.get("w_rate") is not None else "-", f"{int(it['p_rate'])}%" if it.get("p_rate") is not None else "-"] for i, it in enumerate(items)]))

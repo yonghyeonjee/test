@@ -333,7 +333,8 @@ def render(post: dict, mode: str = "summary", images: list[tuple[str, str | None
         parts += place_images(body, keyed or {})
     else:
         parts += weave_images(body, images or [])
-    if not standalone:
+    cites_origin = any(f"/story/{post['slug']}" in json.dumps(b, ensure_ascii=False) for b in body if b.get("type") == "links")
+    if not standalone and not cites_origin:          # 참고 문헌에 원문이 이미 있으면 맺음 줄은 뺀다(운영 사이트 링크를 늘리지 않는다)
         parts.append(
             f'<p>원문: <a href="{url}">{html.escape(post["title"], quote=False)}</a> · '
             f'조건에 맞는 지원사업·채용은 <a href="{SITE}">{BRAND}</a>에서 찾습니다.</p>'

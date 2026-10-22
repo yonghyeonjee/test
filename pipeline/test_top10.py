@@ -97,7 +97,7 @@ for key in ("civil", "orgs", "welfare-sido", "license-applicants"):
     ok(h2[0] == "현황은?" and h2[-1] == "참고 문헌" and h2[-2] == "함께 보면 좋은 사이트" and h2[-3] == "정리", f"{key}: 티스토리 절 {h2[:2]}…{h2[-3:]}")
     ok("jeepedia.com/psy-dict" in text and "jiwon.knowhow-it.com" in text and "knowhow-it.com/english" in text, f"{key}: 운영 사이트 소개")
     ok(("gojobs.go.kr" in text) if key in ("civil", "orgs") else ("bokjiro.go.kr" in text) if key == "welfare-sido" else ("q-net.or.kr" in text), f"{key}: 공식 사이트")
-    ok(text.count("출처: [") >= len(posts[key]["stats"]["items"]) + 2, f"{key}: 출처 줄 {text.count('출처: [')}")
+    ok(text.count("출처: [") + text.count("**공식 사이트.** [") >= len(posts[key]["stats"]["items"]) + 2, f"{key}: 출처·공식 사이트 줄 {text.count('출처: [')}")
     _links = re.findall(r"\]\((/[^)]*|https?://[^)]+)\)", text) + [i["href"] for x in c["body"] if x["type"] == "links" for i in x["items"]]
     _mine = [h for h in _links if h.startswith("/") or "jiwon.knowhow-it.com" in h]
     ok(len(_mine) <= 2, f"{key}: 운영 사이트(jiwon) 링크는 2개 이하 — 지금 {len(_mine)}개 {_mine[:4]}")
@@ -149,6 +149,23 @@ try:
 finally:
     t.PLAN_FILE.write_text(_orig, encoding="utf-8")
 ok(t.plan_for(dt.date(2026, 10, 1)) is None, "기획표 시작 전엔 없음")
+
+# 순위 절 다듬기: 조사, 항목 숫자로 쓴 준비 문장, 항목마다 공식 사이트, 이름 겹침, 0일
+ok(tt.josa("외교부", "은/는") == "외교부는" and tt.josa("조달청", "은/는") == "조달청은" and tt.josa("서울특별시교육청", "이/가") == "서울특별시교육청이", "조사")
+_it = {"name": "외교부", "n": 172, "by_month": [{"m": "2026-02", "n": 5}, {"m": "2026-03", "n": 25}, {"m": "2026-10", "n": 9}],
+       "bars": {"items": [{"label": "공무직", "n": 45}, {"label": "행정·사무", "n": 43}]}}
+ok(tt.item_prep("org", _it, "외교부") == "외교부는 지난 1년 **3월**에 25건으로 공고가 가장 많았습니다. 자리는 공무직·행정·사무 쪽이 많습니다. 2월까지 지난 공고의 자격 요건과 자기소개서 항목을 모아 두면 3월 공고에 바로 낼 수 있습니다.", "기관 준비 문장은 그 기관 숫자로")
+from top10_links import for_item
+ok(for_item("org", "orgs-national", {"name": "국방부 국군조직", "full_name": "국방부 국군조직 육군 육군본부"})[0][1] == "https://www.army.mil.kr", "긴 기관 이름부터 맞춘다")
+ok(for_item("region", "regions", {"name": "강원", "full_name": "강원특별자치도"})[0][1] == "https://state.gwd.go.kr" and for_item("keyword", "medical", {"key": "nurse"})[0][1] == "https://www.kuksiwon.or.kr", "지역·직종 공식 사이트")
+_on = json.loads(json.dumps(posts["orgs-national"])) if "orgs-national" in posts else None
+if _on:
+    _its = _on["stats"]["items"]
+    _its[1]["name"] = _its[0]["name"]; _its[0]["full_name"] = _its[0]["name"] + " 갑"; _its[1]["full_name"] = _its[1]["name"] + " 을"
+    _its[0]["win_med"] = 0; _its[0]["facts"] = _its[0]["facts"] + ["접수 기간: 보통 **0일**"]
+    _c = json.dumps(tt.compose(_on)["body"], ensure_ascii=False)
+    ok(_its[0]["full_name"] in _c and _its[1]["full_name"] in _c, "이름이 겹치면 정식 이름으로 가른다")
+    ok("보통 **0일**" not in _c and "보통 0일" not in _c and "은(는)" not in _c, "0일·'은(는)'은 쓰지 않는다")
 
 print("실패 %d" % bad if bad else "모두 통과")
 sys.exit(1 if bad else 0)
