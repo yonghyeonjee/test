@@ -17,106 +17,136 @@
  },
  {
   "date": "2026-10-22",
-  "topic": "license-applicants"
+  "topic": "roles",
+  "update": "163",
+  "note": "10-21 하루에 몰려 비공개로 돌린 글을 하루 한 편씩 다시 공개(그날 날짜로)"
  },
  {
   "date": "2026-10-23",
-  "topic": "orgs-public"
+  "topic": "civil",
+  "update": "164",
+  "note": "10-21 하루에 몰려 비공개로 돌린 글을 하루 한 편씩 다시 공개(그날 날짜로)"
  },
  {
   "date": "2026-10-24",
-  "topic": "welfare-sido"
+  "topic": "medical",
+  "update": "165",
+  "note": "10-21 하루에 몰려 비공개로 돌린 글을 하루 한 편씩 다시 공개(그날 날짜로)"
  },
  {
   "date": "2026-10-25",
-  "topic": "education"
+  "topic": "orgs-national",
+  "update": "166",
+  "note": "10-21 하루에 몰려 비공개로 돌린 글을 하루 한 편씩 다시 공개(그날 날짜로)"
  },
  {
   "date": "2026-10-26",
-  "topic": "short-window"
+  "topic": "regions",
+  "update": "172",
+  "note": "10-21 하루에 몰려 비공개로 돌린 글을 하루 한 편씩 다시 공개(그날 날짜로)"
  },
  {
   "date": "2026-10-27",
-  "topic": "orgs-intern"
+  "topic": "license-applicants"
  },
  {
   "date": "2026-10-28",
-  "topic": "welfare-topic"
+  "topic": "orgs-public"
  },
  {
   "date": "2026-10-29",
-  "topic": "tech"
+  "topic": "welfare-sido"
  },
  {
   "date": "2026-10-30",
-  "topic": "license-craft-easy"
+  "topic": "education"
  },
  {
   "date": "2026-10-31",
-  "topic": "orgs-local"
+  "topic": "short-window"
  },
  {
   "date": "2026-11-01",
-  "topic": "welfare-youth-sido"
+  "topic": "orgs-intern"
  },
  {
   "date": "2026-11-02",
-  "topic": "regions-open"
+  "topic": "welfare-topic"
  },
  {
   "date": "2026-11-03",
-  "topic": "orgs-nurse"
+  "topic": "tech"
  },
  {
   "date": "2026-11-04",
-  "topic": "welfare-sigungu"
+  "topic": "license-craft-easy"
  },
  {
   "date": "2026-11-05",
-  "topic": "license-hard"
+  "topic": "orgs-local"
  },
  {
   "date": "2026-11-06",
-  "topic": "orgs-edu"
+  "topic": "welfare-youth-sido"
  },
  {
   "date": "2026-11-07",
-  "topic": "long-window"
+  "topic": "regions-open"
  },
  {
   "date": "2026-11-08",
-  "topic": "welfare-cash-sido"
+  "topic": "orgs-nurse"
  },
  {
   "date": "2026-11-09",
-  "topic": "orgs-hospital"
+  "topic": "welfare-sigungu"
  },
  {
   "date": "2026-11-10",
-  "topic": "biz-field"
+  "topic": "license-hard"
  },
  {
   "date": "2026-11-11",
-  "topic": "license-engineer"
+  "topic": "orgs-edu"
  },
  {
   "date": "2026-11-12",
-  "topic": "regions-public"
+  "topic": "long-window"
  },
  {
   "date": "2026-11-13",
-  "topic": "welfare-life"
+  "topic": "welfare-cash-sido"
  },
  {
   "date": "2026-11-14",
-  "topic": "orgs-research"
+  "topic": "orgs-hospital"
  },
  {
   "date": "2026-11-15",
-  "topic": "welfare-always-sido"
+  "topic": "biz-field"
  },
  {
   "date": "2026-11-16",
+  "topic": "license-engineer"
+ },
+ {
+  "date": "2026-11-17",
+  "topic": "regions-public"
+ },
+ {
+  "date": "2026-11-18",
+  "topic": "welfare-life"
+ },
+ {
+  "date": "2026-11-19",
+  "topic": "orgs-research"
+ },
+ {
+  "date": "2026-11-20",
+  "topic": "welfare-always-sido"
+ },
+ {
+  "date": "2026-11-21",
   "topic": "roles"
  }
 ]
