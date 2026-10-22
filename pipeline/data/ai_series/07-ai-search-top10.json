@@ -1,0 +1,822 @@
+{
+ "slug": "ai-search-top10",
+ "slogan": "AI-검색-서비스-TOP10",
+ "title": "AI 검색 서비스 순위 TOP10 | 퍼플렉시티·챗GPT 검색·구글 AI 모드 비교",
+ "summary": "AI 검색 서비스 순위 TOP10을 Arena 검색 순위표(2026년 10월, 투표 143만 건)로 정리했습니다. 챗GPT 검색·큐웬·클로드 웹 검색·그록·구글 AI 모드·퍼플렉시티부터 코파일럿·젠스파크·라이너·펠로까지 점수, 국내 사용자 수, 요금과 목적별 추천, 정확하게 쓰는 법을 비교합니다.",
+ "keywords": [
+  "AI 검색 순위",
+  "AI 검색 서비스",
+  "퍼플렉시티",
+  "챗GPT 검색",
+  "구글 AI 모드",
+  "클로드 웹 검색",
+  "라이너",
+  "AI 검색 엔진",
+  "젠스파크",
+  "그록"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "검색창에 단어를 넣고 링크를 하나씩 눌러 보던 방식이 바뀌고 있습니다. **AI 검색**은 질문을 문장으로 던지면 웹을 찾아 읽고, 출처를 붙여 답을 정리해 줍니다. 그런데 챗GPT·퍼플렉시티·구글 AI 모드·클로드 중 무엇이 더 정확할까요?"
+  },
+  {
+   "type": "p",
+   "text": "이 글은 **AI 검색 서비스 순위 TOP10**을 사람들이 두 AI 의 검색 답변을 이름을 가린 채 비교해 투표하는 **Arena 검색 순위표**(2026년 10월 13일, 투표 143만 7,508건)로 정리했습니다. 각 회사의 가장 높은 검색 모델 점수로 순위를 매기고, 순위표에 모델이 없는 서비스는 국내 사용자 수(와이즈앱·리테일 9월)와 기능으로 뒤에 놓았습니다. 요금은 공식 페이지 기준(2026년 10월 21일 확인)입니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "목차",
+   "id": "toc"
+  },
+  {
+   "type": "list",
+   "items": [
+    "한눈에 보는 AI 검색 순위",
+    "검색 모델 점수 TOP10",
+    "1위 챗GPT 검색 ~ 10위 펠로",
+    "요금 비교",
+    "목적별 추천",
+    "AI 검색 잘 쓰는 법",
+    "자주 묻는 질문",
+    "AI 활용 시리즈"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "한눈에 보는 AI 검색 서비스 순위 TOP10",
+   "id": "now"
+  },
+  {
+   "type": "image",
+   "key": "company"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**1위 챗GPT 검색** — 오픈AI 모델이 검색 순위표 1위(1,261점)",
+    "**2위 큐웬** — 알리바바 Qwen3.8-Max 가 1위와 같은 1,261점(투표 1,870건 예비 수준)",
+    "**3위 클로드 웹 검색** — 상위 10개 모델 중 5개가 앤트로픽 클로드",
+    "**4·5·6위 그록·구글·퍼플렉시티** — 각각 1,216점·1,209점·1,139점",
+    "**7~10위** — 순위표에 모델이 없는 코파일럿·젠스파크·라이너·펠로(여러 회사 모델을 골라 쓰는 서비스)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "바이두의 ERNIE 5.1(1,227점)은 점수로는 그록보다 높지만 중국 중심 서비스라 국내 사용자를 위한 이번 순위에서는 뺐습니다. 순위표의 모델 이름과 각 앱이 지금 기본으로 쓰는 모델은 다를 수 있으니, 점수는 '그 회사의 검색 실력'을 보는 참고로 읽어 주세요."
+  },
+  {
+   "type": "p",
+   "text": "근거 자료: [Arena 검색 순위표](https://arena.ai/leaderboard/chat/search) · [와이즈앱·리테일 9월 조사(ZDNet Korea)](https://zdnet.co.kr/view/?no=20261013163218)"
+  },
+  {
+   "type": "h2",
+   "text": "검색 모델 점수 TOP10 — 오픈AI 와 앤트로픽의 양강",
+   "id": "models"
+  },
+  {
+   "type": "image",
+   "key": "models"
+  },
+  {
+   "type": "p",
+   "text": "모델 단위로 보면 상위 10개 중 **오픈AI 4개, 앤트로픽 5개, 알리바바 1개**입니다. 구글 최고 기록(제미나이 3.1 Pro 그라운딩)은 15위, 퍼플렉시티 소나 리즈닝 프로는 37위였습니다. 다만 1~6위의 점수 차는 오차 범위(±5~13점) 안팎이라 사실상 한 무리로 보는 것이 맞습니다."
+  },
+  {
+   "type": "p",
+   "text": "출처: [Arena 검색 순위표](https://arena.ai/leaderboard/chat/search) · 42개 모델, 블라인드 투표로 계산한 점수"
+  },
+  {
+   "type": "h2",
+   "text": "1위 챗GPT 검색(ChatGPT Search)",
+   "id": "r1"
+  },
+  {
+   "type": "image",
+   "key": "s_chatgpt"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 오픈AI(미국)",
+    "**순위 근거** GPT-5.6 Sol(xHigh) 1,261점 · 국내 월 사용자 2,470만 명",
+    "**요금** 무료, Go 월 $8, Plus 월 $20, Pro 월 $100부터",
+    "**공식 사이트** [chatgpt.com](https://chatgpt.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 챗GPT 안에서 웹을 검색해 출처 링크와 함께 답합니다. 질문에 따라 알아서 검색하거나, 검색 버튼을 눌러 직접 켤 수 있습니다([오픈AI 도움말](https://help.openai.com/en/articles/9237897-searching-the-web-with-chatgpt)). 현재 챗GPT 주력 모델인 GPT-6 Astra(Max)도 1,234점으로 7위입니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 이미 챗GPT 를 쓰고 있다면 따로 검색 서비스를 쓸 필요가 적습니다. 검색 결과를 바로 표·글로 이어서 정리할 때 특히 편합니다."
+  },
+  {
+   "type": "h2",
+   "text": "2위 큐웬(Qwen Chat)",
+   "id": "r2"
+  },
+  {
+   "type": "image",
+   "key": "s_qwen"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 알리바바(중국)",
+    "**순위 근거** Qwen3.8-Max 1,261점(투표 1,870건, 예비 수준)",
+    "**요금** 무료(공식 사이트에서 사용)",
+    "**공식 사이트** [chat.qwen.ai](https://chat.qwen.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 알리바바의 AI 모델 큐웬을 쓰는 대화 서비스입니다. 최신 Qwen3.8-Max 가 검색 순위표에서 1위와 같은 점수를 받았지만 투표 수가 적어 앞으로 오르내릴 수 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 무료로 최상위권 검색 모델을 써 보고 싶을 때 시험해 볼 만합니다. 회사 자료처럼 민감한 내용은 데이터 정책을 먼저 확인하세요."
+  },
+  {
+   "type": "h2",
+   "text": "3위 클로드 웹 검색(Claude Web Search)",
+   "id": "r3"
+  },
+  {
+   "type": "image",
+   "key": "s_claude"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 앤트로픽(미국)",
+    "**순위 근거** Claude Opus 4.6(Search) 1,251점 · 국내 월 사용자 404만 명",
+    "**요금** 무료, Pro 월 $20(연 결제 시 월 $17), Max 월 $100·$200",
+    "**공식 사이트** [claude.com](https://claude.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 클로드에서 웹 검색을 켜면 여러 출처를 찾아 읽고 인용과 함께 답합니다([클로드 도움말](https://support.claude.com/en/articles/10684626-enable-and-use-web-search)). 순위표 상위 10개 중 5개가 클로드 모델이고, 지금 앱에서 고를 수 있는 Fable 5.1(High)도 1,246점으로 5위입니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 여러 자료를 읽고 길게 비교·정리하는 조사형 검색에 강합니다. 보고서 초안까지 이어서 쓰고 싶을 때 좋습니다."
+  },
+  {
+   "type": "h2",
+   "text": "4위 그록(Grok)",
+   "id": "r4"
+  },
+  {
+   "type": "image",
+   "key": "s_grok"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 그록 개발사(순위표 표기 SpaceXAI)",
+    "**순위 근거** Grok 4.5 1,216점 · 국내 월 사용자 129만 명",
+    "**요금** 무료(횟수 제한), Plus 월 $8부터 Ultra 월 $200까지 4단계",
+    "**공식 사이트** [grok.com](https://grok.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 웹과 X(옛 트위터)의 실시간 글을 함께 찾는 것이 특징입니다. 2025년 이후 버전들이 순위표 13~36위에 고르게 올라 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 지금 화제가 되는 사건이나 반응을 빠르게 보고 싶을 때 씁니다. 소셜 글은 사실과 의견이 섞여 있으니 원문을 꼭 확인하세요."
+  },
+  {
+   "type": "h2",
+   "text": "5위 구글 제미나이·AI 모드(Google AI Mode)",
+   "id": "r5"
+  },
+  {
+   "type": "image",
+   "key": "s_google"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 구글(미국)",
+    "**순위 근거** Gemini 3.1 Pro(Grounding) 1,209점 · 제미나이 국내 월 사용자 987만 명",
+    "**요금** AI 모드 무료, 제미나이 AI Plus 월 $4.99 · AI Pro 월 $19.99",
+    "**공식 사이트** [search.google](https://search.google/ways-to-search/ai-mode/)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 구글 검색 안의 **AI 모드**는 질문에 AI 답과 함께 웹 링크를 보여 주고 이어서 질문할 수 있게 합니다. 순위표에 오른 구글 최고 기록은 제미나이 3.1 Pro 이고, 지금 제미나이 앱의 최신 모델(제미나이 4 아르곤)은 검색 순위표에 아직 없습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 평소 구글 검색을 쓴다면 가장 쉽게 닿는 AI 검색입니다. 지도·쇼핑·유튜브처럼 구글 서비스와 이어지는 검색에 강합니다."
+  },
+  {
+   "type": "h2",
+   "text": "6위 퍼플렉시티(Perplexity)",
+   "id": "r6"
+  },
+  {
+   "type": "image",
+   "key": "s_perplexity"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 퍼플렉시티(미국)",
+    "**순위 근거** Sonar Reasoning Pro(High) 1,139점 · 국내 월 사용자 129만 명",
+    "**요금** 무료, 유료 요금은 공식 사이트에서 확인",
+    "**공식 사이트** [perplexity.ai](https://www.perplexity.ai/hub)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 'AI 검색'이라는 말을 대중화한 서비스로, 모든 답에 출처 번호를 붙입니다. 자체 소나 모델 외에 오픈AI·구글·앤트로픽 모델도 골라 쓸 수 있고, AI 브라우저 [코멧(Comet)](https://www.perplexity.ai/comet)을 맥·윈도·iOS·안드로이드로 내놨습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 출처를 하나하나 확인하며 조사해야 할 때, 여러 회사 모델의 답을 한 곳에서 비교하고 싶을 때 좋습니다."
+  },
+  {
+   "type": "h2",
+   "text": "7위 마이크로소프트 코파일럿(Copilot)",
+   "id": "r7"
+  },
+  {
+   "type": "image",
+   "key": "s_copilot"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 마이크로소프트(미국)",
+    "**순위 근거** 검색 순위표에 별도 모델 없음 · 국내 월 사용자 196만 명",
+    "**요금** 무료(마이크로소프트 계정), 업무용은 Microsoft 365 와 함께",
+    "**공식 사이트** [copilot.com](https://copilot.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 빙(Bing) 검색을 바탕으로 답하는 AI 비서로 윈도·엣지에 들어가 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 엣지 브라우저와 윈도를 쓴다면 따로 설치 없이 바로 AI 검색을 쓸 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "8위 젠스파크(Genspark)",
+   "id": "r8"
+  },
+  {
+   "type": "image",
+   "key": "s_genspark"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 젠스파크(미국)",
+    "**순위 근거** 국내 월 사용자 32만 명(와이즈앱 10위)",
+    "**요금** 무료(크레딧 제한), 유료 요금은 공식 사이트에서 확인",
+    "**공식 사이트** [genspark.ai](https://www.genspark.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 검색에서 시작해 슬라이드·시트·문서까지 만들어 주는 'AI 워크스페이스'로 커졌습니다. 여러 회사 모델을 나눠 씁니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 조사 결과를 바로 발표 자료나 보고서로 만들어야 할 때 써 볼 만합니다."
+  },
+  {
+   "type": "h2",
+   "text": "9위 라이너(Liner)",
+   "id": "r9"
+  },
+  {
+   "type": "image",
+   "key": "s_liner"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 라이너(한국)",
+    "**순위 근거** 학술·전문 자료 검색 특화 · 350개 이상 모델 제공(공식 요금 페이지)",
+    "**요금** 무료(하루 100 크레딧), Pro 월 $17.99(연 결제 월 $14.99), Max 월 $35.99",
+    "**공식 사이트** [liner.com](https://liner.com)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 한국에서 시작한 AI 검색·리서치 서비스로, 논문 같은 학술 자료 검색과 전문 문서 초안에 초점을 맞췄습니다. 하나의 요금제로 GPT·제미나이·큐웬·소나 등 여러 모델을 씁니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 논문·보고서처럼 근거가 중요한 조사를 할 때 좋습니다. 학생과 연구자에게 특히 맞습니다."
+  },
+  {
+   "type": "h2",
+   "text": "10위 펠로(Felo)",
+   "id": "r10"
+  },
+  {
+   "type": "image",
+   "key": "s_felo"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**만든 곳** 펠로(일본)",
+    "**순위 근거** 다국어 AI 검색 · 여러 회사 모델 제공",
+    "**요금** 무료(하루 전문 검색 5회), Pro 월 $20.99(연 결제 월 $14.99)",
+    "**공식 사이트** [felo.ai](https://felo.ai)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "**어떤 서비스인가.** 여러 언어로 찾아 답하는 다국어 AI 검색 서비스입니다. GPT-6 Astra·제미나이 4 아르곤 같은 최신 모델을 고를 수 있고 슬라이드 만들기 기능도 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "**이럴 때 쓰세요.** 영어·일본어 등 외국어 자료를 한국어로 정리해 보고 싶을 때 써 볼 만합니다."
+  },
+  {
+   "type": "h2",
+   "text": "AI 검색 서비스 요금 비교",
+   "id": "price"
+  },
+  {
+   "type": "image",
+   "key": "price"
+  },
+  {
+   "type": "p",
+   "text": "대부분 무료로 시작할 수 있고, 유료 첫 단계는 월 $8~$21 사이입니다. 챗GPT·클로드·제미나이는 검색만이 아니라 글쓰기·코딩까지 한 구독에 들어 있어, 이미 쓰는 AI 가 있다면 검색 전용 서비스를 따로 결제할 필요가 줄어듭니다."
+  },
+  {
+   "type": "p",
+   "text": "공식 요금 페이지: [챗GPT](https://chatgpt.com/pricing) · [클로드](https://claude.com/pricing) · [구글 AI](https://gemini.google/subscriptions/) · [그록](https://grok.com/plans) · [라이너](https://liner.com/pricing) · [펠로](https://felo.ai/en/pricing) · [퍼플렉시티](https://www.perplexity.ai/pro)"
+  },
+  {
+   "type": "h2",
+   "text": "목적별 추천",
+   "id": "pick"
+  },
+  {
+   "type": "image",
+   "key": "picker"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**평소 검색을 AI 로 바꿔 보고 싶다** → 구글 AI 모드(무료)",
+    "**검색 후 정리·글쓰기까지** → 챗GPT 검색",
+    "**여러 자료를 깊게 비교하는 조사** → 클로드 웹 검색",
+    "**출처를 하나하나 확인하는 조사** → 퍼플렉시티",
+    "**논문·학술 자료** → 라이너",
+    "**실시간 화제·반응** → 그록"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "바로 써 보기: [구글 AI 모드](https://search.google/ways-to-search/ai-mode/) · [챗GPT](https://chatgpt.com) · [클로드](https://claude.com) · [퍼플렉시티](https://www.perplexity.ai/hub) · [라이너](https://liner.com) · [그록](https://grok.com)"
+  },
+  {
+   "type": "h2",
+   "text": "AI 검색 잘 쓰는 법 4가지",
+   "id": "tips"
+  },
+  {
+   "type": "image",
+   "key": "tips"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**문장으로 묻기** — '전세 사기 예방' 대신 '2026년 전세 계약 전에 꼭 확인할 서류를 출처와 함께 알려 줘'처럼 상황을 넣습니다.",
+    "**기간·지역 정하기** — '최근 1년', '한국 기준'을 넣으면 오래된 해외 자료가 섞이는 일이 줄어듭니다.",
+    "**출처 직접 열기** — 숫자·날짜·법 조항은 AI 가 붙인 출처 링크를 열어 원문과 대조합니다.",
+    "**같은 질문을 두 곳에** — 중요한 조사는 두 서비스의 답을 비교하면 틀린 내용을 쉽게 찾을 수 있습니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "공식 사용법: [챗GPT 웹 검색 도움말](https://help.openai.com/en/articles/9237897-searching-the-web-with-chatgpt) · [클로드 웹 검색 도움말](https://support.claude.com/en/articles/10684626-enable-and-use-web-search) · [구글 AI 모드 소개](https://search.google/ways-to-search/ai-mode/)"
+  },
+  {
+   "type": "h2",
+   "text": "자주 묻는 질문",
+   "id": "faq"
+  },
+  {
+   "type": "h3",
+   "text": "AI 검색 답은 믿어도 되나요?"
+  },
+  {
+   "type": "p",
+   "text": "일반 검색보다 빠르지만, 출처를 잘못 읽거나 오래된 정보를 섞는 일이 아직 있습니다. 출처 링크가 없는 주장은 믿지 말고, 돈·건강·법률 관련 내용은 반드시 공식 기관 원문을 확인하세요."
+  },
+  {
+   "type": "h3",
+   "text": "네이버 같은 국내 검색은 왜 없나요?"
+  },
+  {
+   "type": "p",
+   "text": "Arena 순위표에는 네이버 검색 모델이 없어 같은 기준으로 비교할 수 없었습니다. 네이버도 검색 결과를 생성형 AI 로 요약해 보여 주는 'AI 브리핑'을 운영하고 있어, 국내 맛집·부동산·쇼핑처럼 한국 자료가 중심인 검색은 [네이버](https://www.naver.com)가 여전히 강할 수 있습니다."
+  },
+  {
+   "type": "h3",
+   "text": "Arena 점수는 어떻게 매기나요?"
+  },
+  {
+   "type": "p",
+   "text": "사용자가 같은 질문에 대한 두 AI 의 검색 답을 이름을 가린 채 보고 더 나은 쪽에 투표하면, 그 결과를 모아 체스 등급처럼 점수를 계산합니다. 투표가 적은 모델은 '예비(Preliminary)'로 표시되고 점수가 크게 움직일 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "AI 활용 시리즈",
+   "id": "series"
+  },
+  {
+   "type": "p",
+   "text": "AI 를 일과 생활에 쓰는 방법을 10편으로 나눠 매일 한 편씩 올립니다."
+  },
+  {
+   "type": "series"
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[Arena 검색 순위표](https://arena.ai/leaderboard/chat/search) (2026-10-13 갱신, 42개 모델·투표 1,437,508건)",
+    "[ZDNet Korea, 와이즈앱·리테일 9월 생성형 AI 앱 조사](https://zdnet.co.kr/view/?no=20261013163218) (2026-10-13)",
+    "[OpenAI 도움말, Searching the web with ChatGPT](https://help.openai.com/en/articles/9237897-searching-the-web-with-chatgpt)",
+    "[Claude 도움말, Enable and use web search](https://support.claude.com/en/articles/10684626-enable-and-use-web-search)",
+    "[Google AI 모드 소개](https://search.google/ways-to-search/ai-mode/)",
+    "[Grok 요금제](https://grok.com/plans) · [Liner 요금제](https://liner.com/pricing) · [Felo 요금제](https://felo.ai/en/pricing)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "hero",
+   "kind": "hero",
+   "file": "ai-search-service-ranking-top10-2026.png",
+   "title": "AI 검색 서비스 순위 TOP10",
+   "sub": "Arena 검색 블라인드 투표 143만 건 · 요금과 고르는 법",
+   "date": "2026년 10월",
+   "kicker": "AI 활용 시리즈 7편",
+   "caption": "AI 검색 서비스 순위 TOP10 (2026년 10월)",
+   "alt": "AI 검색 서비스 순위 TOP10 2026 표지"
+  },
+  {
+   "key": "company",
+   "kind": "dot",
+   "file": "ai-search-arena-best-score-by-company.png",
+   "title": "회사별 최고 검색 모델 점수",
+   "sub": "Arena 검색 순위표 · 2026년 10월 13일",
+   "labels": [
+    "1 챗GPT(오픈AI)",
+    "2 큐웬(알리바바)",
+    "3 클로드(앤트로픽)",
+    "참고 ERNIE(바이두)",
+    "4 그록",
+    "5 구글 제미나이",
+    "6 퍼플렉시티 소나"
+   ],
+   "values": [
+    1261,
+    1261,
+    1251,
+    1227,
+    1216,
+    1209,
+    1139
+   ],
+   "xmin": 1100,
+   "highlight": [
+    0,
+    1,
+    2
+   ],
+   "left": 0.3,
+   "source": "출처: Arena 검색 순위표(2026-10-13, 투표 1,437,508건)",
+   "caption": "AI 검색 회사별 최고 모델 Arena 점수",
+   "alt": "AI 검색 순위 회사별 점수 챗GPT 큐웬 클로드 그록 구글 퍼플렉시티"
+  },
+  {
+   "key": "models",
+   "kind": "dot",
+   "file": "search-arena-top10-models-2026-10.png",
+   "title": "검색 모델 점수 상위 10개",
+   "sub": "오픈AI 4개 · 앤트로픽 5개 · 알리바바 1개",
+   "labels": [
+    "1 GPT-5.6 Sol (xHigh)",
+    "2 Qwen3.8-Max",
+    "3 Claude Opus 4.6 (Search)",
+    "4 GPT-5.5 (Search)",
+    "5 Claude Fable 5.1 (High)",
+    "6 Claude Opus 5 (High)",
+    "7 GPT-6 Astra (Max)",
+    "8 GPT-6.1 Sol (Max)",
+    "9 Claude Opus 4.7",
+    "10 Claude Fable 5 (High)"
+   ],
+   "values": [
+    1261,
+    1261,
+    1251,
+    1247,
+    1246,
+    1242,
+    1234,
+    1233,
+    1230,
+    1229
+   ],
+   "xmin": 1200,
+   "highlight": [
+    0,
+    2
+   ],
+   "left": 0.33,
+   "source": "출처: Arena 검색 순위표(2026-10-13, 투표 1,437,508건)",
+   "caption": "Arena 검색 순위표 상위 10개 모델",
+   "alt": "AI 검색 모델 순위 TOP10 GPT 클로드 큐웬 점수"
+  },
+  {
+   "key": "price",
+   "kind": "price",
+   "file": "ai-search-service-price-2026-10.png",
+   "title": "AI 검색 서비스 유료 첫 단계 월 요금(달러)",
+   "sub": "공식 요금 페이지 · 월 결제 기준 · 2026년 10월 21일",
+   "labels": [
+    "펠로 Pro",
+    "챗GPT Plus",
+    "클로드 Pro",
+    "구글 AI Pro",
+    "라이너 Pro",
+    "챗GPT Go",
+    "그록 Plus",
+    "구글 AI Plus"
+   ],
+   "values": [
+    20.99,
+    20,
+    20,
+    19.99,
+    17.99,
+    8,
+    8,
+    4.99
+   ],
+   "value_labels": [
+    "$20.99",
+    "$20",
+    "$20",
+    "$19.99",
+    "$17.99",
+    "$8",
+    "$8",
+    "$4.99"
+   ],
+   "highlight": [],
+   "left": 0.28,
+   "source": "출처: 각 서비스 공식 요금 페이지",
+   "caption": "AI 검색 서비스 유료 요금 비교",
+   "alt": "AI 검색 서비스 가격 비교 챗GPT 클로드 구글 라이너 펠로 그록"
+  },
+  {
+   "key": "picker",
+   "kind": "matrix",
+   "file": "ai-search-service-picker.png",
+   "title": "목적별 AI 검색 서비스",
+   "sub": "abcfact 정리 · 첫 추천은 ◎",
+   "rows": [
+    "평소 검색 대신",
+    "검색 후 정리·글쓰기",
+    "깊은 조사·비교",
+    "출처 확인",
+    "논문·학술",
+    "실시간 화제"
+   ],
+   "cols": [
+    "첫 추천",
+    "함께 쓰면 좋은 것"
+   ],
+   "cells": [
+    [
+     "◎ 구글 AI 모드",
+     "코파일럿"
+    ],
+    [
+     "◎ 챗GPT 검색",
+     "젠스파크"
+    ],
+    [
+     "◎ 클로드 웹 검색",
+     "챗GPT 검색"
+    ],
+    [
+     "◎ 퍼플렉시티",
+     "펠로"
+    ],
+    [
+     "◎ 라이너",
+     "퍼플렉시티"
+    ],
+    [
+     "◎ 그록",
+     "구글 AI 모드"
+    ]
+   ],
+   "source": "abcfact 정리",
+   "caption": "목적별로 고르는 AI 검색 서비스",
+   "alt": "목적별 AI 검색 서비스 추천표"
+  },
+  {
+   "key": "tips",
+   "kind": "card",
+   "file": "ai-search-tips-4.png",
+   "title": "AI 검색 잘 쓰는 법 4가지",
+   "lines": [
+    "① 단어 대신 상황이 담긴 문장으로",
+    "② 기간 · 지역을 정해서",
+    "③ 출처 링크를 직접 열어 대조",
+    "④ 중요한 조사는 두 서비스에"
+   ],
+   "source": "abcfact 정리",
+   "caption": "AI 검색을 정확하게 쓰는 4가지 습관",
+   "alt": "AI 검색 잘 쓰는 법 팁"
+  }
+ ],
+ "shots": [
+  {
+   "key": "s_chatgpt",
+   "url": "https://help.openai.com/en/articles/9237897-searching-the-web-with-chatgpt",
+   "file": "chatgpt-web-search-help.png",
+   "caption": "오픈AI 도움말 — 챗GPT 웹 검색 사용법 (help.openai.com)",
+   "alt": "챗GPT 웹 검색 기능 공식 도움말",
+   "name": "챗GPT 검색",
+   "fallback": {
+    "title": "챗GPT 검색",
+    "lines": [
+     "GPT-5.6 Sol 1,261점(1위)",
+     "국내 월 2,470만 명"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s_qwen",
+   "url": "https://chat.qwen.ai",
+   "file": "qwen-chat-homepage.png",
+   "caption": "큐웬 채팅 첫 화면 (chat.qwen.ai)",
+   "alt": "알리바바 큐웬 AI 채팅 공식 화면",
+   "name": "큐웬",
+   "fallback": {
+    "title": "큐웬",
+    "lines": [
+     "Qwen3.8-Max 1,261점",
+     "무료 사용"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s_claude",
+   "url": "https://support.claude.com/en/articles/10684626-enable-and-use-web-search",
+   "file": "claude-web-search-help.png",
+   "caption": "클로드 도움말 — 웹 검색 켜고 쓰기 (support.claude.com)",
+   "alt": "클로드 웹 검색 기능 공식 도움말",
+   "name": "클로드 웹 검색",
+   "fallback": {
+    "title": "클로드 웹 검색",
+    "lines": [
+     "Opus 4.6 Search 1,251점",
+     "상위 10개 중 5개"
+    ]
+   },
+   "locale": "en-US"
+  },
+  {
+   "key": "s_grok",
+   "url": "https://grok.com",
+   "file": "grok-homepage.png",
+   "caption": "그록 첫 화면 (grok.com)",
+   "alt": "그록 AI 검색 공식 화면",
+   "name": "그록",
+   "fallback": {
+    "title": "그록",
+    "lines": [
+     "Grok 4.5 1,216점",
+     "Plus 월 $8부터"
+    ]
+   }
+  },
+  {
+   "key": "s_google",
+   "url": "https://search.google/ways-to-search/ai-mode/",
+   "file": "google-search-ai-mode.png",
+   "caption": "구글 AI 모드 소개 화면 (search.google)",
+   "alt": "구글 검색 AI 모드 공식 소개",
+   "name": "구글 AI 모드",
+   "fallback": {
+    "title": "구글 AI 모드",
+    "lines": [
+     "제미나이 3.1 Pro 1,209점",
+     "AI 모드 무료"
+    ]
+   }
+  },
+  {
+   "key": "s_perplexity",
+   "url": "https://www.perplexity.ai/hub",
+   "file": "perplexity-ai-search-hub.png",
+   "caption": "퍼플렉시티 공식 사이트 화면 (perplexity.ai)",
+   "alt": "퍼플렉시티 AI 검색 공식 화면",
+   "name": "퍼플렉시티",
+   "fallback": {
+    "title": "퍼플렉시티",
+    "lines": [
+     "소나 리즈닝 프로 1,139점",
+     "국내 월 129만 명"
+    ]
+   }
+  },
+  {
+   "key": "s_copilot",
+   "url": "https://copilot.com",
+   "file": "microsoft-copilot-homepage.png",
+   "caption": "마이크로소프트 코파일럿 화면 (copilot.com)",
+   "alt": "마이크로소프트 코파일럿 AI 검색 화면",
+   "name": "코파일럿",
+   "fallback": {
+    "title": "코파일럿",
+    "lines": [
+     "국내 월 196만 명",
+     "무료"
+    ]
+   }
+  },
+  {
+   "key": "s_genspark",
+   "url": "https://www.genspark.ai",
+   "file": "genspark-search-workspace.png",
+   "caption": "젠스파크 AI 워크스페이스 화면 (genspark.ai)",
+   "alt": "젠스파크 AI 검색 워크스페이스 화면",
+   "name": "젠스파크",
+   "fallback": {
+    "title": "젠스파크",
+    "lines": [
+     "국내 월 32만 명",
+     "슬라이드 · 시트 · 문서"
+    ]
+   }
+  },
+  {
+   "key": "s_liner",
+   "url": "https://liner.com",
+   "file": "liner-ai-research-search.png",
+   "caption": "라이너 공식 사이트 화면 (liner.com)",
+   "alt": "라이너 AI 리서치 검색 공식 화면",
+   "name": "라이너",
+   "fallback": {
+    "title": "라이너",
+    "lines": [
+     "학술·전문 검색",
+     "Pro 월 $17.99"
+    ]
+   }
+  },
+  {
+   "key": "s_felo",
+   "url": "https://felo.ai",
+   "file": "felo-multilingual-ai-search.png",
+   "caption": "펠로 다국어 AI 검색 화면 (felo.ai)",
+   "alt": "펠로 다국어 AI 검색 공식 화면",
+   "name": "펠로",
+   "fallback": {
+    "title": "펠로",
+    "lines": [
+     "다국어 AI 검색",
+     "Pro 월 $20.99"
+    ]
+   }
+  }
+ ]
+}

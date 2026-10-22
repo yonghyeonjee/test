@@ -53,6 +53,7 @@
 
 ## 다음 달을 위해
 
+- **기획표에 `topic: ""` 인 날은 연재를 쉰다**(그날은 다른 글이 나간다). 연재 밖 특집은 `tistory-publish` 워크플로 `script=…` 로 올린다. 첫 특집: 10-21 전세계 인터넷 속도 TOP10(자료 `pipeline/data/world_internet_speed.json`, 글·차트 `pipeline/world_speed.py`; 이날은 연재 regions 도 함께 나갔다).
 - **11월 17일부터는 자동으로 돈다.** 기획표에 없는 날은 기획표 순서(31개 주제)대로 끝없이 돌려 쓴다(`top10.py plan_for`). 한 주제는 31일마다 돌아오고, slug 가 월 단위라 달이 바뀌면 새 글이 된다.
 - 특정 날에 다른 주제를 내고 싶으면 `top10_plan.json` 에 그 날짜 한 줄만 넣으면 그날은 그 주제가 우선한다.
 - 새 주제를 만들려면 `top10.py` 의 `TOPICS` 에 한 줄(항목 종류 + 세는 함수)을 더한다. 항목 종류(keyword·org·region·welfare_*·license)마다 글 틀과 차트가 이미 있다.

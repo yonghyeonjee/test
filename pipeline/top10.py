@@ -555,7 +555,7 @@ def plan_for(date: dt.date) -> dict | None:
         return hit
     order = []
     for p in plan:
-        if p["topic"] not in order:
+        if p["topic"] and p["topic"] not in order:      # topic "" 는 '그날은 연재 쉼'(다른 글이 나간다)
             order.append(p["topic"])
     order += [k for k in TOPICS if k not in order]
     if not order or date < ROTATION_START:
@@ -655,8 +655,14 @@ def main() -> int:
     ap.add_argument("--today", action="store_true", help="기획표에서 오늘(KST) 주제")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--pick", action="store_true", help="그날 주제 키만 찍는다(기획표 → 없으면 순환). 워크플로가 쓴다")
+    ap.add_argument("--pick-update", action="store_true", help="그날 기획표에 적힌 고쳐 쓸 티스토리 글 번호(update). 없으면 빈 줄")
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
+    if a.pick_update:
+        d = dt.date.fromisoformat(a.date) if a.date else b.today()
+        p = plan_for(d)
+        print((p or {}).get("update", ""))
+        return 0
     if a.pick:
         d = dt.date.fromisoformat(a.date) if a.date else b.today()
         p = plan_for(d)
@@ -671,8 +677,8 @@ def main() -> int:
     if not topic:
         d = dt.date.fromisoformat(a.date) if a.date else today
         p = plan_for(d)
-        if not p:
-            print(f"{d} 에 잡힌 주제가 없다(top10_plan.json)")
+        if not p or not p.get("topic"):
+            print(f"{d} 에 잡힌 주제가 없다(top10_plan.json" + (f": {p.get('note', '')}" if p else "") + ")")
             return 3
         topic = p["topic"]
     from supabase import create_client

@@ -45,6 +45,14 @@ on:
         description: "새 글 대신 이 티스토리 글 번호(숫자 id)를 고쳐 쓴다. 번호는 check=true 가 찍는 최근 글 목록에서"
         required: false
         type: string
+      redigest:
+        description: "이 모음 글 번호를 다시 쓴다(원 자료 화면·근거 링크 넣어). 예: 174"
+        required: false
+        type: string
+      replace:
+        description: "짧은 글 번호들(쉼표)을 모음 글 하나로 합쳐 새로 올리고 원래 글은 지운다(예: 168,169,170,171)"
+        required: false
+        type: string
       composer:
         description: "티스토리용 글을 따로 쓴다(jiwon 글은 출처). top10 = 많이 뽑는 직무 순위"
         default: ""
@@ -56,6 +64,15 @@ on:
         type: boolean
       top10_topic:
         description: "순위 연재 한 편을 지금 낸다(top10.py --list 의 주제 키, 예: civil). jiwon 에 쓰고 차트 그려 composer top10 으로 올린다. slug/charts/composer 입력은 무시"
+        required: false
+        type: string
+      script:
+        description: "티스토리 단독 글: pipeline/ 의 글 생성기(out/post.json + shots/)를 돌려 올린다. 예: world_speed.py(전세계 인터넷 속도 TOP10)"
+        default: ""
+        type: choice
+        options: ["", "world_speed.py", "ai_series.py"]
+      script_arg:
+        description: "script 에 넘길 글 slug(ai_series.py 일 때, 예: vibe-coding-top10)"
         required: false
         type: string
   schedule:
@@ -94,6 +111,16 @@ jobs:
           python pipeline/test_top10.py
           python -u pipeline/top10.py --topic "$TOPIC" | tee out.txt
           grep '^SLUG=' out.txt >> "$GITHUB_OUTPUT"
+      - name: 단독 글 만들기(script)
+        if: inputs.script != ''
+        env:
+          SCRIPT: ${{ inputs.script }}
+          SCRIPT_ARG: ${{ inputs.script_arg }}
+        run: |
+          sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패"
+          fc-cache -f >/dev/null 2>&1 || true
+          pip install -q matplotlib
+          if [ -n "$SCRIPT_ARG" ]; then python -u "pipeline/$SCRIPT" --slug "$SCRIPT_ARG"; else python -u "pipeline/$SCRIPT"; fi
       - name: 화면 사진 찍기
         if: inputs.shots != ''
         env:
@@ -112,12 +139,13 @@ jobs:
           pip install -q matplotlib
           if [ -n "$TOP10" ]; then
             [ -f shots/open.png ] || python -u pipeline/shot_pages.py "/jobs/status/open|open|지금 접수 중인 공공기관 채용 공고 (출처: K나라지원)|" || echo "::warning::화면 사진 실패 — 차트만 넣는다"
+            python -u pipeline/shot_top10.py --slug "$SLUG" || echo "::warning::항목 화면 일부 실패 — 차트만 넣는다"
             python -u pipeline/chart_top10.py --slug "$SLUG"
           else
             python -u pipeline/chart_top_roles.py --slug "$SLUG"
           fi
       - uses: actions/upload-artifact@v4
-        if: always() && (inputs.shots != '' || inputs.charts || inputs.top10_topic != '')
+        if: always() && (inputs.shots != '' || inputs.charts || inputs.top10_topic != '' || inputs.script != '')
         with:
           name: shots
           path: shots/
@@ -136,10 +164,14 @@ jobs:
           DRY: ${{ inputs.dry }}
           SHOTS: ${{ inputs.shots }}
           UPDATE: ${{ inputs.update }}
+          REPLACE: ${{ inputs.replace }}
+          REDIGEST: ${{ inputs.redigest }}
           COMPOSER: ${{ inputs.composer }}
           TOP10_SLUG: ${{ steps.top10.outputs.SLUG }}
+          SCRIPT: ${{ inputs.script }}
         run: |
           if [ -n "$TOP10_SLUG" ]; then SLUG="$TOP10_SLUG"; COMPOSER="top10"; MODE="full"; fi
+          if [ -n "$SCRIPT" ]; then SLUG=""; COMPOSER=""; MODE="full"; fi
           if [ -z "$TISTORY_COOKIE" ] && [ "$DRY" != "true" ]; then
             echo "::warning::TISTORY_COOKIE 가 없어 건너뜀. 로그인 쿠키를 secret 에 넣으면 올라간다(README '티스토리' 절)."
             exit 0
@@ -150,5 +182,8 @@ jobs:
           [ "$DRY" = "true" ] && args="$args --dry"
           [ -f shots/manifest.json ] && args="$args --images shots/manifest.json"
           [ -n "$UPDATE" ] && args="$args --update \"$UPDATE\""
+          [ -n "$REPLACE" ] && args="$args --replace \"$REPLACE\""
+          [ -n "$REDIGEST" ] && args="$args --redigest \"$REDIGEST\""
           [ -n "$COMPOSER" ] && args="$args --composer $COMPOSER"
+          [ -n "$SCRIPT" ] && args="$args --post-json out/post.json"
           eval python -u pipeline/tistory_publish.py $args

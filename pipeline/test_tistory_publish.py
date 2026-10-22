@@ -132,6 +132,65 @@ ok(t.category_for({"slug": "top10-welfare-sido-2026-10", "kind": "topic"}) == t.
 ok(t.category_for({"slug": "daily-2026-10-17", "kind": "daily"}) == t.CATEGORIES["policy"], "브리핑은 policy")
 ok(all(isinstance(v, int) and v > 0 for v in t.CATEGORIES.values()), "카테고리 id 는 양의 정수")
 
+# 쿠키 이름만 뽑는다(값은 안 나온다)
+ok(t.cookie_names("_fwb=abc; TSSESSION=secret123; __T_=1") == ["_fwb", "TSSESSION", "__T_"], "쿠키 이름")
+ok("secret123" not in " ".join(t.cookie_names("TSSESSION=secret123")), "값은 안 찍는다")
+ok(t.cookie_names(t.clean_cookie("Cookie: a=1;\n b=2")) == ["a", "b"], "Cookie: 접두어·줄바꿈 정리 뒤에도 이름이 나온다")
+
+# 하루 공개 한도: 그날(KST) PUBLIC 글만 센다
+import datetime as _dt
+_items = [{"visibility": "PUBLIC", "date": "2026-10-21 22:43"}, {"visibility": "PUBLIC", "date": "2026-10-21 09:00"},
+          {"visibility": "PRIVATE", "date": "2026-10-21 10:00"}, {"visibility": "PUBLIC", "date": "2026-10-20 23:59"}]
+ok(t.published_on(_items, _dt.date(2026, 10, 21)) == 2, "오늘 공개 글 수(비공개·어제 제외)")
+ok(t.DAILY_MAX == 3, "하루 3편 한도")
+
+# 모음 글: 여러 편을 하나로, 운영 사이트 링크는 하나만
+_P = [{"slug": "daily-2026-10-21", "kind": "daily", "title": "2026년 10월 21일 공공기관 채용 브리핑", "summary": "새 공고 110건.",
+       "keywords": ["채용"], "body": [{"type": "p", "text": "오늘 [공고](/jobs/1)"}, {"type": "h2", "text": "마감"},
+       {"type": "links", "items": [{"label": "A", "href": "/jobs/a"}]}]},
+      {"slug": "loan-1", "kind": "story", "title": "전세대출 1편", "summary": "전세가율.", "keywords": ["전세대출", "채용"],
+       "body": [{"type": "h2", "text": "전세가율"}, {"type": "p", "text": "[잡알리오](https://job.alio.go.kr) 80%"}]}]
+_d = t.digest(_P, _dt.date(2026, 10, 21))
+_h = t.render(_d, "full")
+ok(_d["title"].startswith("10월 21일") and _d["title"].count("10월 21일") == 1 and "외 1편" in _d["title"], "모음 글 제목")
+ok(_h.count(t.SITE) == 1 and "job.alio.go.kr" in _h, "운영 사이트 링크 1개, 공식 링크는 남김")
+ok("<h3>마감</h3>" in _h and _d["keywords"] == ["채용", "전세대출"] and [s["slug"] for s in _d["sources"]] == ["daily-2026-10-21", "loan-1"], "절은 h3, 태그 합침, 원 글 기록")
+
+# 모음 글: 묶인 글마다 원 자료 화면 key 와 근거 링크, 분량 재기
+ok([x["key"] for x in _d["shots"]] == ["d1_gojobs", "d1_alio", "d2_hf_jeonse", "d2_nhuf_youth"] and "근거 자료: <a href=\"https://www.gojobs.go.kr\">인사혁신처 나라일터</a>" in _h, "채용 브리핑 절: 나라일터·잡알리오 화면과 근거 링크")
+_P2 = [{**_P[1], "slug": "jeonse-loan-1", "title": "전세대출 가능 매물 1편"}]
+_d2 = t.digest(_P2, _dt.date(2026, 10, 22))
+ok([x["key"] for x in _d2["shots"]] == ["d1_hf_jeonse", "d1_nhuf_youth"] and "nhuf.molit.go.kr" in t.render(_d2, "full"), "전세 글 절: 주택금융공사·주택도시기금 화면과 링크")
+ok([m["key"] for m in t.take_shots(_d["shots"], dry=True)][:2] == ["d1_gojobs", "d1_alio"], "화면 찍기(dry)는 key 를 그대로")
+ok(t.text_len("<p>가 나</p>[##_Image|kage@x|CDM|1.3|{}_##]<b>a&amp;b</b>") == 5 and t.MIN_CHARS == 1250, "본문 글자 수(태그·사진·공백 제외), 최소 1,250자")
+
+# 모음 글 다듬기: 지난 마감 목록·길잡이 절·같은 절 반복은 빼고, 첫 문단은 문장 단위로, 제목은 따로 쓴 글을 앞세운다
+_B = lambda d, n: {"slug": f"jobs-2026-10-{d}", "kind": "daily", "title": f"2026년 10월 {d}일 공공기관 채용 브리핑 — 새 공고 {n}건",
+                   "summary": f"10월 {d}일 새 공고 {n}건을 모았습니다. 마감순으로 정리했습니다.", "keywords": [],
+                   "body": [{"type": "p", "text": f"{n}건"}, {"type": "h2", "text": "새로 올라온 공고"},
+                            {"type": "p", "text": "**서울** 27건 · [서울 채용 전체](/jobs/region/서울)"},
+                            {"type": "list", "items": ["A — 기관 · 10월 29일 마감"]},
+                            {"type": "p", "text": "**경기도** 19건 · [경기도 채용 전체](/jobs/region/경기)"},
+                            {"type": "h2", "text": "사흘 안에 마감"}, {"type": "p", "text": "오늘부터 모레까지"},
+                            {"type": "links", "items": [{"label": f"B — 기관 · 10월 {d}일 마감", "href": "/jobs/b"}]}, {"type": "p", "text": "그 밖에 200건"},
+                            {"type": "h2", "text": "놓치지 않으려면"}, {"type": "list", "items": ["저장 단추"]},
+                            {"type": "h2", "text": "어떤 자리인가"}, {"type": "p", "text": "오늘 공고를 많이 낸 기관: 甲 3건"}]}
+_S = {**_P[1], "slug": "jeonse-loan-listing-1", "title": "전세대출 가능 매물, 믿어도 될까 — 전세가율 80%와 90% (1편)",
+      "summary": "은행 지점이 심사조차 받지 않았습니다. 과정을 따라갑니다.",
+      "body": [{"type": "h2", "text": "기준"}, {"type": "p", "text": "90%"}, {"type": "h2", "text": "다음 편"}, {"type": "list", "items": ["2편: 금리"]}]}
+_d3 = t.digest([_B(20, 113), _B(21, 110), _S], _dt.date(2026, 10, 22))
+_h3 = t.render(_d3, "full")
+ok(_d3["title"] == "10월 22일 공공 채용·생활 정보 모음 | 전세대출 가능 매물, 믿어도 될까 외 2편", "모음 제목은 따로 쓴 글 앞세우고 부제 뺌: " + _d3["title"])
+ok("10월 20일 마감" not in _h3 and "10월 21일 마감" not in _h3 and "사흘 안에 마감" not in _h3 and "10월 29일 마감" in _h3, "지난 마감 목록 절은 빠지고 남은 마감은 둔다")
+ok("놓치지 않으려면" not in _h3 and "다음 편" not in _h3 and "2편: 금리" not in _h3, "길잡이 절은 뺀다")
+ok("서울 채용 전체" not in _h3 and "<b>서울</b> 27건" in _h3, "운영 사이트 길잡이 링크는 글자째 뺀다")
+ok("경기도" not in _h3, "목록 없이 남은 '경기도 19건' 줄은 뺀다")
+ok("오늘 공고를" not in _h3 and _h3.count("그날 공고를 많이 낸") == 1, "같은 절은 한 번만, '오늘'은 '그날'로")
+ok(_d3["summary"] == "10월 20일 새 공고 113건을 모았습니다. 10월 21일 새 공고 110건을 모았습니다. 은행 지점이 심사조차 받지 않았습니다.", "첫 문단은 글마다 첫 문장: " + _d3["summary"])
+
+_tb = t._unlink_site({"type": "table", "head": ["기관", "공고"], "rows": [["[병무청](/jobs/org/병무청)", "25건"], ["[KOSIS](https://kosis.kr)", "1건"]]})
+ok(_tb["rows"][0][0] == "병무청" and _tb["rows"][1][0] == "[KOSIS](https://kosis.kr)", "표 칸의 운영 사이트 링크는 글자만, 바깥 링크는 둔다")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 

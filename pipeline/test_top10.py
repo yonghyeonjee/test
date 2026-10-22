@@ -2,6 +2,7 @@
    python pipeline/test_top10.py"""
 import datetime as dt
 import json
+import re
 import os
 import random
 import sys
@@ -96,12 +97,23 @@ for key in ("civil", "orgs", "welfare-sido", "license-applicants"):
     ok(h2[0] == "현황은?" and h2[-1] == "참고 문헌" and h2[-2] == "함께 보면 좋은 사이트" and h2[-3] == "정리", f"{key}: 티스토리 절 {h2[:2]}…{h2[-3:]}")
     ok("jeepedia.com/psy-dict" in text and "jiwon.knowhow-it.com" in text and "knowhow-it.com/english" in text, f"{key}: 운영 사이트 소개")
     ok(("gojobs.go.kr" in text) if key in ("civil", "orgs") else ("bokjiro.go.kr" in text) if key == "welfare-sido" else ("q-net.or.kr" in text), f"{key}: 공식 사이트")
-    ok(text.count("출처: [") >= len(posts[key]["stats"]["items"]) + 2, f"{key}: 출처 줄 {text.count('출처: [')}")
+    ok(text.count("출처: [") + text.count("**공식 사이트.** [") >= len(posts[key]["stats"]["items"]) + 2, f"{key}: 출처·공식 사이트 줄 {text.count('출처: [')}")
+    _links = re.findall(r"\]\((/[^)]*|https?://[^)]+)\)", text) + [i["href"] for x in c["body"] if x["type"] == "links" for i in x["items"]]
+    _mine = [h for h in _links if h.startswith("/") or "jiwon.knowhow-it.com" in h]
+    ok(len(_mine) <= 2, f"{key}: 운영 사이트(jiwon) 링크는 2개 이하 — 지금 {len(_mine)}개 {_mine[:4]}")
+    ok(not re.search(r"\]\(/jobs|\]\(/license|\]\(/story", text), f"{key}: 항목·표에 jiwon 링크 없음")
+    ok("K나라지원 자료로 본" not in c["title"], f"{key}: 제목에 운영 사이트 이름 없음")
     orig = {x["text"] for x in posts[key]["body"] if x["type"] == "p"}
     ok(not (orig & {x["text"] for x in c["body"] if x["type"] == "p"}), f"{key}: 원문 문단 복사 없음")
-    imgs = [(f"[IMG{i}]", None) for i in range(1, 14)]
-    html = tp.render(c, "full", imgs)
-    ok(all(f"[IMG{i}]" in html for i in range(1, 14)), f"{key}: 사진 13장 모두 들어감")
+    _n = len(posts[key]["stats"]["items"][:10])
+    _keys = ["open", "overview", "top10"] + tt.WRAP_SHOTS[posts[key]["stats"]["entity"]] + [f"item_{i}" for i in range(1, _n + 1)] + [f"live_{i}" for i in range(1, _n + 1)]
+    html = tp.render(c, "full", None, {k: (f"[IMG:{k}]", None) for k in _keys})
+    ok(all(f"[IMG:{k}]" in html for k in _keys), f"{key}: 사진 25장(차트·항목 화면·원 자료 화면) 모두 제자리에")
+    _secs = re.split(r"<h2", html)
+    ok(all(f"[IMG:item_{i}]" in _secs_i and f"[IMG:live_{i}]" in _secs_i and "](" not in _secs_i[:0] for i, _secs_i in
+           ((i, next(x for x in _secs if f"{i}위 " in x[:80])) for i in range(1, _n + 1))), f"{key}: 순위 절마다 차트와 실제 화면")
+    ok(all(re.search(r'href="https?://(?!jiwon)', x) for x in _secs[1:] if 'id="refs"' not in x[:60] and 'id="sites"' not in x[:60]),
+       f"{key}: 소제목마다 바깥(공식) 링크")
 c = tt.compose(posts["civil"])
 ok(sum(1 for x in c["body"] if x["type"] == "p" and x["text"].startswith("**이 일이 힘든 이유.**")) == len(c["stats"]["items"]), "직렬 티스토리 글: 항목마다 힘든 이유")
 ok(any("Maslach" in i["label"] for x in c["body"] if x["type"] == "links" for i in x["items"]), "참고 문헌에 번아웃 척도")
@@ -117,16 +129,44 @@ for key in ("civil", "welfare-sido", "license-applicants"):
         ct.draw_overview(st, os.path.join(tmp, "o.png")); ct.draw_item(1, st["items"][0], st, os.path.join(tmp, "i.png")); ct.draw_top10(st, os.path.join(tmp, "t.png"))
         ok(all(os.path.getsize(os.path.join(tmp, f)) > 10000 for f in ("o.png", "i.png", "t.png")), f"{key}: 차트 파일")
 
-# 기획표: 30일, 날짜 연속, 주제가 전부 등록돼 있다
+# 기획표: 35일(10-22~26 은 10-21 에 몰린 글을 하루 한 편씩 다시 공개), 날짜 연속, 주제가 전부 등록돼 있다
 plan = json.loads(t.PLAN_FILE.read_text(encoding="utf-8"))
 dates = [dt.date.fromisoformat(p["date"]) for p in plan]
-ok(len(plan) == 30 and all((dates[i+1] - dates[i]).days == 1 for i in range(29)), "30일 연속")
-ok(all(p["topic"] in t.TOPICS for p in plan), f"미등록 주제: {[p['topic'] for p in plan if p['topic'] not in t.TOPICS]}")
+ok(len(plan) == 35 and all((dates[i+1] - dates[i]).days == 1 for i in range(34)), "35일 연속")
+ok([(p["date"], p["topic"], p.get("update")) for p in plan[4:9]] == [("2026-10-22", "roles", "163"), ("2026-10-23", "civil", "164"), ("2026-10-24", "medical", "165"), ("2026-10-25", "orgs-national", "166"), ("2026-10-26", "regions", "172")], "다시 공개할 5편: 날짜·주제·글 번호")
+ok(all(p["topic"] in t.TOPICS or p["topic"] == "" for p in plan), f"미등록 주제: {[p['topic'] for p in plan if p['topic'] not in t.TOPICS]}")
 ok(plan[0] == {"date": "2026-10-18", "topic": "civil"}, "첫날은 공무 직군")
-# 기획표가 끝난 뒤: 순환
-ok(t.plan_for(dt.date(2026, 11, 17)) == {"date": "2026-11-17", "topic": "orgs", "rotation": True}, f"31일째는 기획표에 없던 orgs: {t.plan_for(dt.date(2026, 11, 17))}")
-ok(t.plan_for(dt.date(2026, 11, 18))["topic"] == "civil" and t.plan_for(dt.date(2027, 1, 1))["topic"] in t.TOPICS, "그다음은 civil 부터 다시, 끝없이")
+ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "regions" and len({p["topic"] for p in plan}) == 30, "주제 30개, 10-21 은 regions")
+ok(t.plan_for(dt.date(2026, 10, 27))["topic"] == "license-applicants" and not t.plan_for(dt.date(2026, 10, 27)).get("update"), "새 연재는 10-27 부터 다시")
+# 기획표가 끝난 뒤: 순환. 기획표에 topic "" 인 날(연재 쉼)이 있어도 순환 순서에는 들어가지 않는다
+_rot = [t.plan_for(dt.date(2026, 11, 22) + dt.timedelta(days=i)) for i in range(31)]
+ok(all(r and r.get("rotation") and r["topic"] in t.TOPICS for r in _rot) and "orgs" in {r["topic"] for r in _rot}, "기획표가 끝나면 순환, 기획표에 없던 orgs 도 31일 안에 나온다")
+ok(t.plan_for(dt.date(2027, 1, 1))["topic"] in t.TOPICS, "끝없이 돈다")
+_orig = t.PLAN_FILE.read_text(encoding="utf-8")
+try:
+    _p = json.loads(_orig); _p.insert(3, {"date": "2026-10-21", "topic": ""}); t.PLAN_FILE.write_text(json.dumps(_p), encoding="utf-8")
+    ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "" and "" not in [t.plan_for(dt.date(2026, 11, 18) + dt.timedelta(days=i))["topic"] for i in range(40)], "쉼 날은 빈 주제, 순환엔 안 들어간다")
+finally:
+    t.PLAN_FILE.write_text(_orig, encoding="utf-8")
 ok(t.plan_for(dt.date(2026, 10, 1)) is None, "기획표 시작 전엔 없음")
+
+# 순위 절 다듬기: 조사, 항목 숫자로 쓴 준비 문장, 항목마다 공식 사이트, 이름 겹침, 0일
+ok(tt.josa("외교부", "은/는") == "외교부는" and tt.josa("조달청", "은/는") == "조달청은" and tt.josa("서울특별시교육청", "이/가") == "서울특별시교육청이", "조사")
+_it = {"name": "외교부", "n": 172, "by_month": [{"m": "2026-02", "n": 5}, {"m": "2026-03", "n": 25}, {"m": "2026-10", "n": 9}],
+       "bars": {"items": [{"label": "공무직", "n": 45}, {"label": "행정·사무", "n": 43}]}}
+ok(tt.item_prep("org", _it, "외교부") == "외교부는 지난 1년 **3월**에 25건으로 공고가 가장 많았습니다. 자리는 공무직·행정·사무 쪽이 많습니다. 2월까지 지난 공고의 자격 요건과 자기소개서 항목을 모아 두면 3월 공고에 바로 낼 수 있습니다.", "기관 준비 문장은 그 기관 숫자로")
+ok(tt.item_prep("keyword", _it, "행정직").startswith("행정직 공고는 지난 1년 **3월**(25건)에 가장 많았고, 공무직·행정·사무에서 자주 냈습니다. 2월까지"), "직무 준비 문장도 그 직무 숫자로")
+from top10_links import for_item
+ok(for_item("org", "orgs-national", {"name": "국방부 국군조직", "full_name": "국방부 국군조직 육군 육군본부"})[0][1] == "https://www.army.mil.kr", "긴 기관 이름부터 맞춘다")
+ok(for_item("region", "regions", {"name": "강원", "full_name": "강원특별자치도"})[0][1] == "https://state.gwd.go.kr" and for_item("keyword", "medical", {"key": "nurse"})[0][1] == "https://www.kuksiwon.or.kr", "지역·직종 공식 사이트")
+_on = json.loads(json.dumps(posts["orgs-national"])) if "orgs-national" in posts else None
+if _on:
+    _its = _on["stats"]["items"]
+    _its[1]["name"] = _its[0]["name"]; _its[0]["full_name"] = _its[0]["name"] + " 갑"; _its[1]["full_name"] = _its[1]["name"] + " 을"
+    _its[0]["win_med"] = 0; _its[0]["facts"] = _its[0]["facts"] + ["접수 기간: 보통 **0일**"]
+    _c = json.dumps(tt.compose(_on)["body"], ensure_ascii=False)
+    ok(_its[0]["full_name"] in _c and _its[1]["full_name"] in _c, "이름이 겹치면 정식 이름으로 가른다")
+    ok("보통 **0일**" not in _c and "보통 0일" not in _c and "은(는)" not in _c and "(으)로" not in _c, "0일·'은(는)'·'(으)로'는 쓰지 않는다")
 
 print("실패 %d" % bad if bad else "모두 통과")
 sys.exit(1 if bad else 0)
