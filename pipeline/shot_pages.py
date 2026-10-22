@@ -73,7 +73,7 @@ def main() -> int:
                     el = page.locator(s["selector"][4:]).first
                     if el.count():          # 못 찾으면 첫 화면 그대로
                         el.evaluate("e => { document.documentElement.style.scrollBehavior = 'auto';"   # 부드러운 스크롤이면 안 내려간다
-                                    " window.scrollTo(0, e.getBoundingClientRect().top + window.scrollY - 96); }")
+                                    " window.scrollTo(0, e.getBoundingClientRect().top + window.scrollY - 150); }")
                         page.wait_for_timeout(500)
                     page.screenshot(path=file)
                 elif s["selector"] and s["selector"] != "full":
