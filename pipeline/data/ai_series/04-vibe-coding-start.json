@@ -66,6 +66,10 @@
    "key": "steps"
   },
   {
+   "type": "p",
+   "text": "'바이브 코딩'이라는 말의 출처: [안드레이 카파시의 게시글](https://x.com/karpathy/status/1886192184808149383) · 개념과 한계 정리: [위키백과 '바이브 코딩'](https://ko.wikipedia.org/wiki/%EB%B0%94%EC%9D%B4%EB%B8%8C_%EC%BD%94%EB%94%A9)"
+  },
+  {
    "type": "h2",
    "text": "1단계: 도구 고르기 — 설치 없는 앱 빌더로",
    "id": "s1"
@@ -116,6 +120,10 @@
    "text": "글자 수보다 **구체성**이 중요합니다. '예쁘게'보다 '글씨 크게, 초록 계열', '편하게'보다 '휴대폰에서 잘 보이게'처럼 확인할 수 있는 말로 쓰세요."
   },
   {
+   "type": "p",
+   "text": "프롬프트를 잘 쓰는 법은 공식 가이드가 가장 정확합니다: [앤트로픽 프롬프트 가이드](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview) · [프롬프트 엔지니어링 가이드 한국어판](https://www.promptingguide.ai/kr) · [볼트 도움말 — 좋은 요청 쓰기](https://support.bolt.new)"
+  },
+  {
    "type": "h2",
    "text": "3단계: 실행하고 확인하기",
    "id": "s3"
@@ -139,6 +147,10 @@
   {
    "type": "image",
    "key": "bolt"
+  },
+  {
+   "type": "p",
+   "text": "실행 화면이 이상하면 각 도구 공식 도움말을 먼저 보세요: [리플릿 문서](https://docs.replit.com) · [볼트 도움말](https://support.bolt.new) · [러버블 문서](https://docs.lovable.dev)"
   },
   {
    "type": "h2",
@@ -173,6 +185,14 @@
   {
    "type": "p",
    "text": "마음에 드는 상태가 되면 도구의 **저장(체크포인트·버전)** 기능으로 그 시점을 남겨 두세요. 다음 수정이 망가져도 되돌릴 수 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "small_fix"
+  },
+  {
+   "type": "p",
+   "text": "되돌리기·버전 기록 기능은 도구마다 다릅니다: [리플릿 문서](https://docs.replit.com) · [러버블 문서](https://docs.lovable.dev) · [볼트 도움말](https://support.bolt.new)"
   },
   {
    "type": "h2",
@@ -254,6 +274,14 @@
      "수정 범위를 작게, 원하는 결과를 구체적으로"
     ]
    ]
+  },
+  {
+   "type": "image",
+   "key": "stuck"
+  },
+  {
+   "type": "p",
+   "text": "공식 문제 해결 안내: [버셀 문서(배포)](https://vercel.com/docs) · [볼트 도움말](https://support.bolt.new) · [리플릿 문서](https://docs.replit.com) · [러버블 문서](https://docs.lovable.dev)"
   },
   {
    "type": "h2",
@@ -383,6 +411,59 @@
    "source": "abcfact 정리",
    "caption": "바이브 코딩 첫 부탁에 담을 6가지",
    "alt": "바이브 코딩 프롬프트 작성 틀 예시"
+  },
+  {
+   "key": "small_fix",
+   "kind": "card",
+   "file": "vibe-coding-small-fix-example.png",
+   "title": "작게 나눠 고치기 — 예시",
+   "lines": [
+    "나쁜 예: '디자인 전부 바꾸고 로그인도 넣어 줘'",
+    "좋은 예 ①: '맨 위 제목 글자를 키워 줘'",
+    "좋은 예 ②: '버튼 색을 파란색으로'",
+    "한 번에 하나 → 망가지면 되돌리기 쉽다"
+   ],
+   "source": "abcfact 정리",
+   "caption": "한 번에 하나씩 고치는 요청 예시",
+   "alt": "바이브 코딩 작게 나눠 고치기 예시"
+  },
+  {
+   "key": "stuck",
+   "kind": "matrix",
+   "file": "vibe-coding-common-problems.png",
+   "title": "자주 막히는 곳과 해결법",
+   "sub": "abcfact 정리",
+   "rows": [
+    "화면이 하얗게 나온다",
+    "고칠수록 더 망가진다",
+    "배포 주소가 안 열린다",
+    "무료 한도가 끝났다"
+   ],
+   "cols": [
+    "먼저 해 볼 것",
+    "그래도 안 되면"
+   ],
+   "cells": [
+    [
+     "오류 문구를 그대로 붙여 넣기",
+     "직전 버전으로 되돌리기"
+    ],
+    [
+     "한 번에 하나만 고치기",
+     "새 대화에서 요약부터"
+    ],
+    [
+     "배포 기록의 오류 확인",
+     "공식 도움말 검색"
+    ],
+    [
+     "다음 달까지 기다리거나 유료 전환",
+     "다른 도구로 내보내기"
+    ]
+   ],
+   "source": "abcfact 정리",
+   "caption": "바이브 코딩에서 자주 막히는 곳과 해결 순서",
+   "alt": "바이브 코딩 오류 해결 방법 표"
   }
  ],
  "shots": [

@@ -68,6 +68,14 @@
    "text": "코드를 전혀 모른다면 앱 빌더로 시작하고, 결과물을 키우거나 회사 업무에 붙여야 할 때 코딩 에이전트로 옮겨 가는 사람이 많습니다. 실제로 일하는 사람들은 **도구 하나만 쓰지 않습니다.** 지피터스 사례글을 보면 코덱스가 나온 글의 절반 넘게 클로드도 함께 나옵니다."
   },
   {
+   "type": "image",
+   "key": "wiki"
+  },
+  {
+   "type": "p",
+   "text": "출처: [안드레이 카파시의 첫 게시글(X, 2025-02)](https://x.com/karpathy/status/1886192184808149383) · [위키백과 '바이브 코딩'](https://ko.wikipedia.org/wiki/%EB%B0%94%EC%9D%B4%EB%B8%8C_%EC%BD%94%EB%94%A9) · [Wikipedia 'Vibe coding'(영문, 비판·한계 포함)](https://en.wikipedia.org/wiki/Vibe_coding)"
+  },
+  {
    "type": "h2",
    "text": "순위를 매긴 기준",
    "id": "how"
@@ -503,6 +511,10 @@
    "text": "요금은 바뀌는 일이 잦습니다. 결제 전에는 참고 자료의 공식 요금 페이지를 한 번 더 확인하세요. 연 결제 할인(클로드 Pro 월 $17, 리플릿 Core 월 $18, 볼트 Pro 월 $18)도 있습니다."
   },
   {
+   "type": "p",
+   "text": "공식 요금 페이지: [클로드](https://claude.com/pricing) · [챗GPT(코덱스)](https://chatgpt.com/pricing) · [커서](https://cursor.com/pricing) · [깃허브 코파일럿](https://github.com/features/copilot/plans) · [러버블](https://lovable.dev/pricing) · [리플릿](https://replit.com/pricing) · [볼트](https://bolt.new/pricing) · [v0](https://v0.app/pricing) · [구글 AI 요금제](https://gemini.google/subscriptions/) · [키로](https://kiro.dev/pricing)"
+  },
+  {
    "type": "h2",
    "text": "나에게 맞는 도구 고르는 법",
    "id": "pick"
@@ -520,6 +532,10 @@
     "**개발자다** → 편집기는 커서나 코파일럿, 큰 작업은 클로드 코드·코덱스에 맡기는 조합이 흔합니다.",
     "**제미나이를 이미 구독한다** → 안티그래비티·제미나이 CLI 부터 써 보세요. 추가 비용 없이 시작할 수 있습니다."
    ]
+  },
+  {
+   "type": "p",
+   "text": "도구별 공식 시작 안내: [클로드 코드](https://claude.com/product/claude-code) · [깃허브 코파일럿 문서(한국어)](https://docs.github.com/ko/copilot) · [리플릿 문서](https://docs.replit.com) · [러버블 문서](https://docs.lovable.dev) · [볼트 도움말](https://support.bolt.new)"
   },
   {
    "type": "h2",
@@ -928,6 +944,21 @@
      "Pro 월 $20"
     ],
     "caption": "키로(Kiro) 요약 (공식 사이트 kiro.dev)"
+   }
+  },
+  {
+   "key": "wiki",
+   "url": "https://ko.wikipedia.org/wiki/%EB%B0%94%EC%9D%B4%EB%B8%8C_%EC%BD%94%EB%94%A9",
+   "file": "vibe-coding-wikipedia-korean.png",
+   "caption": "위키백과 '바이브 코딩' 문서 화면 (ko.wikipedia.org)",
+   "alt": "바이브 코딩 위키백과 문서",
+   "name": "바이브 코딩 위키백과",
+   "fallback": {
+    "title": "바이브 코딩 위키백과",
+    "lines": [
+     "2025년 2월 카파시가 처음 쓴 말",
+     "AI 에게 말로 시켜 코드를 만든다"
+    ]
    }
   }
  ]
