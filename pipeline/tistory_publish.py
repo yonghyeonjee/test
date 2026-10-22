@@ -146,8 +146,10 @@ def summary_blocks(body: list[dict], links_cap: int = 5, per_section: int = 1) -
 
 def _unlink_site(blk: dict) -> dict:
     """블록 안의 운영 사이트(jiwon) 링크를 글자만 남기고 뺀다. 바깥 공식 사이트 링크는 그대로 둔다."""
+    own = r"\((/[^)]*|" + re.escape(SITE) + r"[^)]*)\)"
     def strip(text: str) -> str:
-        return re.sub(r"\[([^\]]+)\]\((/[^)]*|" + re.escape(SITE) + r"[^)]*)\)", r"\1", text)
+        text = re.sub(r"\s*·\s*\[[^\]]+\]" + own, "", text)     # '서울 27건 · [서울 채용 전체](/jobs/…)' 같은 길잡이 링크는 통째로
+        return re.sub(r"\[([^\]]+)\]" + own, r"\1", text)
     t = blk.get("type")
     if t == "links":
         own = [i for i in blk["items"] if i["href"].startswith("/") or i["href"].startswith(SITE)]
@@ -168,11 +170,76 @@ def digest_prefix(day: dt.date) -> str:
     return f"{day.month}월 {day.day}일 {DIGEST_MARK}"
 
 
+# 묶을 때 빼는 절: 연재 길잡이(티스토리에 없는 글 제목만 남는다)와 운영 사이트 사용법.
+DIGEST_SKIP = re.compile(r"^(다음 편|이전 편|함께 보면|함께 보기|관련 글|이어서 읽기|놓치지 않으려면)")
+
+
+def _past_deadline(item, day: dt.date) -> bool:
+    m = re.search(r"(\d{1,2})월\s*(\d{1,2})일\s*마감", item if isinstance(item, str) else "")
+    if not m:
+        return False
+    d = dt.date(day.year, int(m.group(1)), int(m.group(2)))
+    if (d - day).days > 180:                      # 12월 글을 1월에 묶을 때
+        d = d.replace(year=day.year - 1)
+    return d < day
+
+
+def digest_sections(blocks: list[dict], day: dt.date, seen: set[str]) -> list[dict]:
+    """모음 글에 넣을 절만 남긴다.
+    - 길잡이 절(DIGEST_SKIP)은 뺀다.
+    - 마감이 묶는 날보다 앞선 공고는 목록에서 빼고, 다 빠지면 그 절을 통째로 뺀다(지난 '사흘 안 마감'을 오늘 글에 싣지 않는다).
+    - 앞 글에 똑같이 있던 절은 한 번만 싣는다."""
+    secs: list[list[dict]] = [[]]
+    for b in blocks:
+        if b.get("type") == "h2":
+            secs.append([b])
+        else:
+            secs[-1].append(b)
+    out: list[dict] = []
+    for sec in secs:
+        if not sec:
+            continue
+        h = sec[0] if sec[0].get("type") == "h2" else None
+        if h and DIGEST_SKIP.match(h["text"]):
+            continue
+        rest, dropped = [], False
+        for b in sec[1:] if h else sec:
+            if b.get("type") == "list":
+                items = [x for x in b["items"] if not _past_deadline(x, day)]
+                if not items:
+                    dropped = True; continue
+                b = {**b, "items": items}
+            if isinstance(b.get("text"), str):
+                b = {**b, "text": b["text"].replace("오늘 공고를 많이 낸", "그날 공고를 많이 낸")}
+            rest.append(b)
+        if dropped and not any(b.get("type") in ("list", "table", "bars") for b in rest):
+            continue
+        key = json.dumps([h and h["text"]] + rest, ensure_ascii=False, sort_keys=True)
+        if h and key in seen:
+            continue
+        seen.add(key)
+        out += ([h] if h else []) + rest
+    return out
+
+
+def digest_summary(posts: list[dict], cap: int = 300) -> str:
+    """첫 문단(검색 설명으로도 쓰인다): 글마다 요지 첫 문장을 이어 붙이되 문장 중간에서 자르지 않는다."""
+    out: list[str] = []
+    for p in posts:
+        first = re.split(r"(?<=[.!?다])\s+", (p.get("summary") or "").strip())[0]
+        if first and first not in out and len(" ".join(out + [first])) <= cap:
+            out.append(first)
+    return " ".join(out)
+
+
 def digest(posts: list[dict], day: dt.date) -> dict:
     """그날 올릴 jiwon 글 여러 편을 티스토리 글 하나로 묶는다(짧은 글을 여러 개 내지 않는다).
     글마다 제목(h2) · 요지 · 절별 핵심(h3 + 본문 2블록) · 원문 링크. 원 글 slug 들은 sources 에 남겨 각각 발행 기록을 단다."""
     head = posts[0]
-    lead = re.sub(r"^(\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일\s*", "", head["title"])      # 날짜가 제목에 두 번 들어가지 않게
+    # 제목 앞머리는 날마다 같은 채용 브리핑보다 따로 쓴 글(연재·해설)을 앞세운다. ' — ' 뒤 부제는 뺀다.
+    star = next((p for p in posts if p.get("kind") != "daily" and not p["slug"].startswith("jobs-")), head)
+    lead = re.sub(r"^(\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일\s*", "", star["title"])      # 날짜가 제목에 두 번 들어가지 않게
+    lead = lead.split(" — ")[0].strip()
     title = f"{digest_prefix(day)} | {lead}"
     if len(posts) > 1:
         title += f" 외 {len(posts) - 1}편"
@@ -182,6 +249,7 @@ def digest(posts: list[dict], day: dt.date) -> dict:
     ]
     from digest_refs import refs_for
     shots: list[dict] = []
+    seen: set[str] = set()
     for i, p in enumerate(posts, 1):
         body.append({"type": "h2", "text": p["title"]})
         sh, links = refs_for(p)
@@ -191,7 +259,7 @@ def digest(posts: list[dict], day: dt.date) -> dict:
             body.append({"type": "image", "key": f"d{i}_{name}"})
         if p.get("summary"):
             body.append({"type": "p", "text": p["summary"]})
-        for blk in summary_blocks(p["body"], links_cap=8, per_section=3):
+        for blk in digest_sections(summary_blocks(p["body"], links_cap=8, per_section=3), day, seen):
             body.append(_unlink_site({**blk, "type": "h3"} if blk.get("type") == "h2" else blk))
         for u, name, cap in sh[1:]:              # 둘째 화면은 절 끝 근거 자료 앞
             shots.append({"url": u, "key": f"d{i}_{name}", "caption": cap})
@@ -206,7 +274,7 @@ def digest(posts: list[dict], day: dt.date) -> dict:
             if k not in kw:
                 kw.append(k)
     return {"slug": f"digest-{day.isoformat()}", "kind": head.get("kind", "daily"), "title": title[:90],
-            "summary": " ".join(p.get("summary", "") for p in posts)[:300], "keywords": kw[:10], "body": body,
+            "summary": digest_summary(posts), "keywords": kw[:10], "body": body,
             "standalone": True, "sources": posts, "shots": shots}
 
 

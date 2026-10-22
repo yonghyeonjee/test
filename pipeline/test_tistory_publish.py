@@ -164,6 +164,28 @@ ok([x["key"] for x in _d2["shots"]] == ["d1_hf_jeonse", "d1_nhuf_youth"] and "nh
 ok([m["key"] for m in t.take_shots(_d["shots"], dry=True)][:2] == ["d1_gojobs", "d1_alio"], "화면 찍기(dry)는 key 를 그대로")
 ok(t.text_len("<p>가 나</p>[##_Image|kage@x|CDM|1.3|{}_##]<b>a&amp;b</b>") == 5 and t.MIN_CHARS == 1250, "본문 글자 수(태그·사진·공백 제외), 최소 1,250자")
 
+# 모음 글 다듬기: 지난 마감 목록·길잡이 절·같은 절 반복은 빼고, 첫 문단은 문장 단위로, 제목은 따로 쓴 글을 앞세운다
+_B = lambda d, n: {"slug": f"jobs-2026-10-{d}", "kind": "daily", "title": f"2026년 10월 {d}일 공공기관 채용 브리핑 — 새 공고 {n}건",
+                   "summary": f"10월 {d}일 새 공고 {n}건을 모았습니다. 마감순으로 정리했습니다.", "keywords": [],
+                   "body": [{"type": "p", "text": f"{n}건"}, {"type": "h2", "text": "새로 올라온 공고"},
+                            {"type": "p", "text": "**서울** 27건 · [서울 채용 전체](/jobs/region/서울)"},
+                            {"type": "list", "items": ["A — 기관 · 10월 29일 마감"]},
+                            {"type": "h2", "text": "사흘 안에 마감"}, {"type": "p", "text": "오늘부터 모레까지"},
+                            {"type": "list", "items": [f"B — 기관 · 10월 {d}일 마감"]}, {"type": "p", "text": "그 밖에 200건"},
+                            {"type": "h2", "text": "놓치지 않으려면"}, {"type": "list", "items": ["저장 단추"]},
+                            {"type": "h2", "text": "어떤 자리인가"}, {"type": "p", "text": "오늘 공고를 많이 낸 기관: 甲 3건"}]}
+_S = {**_P[1], "slug": "jeonse-loan-listing-1", "title": "전세대출 가능 매물, 믿어도 될까 — 전세가율 80%와 90% (1편)",
+      "summary": "은행 지점이 심사조차 받지 않았습니다. 과정을 따라갑니다.",
+      "body": [{"type": "h2", "text": "기준"}, {"type": "p", "text": "90%"}, {"type": "h2", "text": "다음 편"}, {"type": "list", "items": ["2편: 금리"]}]}
+_d3 = t.digest([_B(20, 113), _B(21, 110), _S], _dt.date(2026, 10, 22))
+_h3 = t.render(_d3, "full")
+ok(_d3["title"] == "10월 22일 공공 채용·생활 정보 모음 | 전세대출 가능 매물, 믿어도 될까 외 2편", "모음 제목은 따로 쓴 글 앞세우고 부제 뺌: " + _d3["title"])
+ok("10월 20일 마감" not in _h3 and "10월 21일 마감" not in _h3 and "사흘 안에 마감" not in _h3 and "10월 29일 마감" in _h3, "지난 마감 목록 절은 빠지고 남은 마감은 둔다")
+ok("놓치지 않으려면" not in _h3 and "다음 편" not in _h3 and "2편: 금리" not in _h3, "길잡이 절은 뺀다")
+ok("서울 채용 전체" not in _h3 and "<b>서울</b> 27건" in _h3, "운영 사이트 길잡이 링크는 글자째 뺀다")
+ok("오늘 공고를" not in _h3 and _h3.count("그날 공고를 많이 낸") == 1, "같은 절은 한 번만, '오늘'은 '그날'로")
+ok(_d3["summary"] == "10월 20일 새 공고 113건을 모았습니다. 10월 21일 새 공고 110건을 모았습니다. 은행 지점이 심사조차 받지 않았습니다.", "첫 문단은 글마다 첫 문장: " + _d3["summary"])
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 
