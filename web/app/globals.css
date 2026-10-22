@@ -499,3 +499,7 @@ main .ad-slot:not(.ad-tall):not(.ad-band) .ad-html { line-height: 0; }
 .pm-cell { display: block; width: 100%; padding: 7px 4px; border-radius: 10px; border: 1px solid #E5E8EC; background: #fff; color: #333D4B;
   font-size: 13px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-cell:hover { border-color: #5A4BE0; color: #5A4BE0; }
+
+/* 화면 밖의 긴 덩어리는 보일 때 그린다(2026-10-22). 휴대폰 Lighthouse 에서 Style & Layout 이 0.8초였다.
+   contain-intrinsic-size 는 그리기 전 자리 크기 — 스크롤 막대가 널뛰지 않게 대략 한 카드 높이. */
+.cv { content-visibility: auto; contain-intrinsic-size: auto 420px; }
