@@ -25,6 +25,7 @@ import GuideBanner from "@/components/GuideBanner";
 import JsonLd from "@/components/JsonLd";
 import KeywordBar from "@/components/KeywordBar";
 import TopicGrid from "@/components/TopicGrid";
+import WideOnly from "@/components/WideOnly";
 import SectionHead from "@/components/SectionHead";
 import AdSlot from "@/components/AdSlot";
 import HotBanner from "@/components/HotBanner";
@@ -257,19 +258,21 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
                 <BusinessSentence sidos={sidos} />
               </Suspense>
             </section>
-            <FeedPanels panels={[
+            <div className="cv"><FeedPanels panels={[
               { key: "closing", label: "마감 임박", sub: `${settings.closingDays}일 이내 마감`, more: "/policies",
                 content: closing.length ? <Lines items={closing} /> : null },
               { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
                 content: fresh.length ? <Lines items={fresh} fresh /> : null },
-            ]} />
+            ]} /></div>
             <PromoBanner placement="business" context="business" />
           </>}
           aside={<>
             <AlertBox findHref="/business#find" />
-            <HotRank terms={hotTerms.business} base="/business/search" sub={hotSub(hotTerms)} className="hidden lg:block" />
-            <MapCard className="hidden lg:flex" />
-            <AboutBox total={total} closing={bundle.closingCount} className="hidden lg:block" />
+            <WideOnly>
+              <HotRank terms={hotTerms.business} base="/business/search" sub={hotSub(hotTerms)} className="hidden lg:block" />
+              <MapCard className="hidden lg:flex" />
+              <AboutBox total={total} closing={bundle.closingCount} className="hidden lg:block" />
+            </WideOnly>
           </>}
         />
       </>
@@ -350,11 +353,14 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           휴대폰에서는 이것만으로 첫 화면이 찬다. 긴 소개·통계 띠는 넓은 화면의
           오른쪽 기둥으로 줄여 옮겼다. */}
       {/* 맨 위 롤링 띠. 넓은 화면은 아래 두 기둥과 같은 폭으로 나눠 오른쪽에 광고 지면(비면 우리 배너). */}
+      {/* 휴대폰용·PC용을 둘 다 HTML 에 싣지 않는다(WideOnly, 2026-10-22). 휴대폰 HTML 에는 휴대폰 것만. */}
       <HotBanner slides={hot} className="mt-3 lg:hidden" />
-      <div className="mt-4 hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
-        <HotBanner slides={hot} className="" />
-        <HomeTopAd brief={hot.find((s) => s.kind === "brief") ?? null} />
-      </div>
+      <WideOnly>
+        <div className="mt-4 hidden gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_300px]">
+          <HotBanner slides={hot} className="" />
+          <HomeTopAd brief={hot.find((s) => s.kind === "brief") ?? null} />
+        </div>
+      </WideOnly>
       <PortalTop
         index={sggIndex} hot={hotTerms.welfare}
         h1="K나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
@@ -380,18 +386,19 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
           <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />
           <HomeCalendar className="lg:hidden" />
-          <FeedPanels panels={[
+          <div className="cv"><FeedPanels panels={[
             { key: "closing", label: "마감 임박",
               sub: closingFallback ? "마감일이 가까운 순" : `${settings.closingDays}일 이내 마감`,
               more: "/policies", content: closing.length ? <Lines items={closing.slice(0, 6)} /> : null },
             { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
               content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
-          ]} />
+          ]} /></div>
           <AdSlot name="home_mid" />
-          <Reveal><HowItWorks total={total} closing={closingCount}
-                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} /></Reveal>
-          <Reveal><TopicGrid counts={topicCounts} className="card p-4 sm:p-5" /></Reveal>
-          <section id="areas" className="card scroll-mt-28 p-4 sm:p-5">
+          {/* 사이트 소개(HowItWorks)는 휴대폰에서 뺀다 — 검색·바로가기·마감 목록이면 첫 화면은 찬다(2026-10-22). */}
+          <WideOnly min="sm"><Reveal><HowItWorks total={total} closing={closingCount}
+                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} /></Reveal></WideOnly>
+          <Reveal className="cv"><TopicGrid counts={topicCounts} className="card p-4 sm:p-5" /></Reveal>
+          <section id="areas" className="card cv scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"
                          sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />
             {/* 휴대폰은 짧은 이름(서울·경기…)으로 네 칸. 긴 이름이 세 줄로 꺾였다. */}
@@ -417,7 +424,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
 
           {/* 넓은 화면에서만: 조건별 통계표·정책 전체 입구·안내 글. 휴대폰에서는 검색과
               바로가기로 충분하고, 긴 덩어리가 아래 탭 막대까지 몇 화면을 밀어냈다. */}
-          <div className="hidden space-y-6 lg:block">
+          <WideOnly><div className="hidden space-y-6 lg:block">
             <section className="card p-5">
               <SectionHead title="어디에 해당되시나요"
                            sub="눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다." more="/policies" />
@@ -438,16 +445,20 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
               title="처음이시라면 이것부터"
               items={blogIndexRelated().filter((r) => r.href !== "/")}
             />
-          </div>
-          <PromoBanner placement="home" />
+          </div></WideOnly>
+          <div className="cv"><PromoBanner placement="home" /></div>
         </>}
         aside={<>
-          <HomeMap areas={areas} total={areaTotal} className="hidden lg:block" />
-          <HomeCalendar className="hidden lg:block" />
+          <WideOnly>
+            <HomeMap areas={areas} total={areaTotal} className="hidden lg:block" />
+            <HomeCalendar className="hidden lg:block" />
+          </WideOnly>
           <AlertBox />
-          <HotRank terms={hotTerms.welfare} sub={hotSub(hotTerms)} className="hidden lg:block" />
-          <DeadlineList slides={hot} className="hidden lg:block" />
-          <AboutBox total={total} closing={closingCount} className="hidden lg:block" />
+          <WideOnly>
+            <HotRank terms={hotTerms.welfare} sub={hotSub(hotTerms)} className="hidden lg:block" />
+            <DeadlineList slides={hot} className="hidden lg:block" />
+            <AboutBox total={total} closing={closingCount} className="hidden lg:block" />
+          </WideOnly>
         </>}
       />
     </>
