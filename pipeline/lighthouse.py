@@ -8,9 +8,13 @@ import sys
 import tempfile
 
 
+BLOCK: list[str] = []  # "block=패턴" 인자로 막을 요청(실험용: 글꼴을 막으면 LCP 가 어떻게 되나 등)
+
+
 def run(url: str, desktop: bool) -> None:
     out = tempfile.mktemp(suffix=".json")
     cmd = ["npx", "-y", "lighthouse@12", url, "--output=json", f"--output-path={out}", "--quiet",
+           *[f"--blocked-url-patterns={b}" for b in BLOCK],
            "--chrome-flags=--headless=new --no-sandbox --disable-gpu",
            "--only-categories=performance,accessibility,best-practices,seo"]
     if desktop:
@@ -75,7 +79,9 @@ def run(url: str, desktop: bool) -> None:
 
 arg = sys.argv[1] if len(sys.argv) > 1 else "https://jiwon.knowhow-it.com/"
 mobile_only = arg.startswith("mobile,")
-for u in [x.strip() for x in arg.removeprefix("mobile,").split(",") if x.strip()]:
+items = [x.strip() for x in arg.removeprefix("mobile,").split(",") if x.strip()]
+BLOCK[:] = [x[6:] for x in items if x.startswith("block=")]
+for u in [x for x in items if not x.startswith("block=")]:
     for desktop in ((False,) if mobile_only else (False, True)):
         print(f"\n== {u} [{'PC' if desktop else '휴대폰'}]")
         try:
