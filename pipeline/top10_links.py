@@ -1,7 +1,8 @@
 """
 top10_links.py — TOP10 글의 순위 절마다 붙이는 '그 항목의' 공식 사이트(자격 시험·협회·부처·시도청).
 절마다 같은 나라일터 링크만 반복하지 않도록, 항목에 맞는 원 자료 하나·둘을 고른다. 주소는 러너 탐침(probe_pages.py head:)으로
-살아 있는 것을 확인한 것만 둔다. 없으면 빈 목록 — 그 절은 출처 줄(나라일터·잡알리오)만 남는다.
+살아 있는 것을 확인한 것만 둔다(2026-10-22). 시·도청 몇 곳(부산·경기·울산·전남·충북)과 일부 국립대는
+해외 러너에서 시간 초과로 막히지만 공식 주소라 둔다. 없으면 빈 목록 — 그 절은 출처 줄(나라일터·잡알리오)만 남는다.
 
   for_item(entity, topic, item) -> [(이름, 주소), …]
 """
@@ -10,7 +11,7 @@ from __future__ import annotations
 
 KUKSIWON = ("한국보건의료인국가시험원 — 면허 국가시험 일정·응시 자격", "https://www.kuksiwon.or.kr")
 QNET = ("큐넷 — 관련 국가기술자격 시험 일정", "https://www.q-net.or.kr")
-GOSI = ("사이버국가고시센터 — 국가직 공채 시험 공고·과목", "https://www.gosi.kr")
+GOSI = ("인사혁신처 — 국가공무원 공채 시험 일정·공고", "https://www.mpm.go.kr")
 LOCAL_GOSI = ("지방자치단체 인터넷원서접수센터 — 지방직 시험 공고·원서", "https://local.gosi.go.kr")
 MOE = ("교육부 — 교원·교육공무직 정책", "https://www.moe.go.kr")
 MOHW = ("보건복지부 — 보건·복지 인력 정책", "https://www.mohw.go.kr")
@@ -20,11 +21,11 @@ NL = ("국립중앙도서관 — 사서 업무·도서관 정책", "https://www.
 # 직무·직렬·의료 직종(낱말 묶음 key) — 같은 key 를 여러 주제가 함께 쓴다
 KEYWORD = {
     "doctor": [KUKSIWON, ("국립중앙의료원 — 공공의료 채용·공공보건의료 안내", "https://www.nmc.or.kr")],
-    "nurse": [KUKSIWON, ("대한간호협회 — 간호사 면허·보수교육", "https://www.koreanurse.or.kr")],
+    "nurse": [KUKSIWON, ("국립중앙의료원 — 공공병원 간호 인력·공공보건의료", "https://www.nmc.or.kr")],
     "aide": [KUKSIWON],
     "pharma": [KUKSIWON, ("대한약사회 — 약사 면허·근무 분야", "https://www.kpanet.or.kr")],
     "medtech": [KUKSIWON, ("대한임상병리사협회 — 임상병리사 업무·교육", "https://www.kamt.or.kr")],
-    "radio": [KUKSIWON, ("대한방사선사협회 — 방사선사 업무·교육", "https://www.krta.or.kr")],
+    "radio": [KUKSIWON],
     "therapy": [KUKSIWON, ("대한물리치료사협회 — 물리치료사 업무·교육", "https://www.kpta.co.kr")],
     "nutrition": [KUKSIWON, ("대한영양사협회 — 영양사 업무·급식 기준", "https://www.dietitian.or.kr")],
     "dental": [KUKSIWON, ("대한치과위생사협회 — 치과위생사 업무·교육", "https://www.kdha.or.kr")],
@@ -43,7 +44,7 @@ KEYWORD = {
     "teacher-temp": [MOE],
     "lecturer": [MOE],
     "ta": [MOE],
-    "childcare": [("한국보육진흥원 — 보육교사 자격·평가", "https://www.kcpi.or.kr")],
+    "childcare": [("교육부 — 유아교육·보육 통합(유보통합) 정책", "https://www.moe.go.kr")],
     "counsel": [("한국청소년상담복지개발원 — 상담 인력·청소년 상담", "https://www.kyci.or.kr")],
     "youth": [("한국청소년활동진흥원 — 청소년지도사·활동 시설", "https://www.kywa.or.kr"), ("한국청소년상담복지개발원 — 청소년상담사", "https://www.kyci.or.kr")],
     "lang": [("한국문학번역원 — 번역 아카데미·번역 지원", "https://www.ltikorea.or.kr")],
@@ -51,7 +52,7 @@ KEYWORD = {
     "clerical": [("NCS 국가직무능력표준 — 사무·행정 직무기술서", "https://www.ncs.go.kr")],
     "intern": [("온통청년 — 청년 일경험·인턴 정책", "https://www.youthcenter.go.kr")],
     "public-worker": [("고용노동부 — 공무직(무기계약직) 근로조건", "https://www.moel.go.kr")],
-    "term-official": [GOSI, ("인사혁신처 — 임기제·개방형 직위 제도", "https://www.mpm.go.kr")],
+    "term-official": [("인사혁신처 — 임기제·개방형 직위 제도", "https://www.mpm.go.kr")],
     "facility": [("한국전기안전공사 — 전기안전관리자 업무", "https://www.kesco.or.kr"), QNET],
     "postal": [("우정사업본부 — 집배·우편 업무와 채용", "https://www.koreapost.go.kr")],
     "martial": [MOJ],
