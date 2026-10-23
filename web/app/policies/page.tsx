@@ -70,11 +70,18 @@ async function load(): Promise<Data> {
   }
 }
 
+/**
+ * 조건 링크(/?age=…, /?sido=…&sigungu=…)는 첫 화면의 변형이라 검색엔진이 따라가게 두지 않는다(2026-10-24).
+ * 시·군·구 250여 개마다 첫 화면 변형 주소가 생겨 구글이 거기에 크롤링을 쓰고 허브는 덜 읽었다. 사람에게는 그대로 열린다.
+ * prefetch 도 끈다 — 구글의 실제 URL 테스트에서 이 미리 받기가 "기타 오류"로 찍혔다.
+ */
+const SOFT = { rel: "nofollow", prefetch: false } as const;
+
 function Chips({ items }: { items: { href: string; label: string; n?: number }[] }) {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       {items.map((it) => (
-        <Link key={it.href + it.label} href={it.href} className="chip">
+        <Link key={it.href + it.label} href={it.href} className="chip" {...(it.href.includes("?") ? SOFT : {})}>
           {it.label}
           {it.n !== undefined && (
             <span className="num text-[12px] font-bold text-faint">{it.n}</span>
@@ -243,6 +250,7 @@ export default async function Policies() {
                       key={s.name}
                       href={`/?sido=${encodeURIComponent(r.sido)}&sigungu=${encodeURIComponent(s.name)}&via=policies`}
                       className="text-muted transition-colors hover:text-brand"
+                      {...SOFT}
                     >
                       {s.name}
                       <span className="num ml-1 text-[12px] text-faint">{s.n}</span>

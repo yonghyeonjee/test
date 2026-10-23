@@ -195,8 +195,10 @@ def main() -> None:
         return x
 
     if a.hubs or a.urls:
-        hubs = [f"https://{HOST}{p}" for p in ("/", "/jobs", "/policies", "/orgs", "/map", "/calendar", "/story", "/blog", "/license",
-                                              "/housing", "/business", "/jobs/region/경기도", "/jobs/region/서울특별시", "/area/경기도", "/area/서울특별시")] if a.hubs else []
+        # 한글 경로는 사이트맵과 같게 퍼센트 부호화해 검사한다 — 날것으로 넣으면 구글이 "알려지지 않은 URL" 이라고 한다(2026-10-23).
+        hubs = [f"https://{HOST}" + "/".join(urllib.parse.quote(seg) for seg in p.split("/"))
+                for p in ("/", "/jobs", "/policies", "/orgs", "/map", "/calendar", "/story", "/blog", "/license",
+                          "/housing", "/business", "/jobs/region/경기도", "/jobs/region/서울특별시", "/area/경기도", "/area/서울특별시")] if a.hubs else []
         extra = [u.strip() for u in a.urls.split(",") if u.strip()]
         if a.hubs:
             # 최근 글 셋: 사이트맵 posts 갈래의 /story/ 가운데 앞쪽.
