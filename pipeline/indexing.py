@@ -9,6 +9,8 @@ indexing.py — 새로 생긴 쪽을 검색엔진에 바로 알린다(2026-10-15
 
   python pipeline/indexing.py                 # 최근 30시간 새 주소
   python pipeline/indexing.py --hours 72 --dry
+  python pipeline/indexing.py --urls /jobs,/policies   # 이 주소들만 IndexNow 로(허브 다시 긁기, 2026-10-25). 구글 Indexing API 는
+                                                       # 채용 공고만 허용돼 허브는 보내지 않는다 — 어기면 한도가 잘린다.
 """
 from __future__ import annotations
 
@@ -157,7 +159,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=int, default=30)
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--urls", default="", help="쉼표로 나눈 경로·주소. 이것만 IndexNow 로 보내고 끝낸다(DB 안 읽음)")
     a = ap.parse_args()
+    if a.urls:
+        urls = [u if u.startswith("http") else SITE + u for u in (x.strip() for x in a.urls.split(",")) if u]
+        print(f"지정 주소 {len(urls)}건 → IndexNow(네이버·빙)만")
+        indexnow(urls, a.dry)
+        return
     from supabase import create_client
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
     got = collect(sb, a.hours)
