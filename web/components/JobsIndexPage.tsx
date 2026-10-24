@@ -8,6 +8,7 @@ import MidAd from "@/components/MidAd";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
+import JobsPulse from "@/components/JobsPulse";
 import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -117,6 +118,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
         />
       )}
       <JobList board={board} route={route} />
+      {route.page === 1 && !route.q && !route.region && !route.hire && <JobsPulse jobs={board.jobs} />}
       <MidAd name="detail_mid" context="job" seed="jobs" className="mt-10" />
 
       <p className="mt-3 text-xs leading-relaxed text-muted">

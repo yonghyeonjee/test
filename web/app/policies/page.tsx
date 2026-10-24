@@ -15,8 +15,8 @@ import { POLICIES_FAQ } from "@/lib/pageFaq";
 import { pageGraph } from "@/lib/schema";
 import {
   BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY,
-  getAreas, getCoverage, getRegions, getStats,
-  type Area, type Stat,
+  feedClosing, feedNew, getAreas, getCoverage, getRegions, getStats,
+  type Area, type Program, type Stat,
 } from "@/lib/db";
 import { brandKeys, withOg } from "@/lib/seo";
 
@@ -47,6 +47,9 @@ type Data = {
   regions: Awaited<ReturnType<typeof getRegions>>;
   areas: Area[];
   stats: { age: Stat[]; employment: Stat[]; household: Stat[] };
+  /** 이번 주 새로 올라온 사업과 곧 마감하는 사업(2026-10-24). 목록만 있는 허브에 날마다 달라지는 글을 붙인다. */
+  fresh: Program[];
+  closing: Program[];
 };
 
 /**
@@ -55,10 +58,11 @@ type Data = {
  */
 async function load(): Promise<Data> {
   try {
-    const [coverage, regions, areas, stats] = await Promise.all([
+    const [coverage, regions, areas, stats, fresh, closing] = await Promise.all([
       getCoverage(), getRegions(), getAreas(), getStats(),
+      feedNew(null, 6).catch(() => []), feedClosing(null, 6).catch(() => []),
     ]);
-    return { coverage, regions, areas, stats };
+    return { coverage, regions, areas, stats, fresh, closing };
   } catch (e) {
     console.warn("[policies] DB 를 읽지 못했다:", e);
     return {
@@ -66,8 +70,51 @@ async function load(): Promise<Data> {
       regions: [],
       areas: [],
       stats: { age: [], employment: [], household: [] },
+      fresh: [],
+      closing: [],
     };
   }
+}
+
+const dot = (ymd: string | null) => (ymd ? `${ymd.slice(5, 7)}.${ymd.slice(8, 10)}` : "");
+const kstToday = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+
+/** 새 사업·마감 임박 사업을 짧은 글과 목록으로. 긁어 갈 때마다 달라지는 이 사이트만의 문단이다. */
+function Digest({ fresh, closing }: { fresh: Program[]; closing: Program[] }) {
+  if (fresh.length === 0 && closing.length === 0) return null;
+  const today = kstToday();
+  const where = (p: Program) => [p.sido, p.sigungu].filter(Boolean).join(" ") || p.org_name || "전국";
+  const row = (p: Program, tail: string) => (
+    <li key={p.source_id} className="flex justify-between gap-3">
+      <Link href={`/p/${encodeURIComponent(p.source_id)}`} className="truncate hover:text-brand">
+        <span className="text-muted">{where(p)} · </span>{p.title}
+      </Link>
+      <span className="num shrink-0 text-muted">{tail}</span>
+    </li>
+  );
+  return (
+    <section className="mt-12" aria-labelledby="policies-digest">
+      <h2 id="policies-digest" className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">{dot(today)} 기준, 이번 주 움직임</h2>
+      <p className="mt-3 text-[15px] leading-[1.85] text-ink2">
+        복지로·기업마당·소상공인24에 새로 올라온 공고와 접수 마감이 가까운 공고를 매일 새벽 다시 셉니다. 아래는 그 가운데
+        가장 최근 것과 가장 급한 것입니다. 마감이 가까운 사업은 서류 준비에 며칠이 들 수 있으니 원문의 접수 방법을 먼저 보세요.
+      </p>
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        {fresh.length > 0 && (
+          <div className="card p-4">
+            <h3 className="text-[14px] font-bold">새로 올라온 사업</h3>
+            <ul className="mt-2 space-y-1 text-[14px]">{fresh.map((p) => row(p, p.apply_end ? `~${dot(p.apply_end)}` : "상시"))}</ul>
+          </div>
+        )}
+        {closing.length > 0 && (
+          <div className="card p-4">
+            <h3 className="text-[14px] font-bold">곧 마감하는 사업</h3>
+            <ul className="mt-2 space-y-1 text-[14px]">{closing.map((p) => row(p, p.apply_end ? `~${dot(p.apply_end)}` : ""))}</ul>
+          </div>
+        )}
+      </div>
+    </section>
+  );
 }
 
 /**
@@ -105,7 +152,7 @@ function Block({ title, sub, children }: {
 }
 
 export default async function Policies() {
-  const { coverage, regions, areas, stats } = await load();
+  const { coverage, regions, areas, stats, fresh, closing } = await load();
   const total = coverage.welfare + coverage.business;
   const sggTotal = regions.reduce((a, r) => a + r.sigungu.length, 0);
 
@@ -145,6 +192,8 @@ export default async function Policies() {
           ))}
         </div>
       </PageBanner>
+
+      <Digest fresh={fresh} closing={closing} />
 
       <section className="mt-8">
         <form action="/" method="get" className="flex items-center gap-2 rounded-card border-2 border-line bg-white px-4 py-3 focus-within:border-brand">

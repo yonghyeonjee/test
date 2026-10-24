@@ -8,6 +8,7 @@ import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
+import JobsPulse from "@/components/JobsPulse";
 import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
 import PromoBanner from "@/components/PromoBanner";
@@ -85,6 +86,7 @@ export default async function JobsByRegion({ params }: P) {
       </nav>
 
       <JobList board={board} route={route} />
+      {route.page === 1 && !route.hire && <JobsPulse jobs={board.jobs} scope={sido} />}
 
       <AdSlot name="page_bottom" />
 
