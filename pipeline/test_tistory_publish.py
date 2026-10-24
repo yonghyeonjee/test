@@ -191,6 +191,20 @@ ok(_d3["summary"] == "10월 20일 새 공고 113건을 모았습니다. 10월 21
 _tb = t._unlink_site({"type": "table", "head": ["기관", "공고"], "rows": [["[병무청](/jobs/org/병무청)", "25건"], ["[KOSIS](https://kosis.kr)", "1건"]]})
 ok(_tb["rows"][0][0] == "병무청" and _tb["rows"][1][0] == "[KOSIS](https://kosis.kr)", "표 칸의 운영 사이트 링크는 글자만, 바깥 링크는 둔다")
 
+# 한 편짜리 모음 글: '1편을 모았다' 없이, 지역별 목록까지 싣고, 운영 사이트 화면 안내 문장은 뺀다
+_one = {"slug": "jobs-2026-10-24", "kind": "daily", "title": "2026년 10월 24일 공공기관 채용 브리핑 — 새 공고 156건",
+        "summary": "10월 24일 새 공고 156건을 모았습니다.", "keywords": [],
+        "body": [{"type": "p", "text": "156건"}, {"type": "h2", "text": "새로 올라온 공고"},
+                 {"type": "p", "text": "**전국** 4건"}, {"type": "list", "items": ["A — 기관 · 11월 3일 마감"]},
+                 {"type": "p", "text": "**서울특별시** 34건 · [서울 채용 전체](/jobs/region/서울)"}, {"type": "list", "items": ["B — 서울 기관 · 11월 4일 마감"]},
+                 {"type": "p", "text": "**부산광역시** 12건"}, {"type": "list", "items": ["C — 부산 기관 · 11월 5일 마감"]},
+                 {"type": "h2", "text": "사흘 안에 마감"}, {"type": "list", "items": ["D — 기관 · 10월 25일 마감"]},
+                 {"type": "p", "text": "그 밖에 114건이 더 있습니다. 마감 달력에서 날짜별로, 마감 임박 공고에서 마감순으로 봅니다."}]}
+_d4 = t.digest([_one], _dt.date(2026, 10, 24))
+_h4 = t.render(_d4, "full")
+ok("1편을" not in _h4 and "C — 부산 기관" in _h4 and "B — 서울 기관" in _h4, "한 편짜리 모음 글은 지역별 목록까지")
+ok("마감 달력" not in _h4 and "그 밖에 114건이 더 있습니다." in _h4 and _h4.count("10월 24일 새 공고 156건을 모았습니다.") == 1, "운영 사이트 화면 안내는 빼고 요지는 한 번만")
+
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
 

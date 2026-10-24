@@ -177,6 +177,10 @@ def digest_prefix(day: dt.date) -> str:
 DIGEST_SKIP = re.compile(r"^(다음 편|이전 편|함께 보면|함께 보기|관련 글|이어서 읽기|놓치지 않으려면|이렇게 찾으세요)")
 
 
+# 운영 사이트 화면을 가리키는 문장(티스토리에선 링크가 없어 따라갈 수 없다)
+SITE_UI = re.compile(r"\s*[^.!?]*(마감 달력|마감 임박 공고에서|지역별 채용에서|기관별 채용에서|기관 이력 페이지|책갈피|지역 칩)[^.!?]*[.!?]")
+
+
 def _past_deadline(item, day: dt.date) -> bool:
     m = re.search(r"(\d{1,2})월\s*(\d{1,2})일\s*마감", item if isinstance(item, str) else "")
     if not m:
@@ -213,7 +217,9 @@ def digest_sections(blocks: list[dict], day: dt.date, seen: set[str]) -> list[di
                     dropped = True; continue
                 b = {**b, "items": items}
             if isinstance(b.get("text"), str):
-                b = {**b, "text": b["text"].replace("오늘 공고를 많이 낸", "그날 공고를 많이 낸")}
+                b = {**b, "text": SITE_UI.sub("", b["text"].replace("오늘 공고를 많이 낸", "그날 공고를 많이 낸")).strip()}
+                if not b["text"]:
+                    continue
             rest.append(b)
         while rest and rest[-1].get("type") == "p" and re.fullmatch(r"\*\*[^*]+\*\*\s*[\d,]+건", rest[-1]["text"].strip()):
             rest.pop()                            # 목록이 잘려 '경기도 19건' 머리만 남은 줄
@@ -248,10 +254,14 @@ def digest(posts: list[dict], day: dt.date) -> dict:
     title = f"{digest_prefix(day)} | {lead}"
     if len(posts) > 1:
         title += f" 외 {len(posts) - 1}편"
-    body: list[dict] = [
-        {"type": "p", "text": f"최근 정리한 공공 채용·생활 정보 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
-        {"type": "list", "items": [p["title"] for p in posts]},
-    ]
+    if len(posts) > 1:
+        body: list[dict] = [
+            {"type": "p", "text": f"최근 정리한 공공 채용·생활 정보 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
+            {"type": "list", "items": [p["title"] for p in posts]},
+        ]
+    else:                                         # 한 편뿐이면 '1편을 모았다'·목록 대신 무엇을 붙였는지만
+        body = [{"type": "p", "text": "지역별 새 공고와 곧 마감하는 공고를 원 자료 사이트 화면, 근거 링크와 함께 정리했습니다. 접수는 공고 원문이 기준입니다."}]
+    few = len(posts) <= 2                         # 묶인 글이 적으면 글마다 더 많이 싣는다(지역별 목록까지)
     from digest_refs import refs_for
     shots: list[dict] = []
     seen: set[str] = set()
@@ -262,9 +272,9 @@ def digest(posts: list[dict], day: dt.date) -> dict:
             u, name, cap = sh[0]
             shots.append({"url": u, "key": f"d{i}_{name}", "caption": cap})
             body.append({"type": "image", "key": f"d{i}_{name}"})
-        if p.get("summary"):
+        if p.get("summary") and len(posts) > 1:  # 한 편이면 글 첫 문단(요지)과 겹친다
             body.append({"type": "p", "text": p["summary"]})
-        blocks = [_unlink_site(b) for b in summary_blocks(p["body"], links_cap=8, per_section=3)]   # 공고 링크 목록 → 글자 목록 먼저
+        blocks = [_unlink_site(b) for b in summary_blocks(p["body"], links_cap=12 if few else 8, per_section=10 if few else 3)]   # 공고 링크 목록 → 글자 목록 먼저
         for blk in digest_sections(blocks, day, seen):
             body.append({**blk, "type": "h3"} if blk.get("type") == "h2" else blk)
         for u, name, cap in sh[1:]:              # 둘째 화면은 절 끝 근거 자료 앞
