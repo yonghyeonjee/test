@@ -14,6 +14,10 @@ on:
         description: "보내지 않고 목록만"
         default: false
         type: boolean
+      urls:
+        description: "이 주소들만 IndexNow 로(쉼표). 비우면 최근 새 주소"
+        default: ""
+        type: string
   schedule:
     - cron: "30 2 * * *"    # UTC 02:30 = KST 11:30
 
@@ -41,7 +45,9 @@ jobs:
           GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
           HOURS: ${{ inputs.hours || '30' }}
           DRY: ${{ inputs.dry }}
+          URLS: ${{ inputs.urls }}
         run: |
           args="--hours $HOURS"
           [ "$DRY" = "true" ] && args="$args --dry"
+          [ -n "$URLS" ] && args="$args --urls $URLS"
           python -u pipeline/indexing.py $args

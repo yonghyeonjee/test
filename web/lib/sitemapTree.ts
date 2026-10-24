@@ -52,11 +52,18 @@ function day(v: string | null | undefined): Date | undefined {
 const e = (path: string, changeFrequency: Freq, priority: number, lastModified?: Date): Entry =>
   ({ url: `${SITE}${path}`, changeFrequency, priority, ...(lastModified ? { lastModified } : {}) });
 
+/**
+ * 날마다 내용이 바뀌는 허브의 <lastmod>(2026-10-25). 첫 화면·/jobs·/policies 는 새 공고와 "이번 주 흐름" 문단이 매일 달라지고,
+ * 구글은 lastmod 가 꾸준히 맞는 사이트맵에서 그 날짜로 다시 긁을 차례를 정한다. 안 바뀌는 쪽에 적으면 거짓이라 적지 않는다.
+ */
+const todayKst = () => new Date(Math.floor((Date.now() + 9 * 3600e3) / 86400e3) * 86400e3 - 9 * 3600e3);
+
 function pages(): Entry[] {
+  const t = todayKst();
   return [
-    e("", "daily", 1),
-    e("/business", "daily", 0.9),
-    e("/policies", "daily", 0.9),
+    e("", "daily", 1, t),
+    e("/business", "daily", 0.9, t),
+    e("/policies", "daily", 0.9, t),
     e("/topic", "weekly", 0.8),
     ...TOPICS.map((t) => e(`/topic/${t.slug}`, "daily", 0.8)),
     e("/money", "weekly", 0.8),
@@ -65,10 +72,10 @@ function pages(): Entry[] {
     e("/money/student-loan", "weekly", 0.8),
     e("/license", "weekly", 0.8),
     e("/license/pro", "weekly", 0.7),
-    e("/license/schedule", "daily", 0.8),
-    e("/jobs", "daily", 0.8),
-    e("/jobs/region", "daily", 0.8),
-    e("/jobs/org", "daily", 0.8),
+    e("/license/schedule", "daily", 0.8, t),
+    e("/jobs", "daily", 0.8, t),
+    e("/jobs/region", "daily", 0.8, t),
+    e("/jobs/org", "daily", 0.8, t),
     e("/jobs/overseas", "daily", 0.7),
     e("/jobs/majors", "yearly", 0.7),
     e("/agency", "daily", 0.8),
@@ -77,12 +84,12 @@ function pages(): Entry[] {
     e("/orgs", "weekly", 0.8),
     e("/free", "monthly", 0.7),
     e("/business/search", "weekly", 0.8),
-    e("/map", "daily", 0.8),
-    e("/calendar", "daily", 0.8),
+    e("/map", "daily", 0.8, t),
+    e("/calendar", "daily", 0.8, t),
     e("/about", "monthly", 0.7),
     e("/blog", "weekly", 0.8),
     e("/story", "weekly", 0.7),
-    e("/housing", "daily", 0.9),
+    e("/housing", "daily", 0.9, t),
     e("/privacy", "yearly", 0.2),
   ];
 }
