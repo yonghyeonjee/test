@@ -252,7 +252,25 @@ export type Detail = Program & {
   support_cycle: string | null;
   life_cycle: string[] | null;
   apply_method: string | null;
+  /** program_detail 의 갱신 시각. 구조화 데이터 dateModified 와 사이트맵 lastmod 에 쓴다(2026-10-26). */
+  updated_at?: string | null;
 };
+
+/**
+ * 사업 상세 쪽의 "이 사이트만의 숫자"(2026-10-26, sql/018 program_facts). 복지로 원문에는 없고 우리 자료를 모아야 나오는 사실 셋.
+ * 구글이 원문이 있는 쪽을 색인할 이유를 묻는 데 대한 답이다. 못 읽으면 null — 쪽은 그대로 나간다.
+ */
+export type ProgramFacts = { same_area_n: number; same_sido_topic_n: number; sidos_with_title: number };
+export async function getProgramFacts(sourceId: string): Promise<ProgramFacts | null> {
+  try {
+    const { data, error } = await db.rpc("program_facts", { p_source_id: sourceId });
+    if (error) return null;
+    const row = (Array.isArray(data) ? data[0] : data) as ProgramFacts | undefined;
+    return row ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getProgram(sourceId: string) {
   // DB 오류를 "없음"으로 읽으면 멀쩡한 사업 쪽이 404 로 사흘 캐시된다. 오류는 던진다(getJob 과 같은 까닭).
