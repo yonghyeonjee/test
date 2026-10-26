@@ -276,34 +276,45 @@ export function isTagCriteria(p: Pick<Detail, "source" | "criteria_text">): bool
   return p.source === "bizinfo_support" && /^[^,]+(,[^,]+){4,}$/.test((p.criteria_text ?? "").trim());
 }
 
+/** 쪽에 실리는 우리 글의 길이 — 요약·대상·선정기준·혜택·신청방법을 합친 글자 수. */
+export function programTextLength(p: Pick<Detail, "summary" | "target_text" | "criteria_text" | "benefit_text" | "apply_method">): number {
+  return [p.summary, p.target_text, p.criteria_text, p.benefit_text, p.apply_method].map((v) => (v ?? "").trim()).join("").length;
+}
+/** 복지로 지역 사업 중 이 길이 미만은 색인하지 않는다(2026-10-26). 4,111건의 중앙값이 253자, 400자 미만이 3,100여 건. */
+export const PROGRAM_TEXT_MIN = 400;
+
 /**
- * 사업 상세 쪽을 검색엔진에 색인시킬지(2026-10-17). 사이트 전체가 색인에서 빠졌고(서치콘솔
- * "크롤링됨 - 현재 색인이 생성되지 않음"), 원문을 옮겨 온 쪽 수천 개가 사이트 단위 품질 평가를
- * 끌어내린 것으로 본다. 쪽은 그대로 보이게 두고 색인만 끈다(noindex,follow).
- *  - 마감된 사업(상시 아님, 접수 끝 날짜가 지남): 찾아와도 신청할 수 없다. 채용 공고의 마감 규칙과 같은 꼴.
- * 접수 중인 기업마당 사업은 꼬리표 선정기준 칸만 숨기고 색인은 둔다. 사이트맵에는 올리지 않는다(getTopSourceIds).
+ * 사업 상세 쪽을 검색엔진에 색인시킬지. 쪽은 그대로 보이게 두고 색인만 끈다(noindex,follow).
+ *  - 2026-10-17: 마감된 사업(상시 아님, 접수 끝 날짜가 지남). 찾아와도 신청할 수 없다.
+ *  - 2026-10-26: 복지로 지역 사업 가운데 우리 글이 PROGRAM_TEXT_MIN 자 미만인 것(3,100여 건)과 선정기준이 꼬리표뿐인
+ *    기업마당 사업(전부). 서치콘솔 유효성 검사에서 다시 긁힌 60쪽이 모두 실패했고 그 3분의 2가 복지로 지역 사업이었다.
+ *    색인 허용 쪽 1만 → 약 3,800. 얇은 쪽 수천 개가 사이트 단위 평가를 끌어내렸다고 보고(같은 현상을 겪은 사이트들이 공통으로
+ *    한 일이 이것이다. docs/HANDOFF §28-3) 고유한 내용이 있는 쪽만 남긴다.
  * 쪽을 그리려고 이미 읽은 사업 한 건만 보고 정한다 — 따로 읽다 실패해서 색인이 꺼지는 일이 없다.
  */
 export function programIndexable(p: Detail): boolean {
-  return applyStatus(p) !== "closed";
+  if (applyStatus(p) === "closed") return false;
+  if (p.source === "bokjiro_local" && programTextLength(p) < PROGRAM_TEXT_MIN) return false;
+  if (isTagCriteria(p)) return false;
+  return true;
 }
 
-/** 빌드 시 미리 만들어 둘 상세 페이지 목록. 사이트맵도 이것을 쓴다. */
+/** 빌드 시 미리 만들어 둘 상세 페이지 목록. 사이트맵도 이것을 쓴다. 색인하는(programIndexable) 사업 가운데 상위 limit 건. */
 export async function getTopSourceIds(limit = 400) {
-  // 마감된 사업은 색인하지 않으니 뺀다(programIndexable, 2026-10-17). 기업마당은 선정기준이 꼬리표뿐이라
-  // (2026-10-17 기준 전부) 색인은 두되 사이트맵에는 내용이 있는 복지로·소상공인24 사업을 먼저 올린다.
+  // 2026-10-26: 색인 규칙과 같은 판단을 하려고 program_detail 에서 글 칸까지 읽어 programIndexable 로 거른다.
   const { data } = await db
-    .from("programs_public")
-    .select("source_id,updated_at")
+    .from("program_detail")
+    .select("source_id,updated_at,source,status,summary,target_text,criteria_text,benefit_text,apply_method,apply_start,apply_end,is_always_on")
     .neq("status", "closed")
     .neq("source", "bizinfo_support")
     .order("norm_confidence", { ascending: false })
-    .limit(limit);
+    .limit(limit * 4);
   // 사이트맵이 <lastmod> 를 적으려면 언제 바뀌었는지가 있어야 한다.
-  return (data ?? []).map((d) => ({
-    id: d.source_id as string,
-    updated: (d.updated_at as string | null) ?? null,
-  }));
+  type Row = Detail & { updated_at: string | null };
+  return ((data ?? []) as unknown as Row[])
+    .filter(programIndexable)
+    .slice(0, limit)
+    .map((d) => ({ id: d.source_id, updated: d.updated_at ?? null }));
 }
 
 /** 같은 지역의 다른 사업 */

@@ -112,8 +112,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 2026-10-17). 나라일터와 겹치는 공고에는 요약을 쓰지 않으니 그대로 빠진다.
   //  - 마감한 지 90일 넘은 것(2026-10-21): 요약이 있어도 지원할 수 없는 공고다. 10/11 뒤 사이트 거의 전체가 색인에서
   //    빠져(크롤링됨 - 색인 안 됨) 색인 요청하는 쪽을 더 줄인다. 기관 쪽(/jobs/org)의 이력에는 그대로 남는다.
-  const noindex = stale || (isAlioId(job.id) && !hasSummary) || stage === "final" || stage === "interview"
-    || (job.status === "closed" && !hasSummary) || Boolean(job.status === "closed" && job.end && job.end < ymdAgo(90));
+  //  - 요약 없는 공고 전부(2026-10-26): 접수 중인 나라일터 공고도 요약이 없으면 제목·날짜·첨부 이름뿐이라 얇다. 유효성 검사에서
+  //    다시 긁힌 쪽이 모두 실패해 색인 허용 쪽을 고유한 내용이 있는 것으로 좁힌다. 요약은 보통 하루 안에 붙고, 그때 다시 그린다.
+  const noindex = stale || !hasSummary || stage === "final" || stage === "interview"
+    || Boolean(job.status === "closed" && job.end && job.end < ymdAgo(90));
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length

@@ -548,9 +548,8 @@ export async function getTopJobIds(limit = 1200): Promise<{ id: string; updated:
     } catch {
       withSummary.clear();
     }
-    // 잡알리오 공고는 칸별 내용(요약)이 붙은 것만 색인하니 그것만 올린다(요약을 못 읽었으면 잡알리오는 다 뺀다).
-    const ordered = [...rows.filter((r) => withSummary.has(r.source_id)),
-      ...rows.filter((r) => !withSummary.has(r.source_id) && !isAlioId(r.source_id))];
+    // 요약이 붙은 공고만 색인하니(2026-10-26, 전에는 잡알리오만) 그것만 올린다. 요약을 못 읽었으면 아무것도 안 올린다.
+    const ordered = rows.filter((r) => withSummary.has(r.source_id));
     // 등록일을 <lastmod> 로 쓴다. 공고는 올라온 뒤 내용이 거의 안 바뀐다.
     return ordered.slice(0, limit).map((r) => ({ id: r.source_id, updated: r.reg_date }));
   } catch {
