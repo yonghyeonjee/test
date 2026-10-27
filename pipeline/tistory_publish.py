@@ -170,7 +170,19 @@ DIGEST_MARK = "공공 채용·생활 정보 모음"
 
 
 def digest_prefix(day: dt.date) -> str:
-    return f"{day.month}월 {day.day}일 {DIGEST_MARK}"
+    """모음 글은 한 달에 한 편. 제목에 일(日)은 넣지 않는다 — 날이 지나면 아무도 찾지 않는다."""
+    return f"{day.year}년 {day.month}월 {DIGEST_MARK}"
+
+
+def is_briefing(p: dict) -> bool:
+    """그날 공고 브리핑(jobs-날짜). 며칠이면 낡아서 티스토리 모음 글에는 넣지 않는다."""
+    return p.get("kind") == "daily" or p["slug"].startswith("jobs-")
+
+
+def prev_month(day: dt.date) -> dt.date:
+    """day 가 속한 달의 앞 달 1일."""
+    first = day.replace(day=1)
+    return (first - dt.timedelta(days=1)).replace(day=1)
 
 
 # 묶을 때 빼는 절: 연재 길잡이(티스토리에 없는 글 제목만 남는다)와 운영 사이트 사용법.
@@ -243,24 +255,29 @@ def digest_summary(posts: list[dict], cap: int = 300) -> str:
     return " ".join(out)
 
 
-def digest(posts: list[dict], day: dt.date) -> dict:
-    """그날 올릴 jiwon 글 여러 편을 티스토리 글 하나로 묶는다(짧은 글을 여러 개 내지 않는다).
-    글마다 제목(h2) · 요지 · 절별 핵심(h3 + 본문 2블록) · 원문 링크. 원 글 slug 들은 sources 에 남겨 각각 발행 기록을 단다."""
+def digest(posts: list[dict], day: dt.date, month: dt.date | None = None) -> dict | None:
+    """한 달 동안 jiwon 에 쓴 글을 티스토리 글 하나로 묶는다(짧은 글을 여러 개 내지 않는다).
+    글마다 제목(h2) · 요지 · 절별 핵심(h3 + 본문 2블록) · 원문 링크. 원 글 slug 들은 sources 에 남겨 각각 발행 기록을 단다.
+    그날 공고 브리핑은 빼고, 남는 글이 없으면 None. day 는 지난 마감을 거르는 기준일, month 는 제목의 달(없으면 day 의 달)."""
+    posts = [p for p in posts if not is_briefing(p)]
+    if not posts:
+        return None
+    month = month or day
     head = posts[0]
     # 제목 앞머리는 날마다 같은 채용 브리핑보다 따로 쓴 글(연재·해설)을 앞세운다. ' — ' 뒤 부제는 뺀다.
     star = next((p for p in posts if p.get("kind") != "daily" and not p["slug"].startswith("jobs-")), head)
     lead = re.sub(r"^(\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일\s*", "", star["title"])      # 날짜가 제목에 두 번 들어가지 않게
     lead = lead.split(" — ")[0].strip()
-    title = f"{digest_prefix(day)} | {lead}"
+    title = f"{digest_prefix(month)} | {lead}"
     if len(posts) > 1:
         title += f" 외 {len(posts) - 1}편"
     if len(posts) > 1:
         body: list[dict] = [
-            {"type": "p", "text": f"최근 정리한 공공 채용·생활 정보 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
+            {"type": "p", "text": f"{month.month}월에 정리한 공공 채용·생활 정보 글 {len(posts)}편을 한 번에 모았습니다. 글마다 핵심만 추렸고, 표와 공고 목록 전체는 각 원문에 있습니다."},
             {"type": "list", "items": [p["title"] for p in posts]},
         ]
     else:                                         # 한 편뿐이면 '1편을 모았다'·목록 대신 무엇을 붙였는지만
-        body = [{"type": "p", "text": "지역별 새 공고와 곧 마감하는 공고를 원 자료 사이트 화면, 근거 링크와 함께 정리했습니다. 접수는 공고 원문이 기준입니다."}]
+        body = [{"type": "p", "text": f"{month.month}월에 정리한 공공 채용·생활 정보를 원 자료 사이트 화면, 근거 링크와 함께 옮겼습니다. 신청·접수 조건은 각 원문 공고가 기준입니다."}]
     few = len(posts) <= 2                         # 묶인 글이 적으면 글마다 더 많이 싣는다(지역별 목록까지)
     from digest_refs import refs_for
     shots: list[dict] = []
@@ -289,7 +306,7 @@ def digest(posts: list[dict], day: dt.date) -> dict:
         for k in p.get("keywords") or []:
             if k not in kw:
                 kw.append(k)
-    return {"slug": f"digest-{day.isoformat()}", "kind": head.get("kind", "daily"), "title": title[:90],
+    return {"slug": f"digest-{month:%Y-%m}", "kind": head.get("kind", "daily"), "title": title[:90],
             "summary": digest_summary(posts), "keywords": kw[:10], "body": body,
             "standalone": True, "sources": posts, "shots": shots}
 
@@ -660,11 +677,11 @@ def current_slogan(t: "Tistory", post_id: str) -> str:
     return ""
 
 
-def todays_digest(t: "Tistory", day: dt.date) -> str:
-    """그날(KST) 올린 모음 글 번호. 없으면 빈 문자열."""
+def month_digest(t: "Tistory", month: dt.date) -> str:
+    """그 달 모음 글 번호. 없으면 빈 문자열."""
     try:
-        for it in t.recent_posts():
-            if it["title"].startswith(digest_prefix(day)) and str(it.get("date", "")).startswith(day.isoformat()):
+        for it in t.recent_posts() + t.recent_posts(2):
+            if it["title"].startswith(digest_prefix(month)):
                 return it["id"]
     except Exception:  # noqa: BLE001
         pass
@@ -682,6 +699,15 @@ def supabase_client():
 
 
 COLS = "slug,kind,subject,title,summary,keywords,body,stats,published_at"
+
+
+def pick_month(sb, month: dt.date, limit: int = 15) -> list[dict]:
+    """그 달(1일~말일)에 jiwon 에 쓴 글 가운데 아직 티스토리에 안 올린 것. 공고 브리핑은 뺀다."""
+    nxt = (month.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    rows = (sb.table("blog_posts").select(COLS).gte("published_at", month.isoformat()).lt("published_at", nxt.isoformat())
+            .order("published_at").execute().data or [])
+    done = {r["slug"] for r in (sb.table("tistory_posts").select("slug").execute().data or [])}
+    return [r for r in rows if r["slug"] not in done and not is_briefing(r)][:limit]
 
 
 def pick_posts(sb, slug: str | None, since_days: int, limit: int) -> list[dict]:
@@ -824,7 +850,8 @@ def main() -> int:
                 if missing:
                     sys.exit(f"발행 기록에 없는 글 번호: {', '.join(missing)} — 아무것도 고치거나 지우지 않았다")
                 srcs += [by_id[i] for i in replace_ids if by_id[i] not in srcs]
-            posts = [digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst())]
+            d = digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst())
+            posts = [d] if d else []
             a.update, a.mode = a.redigest, "full"
             print(f"{a.redigest}번 모음 글을 다시 쓴다: {', '.join(srcs)}")
         elif a.replace:
@@ -836,25 +863,31 @@ def main() -> int:
             if missing:
                 sys.exit(f"발행 기록에 없는 글 번호: {', '.join(missing)} — 합칠 원 글을 찾지 못해 멈춘다(아무것도 지우지 않았다)")
             posts = [pick_posts(sb, by_id[i], a.since, a.limit)[0] for i in replace_ids]
-            posts = [digest(posts, today_kst())]
+            d = digest(posts, today_kst())
+            posts = [d] if d else []
             a.mode = "full"
-            print(f"{', '.join(replace_ids)}번을 모음 글 하나로 합친다: {posts[0]['title']}")
+            print(f"{', '.join(replace_ids)}번을 모음 글 하나로 합친다: {posts[0]['title'] if posts else '(공고 브리핑뿐이라 낼 글 없음)'}")
         else:
             sb = supabase_client()
-            posts = pick_posts(sb, a.slug, a.since, a.limit)
-            if not a.slug and not a.composer and posts and not a.dry and cookie:
-                # 짧은 글을 따로 내지 않는다: 그날 모음 글이 이미 있으면 거기에 더해 고쳐 쓰고, 없으면 새 모음 글 하나
-                prev_id = todays_digest(Tistory(host, cookie), today_kst())
-                if prev_id:
-                    old = [r["slug"] for r in (sb.table("tistory_posts").select("slug").eq("post_id", prev_id).execute().data or [])]
-                    have = {p["slug"] for p in posts}
-                    posts = [pick_posts(sb, s_, a.since, a.limit)[0] for s_ in old if s_ not in have] + posts
-                    a.update = prev_id
-                    print(f"오늘 모음 글(번호 {prev_id})에 더한다")
-            if not a.slug and not a.composer and posts:
-                posts = [digest(posts, today_kst())]     # 짧은 글 여러 편 대신 모음 글 하나
+            if a.slug or a.composer:
+                posts = pick_posts(sb, a.slug, a.since, a.limit)
+            else:
+                # 모음 글은 한 달에 한 편: 앞 달에 쓴 글(공고 브리핑 제외)을 모아 1일에 낸다. 그 달 모음 글이 있으면 더해 고쳐 쓴다.
+                month = prev_month(today_kst())
+                posts = pick_month(sb, month)
+                if posts and not a.dry and cookie:
+                    prev_id = month_digest(Tistory(host, cookie), month)
+                    if prev_id:
+                        old = [r["slug"] for r in (sb.table("tistory_posts").select("slug").eq("post_id", prev_id).execute().data or [])]
+                        have = {p["slug"] for p in posts}
+                        posts = [pick_posts(sb, s_, a.since, a.limit)[0] for s_ in old if s_ not in have] + posts
+                        a.update = prev_id
+                        print(f"{month:%Y-%m} 모음 글(번호 {prev_id})에 더한다")
+                d = digest(posts, today_kst(), month) if posts else None
+                posts = [d] if d else []
                 a.mode = "full"
-                print(f"모음 글 하나로 묶는다: {', '.join(p['slug'] for p in posts[0]['sources'])}")
+                if d:
+                    print(f"{month:%Y-%m} 모음 글 하나로 묶는다: {', '.join(p['slug'] for p in d['sources'])}")
         if not posts:
             print("올릴 글이 없다(이미 다 올렸거나 기간 안에 쓴 글이 없다)")
             return 0

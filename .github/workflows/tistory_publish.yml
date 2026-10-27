@@ -76,7 +76,7 @@ on:
         required: false
         type: string
   schedule:
-    - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00. blog_daily(00:30) 가 몇 시간 늦어도 끝난 뒤.
+    - cron: "0 3 1 * *"    # 매달 1일 UTC 03:00 = KST 12:00 — 앞 달 글을 모음 글 한 편으로(매일 내지 않는다)
 
 concurrency:
   group: tistory-publish
