@@ -5,6 +5,7 @@ import GovText from "@/components/GovText";
 import JsonLd from "@/components/JsonLd";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
+import ProgramFacts from "@/components/ProgramFacts";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
@@ -30,6 +31,7 @@ import { TOPICS } from "@/lib/topics";
 import {
   ageLabel,
   getProgram,
+  getProgramFacts,
   getRelated,
   getTopSourceIds,
   isTagCriteria,
@@ -116,7 +118,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
   // 낡은 금액을 보여 주는 것이 제일 나쁘다.
   const incomeYear = tableYear();
 
-  const [related, porg] = await Promise.all([getRelated(p), findPublicOrg(p.org_name)]);
+  const [related, porg, facts] = await Promise.all([getRelated(p), findPublicOrg(p.org_name), getProgramFacts(p.source_id)]);
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
@@ -125,6 +127,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
     path,
     name: p.title,
     description: p.summary,
+    dateModified: p.updated_at ?? null,
     // 화면 위 길잡이와 같은 순서로. "지원 / 경기도" 가 그려져 있다.
     crumbs: [
       { name: "지원금 찾기", path: "/" },
@@ -233,6 +236,8 @@ export default async function ProgramPage({ params }: { params: { id: string } }
           <MyFit sido={p.sido} sigungu={p.sigungu} ageMin={p.age_min} ageMax={p.age_max} household={p.household} />
         </section>
       )}
+
+      <ProgramFacts p={p} f={facts} />
 
       <h2 className="mt-11 border-b-2 border-line2 pb-2 text-sm font-bold">
         {p.title} 신청 조건 한눈에
