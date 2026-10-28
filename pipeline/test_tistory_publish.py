@@ -1,5 +1,6 @@
 """tistory_publish 의 HTML 변환과 세션 만료 판정. 네트워크·DB 없이 돈다.
    python pipeline/test_tistory_publish.py"""
+import re
 import sys
 from pathlib import Path
 
@@ -144,52 +145,69 @@ _items = [{"visibility": "PUBLIC", "date": "2026-10-21 22:43"}, {"visibility": "
 ok(t.published_on(_items, _dt.date(2026, 10, 21)) == 2, "오늘 공개 글 수(비공개·어제 제외)")
 ok(t.DAILY_MAX == 3, "하루 3편 한도")
 
-# 모음 글: 여러 편을 하나로, 운영 사이트 링크는 하나만
-_P = [{"slug": "daily-2026-10-21", "kind": "daily", "title": "2026년 10월 21일 공공기관 채용 브리핑", "summary": "새 공고 110건.",
-       "keywords": ["채용"], "body": [{"type": "p", "text": "오늘 [공고](/jobs/1)"}, {"type": "h2", "text": "마감"},
-       {"type": "links", "items": [{"label": "A", "href": "/jobs/a"}]}]},
-      {"slug": "loan-1", "kind": "story", "title": "전세대출 1편", "summary": "전세가율.", "keywords": ["전세대출", "채용"],
-       "body": [{"type": "h2", "text": "전세가율"}, {"type": "p", "text": "[잡알리오](https://job.alio.go.kr) 80%"}]}]
-_d = t.digest(_P, _dt.date(2026, 10, 21))
+# 모음 글(한 달에 한 편): 공고 브리핑은 빼고, 제목에 일(日)을 넣지 않는다, 운영 사이트 링크는 하나만
+_BR = {"slug": "jobs-2026-10-21", "kind": "daily", "title": "2026년 10월 21일 공공기관 채용 브리핑", "summary": "새 공고 110건.",
+       "keywords": ["채용"], "body": [{"type": "h2", "text": "마감"}, {"type": "links", "items": [{"label": "A", "href": "/jobs/a"}]}]}
+_IT = {"slug": "role-it", "kind": "role", "title": "전산·정보화 공공기관 채용, 어디서 얼마나 뽑나 — 최근 3년 공고 882건", "summary": "882건을 셌습니다.",
+       "keywords": ["채용", "전산"], "body": [{"type": "p", "text": "오늘 [공고](/jobs/1)"}, {"type": "h2", "text": "마감"},
+       {"type": "links", "items": [{"label": "A — 기관 · 11월 3일 마감", "href": "/jobs/a"}]}]}
+_LN = {"slug": "loan-1", "kind": "story", "title": "전세대출 1편", "summary": "전세가율.", "keywords": ["전세대출", "채용"],
+       "body": [{"type": "h2", "text": "전세가율"}, {"type": "p", "text": "[잡알리오](https://job.alio.go.kr) 80%"}]}
+_d = t.digest([_BR, _IT, _LN], _dt.date(2026, 11, 1), _dt.date(2026, 10, 1))
 _h = t.render(_d, "full")
-ok(_d["title"].startswith("10월 21일") and _d["title"].count("10월 21일") == 1 and "외 1편" in _d["title"], "모음 글 제목")
+ok(_d["title"] == "2026년 10월 공공 채용·생활 정보 모음 | 전산·정보화 공공기관 채용, 어디서 얼마나 뽑나 외 1편" and not re.search(r"\d+일", _d["title"]) and _d["slug"] == "digest-2026-10",
+   "달마다 한 편, 제목에 일(日) 없음: " + _d["title"])
+ok([x["slug"] for x in _d["sources"]] == ["role-it", "loan-1"] and "브리핑" not in _h, "공고 브리핑은 모음 글에 넣지 않는다")
+ok(t.digest([_BR], _dt.date(2026, 11, 1)) is None, "브리핑뿐이면 모음 글을 내지 않는다")
 ok(_h.count(t.SITE) == 1 and "job.alio.go.kr" in _h, "운영 사이트 링크 1개, 공식 링크는 남김")
-ok("<h3>마감</h3>" in _h and _d["keywords"] == ["채용", "전세대출"] and [s["slug"] for s in _d["sources"]] == ["daily-2026-10-21", "loan-1"], "절은 h3, 태그 합침, 원 글 기록")
+ok("<h3>마감</h3>" in _h and _d["keywords"] == ["채용", "전산", "전세대출"], "절은 h3, 태그 합침")
+ok(t.prev_month(_dt.date(2026, 11, 1)) == _dt.date(2026, 10, 1) and t.prev_month(_dt.date(2027, 1, 15)) == _dt.date(2026, 12, 1), "앞 달")
+ok(t.digest_prefix(_dt.date(2026, 10, 27)) == "2026년 10월 공공 채용·생활 정보 모음", "모음 글 머리말은 연·월만")
 
 # 모음 글: 묶인 글마다 원 자료 화면 key 와 근거 링크, 분량 재기
-ok([x["key"] for x in _d["shots"]] == ["d1_gojobs", "d1_alio", "d2_hf_jeonse", "d2_nhuf_youth"] and "근거 자료: <a href=\"https://www.gojobs.go.kr\">인사혁신처 나라일터</a>" in _h, "채용 브리핑 절: 나라일터·잡알리오 화면과 근거 링크")
-_P2 = [{**_P[1], "slug": "jeonse-loan-1", "title": "전세대출 가능 매물 1편"}]
-_d2 = t.digest(_P2, _dt.date(2026, 10, 22))
+ok([x["key"] for x in _d["shots"]] == ["d1_gojobs", "d1_alio", "d2_hf_jeonse", "d2_nhuf_youth"] and "근거 자료: <a href=\"https://www.gojobs.go.kr\">인사혁신처 나라일터</a>" in _h, "채용 글 절: 나라일터·잡알리오 화면과 근거 링크")
+_d2 = t.digest([{**_LN, "slug": "jeonse-loan-1", "title": "전세대출 가능 매물 1편"}], _dt.date(2026, 10, 22))
 ok([x["key"] for x in _d2["shots"]] == ["d1_hf_jeonse", "d1_nhuf_youth"] and "nhuf.molit.go.kr" in t.render(_d2, "full"), "전세 글 절: 주택금융공사·주택도시기금 화면과 링크")
 ok([m["key"] for m in t.take_shots(_d["shots"], dry=True)][:2] == ["d1_gojobs", "d1_alio"], "화면 찍기(dry)는 key 를 그대로")
 ok(t.text_len("<p>가 나</p>[##_Image|kage@x|CDM|1.3|{}_##]<b>a&amp;b</b>") == 5 and t.MIN_CHARS == 1250, "본문 글자 수(태그·사진·공백 제외), 최소 1,250자")
 
 # 모음 글 다듬기: 지난 마감 목록·길잡이 절·같은 절 반복은 빼고, 첫 문단은 문장 단위로, 제목은 따로 쓴 글을 앞세운다
-_B = lambda d, n: {"slug": f"jobs-2026-10-{d}", "kind": "daily", "title": f"2026년 10월 {d}일 공공기관 채용 브리핑 — 새 공고 {n}건",
-                   "summary": f"10월 {d}일 새 공고 {n}건을 모았습니다. 마감순으로 정리했습니다.", "keywords": [],
+_B = lambda d, n: {"slug": f"role-x{d}", "kind": "role", "title": f"직무 {d} 채용 분석 — 공고 {n}건",
+                   "summary": f"직무 {d} 공고 {n}건을 모았습니다. 마감순으로 정리했습니다.", "keywords": [],
                    "body": [{"type": "p", "text": f"{n}건"}, {"type": "h2", "text": "새로 올라온 공고"},
                             {"type": "p", "text": "**서울** 27건 · [서울 채용 전체](/jobs/region/서울)"},
                             {"type": "list", "items": ["A — 기관 · 10월 29일 마감"]},
                             {"type": "p", "text": "**경기도** 19건 · [경기도 채용 전체](/jobs/region/경기)"},
                             {"type": "h2", "text": "사흘 안에 마감"}, {"type": "p", "text": "오늘부터 모레까지"},
-                            {"type": "links", "items": [{"label": f"B — 기관 · 10월 {d}일 마감", "href": "/jobs/b"}]}, {"type": "p", "text": "그 밖에 200건"},
+                            {"type": "links", "items": [{"label": f"B — 기관 · 10월 {d}일 마감", "href": "/jobs/b"}]}, {"type": "p", "text": "그 밖에 200건. 마감 달력에서 날짜별로 봅니다."},
                             {"type": "h2", "text": "놓치지 않으려면"}, {"type": "list", "items": ["저장 단추"]},
                             {"type": "h2", "text": "어떤 자리인가"}, {"type": "p", "text": "오늘 공고를 많이 낸 기관: 甲 3건"}]}
-_S = {**_P[1], "slug": "jeonse-loan-listing-1", "title": "전세대출 가능 매물, 믿어도 될까 — 전세가율 80%와 90% (1편)",
+_S = {**_LN, "slug": "jeonse-loan-listing-1", "kind": "story", "title": "전세대출 가능 매물, 믿어도 될까 — 전세가율 80%와 90% (1편)",
       "summary": "은행 지점이 심사조차 받지 않았습니다. 과정을 따라갑니다.",
       "body": [{"type": "h2", "text": "기준"}, {"type": "p", "text": "90%"}, {"type": "h2", "text": "다음 편"}, {"type": "list", "items": ["2편: 금리"]}]}
 _d3 = t.digest([_B(20, 113), _B(21, 110), _S], _dt.date(2026, 10, 22))
 _h3 = t.render(_d3, "full")
-ok(_d3["title"] == "10월 22일 공공 채용·생활 정보 모음 | 전세대출 가능 매물, 믿어도 될까 외 2편", "모음 제목은 따로 쓴 글 앞세우고 부제 뺌: " + _d3["title"])
+ok(_d3["title"] == "2026년 10월 공공 채용·생활 정보 모음 | 직무 20 채용 분석 외 2편", "모음 제목은 첫 글 앞머리, 부제 뺌: " + _d3["title"])
 ok("10월 20일 마감" not in _h3 and "10월 21일 마감" not in _h3 and "사흘 안에 마감" not in _h3 and "10월 29일 마감" in _h3, "지난 마감 목록 절은 빠지고 남은 마감은 둔다")
-ok("놓치지 않으려면" not in _h3 and "다음 편" not in _h3 and "2편: 금리" not in _h3, "길잡이 절은 뺀다")
+ok("놓치지 않으려면" not in _h3 and "다음 편" not in _h3 and "2편: 금리" not in _h3 and "마감 달력" not in _h3, "길잡이 절·운영 사이트 화면 안내는 뺀다")
 ok("서울 채용 전체" not in _h3 and "<b>서울</b> 27건" in _h3, "운영 사이트 길잡이 링크는 글자째 뺀다")
 ok("경기도" not in _h3, "목록 없이 남은 '경기도 19건' 줄은 뺀다")
 ok("오늘 공고를" not in _h3 and _h3.count("그날 공고를 많이 낸") == 1, "같은 절은 한 번만, '오늘'은 '그날'로")
-ok(_d3["summary"] == "10월 20일 새 공고 113건을 모았습니다. 10월 21일 새 공고 110건을 모았습니다. 은행 지점이 심사조차 받지 않았습니다.", "첫 문단은 글마다 첫 문장: " + _d3["summary"])
+ok(_d3["summary"] == "직무 20 공고 113건을 모았습니다. 직무 21 공고 110건을 모았습니다. 은행 지점이 심사조차 받지 않았습니다.", "첫 문단은 글마다 첫 문장: " + _d3["summary"])
 
 _tb = t._unlink_site({"type": "table", "head": ["기관", "공고"], "rows": [["[병무청](/jobs/org/병무청)", "25건"], ["[KOSIS](https://kosis.kr)", "1건"]]})
 ok(_tb["rows"][0][0] == "병무청" and _tb["rows"][1][0] == "[KOSIS](https://kosis.kr)", "표 칸의 운영 사이트 링크는 글자만, 바깥 링크는 둔다")
+
+# 이미 올라간 모음 글 다시 쓰기(redigest): 브리핑은 그대로, 제목엔 날짜 없음
+_r1 = t.digest([_BR, _IT], _dt.date(2026, 10, 28), keep_briefings=True, dated=False)
+ok(_r1["title"] == "공공 채용·생활 정보 모음 | 전산·정보화 공공기관 채용, 어디서 얼마나 뽑나 외 1편" and [x["slug"] for x in _r1["sources"]] == ["jobs-2026-10-21", "role-it"], "redigest 는 브리핑을 두고 날짜를 뺀다: " + _r1["title"])
+_r2 = t.digest([{**_BR, "title": "2026년 10월 24일 공공기관 채용 브리핑 — 새 공고 156건, 사흘 안 마감 129건"}], _dt.date(2026, 10, 28), keep_briefings=True, dated=False)
+ok(_r2["title"] == "공공 채용·생활 정보 모음 | 공공기관 채용 브리핑 — 새 공고 156건, 사흘 안 마감 129건", "브리핑 한 편이면 부제로 가른다: " + _r2["title"])
+
+# 한 편짜리 모음 글: '1편을 모았다' 없이 짧은 들머리, 요지는 한 번만
+_d4 = t.digest([_S], _dt.date(2026, 10, 24))
+_h4 = t.render(_d4, "full")
+ok("1편을" not in _h4 and _h4.count("은행 지점이 심사조차 받지 않았습니다.") == 1 and _d4["title"].endswith("| 전세대출 가능 매물, 믿어도 될까"), "한 편짜리 모음 글")
 
 # 공개 범위 정수
 ok(t.VISIBILITY == {"private": 0, "protected": 15, "public": 20}, "visibility 값")
