@@ -255,11 +255,13 @@ def digest_summary(posts: list[dict], cap: int = 300) -> str:
     return " ".join(out)
 
 
-def digest(posts: list[dict], day: dt.date, month: dt.date | None = None) -> dict | None:
+def digest(posts: list[dict], day: dt.date, month: dt.date | None = None, keep_briefings: bool = False,
+           dated: bool = True) -> dict | None:
     """한 달 동안 jiwon 에 쓴 글을 티스토리 글 하나로 묶는다(짧은 글을 여러 개 내지 않는다).
     글마다 제목(h2) · 요지 · 절별 핵심(h3 + 본문 2블록) · 원문 링크. 원 글 slug 들은 sources 에 남겨 각각 발행 기록을 단다.
     그날 공고 브리핑은 빼고, 남는 글이 없으면 None. day 는 지난 마감을 거르는 기준일, month 는 제목의 달(없으면 day 의 달)."""
-    posts = [p for p in posts if not is_briefing(p)]
+    if not keep_briefings:                        # 이미 올라간 모음 글을 다시 쓸 때(redigest)만 그대로 둔다
+        posts = [p for p in posts if not is_briefing(p)]
     if not posts:
         return None
     month = month or day
@@ -267,8 +269,9 @@ def digest(posts: list[dict], day: dt.date, month: dt.date | None = None) -> dic
     # 제목 앞머리는 날마다 같은 채용 브리핑보다 따로 쓴 글(연재·해설)을 앞세운다. ' — ' 뒤 부제는 뺀다.
     star = next((p for p in posts if p.get("kind") != "daily" and not p["slug"].startswith("jobs-")), head)
     lead = re.sub(r"^(\d{4}년\s*)?\d{1,2}월\s*\d{1,2}일\s*", "", star["title"])      # 날짜가 제목에 두 번 들어가지 않게
-    lead = lead.split(" — ")[0].strip()
-    title = f"{digest_prefix(month)} | {lead}"
+    if not (len(posts) == 1 and is_briefing(star)):   # 브리핑 한 편뿐이면 부제(공고 수)로 날마다 제목을 가른다
+        lead = lead.split(" — ")[0].strip()
+    title = f"{digest_prefix(month) if dated else DIGEST_MARK} | {lead}"
     if len(posts) > 1:
         title += f" 외 {len(posts) - 1}편"
     if len(posts) > 1:
@@ -850,7 +853,8 @@ def main() -> int:
                 if missing:
                     sys.exit(f"발행 기록에 없는 글 번호: {', '.join(missing)} — 아무것도 고치거나 지우지 않았다")
                 srcs += [by_id[i] for i in replace_ids if by_id[i] not in srcs]
-            d = digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst())
+            # 이미 올라간 글을 다시 쓰는 것이라 묶인 글은 그대로 두고, 제목에서 날짜만 뺀다(주소는 그대로)
+            d = digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst(), keep_briefings=True, dated=False)
             posts = [d] if d else []
             a.update, a.mode = a.redigest, "full"
             print(f"{a.redigest}번 모음 글을 다시 쓴다: {', '.join(srcs)}")

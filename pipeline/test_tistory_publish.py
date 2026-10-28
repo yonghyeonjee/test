@@ -198,6 +198,12 @@ ok(_d3["summary"] == "직무 20 공고 113건을 모았습니다. 직무 21 공�
 _tb = t._unlink_site({"type": "table", "head": ["기관", "공고"], "rows": [["[병무청](/jobs/org/병무청)", "25건"], ["[KOSIS](https://kosis.kr)", "1건"]]})
 ok(_tb["rows"][0][0] == "병무청" and _tb["rows"][1][0] == "[KOSIS](https://kosis.kr)", "표 칸의 운영 사이트 링크는 글자만, 바깥 링크는 둔다")
 
+# 이미 올라간 모음 글 다시 쓰기(redigest): 브리핑은 그대로, 제목엔 날짜 없음
+_r1 = t.digest([_BR, _IT], _dt.date(2026, 10, 28), keep_briefings=True, dated=False)
+ok(_r1["title"] == "공공 채용·생활 정보 모음 | 전산·정보화 공공기관 채용, 어디서 얼마나 뽑나 외 1편" and [x["slug"] for x in _r1["sources"]] == ["jobs-2026-10-21", "role-it"], "redigest 는 브리핑을 두고 날짜를 뺀다: " + _r1["title"])
+_r2 = t.digest([{**_BR, "title": "2026년 10월 24일 공공기관 채용 브리핑 — 새 공고 156건, 사흘 안 마감 129건"}], _dt.date(2026, 10, 28), keep_briefings=True, dated=False)
+ok(_r2["title"] == "공공 채용·생활 정보 모음 | 공공기관 채용 브리핑 — 새 공고 156건, 사흘 안 마감 129건", "브리핑 한 편이면 부제로 가른다: " + _r2["title"])
+
 # 한 편짜리 모음 글: '1편을 모았다' 없이 짧은 들머리, 요지는 한 번만
 _d4 = t.digest([_S], _dt.date(2026, 10, 24))
 _h4 = t.render(_d4, "full")
