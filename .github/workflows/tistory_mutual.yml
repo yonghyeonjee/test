@@ -1,0 +1,42 @@
+name: tistory-mutual
+
+# 매일 한 번: 티스토리 포럼에서 맞구독을 원하는 블로그 3곳을 찾아 구독하고, 그 포럼 글에 "잘 읽고 구독했어요, 맞구독 부탁드려요" 댓글을 남긴다.
+# 이미 댓글을 단 글은 건너뛴다(pipeline/tistory_mutual.py). 쿠키가 만료되면 실패한다(README '티스토리' 절).
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "몇 곳"
+        default: "3"
+        type: string
+      dry:
+        description: "누르지 않고 찾기만(버튼 화면을 로그에 남긴다)"
+        default: true
+        type: boolean
+  push:                                   # 시험용: 브랜치에 올리면 dry 로 한 번 돈다(머지 전에 뺀다)
+    branches: [claude/eager-goodall-uszo2f]
+    paths: [pipeline/tistory_mutual.py, .github/workflows/tistory_mutual.yml]
+  schedule:
+    - cron: "17 1 * * *"   # UTC 01:17 = KST 10:17
+
+concurrency:
+  group: tistory-mutual
+  cancel-in-progress: false
+
+jobs:
+  mutual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: 맞구독
+        env:
+          TISTORY_COOKIE: ${{ secrets.TISTORY_COOKIE }}
+          COUNT: ${{ inputs.count || '3' }}
+          DRY: ${{ github.event_name == 'push' || inputs.dry }}
+        run: |
+          [ -n "$TISTORY_COOKIE" ] || { echo "::error::TISTORY_COOKIE 가 없다"; exit 1; }
+          python -u pipeline/tistory_mutual.py --count "$COUNT" $([ "$DRY" = "true" ] && echo --dry)
