@@ -854,7 +854,11 @@ def main() -> int:
                     sys.exit(f"발행 기록에 없는 글 번호: {', '.join(missing)} — 아무것도 고치거나 지우지 않았다")
                 srcs += [by_id[i] for i in replace_ids if by_id[i] not in srcs]
             # 이미 올라간 글을 다시 쓰는 것이라 묶인 글은 그대로 두고, 제목에서 날짜만 뺀다(주소는 그대로)
-            d = digest([pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs], today_kst(), keep_briefings=True, dated=False)
+            src_posts = [pick_posts(sb, s_, a.since, a.limit)[0] for s_ in srcs]
+            # 내용은 처음 올린 그날 기준으로 다시 그린다(오늘 기준이면 그새 지난 마감 공고가 빠져 글이 바뀐다)
+            orig = max((dt.date.fromisoformat(str(p_.get("published_at") or "")[:10]) for p_ in src_posts
+                        if str(p_.get("published_at") or "")[:10]), default=today_kst())
+            d = digest(src_posts, orig, keep_briefings=True, dated=False)
             posts = [d] if d else []
             a.update, a.mode = a.redigest, "full"
             print(f"{a.redigest}번 모음 글을 다시 쓴다: {', '.join(srcs)}")
