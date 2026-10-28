@@ -112,11 +112,22 @@ def main() -> int:
             btn = page.locator("text=/구독하기/").first
             already = page.locator("text=/구독중/").count() > 0
             print(f"  구독 버튼: {'있음' if btn.count() else '없음'}{' · 이미 구독 중' if already else ''}")
+            if not btn.count() and not already:
+                print("  구독 버튼을 못 찾아 건너뛴다(구독 안 한 채로 '구독했어요' 댓글을 달지 않는다)")
+                continue
             if a.dry:
                 shot(page, f"blog_{e['id']}")
-            elif btn.count() and not already:
-                btn.click()
-                page.wait_for_timeout(2000)
+            elif not already:
+                try:
+                    with page.expect_response(lambda r: "/subscription/" in r.url and r.request.method == "POST", timeout=15000) as resp:
+                        btn.click()
+                    ok = '"success":true' in resp.value.text().replace(" ", "")
+                except Exception as ex:  # noqa: BLE001
+                    ok = False
+                    print(f"  구독 응답을 못 받았다: {type(ex).__name__}")
+                if not ok:
+                    print("  구독이 안 돼 건너뛴다")
+                    continue
                 print("  구독함")
 
             # 2) 포럼 글에 댓글
@@ -130,9 +141,9 @@ def main() -> int:
                 shot(page, f"forum_{e['id']}")
             elif box.count():
                 box.fill(text)
-                page.locator("button:has-text('완료')").first.click()
-                page.wait_for_timeout(2000)
-                print("  댓글 남김")
+                with page.expect_response(lambda r: "/comments.json" in r.url and r.request.method == "POST", timeout=15000) as resp:
+                    page.locator("button:has-text('완료')").first.click()
+                print(f"  댓글 남김 ({resp.value.status})")
             done += 1
         print(f"\n{done}곳 {'(dry — 누르지 않음)' if a.dry else '처리'}")
         print("보낸 요청:")

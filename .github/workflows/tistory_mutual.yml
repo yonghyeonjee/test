@@ -13,9 +13,6 @@ on:
         description: "누르지 않고 찾기만(버튼 화면을 로그에 남긴다)"
         default: true
         type: boolean
-  push:                                   # 시험용: 브랜치에 올리면 1곳만 실제로 돈다(머지 전에 뺀다)
-    branches: [claude/eager-goodall-uszo2f]
-    paths: [pipeline/tistory_mutual.py, .github/workflows/tistory_mutual.yml]
   schedule:
     - cron: "17 1 * * *"   # UTC 01:17 = KST 10:17
 
@@ -35,8 +32,8 @@ jobs:
       - name: 맞구독
         env:
           TISTORY_COOKIE: ${{ secrets.TISTORY_COOKIE }}
-          COUNT: ${{ github.event_name == 'push' && '1' || inputs.count || '3' }}
-          DRY: ${{ github.event_name != 'push' && inputs.dry }}
+          COUNT: ${{ inputs.count || '3' }}
+          DRY: ${{ inputs.dry }}
         run: |
           [ -n "$TISTORY_COOKIE" ] || { echo "::error::TISTORY_COOKIE 가 없다"; exit 1; }
           python -u pipeline/tistory_mutual.py --count "$COUNT" $([ "$DRY" = "true" ] && echo --dry)
