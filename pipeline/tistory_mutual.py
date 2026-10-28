@@ -80,8 +80,15 @@ def main() -> int:
         ctx.add_cookies(cookies_for(raw))
         page = ctx.new_page()
         calls: list[str] = []
-        page.on("request", lambda r: calls.append(f"{r.method} {r.url} {(r.post_data or '')[:200]}")
-                if r.method in ("POST", "PUT", "DELETE") and "kakao-collector" not in r.url and "sentry" not in r.url else None)
+        def on_resp(r):                   # 티스토리로 보낸 쓰기 요청만(통계·광고 제외) — 구독·댓글 API 확인용
+            q = r.request
+            if q.method in ("POST", "PUT", "DELETE") and "tistory.com" in q.url and "tiara" not in q.url:
+                try:
+                    body = r.text()[:300]
+                except Exception:  # noqa: BLE001
+                    body = ""
+                calls.append(f"{q.method} {r.status} {q.url} {(q.post_data or '')[:200]} → {body}")
+        page.on("response", on_resp)
 
         entries = (page.request.get(f"{API}/entries.json").json().get("data") or {}).get("entries") or []
         print(f"포럼 최근 글 {len(entries)}편")
@@ -102,8 +109,8 @@ def main() -> int:
             # 1) 블로그에 가서 구독
             page.goto(blog, wait_until="domcontentloaded", timeout=45000)
             page.wait_for_timeout(2500)
-            btn = page.locator("text=/^\\s*구독하기\\s*$/").first
-            already = page.locator("text=/^\\s*구독중\\s*$/").count() > 0
+            btn = page.locator("text=/구독하기/").first
+            already = page.locator("text=/구독중/").count() > 0
             print(f"  구독 버튼: {'있음' if btn.count() else '없음'}{' · 이미 구독 중' if already else ''}")
             if a.dry:
                 shot(page, f"blog_{e['id']}")
