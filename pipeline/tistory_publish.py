@@ -530,14 +530,15 @@ class Tistory:
         return data.get("post", data) if isinstance(data, dict) else {}
 
     def publish(self, *, title: str, content: str, category: int, tags: list[str], visibility: str,
-                attachments: list[str] | None = None, update_id: str | None = None, slogan: str = "") -> tuple[str, str]:
+                attachments: list[str] | None = None, update_id: str | None = None, slogan: str = "",
+                published: int = 1) -> tuple[str, str]:
         """새 글을 올린다. update_id(숫자)를 주면 그 글을 통째로 고쳐 쓴다(PUT /manage/post/{id}.json).
         slogan(문자 주소 슬러그)을 비우면 서버가 제목으로 새로 만든다 — 고쳐 쓸 때는 기존 슬러그를 줘야 주소가 `-1` 로 밀리지 않는다."""
         body = {
             "id": "0", "title": title, "content": content, "slogan": slogan,
             "visibility": VISIBILITY[visibility], "category": int(category),
             "tag": ",".join(t.replace(",", " ") for t in tags[:MAX_TAGS]),
-            "published": 1, "password": "", "uselessMarginForEntry": 1,
+            "published": published, "password": "", "uselessMarginForEntry": 1,
             "cclCommercial": 0, "cclDerive": 0, "type": "post", "attachments": list(attachments or []),
             "recaptchaValue": "", "draftSequence": None, "totalWritingTimeMs": 0,
         }
@@ -660,6 +661,18 @@ def text_len(content: str) -> int:
     """본문 HTML 의 글자 수(태그·사진 치환자·공백 제외). 1,250자 기준을 잰다."""
     t = re.sub(r"\[##_[^\]]*_##\]|<[^>]+>", "", content)
     return len(re.sub(r"\s+", "", html.unescape(t)))
+
+
+def original_published(t: "Tistory", post_id: str) -> int:
+    """그 글이 처음 발행된 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않는다. 모르면 1(지금)."""
+    try:
+        for it in t.recent_posts() + t.recent_posts(2) + t.recent_posts(3):
+            if it["id"] == str(post_id) and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
+                kst = dt.datetime.strptime(it["date"][:16], "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=9)))
+                return int(kst.timestamp())
+    except Exception:  # noqa: BLE001
+        pass
+    return 1
 
 
 def published_on(items: list[dict], day: dt.date) -> int:
@@ -964,7 +977,8 @@ def main() -> int:
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
                                      slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
-                                     or (current_slogan(t, a.update) if a.update else ""))
+                                     or (current_slogan(t, a.update) if a.update else ""),
+                                     published=original_published(t, a.update) if a.redigest else 1)   # 다시 쓰기는 발행일을 그대로
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
             if sb is not None:
                 try:
