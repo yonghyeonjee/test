@@ -143,7 +143,7 @@ import datetime as _dt
 _items = [{"visibility": "PUBLIC", "date": "2026-10-21 22:43"}, {"visibility": "PUBLIC", "date": "2026-10-21 09:00"},
           {"visibility": "PRIVATE", "date": "2026-10-21 10:00"}, {"visibility": "PUBLIC", "date": "2026-10-20 23:59"}]
 ok(t.published_on(_items, _dt.date(2026, 10, 21)) == 2, "오늘 공개 글 수(비공개·어제 제외)")
-ok(t.DAILY_MAX == 3, "하루 3편 한도")
+ok(t.DAILY_MAX == 1, "하루 1편 한도")
 
 # 모음 글(한 달에 한 편): 공고 브리핑은 빼고, 제목에 일(日)을 넣지 않는다, 운영 사이트 링크는 하나만
 _BR = {"slug": "jobs-2026-10-21", "kind": "daily", "title": "2026년 10월 21일 공공기관 채용 브리핑", "summary": "새 공고 110건.",

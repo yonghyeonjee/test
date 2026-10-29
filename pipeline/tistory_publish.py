@@ -53,7 +53,7 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 
 EXIT_EXPIRED = 2
 MIN_CHARS = 1250                                              # 글 하나의 최소 분량(본문 글자, 공백 제외)
-DAILY_MAX = int(os.environ.get("TISTORY_DAILY_MAX", "3"))     # 하루(KST)에 새로 공개하는 글 수 한도. 넘치면 다음 날로 미룬다
+DAILY_MAX = int(os.environ.get("TISTORY_DAILY_MAX", "1"))     # 하루(KST)에 새로 공개하는 글 수 한도. 넘치면 다음 날로 미룬다
 
 
 class SessionExpired(Exception):

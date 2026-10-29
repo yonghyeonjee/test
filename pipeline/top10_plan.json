@@ -59,94 +59,104 @@
  },
  {
   "date": "2026-10-30",
-  "topic": "education"
+  "topic": "",
+  "note": "AI 시리즈 마지막 편(ai-job-prep)이 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-10-31",
-  "topic": "short-window"
+  "topic": "education"
  },
  {
   "date": "2026-11-01",
-  "topic": "orgs-intern"
+  "topic": "",
+  "note": "매월 1일은 지난달 모음 글이 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-11-02",
-  "topic": "welfare-topic"
+  "topic": "short-window"
  },
  {
   "date": "2026-11-03",
-  "topic": "tech"
+  "topic": "orgs-intern"
  },
  {
   "date": "2026-11-04",
-  "topic": "license-craft-easy"
+  "topic": "welfare-topic"
  },
  {
   "date": "2026-11-05",
-  "topic": "orgs-local"
+  "topic": "tech"
  },
  {
   "date": "2026-11-06",
-  "topic": "welfare-youth-sido"
+  "topic": "license-craft-easy"
  },
  {
   "date": "2026-11-07",
-  "topic": "regions-open"
+  "topic": "orgs-local"
  },
  {
   "date": "2026-11-08",
-  "topic": "orgs-nurse"
+  "topic": "welfare-youth-sido"
  },
  {
   "date": "2026-11-09",
-  "topic": "welfare-sigungu"
+  "topic": "regions-open"
  },
  {
   "date": "2026-11-10",
-  "topic": "license-hard"
+  "topic": "orgs-nurse"
  },
  {
   "date": "2026-11-11",
-  "topic": "orgs-edu"
+  "topic": "welfare-sigungu"
  },
  {
   "date": "2026-11-12",
-  "topic": "long-window"
+  "topic": "license-hard"
  },
  {
   "date": "2026-11-13",
-  "topic": "welfare-cash-sido"
+  "topic": "orgs-edu"
  },
  {
   "date": "2026-11-14",
-  "topic": "orgs-hospital"
+  "topic": "long-window"
  },
  {
   "date": "2026-11-15",
-  "topic": "biz-field"
+  "topic": "welfare-cash-sido"
  },
  {
   "date": "2026-11-16",
-  "topic": "license-engineer"
+  "topic": "orgs-hospital"
  },
  {
   "date": "2026-11-17",
-  "topic": "regions-public"
+  "topic": "biz-field"
  },
  {
   "date": "2026-11-18",
-  "topic": "welfare-life"
+  "topic": "license-engineer"
  },
  {
   "date": "2026-11-19",
-  "topic": "orgs-research"
+  "topic": "regions-public"
  },
  {
   "date": "2026-11-20",
-  "topic": "welfare-always-sido"
+  "topic": "welfare-life"
  },
  {
   "date": "2026-11-21",
+  "topic": "orgs-research"
+ },
+ {
+  "date": "2026-11-22",
+  "topic": "welfare-always-sido"
+ },
+ {
+  "date": "2026-11-23",
   "topic": "roles"
  }
 ]

@@ -1,6 +1,6 @@
 name: tistory-top10-daily
 
-# 매일 13:00 KST(04:00 UTC) 한 편: pipeline/top10_plan.json 에서 그날 주제를 꺼내
+# 매일 13:00 KST(04:00 UTC) 한 편(티스토리 공개는 모든 연재를 합쳐 하루 한 편 — tistory_publish.py DAILY_MAX): pipeline/top10_plan.json 에서 그날 주제를 꺼내
 #   1) top10.py 로 jiwon(blog_posts)에 순위 글을 쓰고(출처가 된다)
 #   2) chart_top10.py 로 자료 차트 12장 + 접수 중 공고 화면 1장을 만들고
 #   3) tistory_publish.py --composer top10 으로 티스토리용 글을 따로 써서 공개로 올린다.

@@ -129,23 +129,26 @@ for key in ("civil", "welfare-sido", "license-applicants"):
         ct.draw_overview(st, os.path.join(tmp, "o.png")); ct.draw_item(1, st["items"][0], st, os.path.join(tmp, "i.png")); ct.draw_top10(st, os.path.join(tmp, "t.png"))
         ok(all(os.path.getsize(os.path.join(tmp, f)) > 10000 for f in ("o.png", "i.png", "t.png")), f"{key}: 차트 파일")
 
-# 기획표: 35일(10-22~26 은 10-21 에 몰린 글을 하루 한 편씩 다시 공개), 날짜 연속, 주제가 전부 등록돼 있다
+# 기획표: 37일(10-22~26 은 10-21 에 몰린 글을 하루 한 편씩 다시 공개, 10-30·11-01 은 다른 글이 나가 쉼), 날짜 연속, 주제가 전부 등록돼 있다
 plan = json.loads(t.PLAN_FILE.read_text(encoding="utf-8"))
 dates = [dt.date.fromisoformat(p["date"]) for p in plan]
-ok(len(plan) == 35 and all((dates[i+1] - dates[i]).days == 1 for i in range(34)), "35일 연속")
+ok(len(plan) == 37 and all((dates[i+1] - dates[i]).days == 1 for i in range(36)), "37일 연속")
+ok([p["date"] for p in plan if p["topic"] == ""] == ["2026-10-30", "2026-11-01"], "쉬는 날: AI 시리즈 마지막 편, 11월 모음 글")
 ok([(p["date"], p["topic"], p.get("update")) for p in plan[4:9]] == [("2026-10-22", "roles", "163"), ("2026-10-23", "civil", "164"), ("2026-10-24", "medical", "165"), ("2026-10-25", "orgs-national", "166"), ("2026-10-26", "regions", "172")], "다시 공개할 5편: 날짜·주제·글 번호")
 ok(all(p["topic"] in t.TOPICS or p["topic"] == "" for p in plan), f"미등록 주제: {[p['topic'] for p in plan if p['topic'] not in t.TOPICS]}")
 ok(plan[0] == {"date": "2026-10-18", "topic": "civil"}, "첫날은 공무 직군")
-ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "regions" and len({p["topic"] for p in plan}) == 30, "주제 30개, 10-21 은 regions")
+ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "regions" and len({p["topic"] for p in plan if p["topic"]}) == 30, "주제 30개, 10-21 은 regions")
 ok(t.plan_for(dt.date(2026, 10, 27))["topic"] == "license-applicants" and not t.plan_for(dt.date(2026, 10, 27)).get("update"), "새 연재는 10-27 부터 다시")
 # 기획표가 끝난 뒤: 순환. 기획표에 topic "" 인 날(연재 쉼)이 있어도 순환 순서에는 들어가지 않는다
-_rot = [t.plan_for(dt.date(2026, 11, 22) + dt.timedelta(days=i)) for i in range(31)]
+_rot = [t.plan_for(dt.date(2026, 11, 24) + dt.timedelta(days=i)) for i in range(32)]
+_rot = [r for r in _rot if r["date"] != "2026-12-01"]
 ok(all(r and r.get("rotation") and r["topic"] in t.TOPICS for r in _rot) and "orgs" in {r["topic"] for r in _rot}, "기획표가 끝나면 순환, 기획표에 없던 orgs 도 31일 안에 나온다")
-ok(t.plan_for(dt.date(2027, 1, 1))["topic"] in t.TOPICS, "끝없이 돈다")
+ok(t.plan_for(dt.date(2027, 1, 2))["topic"] in t.TOPICS, "끝없이 돈다")
+ok(t.plan_for(dt.date(2026, 12, 1))["topic"] == "" and t.plan_for(dt.date(2027, 1, 1))["topic"] == "", "표에 없는 매월 1일은 쉰다(모음 글이 나가는 날, 하루 한 편)")
 _orig = t.PLAN_FILE.read_text(encoding="utf-8")
 try:
     _p = json.loads(_orig); _p.insert(3, {"date": "2026-10-21", "topic": ""}); t.PLAN_FILE.write_text(json.dumps(_p), encoding="utf-8")
-    ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "" and "" not in [t.plan_for(dt.date(2026, 11, 18) + dt.timedelta(days=i))["topic"] for i in range(40)], "쉼 날은 빈 주제, 순환엔 안 들어간다")
+    ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "" and "" not in [t.plan_for(dt.date(2026, 11, 24) + dt.timedelta(days=i))["topic"] for i in range(40) if (dt.date(2026, 11, 24) + dt.timedelta(days=i)).day != 1], "쉼 날은 빈 주제, 순환엔 안 들어간다")
 finally:
     t.PLAN_FILE.write_text(_orig, encoding="utf-8")
 ok(t.plan_for(dt.date(2026, 10, 1)) is None, "기획표 시작 전엔 없음")

@@ -548,7 +548,8 @@ ROTATION_START = dt.date(2026, 10, 18)   # 기획표 첫날. 표에 없는 날�
 
 def plan_for(date: dt.date) -> dict | None:
     """그날 주제. 기획표(top10_plan.json)에 있으면 그것, 없으면 기획표 순서대로 31개 주제를 끝없이 돌린다.
-    한 주제는 31일마다 돌아오고 slug 가 월 단위라 달이 바뀌면 새 글, 같은 달이면 고쳐 쓴다."""
+    한 주제는 31일마다 돌아오고 slug 가 월 단위라 달이 바뀌면 새 글, 같은 달이면 고쳐 쓴다.
+    표에 없는 매월 1일은 쉰다 — 그날은 지난달 모음 글(tistory_publish.yml)이 나가고, 공개는 하루 한 편이다."""
     plan = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
     hit = next((p for p in plan if p["date"] == date.isoformat()), None)
     if hit:
@@ -560,6 +561,8 @@ def plan_for(date: dt.date) -> dict | None:
     order += [k for k in TOPICS if k not in order]
     if not order or date < ROTATION_START:
         return None
+    if date.day == 1:
+        return {"date": date.isoformat(), "topic": "", "note": "매월 1일은 모음 글이 나가는 날", "rotation": True}
     return {"date": date.isoformat(), "topic": order[(date - ROTATION_START).days % len(order)], "rotation": True}
 
 
