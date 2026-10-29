@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { IllusJobs } from "@/components/Illus";
-import { withOg } from "@/lib/seo";
+import { YEAR, withOg } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -32,11 +32,26 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 2026-10-17 최근 365일 공고(나라일터+잡알리오)가 ORG_INDEX_MIN(5)건 미만인 기관은 noindex,follow.
   // 기관 쪽은 서치 콘솔에서 아직 색인에 남은 거의 유일한 갈래라 크게 줄이지 않되, 1만 4천여 곳 가운데
   // 1만 2천여 곳은 최근 1년 공고가 몇 건뿐인 얇은 쪽이다. 못 세면(DB 오류) 색인한다 — 실패 시 색인 쪽으로.
-  const [stat, recent] = await Promise.all([
+  const [stat, recent, board] = await Promise.all([
     getOrgStat(org),
     getOrgRecentCounts([org]).then((m) => m.get(org) ?? 0, () => null),
+    // 쪽 본문이 같은 것을 읽는다(React cache 로 한 번만). 제목에 넣을 접수 중 건수와 자주 뽑는 자리.
+    getJobsByOrg(org).catch(() => null),
   ]);
   const thin = recent !== null && recent < ORG_INDEX_MIN;
+  // 검색 결과 제목(2026-10-29). 사람이 치는 말은 "{기관} 채용", "{기관} 채용공고"(다음 유입 검색어 기준) — "채용공고"는 둘 다
+  // 품는다. 뒤에는 이 쪽에만 있는 숫자(접수 중·최근 1년 건수·자주 뽑는 자리)를 붙여 1만 4천 개 기관 쪽이 서로 다르고
+  // 나라일터·잡알리오의 "{기관} 채용정보" 제목과도 갈라지게 한다. 전에는 전부 "— 지금까지 낸 공고와 접수 기간"이었다.
+  const mix = board && board.ok ? titleMix(board.jobs.map((j) => j.title), org) : null;
+  const openN = board && board.ok ? board.jobs.filter((j) => j.status !== "closed").length : stat?.openN ?? 0;
+  const often = [...(mix?.kinds.slice(0, 1).map((k) => k.label) ?? []), ...(mix?.words.slice(0, 2).map((w) => w.word) ?? [])]
+    .filter((v, i, a) => a.indexOf(v) === i).slice(0, 2);
+  const peak = stat ? peakMonths(stat.months) : null;
+  const facts = [
+    openN > 0 ? `접수 중 ${openN}건` : null,
+    recent ? `최근 1년 ${recent.toLocaleString()}건` : stat?.n ? `공고 ${stat.n.toLocaleString()}건` : null,
+    often.length ? `${often.join("·")} 자주 뽑음` : peak ? `${peak.label}에 몰림` : null,
+  ].filter(Boolean) as string[];
   // job_org_stats 는 나라일터만 센다. 잡알리오까지 더하면 이보다 많을 수 있어 "이상"으로 적는다.
   const span = stat?.firstReg && stat.lastReg
     ? `${stat.firstReg.slice(0, 4)}년부터 쌓인 공고 ${stat.n.toLocaleString()}건 이상`
@@ -44,7 +59,9 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const extra = jobRouteLabel(r).filter((v) => v !== org);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
   return withOg({
-    title: `${org} 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 지금까지 낸 공고와 접수 기간"}${tail}`,
+    title: extra.length
+      ? `${org} ${extra.join(" ")} 채용공고 — ${facts.length ? facts.join(" · ") : "접수 기간과 자격"}${tail}`
+      : `${org} 채용공고 ${YEAR} — ${facts.length ? facts.join(" · ") : "접수 기간과 자주 뽑는 자리"}${tail}`,
     // 출처(나라일터·잡알리오)는 한 번만 적는다. 예전에는 "나라일터·잡알리오에 낸 … 나라일터 공고 …건"으로 두 번 나왔다.
     description:
       `${org}이(가) 낸 채용 공고를 나라일터·잡알리오에서 모았습니다. ${span}을 등록일순으로 보고, ` +

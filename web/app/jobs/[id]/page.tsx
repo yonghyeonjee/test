@@ -67,14 +67,16 @@ function orgShort(org: string | null) {
 function seoJobTitle(job: Job, role: ReturnType<typeof detectRole>, detail: string | null, stage: ReturnType<typeof stageOf>) {
   const org = orgShort(job.org);
   const subject = detail ?? role?.name ?? "";
-  const kind = /공무직|무기계약/.test(job.title) ? "공무직" : /기간제/.test(job.title) ? "기간제" : /임기제/.test(job.title) ? "임기제" : /인턴/.test(job.title) ? "인턴" : "";
+  const kind = /공무직|무기계약/.test(job.title) ? "공무직" : /기간제/.test(job.title) ? "기간제" : /임기제/.test(job.title) ? "임기제"
+    : /인턴/.test(job.title) ? "인턴" : /계약직/.test(job.title) ? "계약직" : "";
   const head = [org, subject, kind].filter(Boolean).join(" ");
-  if (!head) return `${job.title} — 공공기관 채용`;
-  const stageLabel = { final: "최종합격자 발표", interview: "면접·서류합격 안내", plan: "채용 계획", repost: "재공고", open: "채용" }[stage];
+  if (!head) return `${job.title} — 공공기관 채용공고`;
+  // "채용공고"로 적는다 — 유입 검색어가 "{기관} 채용"과 "{기관} 채용공고" 두 꼴이고, 뒤 꼴이 앞 꼴을 품는다(2026-10-29).
+  const stageLabel = { final: "최종합격자 발표", interview: "면접·서류합격 안내", plan: "채용 계획", repost: "재공고", open: "채용공고" }[stage];
+  // 뒤쪽은 이 공고만의 것: 지역 · 마감일. 모든 쪽에 같은 말("접수 방법과 자격")은 맨 뒤 한 번만.
   const hook =
     stage === "final" || stage === "interview" ? "제출서류와 다음 채용 시기"
-    : job.end ? `${dot(job.end)} 마감, 접수 방법과 자격`
-    : job.region ? `${job.region} 공공기관 채용` : "접수 기간과 자격";
+    : [job.region, job.end ? `${dot(job.end)} 마감` : null, "자격·접수 방법"].filter(Boolean).join(" · ");
   return `${head} ${stageLabel} — ${hook}`.replace(/\s+/g, " ").trim();
 }
 

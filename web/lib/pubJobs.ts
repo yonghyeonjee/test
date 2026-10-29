@@ -724,7 +724,8 @@ export async function getTopOrgs(limit = 300, minN = 8): Promise<OrgStat[]> {
 }
 
 /** 한 기관의 공고 전부. 접수 중인 것이 앞, 그다음 최근 등록순. */
-export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> {
+/** React cache: 한 번 그릴 때 generateMetadata 와 쪽이 같은 기관을 물으면 한 번만 읽는다(2026-10-29). */
+export const getJobsByOrg = cache(async (org: string, limit = 300): Promise<JobBoard> => {
   if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
   try {
     // 출처마다 따로 읽는다(perSource). in() 으로 물으면 (org, reg_date) 색인을 못 타 1.4ms → 11~70ms.
@@ -749,7 +750,7 @@ export async function getJobsByOrg(org: string, limit = 300): Promise<JobBoard> 
   } catch {
     return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0, failed: true };
   }
-}
+});
 
 const MONTH_LABEL = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
 
