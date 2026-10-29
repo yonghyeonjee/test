@@ -8,6 +8,7 @@ job_summary.py — 공고 하나하나의 요약.
   python pipeline/job_summary.py                    # 최근 3일 등록·접수 중·첨부 있는 공고 가운데 아직 요약 없는 것, 300건까지
   python pipeline/job_summary.py --days 7 --limit 50
   python pipeline/job_summary.py --id 304682 --dry
+  python pipeline/job_summary.py --closed --days 120 --limit 400   # 마감한 공고도(지난 공고 색인용, 2026-10-29)
 """
 
 from __future__ import annotations
@@ -138,7 +139,7 @@ def summarize(client, row: dict) -> tuple[dict, list[str], int]:
     return (fix_period(s, row) if s else s), names, len(text)
 
 
-def targets(sb, days: int, limit: int, only_id: str | None) -> list[dict]:
+def targets(sb, days: int, limit: int, only_id: str | None, closed: bool = False) -> list[dict]:
     q = sb.table("job_posts").select("source_id,title,org,reg_date,end_date,raw").eq("source", "gojobs")
     if only_id:
         q = q.eq("source_id", only_id)
@@ -146,8 +147,11 @@ def targets(sb, days: int, limit: int, only_id: str | None) -> list[dict]:
         today = dt.date.today()
         # 요약 유무는 다른 표에 있어 DB 에서 걸러 올 수 없다. 기간 안의 공고를 다 읽고 여기서 거른다.
         # 2026-10-09 limit*2 만 읽어 오다가, 앞쪽이 전부 요약된 뒤 뒤쪽 20건이 영영 안 잡혔다.
-        q = (q.gte("reg_date", (today - dt.timedelta(days=days)).isoformat()).gte("end_date", today.isoformat())
-             .order("reg_date", desc=True).limit(3000))
+        q = q.gte("reg_date", (today - dt.timedelta(days=days)).isoformat())
+        # --closed: 마감한 공고까지. 2026-10-29 부터 지난 공고도 색인하므로, 요약이 시작된 10/9 전에 마감한 공고를 채운다.
+        if not closed:
+            q = q.gte("end_date", today.isoformat())
+        q = q.order("reg_date", desc=True).limit(5000 if closed else 3000)
     rows = q.execute().data or []
     rows = [r for r in rows if pick_files(((r.get("raw") or {}).get("gojobs") or {}).get("files") or [])]
     if only_id:
@@ -165,6 +169,7 @@ def main():
     ap.add_argument("--limit", type=int, default=300)
     ap.add_argument("--id")
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--closed", action="store_true", help="마감한 공고도 대상에 넣는다")
     a = ap.parse_args()
 
     from supabase import create_client
@@ -176,8 +181,8 @@ def main():
         sb = create_client(url, key)
     client = org_guide.gemini_client()
 
-    rows = targets(sb, a.days, a.limit, a.id)
-    print(f"대상 {len(rows)}건 (최근 {a.days}일 등록 · 접수 중 · 첨부 있음 · 요약 없음)")
+    rows = targets(sb, a.days, a.limit, a.id, a.closed)
+    print(f"대상 {len(rows)}건 (최근 {a.days}일 등록 · {'마감 포함' if a.closed else '접수 중'} · 첨부 있음 · 요약 없음)")
     saved = empty = failed = 0
     for i, r in enumerate(rows):
         try:
