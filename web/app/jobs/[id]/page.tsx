@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import GuideBanner from "@/components/GuideBanner";
-import JobGone from "@/components/JobGone";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PromoBanner from "@/components/PromoBanner";
@@ -68,20 +67,25 @@ function orgShort(org: string | null) {
 function seoJobTitle(job: Job, role: ReturnType<typeof detectRole>, detail: string | null, stage: ReturnType<typeof stageOf>) {
   const org = orgShort(job.org);
   const subject = detail ?? role?.name ?? "";
-  const kind = /공무직|무기계약/.test(job.title) ? "공무직" : /기간제/.test(job.title) ? "기간제" : /임기제/.test(job.title) ? "임기제" : /인턴/.test(job.title) ? "인턴" : "";
-  const head = [org, subject, kind].filter(Boolean).join(" ");
-  if (!head) return `${job.title} — 공공기관 채용`;
-  const stageLabel = { final: "최종합격자 발표", interview: "면접·서류합격 안내", plan: "채용 계획", repost: "재공고", open: "채용" }[stage];
+  const kind = /공무직|무기계약/.test(job.title) ? "공무직" : /기간제/.test(job.title) ? "기간제" : /임기제/.test(job.title) ? "임기제"
+    : /인턴/.test(job.title) ? "인턴" : /계약직/.test(job.title) ? "계약직" : "";
+  // "공무직 공무직": 자리 이름이 곧 고용 형태인 공고가 있다. 이미 든 말은 다시 붙이지 않는다(2026-10-29).
+  // "공군 공군제11전투비행단": 기관 이름 앞 낱말이 뒤 낱말에 포함되면 앞 낱말을 뺀다.
+  const orgDedup = org.split(" ").filter((w, i, a) => !a.slice(i + 1).some((x) => x.includes(w))).join(" ");
+  const head = [orgDedup, subject, kind].filter((w, i, a) => Boolean(w) && !a.slice(0, i).some((x) => x && x.includes(w!))).join(" ");
+  if (!head) return `${job.title} — 공공기관 채용공고`;
+  // "채용공고"로 적는다 — 유입 검색어가 "{기관} 채용"과 "{기관} 채용공고" 두 꼴이고, 뒤 꼴이 앞 꼴을 품는다(2026-10-29).
+  const stageLabel = { final: "최종합격자 발표", interview: "면접·서류합격 안내", plan: "채용 계획", repost: "재공고", open: "채용공고" }[stage];
+  // 뒤쪽은 이 공고만의 것: 지역 · 마감일. 모든 쪽에 같은 말("접수 방법과 자격")은 맨 뒤 한 번만.
   const hook =
     stage === "final" || stage === "interview" ? "제출서류와 다음 채용 시기"
-    : job.end ? `${dot(job.end)} 마감, 접수 방법과 자격`
-    : job.region ? `${job.region} 공공기관 채용` : "접수 기간과 자격";
+    : [job.region, job.end ? `${dot(job.end)} 마감` : null, "자격·접수 방법"].filter(Boolean).join(" · ");
   return `${head} ${stageLabel} — ${hook}`.replace(/\s+/g, " ").trim();
 }
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
-  // 없는 번호. 쪽은 JobGone 이 지금 접수 중인 공고로 채운다.
+  // 없는 번호. 쪽은 404(app/not-found.tsx)로 나간다.
   if (!job) return withOg({
     title: "내려간 채용 공고 — 지금 접수 중인 공공기관 채용",
     description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
@@ -220,11 +224,15 @@ export default async function JobDetail({ params }: P) {
   const id = decodeURIComponent(params.id);
   const job = await getJob(id);
   if (!job) {
-    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는
-    // 지금 접수 중인 공고로 채운 쪽(JobGone 참고).
+    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는 진짜 404(app/not-found.tsx).
+    // 전에는 200 + noindex 로 냈는데, 구글은 그것을 소프트 404 로 센다. 10/24 에 loading.tsx 를
+    // 빼서 응답이 스트리밍되지 않으니 이제 notFound() 가 404 머리글로 나간다(/jobs/org 와 같다).
+    // 이 폴더에 not-found.tsx 를 두어 봤지만(#294) 운영에서 HTML 은 늘 전역 404 였고, 그 내용은
+    // 모든 공고 쪽 응답에 미리 그려져 실렸다(DB 조회 하나가 쪽마다 더 돎). 그래서 뺐다(2026-10-29).
+    // getJob 은 DB 오류면 예외를 던지므로(10/16) 오류가 404 로 굳는 일은 없다.
     const src = await findJobSource(id).catch(() => null);
     if (src === "worldjob") redirect("/jobs/overseas");
-    return <JobGone />;
+    notFound();
   }
   const [related, stat, attach, guide, sum, porg] = await Promise.all([
     getRelatedJobs(job),

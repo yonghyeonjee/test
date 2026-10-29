@@ -67,6 +67,17 @@ const HOME_DESC =
   "회원가입도 주민등록번호도 필요 없습니다.";
 
 /** 기업 지원사업 첫 화면의 메타데이터. /business 가 쓴다. */
+
+/**
+ * 검색으로 세지 않을 요청. 크롤러 이름표(isBot)에 더해, 언어 머리글(Accept-Language)이 없는 요청도 뺀다 —
+ * 사람 브라우저는 반드시 보내고, 이름표를 브라우저로 꾸민 수집기는 흔히 빠뜨린다(/api/visit 와 같은 기준, 2026-10-29).
+ * 전에는 /policies 의 조건 링크를 그런 수집기가 새벽마다 훑어 하루 검색 354건 중 302건이 사람이 아니었다.
+ */
+function botLike() {
+  const h = headers();
+  return isBot(h.get("user-agent")) || !h.get("accept-language");
+}
+
 export function businessMetadata(): Metadata {
   return withOg({
     title: { absolute: BIZ_TITLE },
@@ -207,7 +218,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
       ? await Promise.all([matchBusiness(bq, 60, true), countBusiness(bq, true).catch(() => undefined)])
       : [[], 0];
     // 크롤러가 정책 화면의 조건 링크를 훑는 것까지 "검색"으로 세고 있었다.
-    if (asked && !isBot(headers().get("user-agent")))
+    if (asked && !botLike())
       logSearch({ kind: "business", sido, bizTarget, bizField,
                   n: results.length, entry: via });
 
@@ -292,7 +303,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
   const [results, count] = asked
     ? await Promise.all([matchWelfare(wq, 60, true), countWelfare(wq, true).catch(() => undefined)])
     : [[], 0];
-  if (asked && !isBot(headers().get("user-agent")))
+  if (asked && !botLike())
     logSearch({ kind: "welfare", sido, sigungu, age, employment,
                 household, n: results.length, entry: via });
 
