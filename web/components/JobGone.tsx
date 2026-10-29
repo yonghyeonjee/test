@@ -4,16 +4,16 @@ import RecentStrip from "./RecentStrip";
 import { IllusEmpty } from "./Illus";
 
 /**
- * 없는 공고 번호로 들어왔을 때 상세 쪽이 대신 그리는 내용.
+ * 없는 공고 번호로 들어왔을 때 app/jobs/[id]/not-found.tsx 가 그리는 내용.
  *
  * 검색엔진에 남은 옛 주소나 마감돼 내려간 공고로 들어오는 사람이 꾸준히
  * 있다. "찾지 못했습니다" 한 줄로 돌려보내면 그 사람은 그냥 나간다.
  *
- * not-found.tsx 로 만들지 않은 이유: 이 구역은 동적으로 그려져 응답을
- * 흘려보내는 중이라 notFound() 를 불러도 이미 나간 200 을 되돌리지 못하고,
- * 대신 화면이 클라이언트에서만 바뀐다 — 서버 HTML 에는 h1 하나 없이 나갔다.
- * 게다가 not-found 경계는 그 구역의 모든 쪽 응답에 같이 실려 매번 실행됐다.
- * 그래서 쪽이 직접 이 컴포넌트를 그린다. 색인은 메타데이터의 noindex 가 막는다.
+ * 응답 코드는 404. 전에는 쪽이 이 컴포넌트를 200 으로 직접 그렸다 — 그때는
+ * loading.tsx 가 있어 응답이 스트리밍되는 중이라 notFound() 가 200 을 되돌리지
+ * 못했다. 2026-10-24 에 색인 구역의 loading.tsx 를 모두 빼서 이제 notFound() 가
+ * 404 머리글로 나간다. 구글은 200+noindex 를 소프트 404 로 세지만 진짜 404 는
+ * 그냥 잊는다(2026-10-29).
  */
 export default async function JobGone() {
   const jobs = await getOpenJobs(10).catch(() => []);
