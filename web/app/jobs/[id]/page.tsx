@@ -80,7 +80,7 @@ function seoJobTitle(job: Job, role: ReturnType<typeof detectRole>, detail: stri
 
 export async function generateMetadata({ params }: P): Promise<Metadata> {
   const job = await getJob(decodeURIComponent(params.id));
-  // 없는 번호. 쪽은 404 로 나가고 화면은 not-found.tsx(JobGone)가 채운다.
+  // 없는 번호. 쪽은 404(app/not-found.tsx)로 나간다.
   if (!job) return withOg({
     title: "내려간 채용 공고 — 지금 접수 중인 공공기관 채용",
     description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
@@ -219,10 +219,11 @@ export default async function JobDetail({ params }: P) {
   const id = decodeURIComponent(params.id);
   const job = await getJob(id);
   if (!job) {
-    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는 진짜 404 —
-    // 화면은 이 폴더의 not-found.tsx(JobGone)가 그린다. 전에는 200 + noindex 로
-    // 냈는데, 구글은 그것을 소프트 404 로 센다. 10/24 에 loading.tsx 를 빼서
-    // 응답이 스트리밍되지 않으니 이제 notFound() 가 404 머리글로 나간다(/jobs/org 와 같다).
+    // 해외채용(월드잡) 번호로 들어온 것은 그쪽 목록으로. 나머지는 진짜 404(app/not-found.tsx).
+    // 전에는 200 + noindex 로 냈는데, 구글은 그것을 소프트 404 로 센다. 10/24 에 loading.tsx 를
+    // 빼서 응답이 스트리밍되지 않으니 이제 notFound() 가 404 머리글로 나간다(/jobs/org 와 같다).
+    // 이 폴더에 not-found.tsx 를 두어 봤지만(#294) 운영에서 HTML 은 늘 전역 404 였고, 그 내용은
+    // 모든 공고 쪽 응답에 미리 그려져 실렸다(DB 조회 하나가 쪽마다 더 돎). 그래서 뺐다(2026-10-29).
     // getJob 은 DB 오류면 예외를 던지므로(10/16) 오류가 404 로 굳는 일은 없다.
     const src = await findJobSource(id).catch(() => null);
     if (src === "worldjob") redirect("/jobs/overseas");
