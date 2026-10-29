@@ -15,7 +15,7 @@
 export const EXPECTED_FUNCTIONS = [
   "account_by_device", "account_create", "account_mark", "account_probe", "account_taken",
   "account_update_contact", "feed_closing", "feed_ending", "feed_new",
-  "home_bundle", "log_search", "log_visit",
+  "admin_stat_series", "home_bundle", "log_search", "log_visit",
   "match_business", "match_welfare",
   "recovery_claim", "recovery_issue",
   "saved_add", "saved_list", "saved_open", "saved_remove",
@@ -28,7 +28,7 @@ export const EXPECTED_FUNCTIONS = [
  */
 const SERVER_ONLY = new Set<string>([
   "account_by_device", "account_create", "account_mark", "account_probe", "account_taken",
-  "account_update_contact", "log_search", "log_visit", "recovery_claim", "recovery_issue",
+  "account_update_contact", "admin_stat_series", "log_search", "log_visit", "recovery_claim", "recovery_issue",
   "saved_add", "saved_list", "saved_open", "saved_remove",
   "notify_sent", "notify_log", "visit_log", "save_account", "saved_condition", "saved_item", "exam_site_state",
 ]);

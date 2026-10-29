@@ -3,7 +3,8 @@ import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
-import VisitChart, { type VisitPoint } from "@/components/VisitChart";
+import StatsExplorer from "./StatsExplorer";
+import type { StatRow } from "@/lib/adminStats";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
 import CollectPanel, { type SourceStat } from "./CollectPanel";
 import { COLLECT_KEYS, type CollectKey } from "@/lib/collectorMeta";
@@ -149,10 +150,11 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
     db.rpc("admin_source_stats"),
     readLastRuns(),
     checkSchema(db as never),
-    // 유입 그래프는 표본이 아니라 DB 집계(sql/017, 2026-10-22). 함수가 없으면 빈 그래프.
-    db.rpc("admin_visit_series", { p_days: 370 }),
+    // 통계 탐색기의 첫 화면(30일·일·채널)은 서버에서 미리 센다(sql/019). 나머지 조합은 화면이 /admin/stats 로 받는다.
+    db.rpc("admin_stat_series", { p_src: "visit", p_from: since, p_to: new Date().toISOString(), p_unit: "day", p_dim: "channel", p_top: 12 }),
   ]);
-  const series = (Array.isArray(seriesR.data) ? seriesR.data : []) as VisitPoint[];
+  const series = (Array.isArray(seriesR.data) ? seriesR.data : null) as StatRow[] | null;
+  const seriesError = seriesR.error ? seriesR.error.message : null;
   const cnt = (countsR.data ?? {}) as Record<string, number | null>;
   const n0 = (k: string) => Number(cnt[k] ?? 0);
   let [nSearch30, nSearchToday, nZero30, nSaved, nVisit30, nVisitToday, nVisit7] =
@@ -190,7 +192,6 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
   };
 
   const terms = tally(visitRows, "term", 20);
-  const landings = tally(visitRows, "landing", 10);
   /**
    * 채널별로 무엇을 찾아 들어왔나. 검색어를 넘겨주는 곳(다음·카카오)은 검색어를, 지우고 보내는 곳
    * (구글·네이버·직접)은 처음 열린 페이지를 — 어느 쪽이든 "그 채널 사람들이 무엇을 보러 왔나" 가 보인다.
@@ -338,25 +339,8 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
           ` 아래 순위와 그래프는 최근 ${SAMPLE.toLocaleString()}건을 표본으로 합니다.`}
       </p>
 
-      <Panel id="a-visit" title="유입자" note="일·주·월 · 채널별 · 탭당 한 번, 사이트 안 이동은 세지 않음">
-        {series.length ? <VisitChart points={series} /> : <p className="text-xs text-muted">집계 함수(admin_visit_series)가 없거나 자료가 없습니다.</p>}
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="mb-1 text-xs font-bold text-muted">처음 도착한 화면</p>
-            <Rank rows={landings.map((t) => ({ landing: t.label, n: t.n }))} keyName="landing" />
-          </div>
-          <div>
-            <p className="mb-1 text-xs font-bold text-muted">하루 평균</p>
-            <p className="num text-2xl font-extrabold">
-              {(visitRows.length / 30).toFixed(1)}
-              <span className="ml-1 text-xs font-normal text-muted">명 / 일</span>
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-muted">
-              한 탭에서 첫 화면을 열 때 한 번 셉니다. 새로고침이나 사이트 안 이동은 세지
-              않으므로 페이지뷰보다 작고, 사람 수에 가깝습니다. IP 는 저장하지 않습니다.
-            </p>
-          </div>
-        </div>
+      <Panel id="a-visit" title="통계 탐색" note="유입·검색 × 기간 × 단위 × 나누기 · DB 전체를 셈(표본 아님)">
+        <StatsExplorer initial={series} initialError={seriesError} />
       </Panel>
 
       <Panel
