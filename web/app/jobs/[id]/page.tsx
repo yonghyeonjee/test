@@ -69,7 +69,10 @@ function seoJobTitle(job: Job, role: ReturnType<typeof detectRole>, detail: stri
   const subject = detail ?? role?.name ?? "";
   const kind = /공무직|무기계약/.test(job.title) ? "공무직" : /기간제/.test(job.title) ? "기간제" : /임기제/.test(job.title) ? "임기제"
     : /인턴/.test(job.title) ? "인턴" : /계약직/.test(job.title) ? "계약직" : "";
-  const head = [org, subject, kind].filter(Boolean).join(" ");
+  // "공무직 공무직": 자리 이름이 곧 고용 형태인 공고가 있다. 이미 든 말은 다시 붙이지 않는다(2026-10-29).
+  // "공군 공군제11전투비행단": 기관 이름 앞 낱말이 뒤 낱말에 포함되면 앞 낱말을 뺀다.
+  const orgDedup = org.split(" ").filter((w, i, a) => !a.slice(i + 1).some((x) => x.includes(w))).join(" ");
+  const head = [orgDedup, subject, kind].filter((w, i, a) => Boolean(w) && !a.slice(0, i).some((x) => x && x.includes(w!))).join(" ");
   if (!head) return `${job.title} — 공공기관 채용공고`;
   // "채용공고"로 적는다 — 유입 검색어가 "{기관} 채용"과 "{기관} 채용공고" 두 꼴이고, 뒤 꼴이 앞 꼴을 품는다(2026-10-29).
   const stageLabel = { final: "최종합격자 발표", interview: "면접·서류합격 안내", plan: "채용 계획", repost: "재공고", open: "채용공고" }[stage];
