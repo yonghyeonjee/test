@@ -97,8 +97,14 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 2026-10-29 색인 규칙(사용자 결정): 지난 공고도 색인한다. 마감일·요약 유무로 noindex 하지 않는다.
   // 10/17~10/26 에 넣었던 "1년 넘은 것·마감 90일 넘은 것·요약 없는 것" noindex 를 걷었다. 지난 공고 쪽에는
   // 기관 이력·다음 채용 시기 같은 이 사이트만의 내용을 붙여 얇지 않게 한다.
-  // 합격자 발표·면접 안내만 noindex,follow — 지원하는 공고가 아니고 같은 기관 모집 공고와 겹친다.
-  const noindex = stage === "final" || stage === "interview";
+  // 합격자 발표·면접 안내는 noindex,follow — 지원하는 공고가 아니고 같은 기관 모집 공고와 겹친다.
+  // 2026-10-30 중간안(사용자 결정): 지난 공고 가운데 이 사이트만의 내용이 하나도 없는 것 — 공고 요약도 없고, 기관 공고가
+  // 5건 미만이라 "이 공고를 숫자로" 상자도 비는 것 — 만 noindex,follow. 구글 쪽 설명으로는 같은 틀의 복사본 묶음에서
+  // 빠져나오려면 쪽 내용이 크게 달라야 하는데, 그런 쪽은 제목·날짜뿐이라 다를 수가 없다. 요약을 못 읽었으면(DB 오류)
+  // 요약이 있는 것으로 쳐서 색인을 남긴다(sumRead === "error").
+  const hasSummary = sumRead === "error" || sumRead !== null;
+  const bare = job.status === "closed" && !hasSummary && facts.orgTotal < 5;
+  const noindex = stage === "final" || stage === "interview" || bare;
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
