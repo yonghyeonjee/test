@@ -605,7 +605,7 @@ export const getAlioCounts = cache(async (): Promise<{ total: number; open: numb
   return { total: all.count ?? 0, open: open.count ?? 0 };
 });
 
-export async function getJobOverview(): Promise<JobOverview | null> {
+export const getJobOverview = cache(async (): Promise<JobOverview | null> => {
   if (!dbConfigured) return null;
   try {
     const { data, error } = await db
@@ -626,7 +626,7 @@ export async function getJobOverview(): Promise<JobOverview | null> {
   } catch {
     return null;
   }
-}
+});
 
 export type OrgStat = {
   org: string;
