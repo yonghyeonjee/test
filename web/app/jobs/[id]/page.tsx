@@ -24,6 +24,8 @@ import { findPublicOrg } from "@/lib/govData";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getJobSummary, getJobSummaryStrict } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
+import { factsLine, getJobFacts } from "@/lib/jobFacts";
+import JobFactsBox from "@/components/JobFactsBox";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { employmentFromTitle, jobLocation, salaryFromPay } from "@/lib/jobSchema";
@@ -90,7 +92,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const stage = stageOf(job.title);
   // 요약은 엄격한 판으로 읽는다. 못 읽었으면(DB 오류) 요약이 있는 것으로 쳐서 색인을 남긴다 — 잠깐의 오류로
   // noindex 가 사흘 캐시에 남으면 안 된다(2026-10-17).
-  const [attach, sumRead] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const)]);
+  const [attach, sumRead, facts] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const), getJobFacts(job)]);
   const sum = sumRead === "error" ? null : sumRead;
   // 2026-10-29 색인 규칙(사용자 결정): 지난 공고도 색인한다. 마감일·요약 유무로 noindex 하지 않는다.
   // 10/17~10/26 에 넣었던 "1년 넘은 것·마감 90일 넘은 것·요약 없는 것" noindex 를 걷었다. 지난 공고 쪽에는
@@ -106,7 +108,13 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     ...(noindex ? { robots: { index: false, follow: true } } : {}),
     title: seoJobTitle(job, role, detail, stage),
     // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
-    description: `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}${fileNote}`,
+    // 설명문은 공고 이름 → 요약 한 줄 → 이 사이트만 센 숫자(기관 최근 1년 공고 수·순위, 접수 기간 비교, 몰리는 달) 순.
+    // 같은 공고를 실은 다른 사이트와 설명문부터 달라야 한다(2026-10-30). 첨부 이름은 자리가 남을 때만.
+    description: (() => {
+      const uniq = factsLine(job, facts);
+      const base = `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${uniq ? `${uniq} ` : ""}${jobSummary(job)}`;
+      return base.length < 150 ? `${base}${fileNote}` : base;
+    })(),
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
@@ -211,13 +219,14 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     notFound();
   }
-  const [related, stat, attach, guide, sum, porg] = await Promise.all([
+  const [related, stat, attach, guide, sum, porg, facts] = await Promise.all([
     getRelatedJobs(job),
     job.org ? getOrgStat(job.org) : Promise.resolve(null),
     getJobAttach(job.id),
     getGuideByOrg(job.org),
     getJobSummary(job.id),
     findPublicOrg(job.org),
+    getJobFacts(job),
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
@@ -233,7 +242,7 @@ export default async function JobDetail({ params }: P) {
     path: `/jobs/${encodeURIComponent(job.id)}`,
     name: job.title,
     description: jobSummary(job),
-    dateModified: job.reg,
+    dateModified: job.checked ?? job.reg,
     // 화면 위 길잡이 그대로: 채용 · {지역}
     crumbs: [
       { name: "채용", path: "/jobs" },
@@ -291,7 +300,12 @@ export default async function JobDetail({ params }: P) {
         <Row k="모집 인원" v={job.headcount ? `${job.headcount}명` : null} />
         <Row k="접수 기간" v={job.start || job.end ? <><When iso={job.start} /> ~ <When iso={job.end} /></> : null} />
         <Row k="등록일" v={job.reg ? <When iso={job.reg} /> : null} />
+        {/* 원천에서 마지막으로 확인한 날. "언제 자료인지"가 보이게(2026-10-30). */}
+        <Row k="자료 확인" v={job.checked ? <><When iso={job.checked} /> <span className="text-muted">{sourceName(job.id)}에서 확인</span></> : null} />
       </dl>
+
+      {/* 이 사이트만 센 숫자. 원문 복사본과 다른 점이 HTML 앞쪽에 오게 기본 정보 바로 아래(2026-10-30). */}
+      <JobFactsBox job={job} f={facts} />
 
       {/* 접수 마감을 캘린더에, 기관 자리는 지도에. 합격자 발표·면접 공고에는 마감이 없다. */}
       {(() => {
@@ -326,17 +340,12 @@ export default async function JobDetail({ params }: P) {
             {job.end ? `${dot(job.end)}에 접수가 끝난 공고입니다` : "접수가 끝난 공고입니다"}
           </b>
           <p className="mt-1 text-[13.5px] leading-relaxed text-ink2">
-            {stat && stat.n >= 5 ? (
-              <>
-                {orgShort(job.org)}은 지금까지 나라일터에 공고 {stat.n.toLocaleString("ko-KR")}건을 올렸습니다.
-                {peak ? <> 공고는 주로 <strong>{peak.label}</strong>에 올라옵니다({peak.share}%).</> : " 공고는 특정 달에 몰리지 않고 연중 올라옵니다."}
-                {stat.openN > 0
-                  ? <> 지금 접수 중인 공고가 <strong className="num">{stat.openN}건</strong> 있습니다.</>
-                  : stat.lastReg ? <> 가장 최근 공고는 {dot(stat.lastReg)}에 올라왔습니다.</> : null}
-              </>
-            ) : (
-              <>같은 자리를 다시 뽑는 일이 많습니다. 기관 이력과 지역의 접수 중인 공고를 함께 보세요.</>
-            )}
+            {facts.peak
+              ? <>{orgShort(job.org)} 공고는 주로 <strong>{facts.peak.label}</strong>에 올라옵니다({facts.peak.share}%). </>
+              : facts.orgTotal >= 5 ? <>{orgShort(job.org)} 공고는 특정 달에 몰리지 않고 연중 올라옵니다. </> : null}
+            {facts.orgOpen > 0
+              ? <>지금 접수 중인 공고가 <strong className="num">{facts.orgOpen}건</strong> 있습니다.</>
+              : stat?.lastReg ? <>가장 최근 공고는 {dot(stat.lastReg)}에 올라왔습니다.</> : <>같은 자리를 다시 뽑는 일이 많으니 기관 이력과 지역의 접수 중 공고를 함께 보세요.</>}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             {job.org && <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="chip">{orgShort(job.org)} 채용 이력·접수 중 공고</Link>}
@@ -572,7 +581,7 @@ export default async function JobDetail({ params }: P) {
         민간 사이트로, 인사혁신처나 각 기관이 운영하는 공식 사이트가 아닙니다.
       </p>
 
-      <Faq items={jobFaq(job, role, sum?.summary)} />
+      <Faq items={jobFaq(job, role, sum?.summary, facts)} />
 
       {related.length > 0 && (
         <section className="mt-14">

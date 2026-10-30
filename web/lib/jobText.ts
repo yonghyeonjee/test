@@ -58,14 +58,30 @@ export function jobIntro(job: Job): string {
  * 공고 요약(첨부 공고문에서 뽑은 것)이 있으면 그 칸 가운데 값이 있는 것만 묻고 답한다 — 요약에 없는
  * 칸은 묻지도 않고, 답은 요약에 적힌 그대로만 옮긴다.
  */
-export function jobFaq(job: Job, role: Role | null = null, sum: JobSummary | null = null): { q: string; a: string }[] {
+/** FAQ 가 쓰는 이 사이트만의 숫자(lib/jobFacts 의 일부). 없으면 그 문답은 빠진다. */
+export type FaqFacts = {
+  n12: number; rank: number | null; ranked: number; orgTotal: number; orgSince: string | null;
+  peak: { label: string; share: number } | null; orgOpen: number; periodDays: number | null; orgAvgDays: number | null;
+};
+
+export function jobFaq(job: Job, role: Role | null = null, sum: JobSummary | null = null, f: FaqFacts | null = null): { q: string; a: string }[] {
   const org = job.org ?? "해당 기관";
   const faq: { q: string; a: string }[] = [];
 
-  if (role)
+  // 2026-10-30: 직무 일반론 문답("{직무}는 무슨 일을 하나요?")은 같은 직무의 공고 수천 쪽에 글자 그대로 같은 답이 들어가
+  // 뺐다. 대신 이 기관의 숫자로 답하는 문답을 앞에 둔다 — 쪽마다 다르고, 원문을 실은 다른 사이트에는 없는 내용이다.
+  if (f && (f.n12 > 0 || f.orgTotal >= 5)) {
+    const parts: string[] = [];
+    if (f.n12 > 0) parts.push(`최근 1년 동안 나라일터에 공고 ${f.n12}건을 올렸습니다${f.rank && f.ranked ? ` (1년 안에 공고를 낸 ${f.ranked.toLocaleString("ko-KR")}곳 가운데 ${f.rank}위)` : ""}.`);
+    else parts.push(`${f.orgSince ? `${f.orgSince}년부터 ` : ""}나라일터에 공고 ${f.orgTotal}건을 올렸습니다.`);
+    if (f.peak) parts.push(`공고는 ${f.peak.label}에 ${f.peak.share}%가 몰립니다.`);
+    if (f.orgOpen > 1) parts.push(`지금 접수 중인 공고도 ${f.orgOpen}건입니다.`);
+    faq.push({ q: `${org}은 얼마나 자주 뽑나요?`, a: parts.join(" ") });
+  }
+  if (f?.periodDays && f.orgAvgDays)
     faq.push({
-      q: `${role.name} 자리는 무슨 일을 하나요?`,
-      a: `${role.does} 이 공고의 실제 담당 업무는 원문의 업무 내용 항목에 적혀 있습니다.`,
+      q: "접수 기간이 넉넉한 편인가요?",
+      a: `이 공고의 접수 기간은 ${f.periodDays}일입니다. ${org}의 평소 접수 기간은 평균 ${f.orgAvgDays}일이라 ${f.periodDays >= f.orgAvgDays * 1.3 ? "평소보다 긴 편" : f.periodDays <= f.orgAvgDays * 0.7 ? "평소보다 짧은 편이니 서류를 먼저 준비해 두는 것이 좋습니다" : "평소와 비슷한 수준"}입니다.`,
     });
 
   faq.push({
@@ -88,11 +104,6 @@ export function jobFaq(job: Job, role: Role | null = null, sum: JobSummary | nul
     add("제출 서류는 무엇인가요?", "제출 서류", sum.documents.join(", "));
   }
 
-  if (job.region)
-    faq.push({
-      q: `${job.region}의 다른 공공기관 채용도 볼 수 있나요?`,
-      a: `네. ${job.region} 채용 목록에 같은 지역 공고를 모아 두었습니다. 접수 중인 것이 앞에 오고, 마감이 가까운 순서로 정렬됩니다.`,
-    });
-
+  // 지역 안내 문답도 모든 쪽에 같은 글이라 뺐다(2026-10-30). 지역 목록 링크는 본문 단추에 있다.
   return faq;
 }
