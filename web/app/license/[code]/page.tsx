@@ -14,7 +14,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import ExamInsight from "@/components/ExamInsight";
 import ExamRoundsFor from "@/components/ExamRoundsFor";
 import { licenseFaq, licenseIntro, seriesEligibility } from "@/lib/licenseText";
-import { getExamSite } from "@/lib/examInsight";
+import { difficulty, getExamSite, upcomingEvents } from "@/lib/examInsight";
 import { getExamRounds, gradeOfSeries, upcomingForSeries } from "@/lib/qnetExam";
 import { getLicenses, licenseApplicants, licenseIndexable, type License } from "@/lib/qnet";
 import { licenseRelated } from "@/lib/related";
@@ -54,11 +54,30 @@ export async function generateMetadata({ params }: { params: { code: string } })
   const r = await find(params.code);
   if (!r) return withOg({ title: "찾을 수 없는 종목" });
   const { l, all } = r;
-  const title = `${l.name} 자격증 — 응시 자격, 시험 일정, 취득 지원 제도`;
-  const description = licenseDesc(l);
   // 찾는 사람이 적은 종목은 색인하지 않는다(lib/qnet licenseIndexable, 2026-10-17). 응시자 통계를 못 읽으면
   // 색인을 끄지 않는다 — 잠깐의 DB 오류가 하루 캐시에 noindex 로 남으면 멀쩡한 종목이 색인에서 빠진다.
-  const applicants = await licenseApplicants(l.code).catch(() => null);
+  // 제목·설명문에 이 종목만의 숫자(다음 시험일, 3년 합격률, 한 해 접수자)를 넣는다 — 같은 종목을 소개하는 다른 사이트와
+  // 검색 결과에서부터 다르게(2026-10-30). getExamSite 는 쪽 본문도 읽지만 Next 가 같은 요청 안에서 fetch 를 겹치지는
+  // 않으니 표 두 개를 한 번 더 읽는다(종목 쪽은 하루 캐시라 부담이 작다).
+  const [applicants, site] = await Promise.all([
+    licenseApplicants(l.code).catch(() => null),
+    getExamSite(l.code).catch(() => ({ sched: [], stats: [] })),
+  ]);
+  const next = upcomingEvents(site.sched)[0] ?? null;
+  const diff = difficulty(site.stats);
+  const nextText = next ? `${next.stageName} ${next.examStart.slice(0, 10).replaceAll("-", ".")}` : null;
+  const rate = diff ? diff.rate[diff.by] : null;
+  const bits = [
+    nextText ? `다음 시험 ${nextText}` : null,
+    rate !== null && diff ? `${diff.by} 합격률 ${rate}%` : null,
+    diff?.applicantsPerYear ? `한 해 ${diff.applicantsPerYear.toLocaleString("ko-KR")}명 접수` : null,
+  ].filter(Boolean) as string[];
+  const title = bits.length
+    ? `${l.name} 자격증 — ${bits.slice(0, 2).join(" · ")} · 응시 자격·지원 제도`
+    : `${l.name} 자격증 — 응시 자격, 시험 일정, 취득 지원 제도`;
+  const description = bits.length
+    ? `${l.name}(${l.series}, ${l.field}): ${bits.join(", ")}${diff ? `, 난이도 ${diff.level}` : ""}. 응시 자격과 학원비·응시료를 지원하는 정부 제도, 이 자격으로 지원할 수 있는 채용까지 큐넷 통계로 정리했습니다.`
+    : licenseDesc(l);
   const thin = applicants !== null && !licenseIndexable(l, all, applicants);
   return withOg({
     title, description,

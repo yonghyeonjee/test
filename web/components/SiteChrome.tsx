@@ -171,21 +171,14 @@ export function SiteFooter() {
           화면의 조건은 공고 원문에서 자동으로 추려낸 것이라 실제와 다를 수 있습니다. 신청 자격의 최종
           확인과 접수는 원문 또는 관할 주민센터를 통해 하시기 바랍니다. 정부 공식 서비스가 아닙니다.
         </p>
-        {/* 자료 출처: 넓은 화면은 한 줄로 늘 보이고, 휴대폰은 접어 둔다. */}
-        <p className="mt-3 hidden flex-wrap items-center gap-x-3 text-[12px] text-faint md:flex">
+        {/* 자료 출처. 한 번만 그린다 — 전에는 넓은 화면용·휴대폰용을 둘 다 실어 같은 바깥 링크 10개가 모든 쪽에
+            두 번씩 들어갔다(2026-10-30). 공공 원천 사이트라 follow 그대로. */}
+        <p className="mt-3 flex flex-wrap items-center gap-x-3 text-[12px] text-faint">
           <span className="font-bold text-muted">자료 출처</span>
           {SOURCES.map(([name, href]) => (
             <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1.5 hover:text-ink">{name}</a>
           ))}
         </p>
-        <details className="mt-3 text-[12px] text-faint md:hidden">
-          <summary className="cursor-pointer py-1 font-bold text-muted">자료 출처</summary>
-          <p className="flex flex-wrap gap-x-3">
-            {SOURCES.map(([name, href]) => (
-              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="inline-block py-1.5 hover:text-ink">{name}</a>
-            ))}
-          </p>
-        </details>
         <p className="mt-3 text-[12px] text-faint">© K나라지원</p>
       </div>
     </footer>

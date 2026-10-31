@@ -30,18 +30,20 @@ export default function PromoBanner({
       <p className="mb-3 mt-1 text-[13px] text-muted sm:text-sm">
         {SITE_NAME}과 같이 운영하는 자료입니다. 모두 무료이고 회원가입이 없습니다.
       </p>
-      {/* 휴대폰: 한 상자 안의 짧은 줄 셋. 큰 카드 셋이 화면 하나 반을 먹었다. */}
-      <ul className="card divide-y divide-line sm:hidden">
+      {/* 목록은 한 번만 그린다. 전에는 휴대폰용·넓은 화면용을 둘 다 HTML 에 실어 같은 바깥 링크가 모든 쪽에
+          두 번씩 들어갔다(2026-10-30 점검). 같이 운영하는 사이트로 가는 홍보 링크라 nofollow 를 단다 —
+          사이트 전체에 깔린 바깥 링크로 평가를 넘기지 않는다. */}
+      <ul className="card divide-y divide-line sm:grid sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {links.map((l) => (
           <li key={l.slug}>
-            <a href={withUtm(l.href, l.slug, placement)} target="_blank" rel="noopener noreferrer"
-               className="flex items-center gap-2.5 px-4 py-3">
+            <a href={withUtm(l.href, l.slug, placement)} target="_blank" rel="nofollow noopener noreferrer"
+               className="flex items-center gap-2.5 px-4 py-3 sm:block sm:p-5">
               <span className="badge badge-quiet shrink-0">{l.tag}</span>
-              <span className="min-w-0 flex-1">
-                <b className="block truncate text-[14px]">{l.title}</b>
-                <span className="block truncate text-[12px] text-muted">{l.desc}</span>
+              <span className="min-w-0 flex-1 sm:mt-2.5 sm:block">
+                <b className="block truncate text-[14px] sm:text-[15px]">{l.title}</b>
+                <span className="block truncate text-[12px] text-muted sm:mt-1 sm:whitespace-normal sm:text-sm sm:leading-relaxed">{l.desc}</span>
               </span>
-              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-faint" fill="none" stroke="currentColor"
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0 text-faint sm:hidden" fill="none" stroke="currentColor"
                    strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M7 17L17 7M9 7h8v8" />
               </svg>
@@ -49,37 +51,6 @@ export default function PromoBanner({
           </li>
         ))}
       </ul>
-      <div className="hidden gap-3 sm:grid sm:grid-cols-3">
-        {links.map((l) => (
-          <a
-            key={l.slug}
-            href={withUtm(l.href, l.slug, placement)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="card card-link block p-5"
-          >
-            <span className="badge badge-quiet">{l.tag}</span>
-            <b className="mt-2.5 flex items-center gap-1 text-[15px]">
-              {l.title}
-              <svg
-                viewBox="0 0 24 24"
-                className="h-3.5 w-3.5 shrink-0 text-faint"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M7 17L17 7M9 7h8v8" />
-              </svg>
-            </b>
-            <span className="mt-1 block text-sm leading-relaxed text-muted">
-              {l.desc}
-            </span>
-          </a>
-        ))}
-      </div>
     </section>
   );
 }

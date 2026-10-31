@@ -73,6 +73,8 @@ const SITE_JSONLD = {
       name: SITE_NAME,
       url: SITE_URL,
       logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
+      // 같은 운영자가 쓰는 블로그. 사이트 밖에서도 같은 이름으로 활동한다는 표시(2026-10-30).
+      sameAs: ["https://abcfact.tistory.com"],
     },
   ],
 };
