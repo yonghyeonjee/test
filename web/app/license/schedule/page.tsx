@@ -12,7 +12,7 @@ import RelatedLinks from "@/components/RelatedLinks";
 import CalendarAdd from "@/components/CalendarAdd";
 import { roundEvents, upcomingRoundEvents } from "@/lib/calEvents";
 import { getLicenses, type License } from "@/lib/qnet";
-import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, GRADE_SLUG, gradeOfSeries, splitRounds, windowState, type ExamRound } from "@/lib/qnetExam";
+import { EXAM_GRADES, applyWindows, daysUntil, getExamRounds, GRADE_SLUG, gradeOfSeries, splitRounds, upcoming, windowState, type ExamRound } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { brandKeys, withOg } from "@/lib/seo";
@@ -23,13 +23,20 @@ const DESC =
   "기술사·기능장·기사·산업기사·기능사 시험의 원서접수 기간과 시험일, 합격자 발표일을 " +
   "마감이 가까운 순으로 정리했습니다. 접수는 정해진 기간에만 열립니다.";
 
-export const metadata: Metadata = withOg({
-  title: "국가기술자격 시험 일정 — 원서접수 마감일 한눈에",
+export async function generateMetadata(): Promise<Metadata> {
+  // 지금 접수 중인 창 수를 제목에 싣는다. 0이면 숫자를 빼서 "0건" 이 검색 결과에 박히지 않게.
+  const open = await getExamRounds().then((r) => upcoming(r).filter((u) => u.state === "open").length).catch(() => 0);
+  const title = open > 0
+    ? `국가기술자격 시험 일정 — 지금 원서접수 중 ${open}건, 마감일 한눈에`
+    : "국가기술자격 시험 일정 — 원서접수 마감일 한눈에";
+  return withOg({
+    title,
   description: DESC,
   keywords: [
       ...brandKeys("시험 일정", "자격증 일정"),"국가기술자격 시험일정", "기사 원서접수", "기능사 시험일정", "큐넷 접수기간", "자격증 시험일"],
   alternates: { canonical: "/license/schedule" },
-});
+  });
+}
 
 const dot = (v: string | null) => (v ? v.replaceAll("-", ".") : "—");
 
