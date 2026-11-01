@@ -172,7 +172,9 @@ def targets(sb, days: int, limit: int, only_id: str | None, closed: bool = False
     ids = [r["source_id"] for r in rows]
     for i in range(0, len(ids), 200):  # in_ 은 주소 길이 한도가 있어 200개씩
         done |= {d["source_id"] for d in (sb.table("job_summaries").select("source_id").in_("source_id", ids[i:i + 200]).execute().data or [])}
-    return [r for r in rows if r["source_id"] not in done][:limit]
+    todo = [r for r in rows if r["source_id"] not in done]
+    print(f"읽은 공고 {len(ids)}건(첨부 있음) · 요약 없음 {len(todo)}건")
+    return todo[:limit]
 
 
 def main():
