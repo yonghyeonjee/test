@@ -664,10 +664,11 @@ def text_len(content: str) -> int:
 
 
 def original_published(t: "Tistory", post_id: str) -> int:
-    """그 글이 처음 발행된 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않는다. 모르면 1(지금)."""
+    """공개된 글이 처음 발행된 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않는다.
+    비공개 글(다시 공개하는 글)이거나 모르면 1(지금)."""
     try:
         for it in t.recent_posts() + t.recent_posts(2) + t.recent_posts(3):
-            if it["id"] == str(post_id) and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
+            if it["id"] == str(post_id) and it.get("visibility", "").upper() == "PUBLIC" and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
                 kst = dt.datetime.strptime(it["date"][:16], "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=9)))
                 return int(kst.timestamp())
     except Exception:  # noqa: BLE001
@@ -991,7 +992,7 @@ def main() -> int:
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
                                      slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
                                      or (current_slogan(t, a.update) if a.update else ""),
-                                     published=at or (original_published(t, a.update) if a.redigest else 1))   # 예약 시각, 다시 쓰기는 발행일을 그대로
+                                     published=at or (original_published(t, a.update) if a.update else 1))   # 예약 시각, 공개 글 고쳐 쓰기는 발행일을 그대로
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
             if sb is not None:
                 try:
