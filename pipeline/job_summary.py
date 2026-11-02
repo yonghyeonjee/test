@@ -140,19 +140,31 @@ def summarize(client, row: dict) -> tuple[dict, list[str], int]:
 
 
 def targets(sb, days: int, limit: int, only_id: str | None, closed: bool = False) -> list[dict]:
-    q = sb.table("job_posts").select("source_id,title,org,reg_date,end_date,raw").eq("source", "gojobs")
+    def base():
+        return sb.table("job_posts").select("source_id,title,org,reg_date,end_date,raw").eq("source", "gojobs")
+
     if only_id:
-        q = q.eq("source_id", only_id)
+        rows = base().eq("source_id", only_id).execute().data or []
     else:
         today = dt.date.today()
-        # 요약 유무는 다른 표에 있어 DB 에서 걸러 올 수 없다. 기간 안의 공고를 다 읽고 여기서 거른다.
-        # 2026-10-09 limit*2 만 읽어 오다가, 앞쪽이 전부 요약된 뒤 뒤쪽 20건이 영영 안 잡혔다.
-        q = q.gte("reg_date", (today - dt.timedelta(days=days)).isoformat())
-        # --closed: 마감한 공고까지. 2026-10-29 부터 지난 공고도 색인하므로, 요약이 시작된 10/9 전에 마감한 공고를 채운다.
-        if not closed:
-            q = q.gte("end_date", today.isoformat())
-        q = q.order("reg_date", desc=True).limit(5000 if closed else 3000)
-    rows = q.execute().data or []
+
+        def query():
+            # 요약 유무는 다른 표에 있어 DB 에서 걸러 올 수 없다. 기간 안의 공고를 다 읽고 여기서 거른다.
+            # 2026-10-09 limit*2 만 읽어 오다가, 앞쪽이 전부 요약된 뒤 뒤쪽 20건이 영영 안 잡혔다.
+            q = base().gte("reg_date", (today - dt.timedelta(days=days)).isoformat())
+            # --closed: 마감한 공고까지. 2026-10-29 부터 지난 공고도 색인하므로, 요약이 시작된 10/9 전에 마감한 공고를 채운다.
+            if not closed:
+                q = q.gte("end_date", today.isoformat())
+            return q.order("reg_date", desc=True).order("source_id", desc=True)
+
+        # 2026-11-02 Supabase(PostgREST) 는 한 번에 1,000줄까지만 준다. limit(5000) 을 줘도 1,000줄에서 끊겨
+        # 10/20 전 공고 538건이 영영 대상에 안 들어왔다. 1,000줄씩 나눠 끝까지 읽는다(120일이면 1만 건 안팎).
+        cap, page, rows = (15000 if closed else 3000), 1000, []
+        while len(rows) < cap:
+            chunk = query().range(len(rows), len(rows) + page - 1).execute().data or []
+            rows += chunk
+            if len(chunk) < page:
+                break
     rows = [r for r in rows if pick_files(((r.get("raw") or {}).get("gojobs") or {}).get("files") or [])]
     if only_id:
         return rows
@@ -160,7 +172,9 @@ def targets(sb, days: int, limit: int, only_id: str | None, closed: bool = False
     ids = [r["source_id"] for r in rows]
     for i in range(0, len(ids), 200):  # in_ 은 주소 길이 한도가 있어 200개씩
         done |= {d["source_id"] for d in (sb.table("job_summaries").select("source_id").in_("source_id", ids[i:i + 200]).execute().data or [])}
-    return [r for r in rows if r["source_id"] not in done][:limit]
+    todo = [r for r in rows if r["source_id"] not in done]
+    print(f"읽은 공고 {len(ids)}건(첨부 있음) · 요약 없음 {len(todo)}건")
+    return todo[:limit]
 
 
 def main():
