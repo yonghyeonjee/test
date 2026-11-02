@@ -21,6 +21,10 @@ on:
         description: "DB 에 쓰지 않고 결과만"
         default: false
         type: boolean
+      closed:
+        description: "마감한 공고도(지난 공고 요약 채우기)"
+        default: false
+        type: boolean
   schedule:
     - cron: "40 1 * * *"    # UTC 01:40 = KST 10:40
 
@@ -48,8 +52,10 @@ jobs:
           LIMIT: ${{ inputs.limit || '300' }}
           ID: ${{ inputs.id }}
           DRY: ${{ inputs.dry }}
+          CLOSED: ${{ inputs.closed }}
         run: |
           args="--days $DAYS --limit $LIMIT"
           [ -n "$ID" ] && args="$args --id $ID"
           [ "$DRY" = "true" ] && args="$args --dry"
+          [ "$CLOSED" = "true" ] && args="$args --closed"
           python -u pipeline/job_summary.py $args

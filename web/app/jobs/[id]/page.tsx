@@ -24,6 +24,8 @@ import { findPublicOrg } from "@/lib/govData";
 import { getGuideByOrg, guidePath } from "@/lib/guides";
 import { getJobSummary, getJobSummaryStrict } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
+import { factsLine, getJobFacts } from "@/lib/jobFacts";
+import JobFactsBox from "@/components/JobFactsBox";
 import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
 import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { employmentFromTitle, jobLocation, salaryFromPay } from "@/lib/jobSchema";
@@ -43,13 +45,6 @@ export function generateStaticParams() {
 }
 
 type P = { params: { id: string } };
-
-/** n일 전 날짜(YYYY-MM-DD). */
-function ymdAgo(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
 
 /** "대법원 수원지방법원 안산지원" → "수원지방법원 안산지원". 상위 기관은 뺀다. */
 function orgShort(org: string | null) {
@@ -91,35 +86,25 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description: "이 공고는 마감되어 목록에서 내려갔거나 주소가 바뀌었습니다. 지금 접수 중인 공공기관 채용 공고를 대신 보여 드립니다.",
     robots: { index: false, follow: true },
   });
-  // 2008년치까지 받아 오면 공고가 수십만 건이 된다. 오래전에 끝난 공고를
-  // 전부 색인에 밀어 넣으면 검색엔진이 사이트 전체를 얕게 본다. 자료로는
-  // 남겨 두되(들어오면 보인다), 1년 넘게 지난 것은 색인하지 않는다.
-  const stale = Boolean(job.end && job.end < ymdAgo(365));
   const role = detectRole(job.title, job.org);
   const rawDetail = detailOf(job.title);
   const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
   const stage = stageOf(job.title);
   // 요약은 엄격한 판으로 읽는다. 못 읽었으면(DB 오류) 요약이 있는 것으로 쳐서 색인을 남긴다 — 잠깐의 오류로
   // noindex 가 사흘 캐시에 남으면 안 된다(2026-10-17).
-  const [attach, sumRead] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const)]);
+  const [attach, sumRead, facts] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const), getJobFacts(job)]);
   const sum = sumRead === "error" ? null : sumRead;
-  const hasSummary = sumRead === "error" || sumRead !== null; // 오류도 "있음"으로 친다(실패 시 색인 쪽으로)
-  // 2026-10-17 색인 규칙. 서치 콘솔에서 사이트 거의 전체가 '크롤링됨 - 현재 색인이 생성되지 않음'으로 빠졌다 —
-  // 같은 틀에 내용이 얇은 공고 쪽 3만여 건이 사이트 평가를 끌어내린 것으로 본다. 아래 중 하나면 noindex,follow
-  // (쪽은 그대로 보이고 링크도 따라간다. robots.txt 로 막지 않는다).
-  //  - 잡알리오 공고: 첨부도 요약도 없이 목록 몇 줄이 전부다.
-  //  - 합격자 발표·면접 안내: 지원하는 공고가 아니다. 임용시험 시행계획 공고는 대개 그 자체가 접수 공고라 색인한다.
-  //  - 마감됐고 공고 요약도 없는 것: 남은 것이 날짜뿐이다.
-  //  - 1년 넘게 지난 것(예전 규칙).
-  // 접수 중인 나라일터 모집 공고는 요약이 없어도 색인한다 — 요약은 하루 안에 붙는데 noindex 는 사흘 캐시에 남는다.
-  // 잡알리오 공고는 알리오 채용공시 API 로 칸별 내용(자격·우대·전형)이 붙은 것만 색인한다(pipeline/alio_recruit.py,
-  // 2026-10-17). 나라일터와 겹치는 공고에는 요약을 쓰지 않으니 그대로 빠진다.
-  //  - 마감한 지 90일 넘은 것(2026-10-21): 요약이 있어도 지원할 수 없는 공고다. 10/11 뒤 사이트 거의 전체가 색인에서
-  //    빠져(크롤링됨 - 색인 안 됨) 색인 요청하는 쪽을 더 줄인다. 기관 쪽(/jobs/org)의 이력에는 그대로 남는다.
-  //  - 요약 없는 공고 전부(2026-10-26): 접수 중인 나라일터 공고도 요약이 없으면 제목·날짜·첨부 이름뿐이라 얇다. 유효성 검사에서
-  //    다시 긁힌 쪽이 모두 실패해 색인 허용 쪽을 고유한 내용이 있는 것으로 좁힌다. 요약은 보통 하루 안에 붙고, 그때 다시 그린다.
-  const noindex = stale || !hasSummary || stage === "final" || stage === "interview"
-    || Boolean(job.status === "closed" && job.end && job.end < ymdAgo(90));
+  // 2026-10-29 색인 규칙(사용자 결정): 지난 공고도 색인한다. 마감일·요약 유무로 noindex 하지 않는다.
+  // 10/17~10/26 에 넣었던 "1년 넘은 것·마감 90일 넘은 것·요약 없는 것" noindex 를 걷었다. 지난 공고 쪽에는
+  // 기관 이력·다음 채용 시기 같은 이 사이트만의 내용을 붙여 얇지 않게 한다.
+  // 합격자 발표·면접 안내는 noindex,follow — 지원하는 공고가 아니고 같은 기관 모집 공고와 겹친다.
+  // 2026-10-30 중간안(사용자 결정): 지난 공고 가운데 이 사이트만의 내용이 하나도 없는 것 — 공고 요약도 없고, 기관 공고가
+  // 5건 미만이라 "이 공고를 숫자로" 상자도 비는 것 — 만 noindex,follow. 구글 쪽 설명으로는 같은 틀의 복사본 묶음에서
+  // 빠져나오려면 쪽 내용이 크게 달라야 하는데, 그런 쪽은 제목·날짜뿐이라 다를 수가 없다. 요약을 못 읽었으면(DB 오류)
+  // 요약이 있는 것으로 쳐서 색인을 남긴다(sumRead === "error").
+  const hasSummary = sumRead === "error" || sumRead !== null;
+  const bare = job.status === "closed" && !hasSummary && facts.orgTotal < 5;
+  const noindex = stage === "final" || stage === "interview" || bare;
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
@@ -129,7 +114,13 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     ...(noindex ? { robots: { index: false, follow: true } } : {}),
     title: seoJobTitle(job, role, detail, stage),
     // 설명문은 공고 이름으로 시작한다 — 이름 그대로 치는 검색에도 걸리게.
-    description: `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${jobSummary(job)}${fileNote}`,
+    // 설명문은 공고 이름 → 요약 한 줄 → 이 사이트만 센 숫자(기관 최근 1년 공고 수·순위, 접수 기간 비교, 몰리는 달) 순.
+    // 같은 공고를 실은 다른 사이트와 설명문부터 달라야 한다(2026-10-30). 첨부 이름은 자리가 남을 때만.
+    description: (() => {
+      const uniq = factsLine(job, facts);
+      const base = `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${uniq ? `${uniq} ` : ""}${jobSummary(job)}`;
+      return base.length < 150 ? `${base}${fileNote}` : base;
+    })(),
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
       role?.name, role && `${role.name} 채용`, detail && `${detail} 채용`,
@@ -234,13 +225,14 @@ export default async function JobDetail({ params }: P) {
     if (src === "worldjob") redirect("/jobs/overseas");
     notFound();
   }
-  const [related, stat, attach, guide, sum, porg] = await Promise.all([
+  const [related, stat, attach, guide, sum, porg, facts] = await Promise.all([
     getRelatedJobs(job),
     job.org ? getOrgStat(job.org) : Promise.resolve(null),
     getJobAttach(job.id),
     getGuideByOrg(job.org),
     getJobSummary(job.id),
     findPublicOrg(job.org),
+    getJobFacts(job),
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
@@ -256,7 +248,7 @@ export default async function JobDetail({ params }: P) {
     path: `/jobs/${encodeURIComponent(job.id)}`,
     name: job.title,
     description: jobSummary(job),
-    dateModified: job.reg,
+    dateModified: job.checked ?? job.reg,
     // 화면 위 길잡이 그대로: 채용 · {지역}
     crumbs: [
       { name: "채용", path: "/jobs" },
@@ -314,11 +306,17 @@ export default async function JobDetail({ params }: P) {
         <Row k="모집 인원" v={job.headcount ? `${job.headcount}명` : null} />
         <Row k="접수 기간" v={job.start || job.end ? <><When iso={job.start} /> ~ <When iso={job.end} /></> : null} />
         <Row k="등록일" v={job.reg ? <When iso={job.reg} /> : null} />
+        {/* 원천에서 마지막으로 확인한 날. "언제 자료인지"가 보이게(2026-10-30). */}
+        <Row k="자료 확인" v={job.checked ? <><When iso={job.checked} /> <span className="text-muted">{sourceName(job.id)}에서 확인</span></> : null} />
       </dl>
+
+      {/* 이 사이트만 센 숫자. 원문 복사본과 다른 점이 HTML 앞쪽에 오게 기본 정보 바로 아래(2026-10-30). */}
+      <JobFactsBox job={job} f={facts} />
 
       {/* 접수 마감을 캘린더에, 기관 자리는 지도에. 합격자 발표·면접 공고에는 마감이 없다. */}
       {(() => {
-        const events = stage === "final" || stage === "interview" ? [] : jobEvents(job);
+        // 마감한 공고는 캘린더에 담을 날이 없다(2026-10-29).
+        const events = stage === "final" || stage === "interview" || job.status === "closed" ? [] : jobEvents(job);
         const place = locateJob(job);
         if (!events.length && !place) return null;
         return (
@@ -339,6 +337,28 @@ export default async function JobDetail({ params }: P) {
           </section>
         );
       })()}
+
+      {/* 마감한 모집 공고(2026-10-29 부터 지난 공고도 색인한다). 지난 공고로 들어온 사람이 찾는 것은
+          "다음은 언제, 지금 열린 것은 무엇"이다 — 이 기관의 채용 시기와 지금 접수 중인 공고로 잇는다. */}
+      {job.status === "closed" && stage === "open" && (
+        <section className="mt-5 rounded-card border-l-[3px] border-muted bg-surface2/60 px-4 py-3" aria-label="마감 안내">
+          <b className="block text-[14px] font-bold">
+            {job.end ? `${dot(job.end)}에 접수가 끝난 공고입니다` : "접수가 끝난 공고입니다"}
+          </b>
+          <p className="mt-1 text-[13.5px] leading-relaxed text-ink2">
+            {facts.peak
+              ? <>{orgShort(job.org)} 공고는 주로 <strong>{facts.peak.label}</strong>에 올라옵니다({facts.peak.share}%). </>
+              : facts.orgTotal >= 5 ? <>{orgShort(job.org)} 공고는 특정 달에 몰리지 않고 연중 올라옵니다. </> : null}
+            {facts.orgOpen > 0
+              ? <>지금 접수 중인 공고가 <strong className="num">{facts.orgOpen}건</strong> 있습니다.</>
+              : stat?.lastReg ? <>가장 최근 공고는 {dot(stat.lastReg)}에 올라왔습니다.</> : <>같은 자리를 다시 뽑는 일이 많으니 기관 이력과 지역의 접수 중 공고를 함께 보세요.</>}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {job.org && <Link href={`/jobs/org/${encodeURIComponent(job.org)}`} className="chip">{orgShort(job.org)} 채용 이력·접수 중 공고</Link>}
+            {job.region && <Link href={`/jobs/region/${encodeURIComponent(job.region)}`} className="chip">{job.region} 접수 중 공고</Link>}
+          </div>
+        </section>
+      )}
 
       {/* 모집이 아닌 공고(합격자 발표·면접 안내)는 지원할 수 없다. 제일 먼저 말한다. */}
       {stage !== "open" && (
@@ -567,7 +587,7 @@ export default async function JobDetail({ params }: P) {
         민간 사이트로, 인사혁신처나 각 기관이 운영하는 공식 사이트가 아닙니다.
       </p>
 
-      <Faq items={jobFaq(job, role, sum?.summary)} />
+      <Faq items={jobFaq(job, role, sum?.summary, facts)} />
 
       {related.length > 0 && (
         <section className="mt-14">

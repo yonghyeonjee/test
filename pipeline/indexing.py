@@ -153,6 +153,23 @@ def google_publish(new_jobs: list[str], closed: list[str], dry: bool) -> None:
                 break
         time.sleep(0.2)
     print(f"구글 Indexing: 보냄 {ok} · 실패 {fail} (새 공고 {len(new_jobs)}, 어제 마감 {len(closed)})")
+    # 2026-10-30: publish 가 200 이어도 구글이 알림을 받아 둔 것은 아니다. 2026년 들어 많은 채용 사이트가 publish 200 을 받고도
+    # getMetadata 가 404 였다 — 프로젝트가 승인되지 않아 알림이 어디에도 남지 않는 상태. 보낸 첫 주소의 metadata 를 읽어
+    # 실제로 저장됐는지(latestUpdate 의 시각) 매일 기록에 남긴다. 404 면 매일 190건이 헛돈다는 뜻이다.
+    if plan and not dry:
+        url = plan[0][0]
+        try:
+            m = requests.get("https://indexing.googleapis.com/v3/urlNotifications/metadata",
+                             params={"url": url}, headers={"Authorization": f"Bearer {token}"}, timeout=30)
+            if m.status_code == 200:
+                lu = (m.json().get("latestUpdate") or {})
+                print(f"구글 Indexing 확인(getMetadata): 저장됨 · {lu.get('type')} {lu.get('notifyTime')} · {url}")
+            elif m.status_code == 404:
+                print(f"::warning::구글 Indexing getMetadata 404 — publish 는 200 이지만 구글이 알림을 저장하지 않는다(프로젝트 미승인 가능성). {url}")
+            else:
+                print(f"구글 Indexing getMetadata {m.status_code}: {m.text[:160].strip()}", file=sys.stderr)
+        except Exception as e:  # noqa: BLE001
+            print(f"구글 Indexing getMetadata 실패 {type(e).__name__}: {str(e)[:120]}", file=sys.stderr)
 
 
 def main():

@@ -30,8 +30,14 @@ const DESC =
   "한국산업인력공단이 시행하는 국가기술자격 600여 종목을 이름으로 찾고, 응시 자격과 다가오는 " +
   "원서접수 일정을 확인하세요. 자격증 응시료·학원비를 지원하는 정부 제도도 함께 안내합니다.";
 
-export const metadata: Metadata = withOg({
-  title: "국가자격증 찾기 — 종목별 응시 자격·시험 일정·지원 제도",
+export async function generateMetadata(): Promise<Metadata> {
+  // 종목 수를 제목에 싣는다. 못 읽으면 숫자 없이.
+  const n = await getLicenses().then((b) => b.all.length).catch(() => 0);
+  const title = n > 0
+    ? `국가자격증 ${n}종 찾기 — 종목별 응시 자격·시험 일정·지원 제도`
+    : "국가자격증 찾기 — 종목별 응시 자격·시험 일정·지원 제도";
+  return withOg({
+    title,
   description: DESC,
   keywords: [
       ...brandKeys("자격증", "국가자격"),
@@ -45,7 +51,8 @@ export const metadata: Metadata = withOg({
     "자격증 응시료 지원",
   ],
   alternates: { canonical: "/license" },
-});
+  });
+}
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v);

@@ -25,16 +25,45 @@ export const revalidate = 10800;
 
 type P = { params: { seg: string[] } };
 
-export function generateMetadata({ params }: P): Metadata {
+/**
+ * 지역 목록의 "지금 숫자". 제목·설명문·머리글이 같이 쓴다 — 같은 지역 목록을 둔 다른 사이트와 제목부터 다르고,
+ * 날마다 바뀌어 다시 긁을 이유가 된다(2026-10-30). getJobsByRegion 은 cache() 라 쪽 본문과 한 번만 읽는다.
+ */
+async function regionFacts(sido: string) {
+  const board = await getJobsByRegion(sido);
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() + 9 * 3600e3 - 7 * 86400e3).toISOString().slice(0, 10);
+  const open = board.jobs.filter((j) => j.status !== "closed");
+  const soon = open.filter((j) => j.end && j.end >= today && j.end <= new Date(Date.parse(today) + 7 * 86400e3).toISOString().slice(0, 10)).length;
+  const fresh = board.jobs.filter((j) => j.reg && j.reg >= weekAgo).length;
+  const byOrg = new Map<string, number>();
+  for (const j of open) if (j.org) byOrg.set(j.org, (byOrg.get(j.org) ?? 0) + 1);
+  const topOrgs = [...byOrg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const byHire = new Map<string, number>();
+  for (const j of open) if (j.hire) byHire.set(j.hire, (byHire.get(j.hire) ?? 0) + 1);
+  const topHire = [...byHire.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+  return { board, openN: open.length, soon, fresh, topOrgs, topHire };
+}
+
+export async function generateMetadata({ params }: P): Promise<Metadata> {
   const r = peekJobRoute(["region"], params.seg);
   const sido = r.region!;
   const extra = jobRouteLabel(r).filter((v) => v !== sido);
   const tail = r.page > 1 ? ` (${r.page}쪽)` : "";
+  const f = normSido(sido) && r.page === 1 && !extra.length ? await regionFacts(sido).catch(() => null) : null;
+  const facts = f && f.openN > 0
+    ? [`접수 중 ${f.openN}건`, f.soon ? `이번 주 마감 ${f.soon}건` : null, f.fresh ? `새 공고 ${f.fresh}건` : null].filter(Boolean).join(" · ")
+    : null;
+  const orgNote = f && f.topOrgs.length ? ` ${f.topOrgs.map(([o, n]) => `${o} ${n}건`).join(", ")} 순으로 많이 뽑고` : "";
+  const hireNote = f?.topHire ? ` ${f.topHire[0]}이 ${f.topHire[1]}건으로 가장 많습니다.` : "";
   return withOg({
-    title: `${sido} 공공기관 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 접수 중인 자리부터"}${tail}`,
-    description:
-      `${sido}에서 뽑는 공공기관·지자체 채용 공고를 모았습니다. 접수 중인 것이 앞에 오고 ` +
-      "마감이 가까운 순서로 정렬합니다. 회원가입 없이 바로 볼 수 있습니다.",
+    title: facts
+      ? `${sido} 공공기관 채용공고 — ${facts}`
+      : `${sido} 공공기관 채용 공고${extra.length ? ` — ${extra.join(" · ")}` : " — 접수 중인 자리부터"}${tail}`,
+    description: facts
+      ? `${sido} 공공기관·지자체 채용 공고 ${facts}.${orgNote}${hireNote} 나라일터·잡알리오 공고를 하루 다섯 번 모아 마감 가까운 순으로 보여 줍니다.`
+      : `${sido}에서 뽑는 공공기관·지자체 채용 공고를 모았습니다. 접수 중인 것이 앞에 오고 ` +
+        "마감이 가까운 순서로 정렬합니다. 회원가입 없이 바로 볼 수 있습니다.",
     keywords: [`${sido} 채용`, `${sido} 공공기관 채용`, `${sido} 공무직`, "지자체 채용공고"],
     alternates: { canonical: jobCanonical(r) },
     robots: jobRobots(r),
@@ -47,8 +76,8 @@ export default async function JobsByRegion({ params }: P) {
   const sido = route.region!;
   // 시·도가 아닌 이름("해외" 등)은 지역 쪽이 없다. 예전에는 두 글자로 전체를 훑어 2.5초가 걸리고 엉뚱한 공고가 나왔다.
   if (!normSido(sido)) notFound();
-  const board = await getJobsByRegion(sido);
-  const openN = board.jobs.filter((j) => j.status !== "closed").length;
+  const f = await regionFacts(sido);
+  const { board, openN } = f;
 
   return (
     <div className="pb-4">
@@ -61,6 +90,17 @@ export default async function JobsByRegion({ params }: P) {
         {board.ok && (
           <p className="num mt-4 text-sm text-muted">
             최근 {board.total.toLocaleString()}건 · 접수 중 {openN.toLocaleString()}건
+            {f.soon > 0 && <> · 이번 주 마감 {f.soon}건</>}
+            {f.fresh > 0 && <> · 7일 안 새 공고 {f.fresh}건</>}
+          </p>
+        )}
+        {/* 이 지역만의 지금 사실. 목록을 그대로 실은 사이트에는 없는 문장이라 쪽 앞머리에 둔다(2026-10-30). */}
+        {board.ok && f.topOrgs.length > 0 && (
+          <p className="mt-2 max-w-[40rem] text-[14px] leading-relaxed text-ink2">
+            지금 {sido}에서 가장 많이 뽑는 곳은 {f.topOrgs.map(([o, n], i) => (
+              <span key={o}>{i > 0 && ", "}<Link href={`/jobs/org/${encodeURIComponent(o)}`} className="font-semibold underline-offset-2 hover:underline">{o}</Link> {n}건</span>
+            ))}입니다.
+            {f.topHire && <> 고용 형태는 {f.topHire[0]}이 {f.topHire[1]}건으로 가장 많습니다.</>}
           </p>
         )}
       </PageBanner>

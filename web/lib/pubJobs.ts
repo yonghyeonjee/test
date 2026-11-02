@@ -62,6 +62,8 @@ export type Job = {
   end: string | null;
   reg: string | null;
   url: string | null;
+  /** 원천(나라일터·잡알리오)에서 마지막으로 확인한 날(YYYY-MM-DD). 상세에서만 채워진다. */
+  checked?: string | null;
   status: ApplyStatus;
 };
 
@@ -74,7 +76,7 @@ export type JobBoard = {
   failed?: boolean;
 };
 
-const ALIAS: Record<keyof Omit<Job, "status">, string[]> = {
+const ALIAS: Record<keyof Omit<Job, "status" | "checked">, string[]> = {
   id: ["idx", "pbancNo", "id", "seq"],
   title: ["title", "pbancNm", "subject", "recrutPbancTtl"],
   org: ["orgName", "instNm", "ognNm", "orgNm", "instName"],
@@ -133,6 +135,8 @@ type Stored = {
   source_id: string; title: string; org: string | null; region: string | null; hire: string | null;
   recruit: string | null; sectors: string | null; headcount: string | null;
   start_date: string | null; end_date: string | null; reg_date: string | null; url: string | null;
+  /** 원천에서 마지막으로 확인한 시각. 상세(getJob)만 읽는다. */
+  fetched_at?: string | null;
 };
 
 /** 저장된 한 줄을 화면이 쓰는 모양으로. */
@@ -141,6 +145,7 @@ function toStoredJob(r: Stored): Job {
     id: r.source_id, title: r.title, org: r.org, region: r.region, hire: r.hire,
     recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
     start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
+    checked: r.fetched_at ? r.fetched_at.slice(0, 10) : null,
     status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
   };
 }
@@ -327,7 +332,7 @@ export const getJob = cache(async (sourceId: string): Promise<Job | null> => {
   // 500(캐시 안 됨), 재생성은 실패로 남아 이전의 멀쩡한 쪽이 계속 나간다.
   const { data, error } = await db
     .from("job_posts")
-    .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+    .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url,fetched_at")
     .in("source", DETAIL_SOURCES)
     .eq("source_id", sourceId)
     .limit(1)
@@ -473,7 +478,7 @@ export async function getJobRegions(): Promise<{ sido: string; n: number }[]> {
  * 기관명에 "인천남동우체국" 처럼 지역이 적혀 있다. 통합 검색·정책지도·목록 거르기(lib/jobFilter)와 같은
  * 기준으로 제목·기관명의 시·도 이름("인천", "인천광역시")도 본다. 지도에서 넘어온 공고가 여기서 사라지던 일.
  */
-export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoard> {
+export const getJobsByRegion = cache(async (sido: string, limit = 200): Promise<JobBoard> => {
   if (!dbConfigured) return { ok: false, reason: "준비 중입니다.", jobs: [], total: 0 };
   // 시·도가 아닌 값("해외" 등)은 두 글자 ILIKE 로 22만 건을 훑는다(2.5초). 묻지 않는다.
   if (!normSido(sido)) return { ok: false, reason: "시·도 이름이 아닙니다.", jobs: [], total: 0 };
@@ -510,7 +515,7 @@ export async function getJobsByRegion(sido: string, limit = 200): Promise<JobBoa
   } catch {
     return { ok: false, reason: "목록을 읽지 못했습니다.", jobs: [], total: 0 };
   }
-}
+});
 
 /**
  * 사이트맵에 올릴 공고. 색인하는 것(app/jobs/[id] 의 robots 규칙)만 올린다.
@@ -600,7 +605,7 @@ export const getAlioCounts = cache(async (): Promise<{ total: number; open: numb
   return { total: all.count ?? 0, open: open.count ?? 0 };
 });
 
-export async function getJobOverview(): Promise<JobOverview | null> {
+export const getJobOverview = cache(async (): Promise<JobOverview | null> => {
   if (!dbConfigured) return null;
   try {
     const { data, error } = await db
@@ -621,7 +626,7 @@ export async function getJobOverview(): Promise<JobOverview | null> {
   } catch {
     return null;
   }
-}
+});
 
 export type OrgStat = {
   org: string;

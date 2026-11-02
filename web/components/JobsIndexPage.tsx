@@ -45,11 +45,21 @@ function jobsIndexDescription(r: JobRoute) {
       "걸러 봅니다. 접수 중인 공고를 마감 임박순으로 보여 드립니다.";
 }
 
-export function jobsIndexMetadata(r: JobRoute): Metadata {
+export async function jobsIndexMetadata(r: JobRoute): Promise<Metadata> {
   const cond = jobRouteLabel(r);
+  // 뿌리 쪽(/jobs)은 제목·설명문에 오늘의 숫자를 넣는다 — 접수 중 공고 수·기관 수·접수 기간 중앙값. 공고 목록을 그대로 둔
+  // 다른 사이트와 검색 결과에서부터 다르고, 날마다 바뀌어 다시 긁을 이유가 된다(2026-10-30). job_overview 는 미리 센 표 한 줄.
+  const root = !cond.length && r.page <= 1 && !r.open;
+  const [ov, alio] = root ? await Promise.all([getJobOverview().catch(() => null), getAlioCounts().catch(() => null)]) : [null, null];
+  const openN = ov ? ov.openN + (alio?.open ?? 0) : 0;
+  const live = root && ov && openN > 0;
   return withOg({
-    title: jobsIndexTitle(r),
-    description: jobsIndexDescription(r),
+    title: live
+      ? `공공기관 채용공고 — 접수 중 ${openN.toLocaleString("ko-KR")}건 · ${ov.orgs.toLocaleString("ko-KR")}개 기관 · 지역·기관별 한눈에`
+      : jobsIndexTitle(r),
+    description: live
+      ? `나라일터·잡알리오 공공기관 채용 공고를 하루 다섯 번 모읍니다. 지금 접수 중 ${openN.toLocaleString("ko-KR")}건, 공고를 낸 기관 ${ov.orgs.toLocaleString("ko-KR")}곳${ov.medDays ? `, 접수 기간 중앙값 ${ov.medDays}일` : ""}. 지역·기관·고용 형태로 거르고, 기관마다 얼마나 자주 뽑는지까지 봅니다.`
+      : jobsIndexDescription(r),
     keywords: [
       ...brandKeys("채용", "공공기관 채용", "채용정보"),
       "취업지원제도", "구직", "공공기관 채용", "공공기관 채용정보",

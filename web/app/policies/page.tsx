@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import { IllusSearch } from "@/components/Illus";
 import Link from "next/link";
@@ -26,7 +27,26 @@ const DESC =
   "전국 지자체와 중앙부처의 정부 지원 정책을 대상별·분야별·지역별로 한 화면에 펼쳤습니다. " +
   "조건을 누르면 해당되는 공고만 바로 모아 보실 수 있습니다.";
 
-export const metadata: Metadata = withOg({
+/**
+ * 제목·설명문에 오늘의 숫자(사업 수, 이번 주 새 사업, 곧 마감)를 넣는다 — 같은 목록을 둔 다른 사이트와 검색 결과에서부터
+ * 다르고, 날마다 바뀌어 다시 긁을 이유가 된다(2026-10-30). load() 는 cache() 라 본문과 한 번만 읽는다. 못 읽으면 고정 글.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const d = await load();
+  const total = d.coverage.welfare + d.coverage.business;
+  const live = total > 0
+    ? [`${total.toLocaleString("ko-KR")}건`, d.fresh.length ? `이번 주 새 사업 ${d.fresh.length}건` : null, d.closing.length ? `곧 마감 ${d.closing.length}건` : null].filter(Boolean).join(" · ")
+    : null;
+  return withOg({
+    ...STATIC_META,
+    ...(live ? {
+      title: `정부지원사업·청년정책 전체 ${live} — 청년지원금, 복지서비스, 기업지원`,
+      description: `전국 지자체와 중앙부처의 지원 정책 ${total.toLocaleString("ko-KR")}건(복지 ${d.coverage.welfare.toLocaleString("ko-KR")} · 기업 ${d.coverage.business.toLocaleString("ko-KR")})을 대상별·분야별·지역별로 한 화면에. ${d.fresh.length ? `이번 주 새로 올라온 사업 ${d.fresh.length}건과 ` : ""}${d.closing.length ? `곧 마감하는 사업 ${d.closing.length}건을 ` : ""}먼저 보여 주고, 조건을 누르면 해당되는 공고만 모아 봅니다.`,
+    } : {}),
+  });
+}
+
+const STATIC_META = {
   title: "청년정책·정부지원사업 전체 — 청년지원금, 복지서비스, 기업지원 목록",
   description: DESC,
   keywords: [
@@ -40,7 +60,7 @@ export const metadata: Metadata = withOg({
     "정부복지 목록",
   ],
   alternates: { canonical: "/policies" },
-});
+};
 
 type Data = {
   coverage: { welfare: number; business: number };
@@ -56,7 +76,7 @@ type Data = {
  * 이 화면 하나 때문에 배포가 죽으면 안 된다. DB 를 못 읽으면 조건 목록만
  * 내보내고, 숫자는 비운 채 다음 revalidate 때 채운다.
  */
-async function load(): Promise<Data> {
+const load = cache(async (): Promise<Data> => {
   try {
     const [coverage, regions, areas, stats, fresh, closing] = await Promise.all([
       getCoverage(), getRegions(), getAreas(), getStats(),
@@ -74,7 +94,7 @@ async function load(): Promise<Data> {
       closing: [],
     };
   }
-}
+});
 
 const dot = (ymd: string | null) => (ymd ? `${ymd.slice(5, 7)}.${ymd.slice(8, 10)}` : "");
 const kstToday = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
