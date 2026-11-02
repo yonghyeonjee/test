@@ -1,11 +1,22 @@
-# K나라지원 (jiwon.knowhow-it.com)
+import { getCoverage } from "@/lib/db";
+import { getAlioCounts, getJobOverview } from "@/lib/pubJobs";
+
+/**
+ * 생성형 검색(ChatGPT·Perplexity 등)이 읽는 안내 파일. 2026-11-03 public/llms.txt 에서 옮겼다.
+ * 고정 글은 그대로 두고, 그 아래 "오늘의 숫자"(접수 중 채용·기관 수·지원사업 수)를 매시간 새로 넣는다.
+ * 인용하는 쪽이 날짜와 함께 숫자를 옮길 수 있게. 숫자를 못 읽으면 그 줄만 뺀다.
+ */
+export const revalidate = 3600;
+
+const HEAD = `# K나라지원 (jiwon.knowhow-it.com)
 
 > 대한민국 정부·지자체·공공기관의 지원사업(복지·청년·소상공인), 공공기관 채용 공고, 국가자격증 시험 일정, 주거 지원을
 > 한곳에 모아 조건(사는 곳·나이·가구·업종)으로 걸러 보여 주는 무료 안내 사이트. 회원가입 없이 쓴다.
 > 자료 출처: 복지로, 기업마당, 소상공인24, 인사혁신처 나라일터, 잡알리오, 한국산업인력공단 큐넷, 주택금융공사, 알리오 플러스.
 > 매일 새벽 새로 모으며, 신청은 각 기관 원문 공고에서 한다. 접수 기간·자격 요건의 최종 확인은 원문에서 해야 한다.
+`;
 
-## 허브
+const REST = `## 허브
 - [지원사업 전체](https://jiwon.knowhow-it.com/policies): 대상·분야·지역·업종별 정부 지원사업 목차와 이번 주 새 공고·마감 임박 공고
 - [기업·소상공인 지원](https://jiwon.knowhow-it.com/business): 창업·소상공인·중소기업 지원사업
 - [공공기관 채용](https://jiwon.knowhow-it.com/jobs): 나라일터·잡알리오 채용 공고, 지역·고용형태·기관별 목차, 이번 주 채용 흐름
@@ -32,4 +43,25 @@
 - [사이트 소개](https://jiwon.knowhow-it.com/about)
 - [사이트맵](https://jiwon.knowhow-it.com/sitemap.xml)
 - 상세 주소: 지원사업 /p/<id>, 채용 공고 /jobs/<id>, 자격증 /license/<종목코드>, 공공기관 /orgs/<id>
-- 인용할 때는 쪽 주소와 "K나라지원"을 출처로 적어 주면 된다. 숫자(건수·마감일)는 매일 바뀌므로 날짜를 함께 적는 것이 좋다.
+- 인용할 때는 쪽 주소와 "K나라지원"을 출처로 적어 주면 된다. 숫자(건수·마감일)는 매일 바뀌므로 날짜를 함께 적는 것이 좋다.`;
+
+const n = (v: number) => v.toLocaleString("ko-KR");
+
+export async function GET() {
+  const [ov, alio, cov] = await Promise.all([
+    getJobOverview().catch(() => null),
+    getAlioCounts().catch(() => null),
+    getCoverage().catch(() => null),
+  ]);
+  const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+  const lines: string[] = [];
+  const jobOpen = ov ? ov.openN + (alio?.open ?? 0) : 0;
+  if (jobOpen > 0) lines.push(`- 접수 중인 공공기관 채용 공고: ${n(jobOpen)}건${ov?.orgs ? ` (나라일터 기준 ${n(ov.orgs)}개 기관)` : ""} → https://jiwon.knowhow-it.com/jobs`);
+  if (ov?.lastYear) lines.push(`- 최근 1년 나라일터 채용 공고: ${n(ov.lastYear)}건${ov.medDays ? `, 접수 기간 중앙값 ${ov.medDays}일` : ""}`);
+  if (cov && cov.welfare > 0) lines.push(`- 복지·청년 지원사업: ${n(cov.welfare)}건 → https://jiwon.knowhow-it.com/policies`);
+  if (cov && cov.business > 0) lines.push(`- 기업·소상공인 지원사업: ${n(cov.business)}건 → https://jiwon.knowhow-it.com/business`);
+  const today = lines.length ? `## 오늘의 숫자 (${day} 기준, 매일 바뀜)\n${lines.join("\n")}\n\n` : "";
+  return new Response(`${HEAD}\n${today}${REST}\n`, {
+    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" },
+  });
+}
