@@ -30,7 +30,7 @@ on:
 jobs:
   report:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40  # sample 은 URL 검사 한 건에 7초 남짓. 7묶음×20쪽이면 17분
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
