@@ -25,10 +25,10 @@ export default function HomeHero({
 }) {
   return (
     <section className="pb-2 pt-7 text-center sm:pt-11">
-      <h1 className="mx-auto max-w-[26ch] text-[1.5rem] font-black leading-[1.28] tracking-[-.03em] text-ink sm:text-[2.125rem] [text-wrap:balance]">
+      <h1 className="mx-auto max-w-[26ch] text-[1.5rem] font-black leading-[1.28] tracking-[-.03em] break-keep text-ink sm:text-[2.125rem] [text-wrap:balance]">
         {h1}
       </h1>
-      <p className="mx-auto mt-3 max-w-[38em] text-[14px] leading-relaxed text-muted sm:text-[15px]">{sub}</p>
+      <p className="mx-auto mt-3 max-w-[38em] break-keep text-[14px] leading-relaxed text-muted sm:text-[15px]">{sub}</p>
       <div className="mx-auto mt-6 max-w-[46rem] sm:mt-7">
         <PortalSearch index={index} hot={hot} scope={scope} size="xl" center autoFocus
                       placeholder={placeholder} placeholderNarrow={placeholderNarrow} />

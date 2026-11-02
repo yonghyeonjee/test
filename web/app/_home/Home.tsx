@@ -367,7 +367,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
   const briefDay = brief ? brief.sub.split(" 공공기관")[0] : null;
   const todayTiles: TodayTile[] = [
     ...(briefNew > 0 && brief
-      ? [{ k: "오늘 새 채용 공고", n: briefNew, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: brief.href },
+      ? [{ k: `${briefDay ?? "오늘"} 새 채용 공고`, n: briefNew, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: brief.href },
          { k: "사흘 안 마감 채용", n: briefDue, tag: "서두르세요", tone: "bg-alertSoft text-alert", href: "/jobs" }]
       : [{ k: "접수 중 채용 공고", n: jobOpen, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: "/jobs" }]),
     { k: `최근 ${settings.newDays}일 새 지원사업`, n: fresh.length, tag: "지원금", tone: "bg-cat-greenSoft text-cat-green", href: "/policies" },
