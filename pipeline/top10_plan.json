@@ -80,23 +80,31 @@
  {
   "date": "2026-11-03",
   "topic": "",
-  "note": "11-01 에 못 낸 10월 모음 글이 나가는 날 — 하루 1편"
+  "note": "11-01 에 못 낸 10월 모음 글 — 11-02 에 티스토리 예약 발행(19:00 KST)으로 걸어 둠"
  },
  {
   "date": "2026-11-04",
-  "topic": "short-window"
+  "topic": "short-window",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-05",
-  "topic": "orgs-intern"
+  "topic": "orgs-intern",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-06",
-  "topic": "welfare-topic"
+  "topic": "welfare-topic",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-07",
-  "topic": "tech"
+  "topic": "tech",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-08",

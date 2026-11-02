@@ -676,9 +676,18 @@ def original_published(t: "Tistory", post_id: str) -> int:
 
 
 def published_on(items: list[dict], day: dt.date) -> int:
-    """글 목록(recent_posts)에서 그날(KST) 공개된 글 수. 목록의 published 는 'YYYY-MM-DD HH:MM'(블로그 시간)."""
+    """글 목록(recent_posts)에서 그날(KST) 공개된(또는 공개 예약된) 글 수. 목록의 published 는 'YYYY-MM-DD HH:MM'(블로그 시간),
+    예약 글은 그 예약 시각이고 visibility 가 RESERVED_PUBLIC 처럼 온다."""
     d = day.isoformat()
-    return sum(1 for it in items if it.get("visibility", "").upper() == "PUBLIC" and str(it.get("date", "")).startswith(d))
+    return sum(1 for it in items if it.get("visibility", "").upper().endswith("PUBLIC") and str(it.get("date", "")).startswith(d))
+
+
+def reserve_epoch(at: str) -> int:
+    """'YYYY-MM-DD HH:MM'(KST) → 예약 발행 시각(유닉스 초). 지난 시각이면 멈춘다."""
+    when = dt.datetime.strptime(at.strip(), "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=9)))
+    if when <= dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=5):
+        sys.exit(f"--at {at}: 이미 지났거나 너무 가깝다 — 예약은 앞으로의 시각(KST)만")
+    return int(when.timestamp())
 
 
 def current_slogan(t: "Tistory", post_id: str) -> str:
@@ -791,6 +800,8 @@ def main() -> int:
     ap.add_argument("--post-json", help="blog_posts 대신 이 JSON 파일의 글 하나를 올린다(티스토리 단독 글, 예: world_speed.py 가 만든 out/post.json)")
     ap.add_argument("--images", help="shots/manifest.json — [{\"file\": 경로, \"caption\": 설명}] 순서대로 본문에 끼운다")
     ap.add_argument("--dry", action="store_true", help="올리지 않고 HTML 만 찍는다")
+    ap.add_argument("--at", default=os.environ.get("TISTORY_AT", ""),
+                    help="예약 발행 시각 'YYYY-MM-DD HH:MM'(KST). 티스토리가 그 시각에 공개한다. 하루 한도는 그날로 센다")
     a = ap.parse_args()
     replace_ids: list[str] = []
     manifest: list[dict] = []
@@ -950,11 +961,13 @@ def main() -> int:
                 a.update = prev          # 같은 글을 두 번 만들지 않는다 — 기존 티스토리 글을 고쳐 쓴다
                 print(f"이미 올린 글(번호 {prev})이 있어 고쳐 쓴다")
         t = Tistory(host, cookie)
+        at = reserve_epoch(a.at) if a.at else 0
+        day = dt.date.fromisoformat(a.at.strip()[:10]) if at else today_kst()
         if not a.update and a.visibility == "public":
-            used = published_on([it for it in t.recent_posts() + t.recent_posts(2) if it["id"] not in replace_ids], today_kst())
+            used = published_on([it for it in t.recent_posts() + t.recent_posts(2) if it["id"] not in replace_ids], day)
             room = max(0, DAILY_MAX - used)
             if room < len(posts):
-                print(f"오늘(KST) 이미 {used}편 공개 — 하루 {DAILY_MAX}편 한도라 {len(posts) - room}편은 내일 이후로 미룬다: "
+                print(f"{day}(KST) 이미 {used}편 공개(예약 포함) — 하루 {DAILY_MAX}편 한도라 {len(posts) - room}편은 내일 이후로 미룬다: "
                       + ", ".join(p["slug"] for p in posts[room:]))
                 posts = posts[:room]
             if not posts:
@@ -978,7 +991,7 @@ def main() -> int:
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
                                      slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
                                      or (current_slogan(t, a.update) if a.update else ""),
-                                     published=original_published(t, a.update) if a.redigest else 1)   # 다시 쓰기는 발행일을 그대로
+                                     published=at or (original_published(t, a.update) if a.redigest else 1))   # 예약 시각, 다시 쓰기는 발행일을 그대로
             num = a.update or numeric_id_by_title(t, p["title"]) or post_id
             if sb is not None:
                 try:
@@ -986,7 +999,7 @@ def main() -> int:
                         record(sb, src, num, url, a.mode, a.visibility)
                 except Exception as e:  # noqa: BLE001 — 단독 글은 blog_posts 에 없어 외래키에 걸릴 수 있다. 올린 건 유효하다.
                     print(f"  (발행 기록을 못 남겼다 — 다시 올릴 땐 --update {num} 을 쓴다: {type(e).__name__}: {str(e)[:120]})")
-            print(f"{'고침' if a.update else '올림'}: {p['slug']} → {url} (번호 {num})")
+            print(f"{'고침' if a.update else '올림'}{f'(예약 {a.at} KST)' if at else ''}: {p['slug']} → {url} (번호 {num})")
             n += 1
         if replace_ids and n:
             for i in replace_ids:                       # 모음 글이 올라간 뒤에만 지운다

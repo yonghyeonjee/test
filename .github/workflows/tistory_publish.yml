@@ -75,6 +75,10 @@ on:
         description: "script 에 넘길 글 slug(ai_series.py 일 때, 예: vibe-coding-top10)"
         required: false
         type: string
+      at:
+        description: "예약 발행 시각 'YYYY-MM-DD HH:MM'(KST). 비우면 바로 공개"
+        required: false
+        type: string
   schedule:
     - cron: "0 3 1 * *"    # 매달 1일 UTC 03:00 = KST 12:00 — 앞 달 글을 모음 글 한 편으로(매일 내지 않는다)
 
@@ -169,6 +173,7 @@ jobs:
           COMPOSER: ${{ inputs.composer }}
           TOP10_SLUG: ${{ steps.top10.outputs.SLUG }}
           SCRIPT: ${{ inputs.script }}
+          TISTORY_AT: ${{ inputs.at }}
         run: |
           if [ -n "$TOP10_SLUG" ]; then SLUG="$TOP10_SLUG"; COMPOSER="top10"; MODE="full"; fi
           if [ -n "$SCRIPT" ]; then SLUG=""; COMPOSER=""; MODE="full"; fi

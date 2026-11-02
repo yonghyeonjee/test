@@ -34,6 +34,10 @@ on:
         description: "여러 주제를 한 실행에서 차례로(쉼표). 밀린 편 따라잡기·고쳐 쓰기용. 같은 달 slug 는 기존 글을 고쳐 쓴다. civil:164 처럼 쓰면 그 번호 글을 고쳐 쓴다. 이게 있으면 topic/date 는 무시"
         required: false
         type: string
+      at:
+        description: "예약 발행 시각 'YYYY-MM-DD HH:MM'(KST). topics 와 함께 쓰면 쉼표 순서대로 그 날짜들(예: 2026-11-04 19:00,2026-11-05 19:00)"
+        required: false
+        type: string
   schedule:
     - cron: "0 4 * * *"    # UTC 04:00 = KST 13:00
 
@@ -80,13 +84,17 @@ jobs:
           TOPICS: ${{ inputs.topics }}
           VISIBILITY: ${{ inputs.visibility || 'public' }}
           DRY: ${{ inputs.dry }}
+          AT: ${{ inputs.at }}
         run: |
           sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패"
           fc-cache -f >/dev/null 2>&1 || true
           [ -f shots/open.png ] || python -u pipeline/shot_pages.py "/jobs/status/open|open|지금 접수 중인 공공기관 채용 공고 (출처: K나라지원)|" || echo "::warning::화면 사진 실패 — 차트만 넣는다"
           cp shots/open.png /tmp/open.png 2>/dev/null || true
+          i=0
           for item in $(echo "$TOPICS" | tr ',' ' '); do
+            i=$((i+1))
             topic="${item%%:*}"; upd=""; [ "$item" != "$topic" ] && upd="${item#*:}"     # civil:164 = 164번 글을 고쳐 쓴다
+            export TISTORY_AT="$(echo "$AT" | awk -F, -v i=$i '{print $i}' | xargs)"                   # topics 와 같은 순서의 예약 시각(없으면 바로)
             echo "::group::$topic${upd:+ → $upd}"
             rm -rf shots; mkdir -p shots; cp /tmp/open.png shots/open.png 2>/dev/null || true
             python -u pipeline/top10.py --topic "$topic" | tee out.txt
@@ -136,6 +144,7 @@ jobs:
           SLUG: ${{ steps.write.outputs.SLUG }}
           VISIBILITY: ${{ inputs.visibility || 'public' }}
           UPDATE: ${{ inputs.update || steps.pick.outputs.update }}
+          TISTORY_AT: ${{ inputs.at }}
         run: |
           [ -n "$TISTORY_COOKIE" ] || { echo "::error::TISTORY_COOKIE 가 없다"; exit 1; }
           args="--slug \"$SLUG\" --mode full --visibility $VISIBILITY --composer top10 --images shots/manifest.json"

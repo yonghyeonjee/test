@@ -137,6 +137,7 @@ ok([p["date"] for p in plan if p["topic"] == ""] == ["2026-10-30", "2026-10-31",
 ok([(p["date"], p["topic"], p.get("update")) for p in plan[4:9]] == [("2026-10-22", "roles", "163"), ("2026-10-23", "civil", "164"), ("2026-10-24", "medical", "165"), ("2026-10-25", "orgs-national", "166"), ("2026-10-26", "regions", "172")], "다시 공개할 5편: 날짜·주제·글 번호")
 ok(all(p["topic"] in t.TOPICS or p["topic"] == "" for p in plan), f"미등록 주제: {[p['topic'] for p in plan if p['topic'] not in t.TOPICS]}")
 ok(plan[0] == {"date": "2026-10-18", "topic": "civil"}, "첫날은 공무 직군")
+ok([p["date"] for p in plan if p.get("reserved")] == ["2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07"] and t.plan_for(dt.date(2026, 11, 4))["topic"] == "" and t.plan_for(dt.date(2026, 11, 8))["topic"], "티스토리에 미리 예약한 날은 그날 실행이 쓰지 않는다")
 ok(t.plan_for(dt.date(2026, 10, 21))["topic"] == "regions" and len({p["topic"] for p in plan if p["topic"]}) == 30, "주제 30개, 10-21 은 regions")
 ok(t.plan_for(dt.date(2026, 10, 27))["topic"] == "license-applicants" and not t.plan_for(dt.date(2026, 10, 27)).get("update"), "새 연재는 10-27 부터 다시")
 # 기획표가 끝난 뒤: 순환. 기획표에 topic "" 인 날(연재 쉼)이 있어도 순환 순서에는 들어가지 않는다

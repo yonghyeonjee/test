@@ -552,6 +552,8 @@ def plan_for(date: dt.date) -> dict | None:
     표에 없는 매월 1일은 쉰다 — 그날은 지난달 모음 글(tistory_publish.yml)이 나가고, 공개는 하루 한 편이다."""
     plan = json.loads(PLAN_FILE.read_text(encoding="utf-8"))
     hit = next((p for p in plan if p["date"] == date.isoformat()), None)
+    if hit and hit.get("reserved"):          # 티스토리에 미리 예약해 둔 날 — 그날 실행은 새로 쓰지 않는다
+        return {**hit, "topic": ""}
     if hit:
         return hit
     order = []
