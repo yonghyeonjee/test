@@ -11,7 +11,6 @@ import ConditionSentence from "@/components/ConditionSentence";
 import StepFinder from "@/components/StepFinder";
 import RecentFinds from "@/components/RecentFinds";
 import HowItWorks from "@/components/HowItWorks";
-import HomeCalendar from "@/components/HomeCalendar";
 import { Reveal } from "@/components/Motion";
 import FeedPanels from "@/components/FeedPanels";
 import ProgramEntry from "@/components/ProgramEntry";
@@ -21,31 +20,26 @@ import { IllusEmpty } from "@/components/Illus";
 import LastConditions from "@/components/LastConditions";
 import RecentStrip from "@/components/RecentStrip";
 import RememberMe from "@/components/RememberMe";
-import GuideBanner from "@/components/GuideBanner";
 import JsonLd from "@/components/JsonLd";
 import KeywordBar from "@/components/KeywordBar";
 import TopicGrid from "@/components/TopicGrid";
 import WideOnly from "@/components/WideOnly";
 import SectionHead from "@/components/SectionHead";
 import AdSlot from "@/components/AdSlot";
-import HotBanner from "@/components/HotBanner";
-import HomeMap from "@/components/HomeMap";
-import HomeTopAd from "@/components/HomeTopAd";
 import PromoBanner from "@/components/PromoBanner";
-import RelatedLinks from "@/components/RelatedLinks";
 import SaveBar from "@/components/SaveBar";
 import SavedItems from "@/components/SavedItems";
 import SavedList from "@/components/SavedList";
-import {
-  AboutBox, DeadlineList, HotRank, MapCard, PortalColumns, PortalTop, ProgramLine,
-} from "@/components/PortalHome";
+import { AboutBox, DeadlineList, HotRank, MapCard, PortalColumns, ProgramLine } from "@/components/PortalHome";
+import HomeHero from "@/components/HomeHero";
+import TodayNumbers, { type TodayTile } from "@/components/TodayNumbers";
+import Ways, { type Way } from "@/components/Ways";
+import { getAlioCounts, getJobOverview } from "@/lib/pubJobs";
 import PortalIcon from "@/components/PortalIcon";
 import SearchBox from "@/components/SearchBox";
-import StatTables from "@/components/StatTables";
 import Tabs from "@/components/Tabs";
 import { promoContextFor } from "@/lib/promo";
 import { SUGGEST_BUSINESS, SUGGEST_WELFARE, cleanQuery } from "@/lib/keywords";
-import { blogIndexRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg } from "@/lib/seo";
 import { SIDO_SHORT } from "@/lib/geo";
@@ -253,10 +247,17 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
     return (
       <>
         {ld && homeLd("/business", BIZ_TITLE, BIZ_DESC, closing, fresh)}
-        <PortalTop
-          index={bundle.sggIndex} hot={hotTerms.business} scope="business" findHref="/business#find"
-          h1="기업·소상공인 지원사업, 내 사업에 맞는 것만 — K나라지원 사업자 검색"
-          tagline={<>중소기업·소상공인 지원사업 <b className="num text-ink">{coverage.business.toLocaleString("ko-KR")}</b>건을 지역·업종·업력으로</>}
+        {/* 첫 화면(/)과 같은 틀(2026-11-02): 약속 한 문장 → 입력 하나 → 신뢰 줄. */}
+        <HomeHero
+          index={bundle.sggIndex} hot={hotTerms.business} scope="business"
+          h1={<>지역과 사업체 형태만 고르면,<br className="hidden sm:block" /> 지금 신청할 수 있는 <em className="not-italic text-brand">기업·소상공인 지원사업</em>이 남습니다</>}
+          sub="중앙부처·지자체·공공기관의 자금·기술·인력·수출·판로 공고를 매일 모아 지역·업종·업력으로 걸러 드립니다."
+          trust={[
+            <>지원사업 <b className="num text-ink2">{coverage.business.toLocaleString("ko-KR")}</b>건</>,
+            <>매일 새벽 갱신</>,
+            <>출처 기업마당 · 소상공인24 · 지자체 공고</>,
+            <>모든 공고에 원문 링크</>,
+          ]}
           placeholder="무엇이 필요하세요 — 수출 바우처, 스마트공장, 소상공인 폐업"
           placeholderNarrow="수출, 스마트공장, 폐업, 특허…"
         />
@@ -348,11 +349,41 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
 
   const { closing, closingFallback, fresh, closingCount } = bundle;
   const areaTotal = areas.reduce((a, x) => a + x.n, 0);
-  const [topicCounts, hot] = await Promise.all([
+  const [topicCounts, hot, jobOv, alio] = await Promise.all([
     countByTopic().catch(() => ({} as Record<string, number>)),
-    // 마감이 걸린 것만 도는 띠. 결과를 보는 중에는 방해가 되어 첫 화면에서만.
+    // 오늘의 채용 브리핑(새 공고·사흘 안 마감 건수)과 마감 임박 목록(오른쪽 기둥). 첫 화면에서만.
     getHotSlides().catch(() => []),
+    // 채용 갈래 칸의 "접수 중 N건 · M개 기관". 미리 센 표 한 줄.
+    getJobOverview().catch(() => null),
+    getAlioCounts().catch(() => null),
   ]);
+  const jobOpen = jobOv ? jobOv.openN + (alio?.open ?? 0) : 0;
+  const brief = hot.find((s) => s.kind === "brief") ?? null;
+  // 브리핑 제목 "오늘 새 공고 117건 · 사흘 안 마감 160건"에서 두 숫자를 읽는다. 없으면 접수 중 공고 수로.
+  const bm = brief?.title.match(/새 공고 ([\d,]+)건.*?마감 ([\d,]+)건/);
+  const briefNew = bm ? Number(bm[1].replace(/,/g, "")) : 0;
+  const briefDue = bm ? Number(bm[2].replace(/,/g, "")) : 0;
+  // 브리핑 밑글 "10월 30일 공공기관 채용 브리핑 · …"에서 날짜만.
+  const briefDay = brief ? brief.sub.split(" 공공기관")[0] : null;
+  const todayTiles: TodayTile[] = [
+    ...(briefNew > 0 && brief
+      ? [{ k: "오늘 새 채용 공고", n: briefNew, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: brief.href },
+         { k: "사흘 안 마감 채용", n: briefDue, tag: "서두르세요", tone: "bg-alertSoft text-alert", href: "/jobs" }]
+      : [{ k: "접수 중 채용 공고", n: jobOpen, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: "/jobs" }]),
+    { k: `최근 ${settings.newDays}일 새 지원사업`, n: fresh.length, tag: "지원금", tone: "bg-cat-greenSoft text-cat-green", href: "/policies" },
+    { k: `${settings.closingDays}일 안 마감 지원사업`, n: closingCount, tag: "마감 임박", tone: "bg-accentSoft text-accent", href: "/calendar" },
+  ];
+  const ways: Way[] = [
+    { href: "/#find", label: "내 조건으로 지원금 찾기", sub: "사는 곳 → 나이 → 상태, 네 번 누르면 끝", icon: "find", tone: "bg-brand text-white", first: true },
+    { href: "/jobs", label: "공공기관 채용",
+      sub: jobOpen > 0 ? `접수 중 ${jobOpen.toLocaleString("ko-KR")}건${jobOv?.orgs ? ` · ${jobOv.orgs.toLocaleString("ko-KR")}개 기관` : ""}` : "나라일터·잡알리오를 하루 다섯 번",
+      icon: "jobs", tone: "bg-cat-blueSoft text-cat-blue" },
+    { href: "/license", label: "자격증 시험", sub: "다음 시험일 · 합격률 · 응시 지원 제도", icon: "license", tone: "bg-cat-orangeSoft text-cat-orange" },
+    { href: "/business", label: "기업·창업 지원",
+      sub: coverage.business > 0 ? `${coverage.business.toLocaleString("ko-KR")}건 · 지역·업종·업력으로` : "지역·업종·업력으로",
+      icon: "biz", tone: "bg-cat-violetSoft text-cat-violet" },
+    { href: "/map", label: "정책지도", sub: "내 주변 지원사업·채용을 지도에서", icon: "map", tone: "bg-cat-greenSoft text-cat-green" },
+  ];
 
   return (
     <>
@@ -360,27 +391,26 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
       {settings.notice && (
         <p className="mt-4 rounded-card bg-brandSoft px-4 py-3 text-sm text-brand">{settings.notice}</p>
       )}
-      {/* 검색 포털의 얼굴: 가운데 큰 검색창 → 많이 찾는 말 → 색 아이콘 바로가기.
-          휴대폰에서는 이것만으로 첫 화면이 찬다. 긴 소개·통계 띠는 넓은 화면의
-          오른쪽 기둥으로 줄여 옮겼다. */}
-      {/* 맨 위 롤링 띠. 넓은 화면은 아래 두 기둥과 같은 폭으로 나눠 오른쪽에 광고 지면(비면 우리 배너). */}
-      {/* 휴대폰용·PC용을 둘 다 HTML 에 싣지 않는다(WideOnly, 2026-10-22). 휴대폰 HTML 에는 휴대폰 것만. */}
-      {/* 띠는 하나만 싣는다. 넓은 화면은 같은 띠 오른쪽에 광고 지면(비면 우리 배너)을 켜진 뒤 붙인다 — 띠 높이가 줄을
-          잡고 있어 늦게 붙어도 아래가 밀리지 않는다. */}
-      <div className="mt-3 grid gap-6 lg:mt-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <HotBanner slides={hot} className="" />
-        <WideOnly><HomeTopAd brief={hot.find((s) => s.kind === "brief") ?? null} /></WideOnly>
-      </div>
-      <PortalTop
+      {/* 2026-11-02 첫 화면 재설계. 약속 한 문장(보이는 H1) → 입력 하나 → 신뢰 줄 → 오늘의 숫자 → 갈래 다섯 칸.
+          회전 띠(HotBanner)·오른쪽 브리핑 카드(HomeTopAd)·지도 미리보기·달력·통계표·안내 글은 첫 화면에서 뺐다.
+          h2 가 열 개를 넘으면 검색엔진이 쪽의 주제를 못 잡고, 접히는 선 위가 움직이는 띠뿐이면 처음 온 사람이
+          여기가 무엇을 하는 곳인지 모른다. 지도는 /map, 통계표·정책 전체는 /policies, 소개는 /about 에 그대로 있다. */}
+      <HomeHero
         index={sggIndex} hot={hotTerms.welfare}
-        h1="K나라지원 — 정부지원금·청년지원금 조회부터 공공기관 채용·자격증까지 한 번에 찾는 검색"
-        tagline={<>정부지원금 · 채용 · 자격증 · 공공기관 사업을 <b className="text-ink">검색 한 번</b>으로</>}
+        h1={<>사는 곳과 나이만 넣으면,<br className="hidden sm:block" /> 지금 받을 수 있는 <em className="not-italic text-brand">지원금·채용·시험</em>이 남습니다</>}
+        sub="전국 지자체·중앙부처·공공기관의 공고를 매일 새벽 모아 조건으로 걸러 드립니다. 회원가입도 주민등록번호도 없습니다."
+        trust={[
+          <>공공데이터 <b className="num text-ink2">{total.toLocaleString("ko-KR")}</b>건{jobOpen > 0 && <> · 채용 <b className="num text-ink2">{jobOpen.toLocaleString("ko-KR")}</b>건 접수 중</>}</>,
+          <>매일 새벽 갱신{briefDay && <> · <b className="text-ink2">{briefDay}</b> 브리핑</>}</>,
+          <>출처 복지로 · 기업마당 · 나라일터 · 알리오 · 큐넷</>,
+          <>모든 공고에 원문 링크</>,
+        ]}
       />
+      <TodayNumbers tiles={todayTiles} className="mt-5 sm:mt-7" note={briefDay ? `${briefDay} 브리핑 기준` : undefined} />
+      <Ways items={ways} className="mt-5 sm:mt-6" />
       <PortalColumns
         main={<>
           <section id="find" className="card scroll-mt-28 p-4 sm:p-5">
-            <Tabs active="welfare" counts={coverage} compact />
-            {/* 큰 단계 찾기. 결과 쪽은 예전 문장(ConditionSentence)으로 고쳐 본다. */}
             <StepFinder regions={regions} />
           </section>
           <RecentFinds />
@@ -393,9 +423,6 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           </div>
           <SavedItems variant="strip" max={8} />
           <RecentStrip />
-          {/* 휴대폰: 정책지도 미리보기는 본문에. 넓은 화면은 오른쪽 기둥 맨 위. */}
-          <HomeMap areas={areas} total={areaTotal} className="lg:hidden" />
-          <HomeCalendar className="lg:hidden" />
           <div className="cv"><FeedPanels panels={[
             { key: "closing", label: "마감 임박",
               sub: closingFallback ? "마감일이 가까운 순" : `${settings.closingDays}일 이내 마감`,
@@ -403,16 +430,11 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
             { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
               content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
           ]} /></div>
-          <AdSlot name="home_mid" />
-          {/* 사이트 소개(HowItWorks)는 휴대폰에서 뺀다 — 검색·바로가기·마감 목록이면 첫 화면은 찬다(2026-10-22). */}
-          <WideOnly min="sm"><Reveal><HowItWorks total={total} closing={closingCount}
-                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} /></Reveal></WideOnly>
-          <Reveal className="cv"><TopicGrid counts={topicCounts} className="card p-4 sm:p-5" /></Reveal>
           <section id="areas" className="card cv scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"
-                         sub="시·도를 고르면 시·군·구 사업까지 함께 나옵니다." more="/policies" />
+                         sub={`시·도를 고르면 시·군·구 사업까지 함께 나옵니다. 전국 ${areaTotal.toLocaleString("ko-KR")}건.`} more="/policies" />
             {/* 휴대폰은 짧은 이름(서울·경기…)으로 네 칸. 긴 이름이 세 줄로 꺾였다. */}
-            <div className="grid grid-cols-4 gap-x-1 gap-y-0.5 sm:gap-x-3">
+            <div className="grid grid-cols-4 gap-x-1 gap-y-0.5 sm:grid-cols-6 sm:gap-x-3">
               {areas.map((a) => (
                 <Link key={a.sido} href={`/area/${encodeURIComponent(a.sido)}`} title={a.sido}
                       className="flex items-baseline justify-between gap-1 rounded-[8px] px-2 py-2 text-[14px]
@@ -425,44 +447,22 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
                 </Link>
               ))}
             </div>
-            <Link href="/map" className="mt-3 flex items-center justify-center gap-1.5 rounded-btn bg-cat-redSoft px-4 py-3
-                                         text-[14px] font-bold text-cat-red transition-colors hover:bg-[#FFE3E3]">
+            <Link href="/map" className="mt-3 flex items-center justify-center gap-1.5 rounded-btn bg-brandSoft px-4 py-3
+                                         text-[14px] font-bold text-brand transition-colors hover:bg-brand hover:text-white">
               <PortalIcon name="map" className="h-[18px] w-[18px]" strokeWidth={2.1} />
               정책지도에서 내 주변 보기
             </Link>
           </section>
-
-          {/* 넓은 화면에서만: 조건별 통계표·정책 전체 입구·안내 글. 휴대폰에서는 검색과
-              바로가기로 충분하고, 긴 덩어리가 아래 탭 막대까지 몇 화면을 밀어냈다. */}
-          <WideOnly><div className="hidden space-y-6 lg:block">
-            <section className="card p-5">
-              <SectionHead title="어디에 해당되시나요"
-                           sub="눌러보면 그 조건에 걸리는 사업만 모아 보여드립니다." more="/policies" />
-              <StatTables areas={areas} age={stats.age}
-                          employment={stats.employment} household={stats.household} />
-            </section>
-            <Link href="/policies" className="card card-link flex items-center justify-between gap-6 p-5">
-              <span className="block">
-                <b className="block text-[16px] font-extrabold">무엇을 찾아야 할지 모르겠다면</b>
-                <span className="mt-1 block text-[13.5px] leading-relaxed text-muted">
-                  대상·분야·지역·업종을 전부 펼쳐 두었습니다. 누르기만 하면 그 조건에 걸리는 공고만 남습니다.
-                </span>
-              </span>
-              <span className="btn btn-primary shrink-0 !py-2.5">정책 전체 보기</span>
-            </Link>
-            <GuideBanner />
-            <RelatedLinks
-              title="처음이시라면 이것부터"
-              items={blogIndexRelated().filter((r) => r.href !== "/")}
-            />
-          </div></WideOnly>
+          <Reveal className="cv"><TopicGrid counts={topicCounts} className="card p-4 sm:p-5" /></Reveal>
+          {/* 사이트 소개(HowItWorks)는 휴대폰에서 뺀다 — 검색·갈래·마감 목록이면 첫 화면은 찬다(2026-10-22). */}
+          <WideOnly min="sm"><Reveal><HowItWorks total={total} closing={closingCount}
+                      areas={regions.reduce((a, r) => a + r.sigungu.length, 0)} /></Reveal></WideOnly>
+          {/* 광고와 운영자 다른 사이트 배너는 맨 아래. 접히는 선 위에는 두지 않는다. */}
+          <AdSlot name="home_mid" />
           <div className="cv"><PromoBanner placement="home" /></div>
         </>}
         aside={<>
-          <WideOnly placeholder={<div className="hidden lg:block lg:h-[560px]" aria-hidden="true" />}>
-            <HomeMap areas={areas} total={areaTotal} className="hidden lg:block" />
-            <HomeCalendar className="hidden lg:block" />
-          </WideOnly>
+          {/* 재방문을 만드는 유일한 장치라 기둥 맨 위. 지도·달력 미리보기는 첫 화면에서 뺐다(가장 무거운 요소였다). */}
           <AlertBox />
           <WideOnly>
             <HotRank terms={hotTerms.welfare} sub={hotSub(hotTerms)} className="hidden lg:block" />
