@@ -56,7 +56,9 @@ export async function GET() {
   const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
   const lines: string[] = [];
   const jobOpen = ov ? ov.openN + (alio?.open ?? 0) : 0;
-  if (jobOpen > 0) lines.push(`- 접수 중인 공공기관 채용 공고: ${n(jobOpen)}건${ov?.orgs ? ` (나라일터 기준 ${n(ov.orgs)}개 기관)` : ""} → https://jiwon.knowhow-it.com/jobs`);
+  if (jobOpen > 0) lines.push(`- 접수 중인 공공기관 채용 공고: ${n(jobOpen)}건 → https://jiwon.knowhow-it.com/jobs`);
+  // orgs 는 접수 중인 기관 수가 아니라 나라일터에 공고를 낸 적 있는 기관 전체다(2026-11-03 표기 바로잡음).
+  if (ov?.orgs) lines.push(`- 나라일터에 채용 공고를 낸 기관: ${n(ov.orgs)}곳${ov.firstReg ? `(${ov.firstReg.slice(0, 4)}년부터 누적)` : "(누적)"} → https://jiwon.knowhow-it.com/jobs/org`);
   if (ov?.lastYear) lines.push(`- 최근 1년 나라일터 채용 공고: ${n(ov.lastYear)}건${ov.medDays ? `, 접수 기간 중앙값 ${ov.medDays}일` : ""}`);
   if (cov && cov.welfare > 0) lines.push(`- 복지·청년 지원사업: ${n(cov.welfare)}건 → https://jiwon.knowhow-it.com/policies`);
   if (cov && cov.business > 0) lines.push(`- 기업·소상공인 지원사업: ${n(cov.business)}건 → https://jiwon.knowhow-it.com/business`);
