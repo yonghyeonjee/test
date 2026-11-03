@@ -59,94 +59,133 @@
  },
  {
   "date": "2026-10-30",
-  "topic": "education"
+  "topic": "",
+  "note": "AI 시리즈 마지막 편(ai-job-prep)이 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-10-31",
-  "topic": "short-window"
+  "topic": "",
+  "note": "티스토리 쿠키 만료로 못 냄"
  },
  {
   "date": "2026-11-01",
-  "topic": "orgs-intern"
+  "topic": "",
+  "note": "티스토리 쿠키 만료로 못 냄(10월 모음 글도)"
  },
  {
   "date": "2026-11-02",
-  "topic": "welfare-topic"
+  "topic": "education",
+  "note": "쿠키 갱신 뒤 손으로 낸 밀린 편"
  },
  {
   "date": "2026-11-03",
-  "topic": "tech"
+  "topic": "",
+  "note": "11-01 에 못 낸 10월 모음 글 — 11-02 에 티스토리 예약 발행(19:00 KST)으로 걸어 둠"
  },
  {
   "date": "2026-11-04",
-  "topic": "license-craft-easy"
+  "topic": "short-window",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-05",
-  "topic": "orgs-local"
+  "topic": "orgs-intern",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-06",
-  "topic": "welfare-youth-sido"
+  "topic": "welfare-topic",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-07",
-  "topic": "regions-open"
+  "topic": "tech",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-08",
-  "topic": "orgs-nurse"
+  "topic": "license-craft-easy",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-09",
-  "topic": "welfare-sigungu"
+  "topic": "orgs-local",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-10",
-  "topic": "license-hard"
+  "topic": "welfare-youth-sido",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-11",
-  "topic": "orgs-edu"
+  "topic": "regions-open",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-12",
-  "topic": "long-window"
+  "topic": "orgs-nurse",
+  "reserved": true,
+  "note": "11-02 에 티스토리 예약 발행(19:00 KST)으로 미리 걸어 둠 — 그날 실행은 새로 쓰지 않는다"
  },
  {
   "date": "2026-11-13",
-  "topic": "welfare-cash-sido"
+  "topic": "welfare-sigungu"
  },
  {
   "date": "2026-11-14",
-  "topic": "orgs-hospital"
+  "topic": "license-hard"
  },
  {
   "date": "2026-11-15",
-  "topic": "biz-field"
+  "topic": "orgs-edu"
  },
  {
   "date": "2026-11-16",
-  "topic": "license-engineer"
+  "topic": "long-window"
  },
  {
   "date": "2026-11-17",
-  "topic": "regions-public"
+  "topic": "welfare-cash-sido"
  },
  {
   "date": "2026-11-18",
-  "topic": "welfare-life"
+  "topic": "orgs-hospital"
  },
  {
   "date": "2026-11-19",
-  "topic": "orgs-research"
+  "topic": "biz-field"
  },
  {
   "date": "2026-11-20",
-  "topic": "welfare-always-sido"
+  "topic": "license-engineer"
  },
  {
   "date": "2026-11-21",
+  "topic": "regions-public"
+ },
+ {
+  "date": "2026-11-22",
+  "topic": "welfare-life"
+ },
+ {
+  "date": "2026-11-23",
+  "topic": "orgs-research"
+ },
+ {
+  "date": "2026-11-24",
+  "topic": "welfare-always-sido"
+ },
+ {
+  "date": "2026-11-25",
   "topic": "roles"
  }
 ]

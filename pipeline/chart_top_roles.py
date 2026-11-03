@@ -34,17 +34,31 @@ BLUE, BLUE_DARK, BLUE_LIGHT = "#2a78d6", "#184f95", "#9ec5f4"
 W, H, DPI = 1200, 640, 150          # 티스토리 본문 폭(약 740px)에 2배로 또렷하게
 
 
-def setup_font():
+def setup_font(strict: bool | None = None):
+    """strict: 한글 글꼴이 없으면 멈춘다 — 네모 글자 차트를 글에 싣지 않는다. 기본은 GitHub Actions 에서만 켠다."""
+    if strict is None:
+        strict = bool(os.environ.get("GITHUB_ACTIONS"))
     import matplotlib
     matplotlib.use("Agg")
     from matplotlib import font_manager, rcParams
     wanted = ["NanumGothic", "NanumBarunGothic", "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", "AppleGothic", "WenQuanYi Zen Hei", "Unifont-JP"]
     have = {f.name for f in font_manager.fontManager.ttflist}
+    if not have & set(wanted):
+        # 글꼴 목록은 처음 부를 때 ~/.cache/matplotlib 에 굳는다. 워크플로가 fonts-nanum 을 깔기 전에 테스트가 matplotlib 을
+        # 먼저 부르면 그 목록에 나눔이 없어 차트 한글이 네모로 나왔다(TOP10 10-17~11-02). 시스템 글꼴을 다시 훑어 넣는다.
+        for path in font_manager.findSystemFonts():
+            try:
+                font_manager.fontManager.addfont(path)
+            except Exception:  # noqa: BLE001
+                pass
+        have = {f.name for f in font_manager.fontManager.ttflist}
     for name in wanted:
         if name in have:
             rcParams["font.family"] = name
             break
     else:
+        if strict:
+            sys.exit("한글 글꼴을 못 찾았다 — 네모 글자 차트를 싣지 않으려고 멈춘다(워크플로는 fonts-nanum 을 깐다)")
         print("한글 글꼴을 못 찾았다 — 글자가 네모로 나올 수 있다(워크플로는 fonts-nanum 을 깐다)", file=sys.stderr)
     rcParams["axes.unicode_minus"] = False
     rcParams.update({"figure.facecolor": SURFACE, "axes.facecolor": SURFACE, "savefig.facecolor": SURFACE,
