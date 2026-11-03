@@ -353,7 +353,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
     countByTopic().catch(() => ({} as Record<string, number>)),
     // 오늘의 채용 브리핑(새 공고·사흘 안 마감 건수)과 마감 임박 목록(오른쪽 기둥). 첫 화면에서만.
     getHotSlides().catch(() => []),
-    // 채용 갈래 칸의 "접수 중 N건 · M개 기관". 미리 센 표 한 줄.
+    // 채용 갈래 칸의 "접수 중 N건 · 기관 M곳 이력". M 은 누적 기관 수라 "이력" 을 붙인다. 미리 센 표 한 줄.
     getJobOverview().catch(() => null),
     getAlioCounts().catch(() => null),
   ]);
@@ -376,7 +376,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
   const ways: Way[] = [
     { href: "/#find", label: "내 조건으로 지원금 찾기", sub: "사는 곳 → 나이 → 상태, 네 번 누르면 끝", icon: "find", tone: "bg-brand text-white", first: true },
     { href: "/jobs", label: "공공기관 채용",
-      sub: jobOpen > 0 ? `접수 중 ${jobOpen.toLocaleString("ko-KR")}건${jobOv?.orgs ? ` · ${jobOv.orgs.toLocaleString("ko-KR")}개 기관` : ""}` : "나라일터·잡알리오를 하루 다섯 번",
+      sub: jobOpen > 0 ? `접수 중 ${jobOpen.toLocaleString("ko-KR")}건${jobOv?.orgs ? ` · 기관 ${jobOv.orgs.toLocaleString("ko-KR")}곳 이력` : ""}` : "나라일터·잡알리오를 하루 다섯 번",
       icon: "jobs", tone: "bg-cat-blueSoft text-cat-blue" },
     { href: "/license", label: "자격증 시험", sub: "다음 시험일 · 합격률 · 응시 지원 제도", icon: "license", tone: "bg-cat-orangeSoft text-cat-orange" },
     { href: "/business", label: "기업·창업 지원",
