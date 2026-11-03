@@ -22,5 +22,9 @@ for i in ids:
     og = re.findall(r'<meta[^>]+property="og:image"[^>]*>', html)
     imgs = re.findall(r"<img\b[^>]*>", html)
     print(f"===== 글 {i}: og:image={og[:1]}")
+    for t in re.findall(r"<meta[^>]+(?:image|thumbnail)[^>]*>", html, re.I):
+        print("   meta:", t[:400])
+    for t in re.findall(r'"(?:image|thumbnail)[^"]*"\s*:\s*"[^"]{0,300}"', html):
+        print("   json:", t[:400])
     for t in imgs[:3]:
         print("   img:", t[:300])
