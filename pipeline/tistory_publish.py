@@ -853,6 +853,18 @@ def main() -> int:
                     print(f"  {it['id']:>8}  {it['visibility']:<9} {it['date'][:19]:<19} {n:>14}  {it['title'][:60]}")
             except Exception as e:  # noqa: BLE001 — 목록은 덤이다. 실패해도 check 는 성공
                 print(f"  (최근 글 목록을 못 읽었다: {type(e).__name__}: {e})")
+            for pid in [x for x in os.environ.get("TISTORY_INSPECT", "").replace(" ", "").split(",") if x]:
+                try:                           # 글 하나의 관리자 정보(본문은 길이만) — 대표 이미지 같은 칸 이름을 본다
+                    d = Tistory(host, cookie).post_detail(pid)
+                    print(f"글 {pid} 항목:")
+                    for k in sorted(d):
+                        v = d[k]
+                        shown = f"({len(v)}자)" if k == "content" and isinstance(v, str) else json.dumps(v, ensure_ascii=False)[:160]
+                        print(f"  {k} = {shown}")
+                    m = re.search(r"\[##_Image\|[^\]]{0,200}", str(d.get("content", "")))
+                    print(f"  첫 사진 치환자: {m.group(0)[:200] if m else '없음'}")
+                except Exception as e:  # noqa: BLE001
+                    print(f"  글 {pid} 을 못 읽었다: {type(e).__name__}: {str(e)[:120]}")
             return 0
 
         if a.post_json:
