@@ -531,7 +531,7 @@ class Tistory:
 
     def publish(self, *, title: str, content: str, category: int, tags: list[str], visibility: str,
                 attachments: list[str] | None = None, update_id: str | None = None, slogan: str = "",
-                published: int = 1) -> tuple[str, str]:
+                published: int = 1, thumbnail: str = "") -> tuple[str, str]:
         """새 글을 올린다. update_id(숫자)를 주면 그 글을 통째로 고쳐 쓴다(PUT /manage/post/{id}.json).
         slogan(문자 주소 슬러그)을 비우면 서버가 제목으로 새로 만든다 — 고쳐 쓸 때는 기존 슬러그를 줘야 주소가 `-1` 로 밀리지 않는다."""
         body = {
@@ -542,6 +542,8 @@ class Tistory:
             "cclCommercial": 0, "cclDerive": 0, "type": "post", "attachments": list(attachments or []),
             "recaptchaValue": "", "draftSequence": None, "totalWritingTimeMs": 0,
         }
+        if thumbnail:                    # 대표 이미지(글 목록 카드·og:image). 없으면 티스토리 기본 그림이 나간다
+            body["thumbnail"] = thumbnail
         if update_id:
             body["id"] = str(update_id)
             r = self._req("PUT", f"/manage/post/{update_id}.json", json=body)
@@ -578,6 +580,16 @@ def attachment_ref(up: dict) -> str:
         raise TistoryError(f"attach.json 응답에 {e} 가 없다: {json.dumps(up, ensure_ascii=False)[:300]}") from e
     search = url[url.index("?"):] if "?" in url else ""
     return f"kage@{key}/{filename}{search.replace('&', '&amp;')}"
+
+
+def thumb_ref(present: list[dict], uploaded: list[tuple]) -> str:
+    """대표 이미지로 쓸 사진의 ref — 머리 그림(hero)이 있으면 그것, 없으면 본문 첫 사진."""
+    if not uploaded:
+        return ""
+    for m, (_rep, ref, _cap) in zip(present, uploaded):
+        if m.get("key") == "hero":
+            return ref
+    return uploaded[0][1]
 
 
 def image_replacer(ref: str, width: int, height: int, style: str = "alignCenter", alt: str = "") -> str:
@@ -1002,6 +1014,7 @@ def main() -> int:
             post_id, url = t.publish(title=p["title"], content=content,
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
+                                     thumbnail=thumb_ref(present, uploaded),
                                      slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
                                      or (current_slogan(t, a.update) if a.update else ""),
                                      published=at or (original_published(t, a.update) if a.update else 1))   # 예약 시각, 공개 글 고쳐 쓰기는 발행일을 그대로
