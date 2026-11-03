@@ -47,7 +47,7 @@ VISIBILITY = {"private": 0, "protected": 15, "public": 20}   # 티스토리 post
 MAX_TAGS = 10                                                  # 티스토리 글 하나의 태그 한도
 
 # abcfact.tistory.com 의 카테고리 id(--check 가 찍는 목록, 2026-10-17). 새 카테고리를 만들면 여기도 적는다.
-CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430, "IT": 946764}
+CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430, "IT": 946764, "psychology": 1083572}
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 

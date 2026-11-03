@@ -1,0 +1,310 @@
+{
+ "slug": "psy-predict",
+ "slogan": "행동-예측-심리테스트-작심삼일-충동구매",
+ "title": "오늘 더 취할까·작심삼일 위험도 | 논문 근거 행동 예측 심리테스트 6종",
+ "summary": "행동 예측 심리테스트 6종을 정리했습니다. 오늘 더 취할까, 연인과 다투기 쉬운 날일까, 충동구매할 날일까, 발표가 얼마나 떨릴까, 작심삼일 위험도, 오늘 밤 잠들기 어려울까를 수면·기분·일정 같은 조건으로 30초 만에 계산하고, 결과마다 근거 논문을 붙였습니다. 오늘의 브리핑까지 함께 소개합니다.",
+ "keywords": [
+  "행동 예측 심리테스트",
+  "작심삼일 테스트",
+  "충동구매 테스트",
+  "음주 예측",
+  "커플 싸움 예측",
+  "발표 불안 테스트",
+  "오늘의 브리핑",
+  "심리테스트",
+  "지피디아",
+  "수면 부족"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "**행동 예측 심리테스트**는 '나는 어떤 사람인가'가 아니라 **'오늘의 나는 어떻게 움직일 가능성이 큰가'**를 묻습니다. 같은 사람도 잠을 4시간 잔 날과 7시간 잔 날은 술을 마셔도, 장바구니를 열어도, 연인과 대화해도 다르게 반응하기 때문입니다."
+  },
+  {
+   "type": "p",
+   "text": "지피디아의 예측 테스트 6종은 수면·기분·장소·일정 같은 조건을 30초 동안 입력받아 **조건 지수**를 계산하고, 왜 그런지 논문 근거를 붙여 설명합니다. 입력은 이 기기에만 저장됩니다. 테스트별 핵심 조건과 쓰는 법을 정리했습니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "목차",
+   "id": "toc"
+  },
+  {
+   "type": "list",
+   "items": [
+    "예측 테스트 6종 한눈에 보기",
+    "오늘 더 취할까 · 오늘 밤 잠들기 어려울까",
+    "다투기 쉬운 날 · 지르기 쉬운 날",
+    "발표 긴장 · 작심삼일 위험도",
+    "오늘의 브리핑",
+    "자주 묻는 질문",
+    "지피디아 심리테스트 시리즈"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "예측 테스트 6종 한눈에 보기",
+   "id": "list"
+  },
+  {
+   "type": "image",
+   "key": "tests"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**[오늘 더 취할까?](https://jeepedia.com/psychology-test/predict/drinking/)** — 취기 조건 지수 · 논문 7편 근거",
+    "**오늘 다투기 쉬운 날일까?** — 갈등 조건 지수 · 논문 3편 근거",
+    "**오늘 지르기 쉬운 날일까?** — 충동구매 조건 지수 · 논문 6편 근거",
+    "**오늘 발표, 얼마나 떨릴까?** — 긴장 조건 지수 · 논문 5편 근거",
+    "**이번엔 며칠 갈까?** — 작심삼일 위험도 · 논문 3편 근거",
+    "**오늘 밤 잠들기 어려울까?** — 수면 조건 지수"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "여러 테스트에 공통으로 나오는 조건은 **수면 부족**입니다. 하룻밤만 못 자도 감정을 담당하는 편도체 반응이 커지고 이를 누르는 전전두엽의 조절이 약해진다는 fMRI 연구([Yoo 외, 2007](https://doi.org/10.1016/j.cub.2007.08.007))가 여러 테스트의 근거로 쓰입니다."
+  },
+  {
+   "type": "h2",
+   "text": "오늘 더 취할까 · 오늘 밤 잠들기 어려울까",
+   "id": "drink"
+  },
+  {
+   "type": "image",
+   "key": "drinkshot"
+  },
+  {
+   "type": "p",
+   "text": "[오늘 더 취할까?](https://jeepedia.com/psychology-test/predict/drinking/)는 같은 양을 마셔도 어떤 날은 무너지는 이유를 조건으로 풉니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**잠이 빚으로 남은 날** — 수면 부족 상태의 뇌는 알코올의 진정 작용이 더 크게 나타납니다.",
+    "**처음 가는 곳** — 내성의 상당 부분은 늘 마시던 장소에 길든 '조건화'라서, 낯선 곳에서는 같은 양에도 더 취합니다.",
+    "**빈속과 속도** — 음식은 알코올이 흡수되는 속도를 늦추고, 간이 처리하는 속도는 정해져 있어 빨리 마시면 혈중농도가 높게 오릅니다.",
+    "**들뜬 기분, 가라앉은 기분** — 취기는 주의를 눈앞 자극으로 좁혀(알코올 근시) 몸의 '그만' 신호나 부정적 감정을 키웁니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "알코올이 몸에 미치는 영향은 미국 [NIAAA(국립 알코올 남용·중독 연구소)](https://www.niaaa.nih.gov/alcohols-effects-health)가 정리해 두었습니다. [오늘 밤 잠들기 어려울까?](https://jeepedia.com/psychology-test/predict/sleep/)는 오늘의 조건으로 잠들기 어려운 정도를 보고, 잠 습관 정보는 [CDC 수면 안내](https://www.cdc.gov/sleep/)가 참고가 됩니다."
+  },
+  {
+   "type": "h2",
+   "text": "다투기 쉬운 날 · 지르기 쉬운 날",
+   "id": "fight"
+  },
+  {
+   "type": "image",
+   "key": "fight"
+  },
+  {
+   "type": "p",
+   "text": "[오늘 다투기 쉬운 날일까?](https://jeepedia.com/psychology-test/predict/couple-fight/)는 다툼이 상대 때문이 아니라 **조건** 때문에 시작되는 경우가 많다는 연구를 씁니다. 바깥에서 받은 스트레스는 높은 확률로 관계 안으로 새어 들어오고(스트레스 전이), 특히 **퇴근 직후 30분**에 가장 강합니다. 만나자마자 중요한 대화를 꺼내기보다 각자 15분 정리할 시간을 먼저 가지라고 권합니다."
+  },
+  {
+   "type": "p",
+   "text": "[오늘 지르기 쉬운 날일까?](https://jeepedia.com/psychology-test/predict/impulse-buy/)는 충동구매를 의지가 아니라 조건의 문제로 봅니다. 잠이 부족하면 뇌가 이득을 부풀리고 손실에 둔감해지고, '오늘만', '남은 수량 3개' 같은 문구는 주의를 눈앞으로 좁힙니다. 하루 중 자기 통제 자원이 가장 바닥난 **밤 11시의 결제**를 조심하라는 조언도 있습니다. 이런 판매 문구가 지나치면 소비자를 속이는 '다크 패턴'이 될 수 있어 [공정거래위원회](https://www.ftc.go.kr)가 규제하고 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "발표 긴장 · 작심삼일 위험도",
+   "id": "habit"
+  },
+  {
+   "type": "image",
+   "key": "habit"
+  },
+  {
+   "type": "p",
+   "text": "[오늘 발표, 얼마나 떨릴까?](https://jeepedia.com/psychology-test/predict/presentation/)는 떨림을 없애야 할 것이 아니라 **이름을 바꿔야 할 것**으로 봅니다. 심장이 빨리 뛰는 각성은 불안일 때도 설렘일 때도 같고, 수면 부족·카페인·준비 부족·평가받는 무대가 그 각성을 '위협'으로 읽게 만든다는 설명입니다. 불안이 일상을 방해할 정도라면 [NIMH 불안장애 안내](https://www.nimh.nih.gov/health/topics/anxiety-disorders)를 참고하세요."
+  },
+  {
+   "type": "p",
+   "text": "[이번엔 며칠 갈까?](https://jeepedia.com/psychology-test/predict/habit-3day/)는 작심삼일이 의지가 아니라 **설계가 없어서** 생긴다고 봅니다. 96명을 12주 동안 추적한 습관 연구에서 행동이 자동화되기까지 **평균 66일**이 걸렸고, **하루 빠뜨리는 것은 자동화에 큰 영향이 없었습니다**([Lally 외, 2010](https://doi.org/10.1002/ejsp.674)). 무너지는 것은 '이미 망쳤다'는 해석입니다. 목표를 '언제, 어디서, 무엇을'로 정하는 if-then 계획(실행 의도)이 달성률을 높인다는 94개 연구 메타분석([Gollwitzer & Sheeran, 2006](https://doi.org/10.1016/S0065-2601(06)38002-1))도 근거로 씁니다."
+  },
+  {
+   "type": "h2",
+   "text": "오늘의 브리핑",
+   "id": "today"
+  },
+  {
+   "type": "image",
+   "key": "todayshot"
+  },
+  {
+   "type": "p",
+   "text": "[오늘의 브리핑](https://jeepedia.com/psychology-test/today/)은 기분·에너지, 어젯밤 수면 시간, 오늘 일정(집중 업무, 미팅·발표, 술자리, 데이트 등)을 **20초** 동안 고르면 오늘 조심할 것과 밀어붙일 것을 **800자**로 정리해 줍니다. 연구 결과를 '조언 조각'으로 만들어 두고, 입력한 조건에 맞는 조각을 골라 합성하는 방식입니다. 출근길에 한 번 해 보기 좋습니다."
+  },
+  {
+   "type": "p",
+   "text": "예측 테스트 전체는 [지피디아 예측 테스트 모음](https://jeepedia.com/psychology-test/#s-predict)에서 볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "자주 묻는 질문",
+   "id": "faq"
+  },
+  {
+   "type": "h3",
+   "text": "조건 지수가 높으면 꼭 그렇게 되나요?"
+  },
+  {
+   "type": "p",
+   "text": "아닙니다. 조건 지수는 '오늘은 이런 조건이 겹쳐 있다'는 신호일 뿐 확률을 장담하지 않습니다. 조건을 알면 하나라도 바꿀 수 있다는 것이 이 테스트의 쓸모입니다."
+  },
+  {
+   "type": "h3",
+   "text": "음주 테스트 결과로 운전해도 되나요?"
+  },
+  {
+   "type": "p",
+   "text": "절대 안 됩니다. 이 테스트는 취하는 조건을 설명하는 자기이해 도구일 뿐 혈중알코올농도를 재지 않습니다. 술을 마셨다면 운전하지 마세요."
+  },
+  {
+   "type": "h3",
+   "text": "매일 해도 되나요?"
+  },
+  {
+   "type": "p",
+   "text": "됩니다. 조건이 매일 바뀌기 때문에 날마다 결과가 달라지는 것이 정상입니다."
+  },
+  {
+   "type": "h2",
+   "text": "지피디아 심리테스트 시리즈",
+   "id": "series"
+  },
+  {
+   "type": "p",
+   "text": "심리학 논문과 공개 척도로 만든 무료 심리테스트 사이트 [지피디아 오늘의 심리](https://jeepedia.com/psychology-test/)의 테스트를 갈래별로 5편에 나눠 소개합니다. 이 글은 4편입니다."
+  },
+  {
+   "type": "series"
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[지피디아, 행동·상황 예측 테스트](https://jeepedia.com/psychology-test/#s-predict)",
+    "[지피디아, 오늘의 브리핑](https://jeepedia.com/psychology-test/today/)",
+    "[NIAAA, Alcohol's Effects on Health](https://www.niaaa.nih.gov/alcohols-effects-health)",
+    "[CDC, Sleep](https://www.cdc.gov/sleep/)",
+    "[NIMH, Anxiety Disorders](https://www.nimh.nih.gov/health/topics/anxiety-disorders)",
+    "[공정거래위원회](https://www.ftc.go.kr)",
+    "Lally 외(2010), How are habits formed, European Journal of Social Psychology 40(6)",
+    "Gollwitzer & Sheeran(2006), Implementation intentions and goal achievement, Advances in Experimental Social Psychology 38",
+    "Yoo 외(2007), The human emotional brain without sleep, Current Biology 17(20)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "hero",
+   "kind": "hero",
+   "file": "behavior-prediction-psychology-tests.png",
+   "title": "행동 예측 심리테스트 6종",
+   "sub": "취기 · 다툼 · 충동구매 · 발표 · 작심삼일 · 수면",
+   "kicker": "지피디아 심리테스트 시리즈 4편",
+   "caption": "행동 예측 심리테스트 6종",
+   "alt": "행동 예측 심리테스트 작심삼일 충동구매 음주 표지"
+  },
+  {
+   "key": "tests",
+   "kind": "hbar",
+   "file": "prediction-tests-paper-count.png",
+   "title": "예측 테스트별 근거 논문 수",
+   "sub": "결과마다 근거 논문을 붙인다(수면 테스트 제외 집계)",
+   "labels": [
+    "오늘 더 취할까",
+    "오늘 지르기 쉬운 날",
+    "오늘 발표 긴장",
+    "오늘 다투기 쉬운 날",
+    "작심삼일 위험도"
+   ],
+   "values": [
+    7,
+    6,
+    5,
+    3,
+    3
+   ],
+   "fmt": "{}편",
+   "left": 0.26,
+   "source": "출처: 지피디아 예측 테스트 쪽 표기",
+   "caption": "예측 테스트별 근거 논문 수",
+   "alt": "행동 예측 심리테스트 근거 논문 수 차트"
+  },
+  {
+   "key": "fight",
+   "kind": "card",
+   "file": "couple-fight-impulse-buy-conditions.png",
+   "title": "다툼과 충동구매를 부르는 조건",
+   "lines": [
+    "수면 부족: 감정 브레이크가 느슨해진다",
+    "스트레스 전이: 퇴근 직후 30분이 가장 위험",
+    "말하지 않은 기대가 서운함이 된다",
+    "'오늘만' 문구와 밤 11시의 결제"
+   ],
+   "source": "지피디아 예측 테스트 해설 정리",
+   "caption": "다툼·충동구매 조건 지수의 핵심 조건",
+   "alt": "커플 싸움 충동구매 조건 수면 부족 스트레스"
+  },
+  {
+   "key": "habit",
+   "kind": "card",
+   "file": "habit-formation-66-days.png",
+   "title": "작심삼일을 넘기는 법",
+   "lines": [
+    "습관 자동화까지 평균 66일",
+    "하루 빠짐은 괜찮다, 이틀 연속이 위험",
+    "'언제·어디서·무엇을' if-then 계획",
+    "강도보다 반복: 1시간×3일 < 10분×30일"
+   ],
+   "source": "Lally 외(2010) · Gollwitzer & Sheeran(2006) · 지피디아 정리",
+   "caption": "습관 연구로 본 작심삼일 대처법",
+   "alt": "작심삼일 습관 66일 if-then 계획"
+  }
+ ],
+ "shots": [
+  {
+   "key": "drinkshot",
+   "url": "https://jeepedia.com/psychology-test/predict/drinking/",
+   "file": "jeepedia-drinking-prediction-test.png",
+   "caption": "지피디아 '오늘 더 취할까?' 화면 (jeepedia.com)",
+   "alt": "지피디아 음주 예측 취기 조건 지수 화면",
+   "name": "오늘 더 취할까?",
+   "fallback": {
+    "title": "오늘 더 취할까?",
+    "lines": [
+     "취기 조건 지수 · 30초",
+     "논문 7편 근거"
+    ]
+   }
+  },
+  {
+   "key": "todayshot",
+   "url": "https://jeepedia.com/psychology-test/today/",
+   "file": "jeepedia-today-briefing.png",
+   "caption": "지피디아 오늘의 브리핑 화면 (jeepedia.com)",
+   "alt": "지피디아 오늘의 내 심리와 행동 브리핑 화면",
+   "name": "오늘의 브리핑",
+   "fallback": {
+    "title": "오늘의 브리핑",
+    "lines": [
+     "기분 · 수면 · 일정 20초 입력",
+     "800자 조언"
+    ]
+   }
+  }
+ ]
+}

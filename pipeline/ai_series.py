@@ -29,6 +29,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 SERIES = {
     "ai": {"dir": "ai_series", "name": "AI 활용 시리즈", "category": "IT", "kind": "ai"},
     "senior": {"dir": "senior_series", "name": "어르신 복지 시리즈", "category": "policy", "kind": "senior"},
+    # 우리 심리 사이트(jeepedia) 소개 시리즈 — 그 사이트 링크는 '한 도메인 몰림' 검사에서 빼고, 대신 글당 상한을 둔다
+    "psy": {"dir": "psy_series", "name": "지피디아 심리테스트 시리즈", "category": "psychology", "kind": "psy",
+            "home": "jeepedia.com", "home_max": 12},
 }
 CUR = "ai"
 DATA = Path(__file__).parent / "data" / SERIES[CUR]["dir"]
@@ -295,6 +298,11 @@ def check(post: dict) -> list[str]:
         if not c.get("alt") or not re.match(r"^[a-z0-9\-]+\.png$", c.get("file", "")):
             errs.append(f"{c.get('key')}: alt 와 영문 파일 이름(.png) 필요")
     hosts = [re.sub(r"^www\.", "", u.split("/")[2]) for u in LINK.findall(text)]
+    home = SERIES[CUR].get("home")
+    if home:                                           # 시리즈가 소개하는 사이트: 몰림 검사에서 빼고 상한만 본다
+        if hosts.count(home) > SERIES[CUR]["home_max"]:
+            errs.append(f"{home} 링크 {hosts.count(home)}개(최대 {SERIES[CUR]['home_max']})")
+        hosts = [h for h in hosts if h != home]
     from collections import Counter
     cnt = Counter(hosts)
     if cnt and cnt.most_common(1)[0][1] > max(3, len(hosts) // 3):
