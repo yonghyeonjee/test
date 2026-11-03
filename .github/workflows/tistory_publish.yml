@@ -144,7 +144,8 @@ jobs:
             echo "::endgroup::"
             [ $ok = 1 ] && echo "끝: $item" || { echo "::error::실패: $item"; fail="$fail $item"; }
           done
-          [ -z "$fail" ] || { echo "실패한 항목:$fail"; exit 1; }      - name: TOP10 글 먼저 쓰기
+          [ -z "$fail" ] || { echo "실패한 항목:$fail"; exit 1; }
+      - name: TOP10 글 먼저 쓰기
         if: inputs.top10
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
