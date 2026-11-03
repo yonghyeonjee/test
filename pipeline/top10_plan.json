@@ -138,54 +138,79 @@
  },
  {
   "date": "2026-11-13",
-  "topic": "welfare-sigungu"
+  "topic": "",
+  "note": "어르신 복지 시리즈 1편이 티스토리 예약 발행(19:00 KST)으로 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-11-14",
-  "topic": "license-hard"
+  "topic": "",
+  "note": "어르신 복지 시리즈 2편이 티스토리 예약 발행(19:00 KST)으로 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-11-15",
-  "topic": "orgs-edu"
+  "topic": "",
+  "note": "어르신 복지 시리즈 3편이 티스토리 예약 발행(19:00 KST)으로 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-11-16",
-  "topic": "long-window"
+  "topic": "",
+  "note": "어르신 복지 시리즈 4편이 티스토리 예약 발행(19:00 KST)으로 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-11-17",
-  "topic": "welfare-cash-sido"
+  "topic": "",
+  "note": "어르신 복지 시리즈 5편이 티스토리 예약 발행(19:00 KST)으로 나가는 날 — 하루 1편"
  },
  {
   "date": "2026-11-18",
-  "topic": "orgs-hospital"
+  "topic": "welfare-sigungu"
  },
  {
   "date": "2026-11-19",
-  "topic": "biz-field"
+  "topic": "license-hard"
  },
  {
   "date": "2026-11-20",
-  "topic": "license-engineer"
+  "topic": "orgs-edu"
  },
  {
   "date": "2026-11-21",
-  "topic": "regions-public"
+  "topic": "long-window"
  },
  {
   "date": "2026-11-22",
-  "topic": "welfare-life"
+  "topic": "welfare-cash-sido"
  },
  {
   "date": "2026-11-23",
-  "topic": "orgs-research"
+  "topic": "orgs-hospital"
  },
  {
   "date": "2026-11-24",
-  "topic": "welfare-always-sido"
+  "topic": "biz-field"
  },
  {
   "date": "2026-11-25",
+  "topic": "license-engineer"
+ },
+ {
+  "date": "2026-11-26",
+  "topic": "regions-public"
+ },
+ {
+  "date": "2026-11-27",
+  "topic": "welfare-life"
+ },
+ {
+  "date": "2026-11-28",
+  "topic": "orgs-research"
+ },
+ {
+  "date": "2026-11-29",
+  "topic": "welfare-always-sido"
+ },
+ {
+  "date": "2026-11-30",
   "topic": "roles"
  }
 ]
