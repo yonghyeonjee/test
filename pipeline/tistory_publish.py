@@ -651,6 +651,21 @@ def today_kst() -> dt.date:
     return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
 
 
+def digest_hero(post: dict, out: str = "shots") -> dict | None:
+    """모음 글 머리 그림(제목 카드). 글꼴·matplotlib 이 없으면 None — 그림 없이 올린다."""
+    try:
+        import ai_series
+        head, _, lead = post["title"].partition(" | ")
+        os.makedirs(out, exist_ok=True)
+        path = os.path.join(out, "hero.png")
+        ai_series.draw({"kind": "hero", "kicker": "공공 채용·생활 정보 모음", "title": head if head != DIGEST_MARK else lead[:40],
+                        "sub": (lead[:40] if head != DIGEST_MARK else "") + f" · {BRAND}"}, path)
+        return {"key": "hero", "file": path, "caption": "", "alt": post["title"][:80]}
+    except (Exception, SystemExit) as e:  # noqa: BLE001
+        print(f"  (머리 그림을 못 그렸다: {type(e).__name__}: {str(e)[:100]})")
+        return None
+
+
 def take_shots(shots: list[dict], dry: bool = False, out: str = "shots") -> list[dict]:
     """[{url, key, caption}] 을 shot_pages.py 로 찍어 manifest 항목([{key, file, caption, alt}])으로 돌려준다."""
     if not shots:
@@ -957,6 +972,10 @@ def main() -> int:
 
         if posts and posts[0].get("shots"):          # 모음 글: 절마다 원 자료 사이트 화면을 지금 찍는다
             manifest += take_shots(posts[0]["shots"], dry=a.dry)
+            hero = None if a.dry else digest_hero(posts[0])
+            if hero:                                 # 머리 그림 — 글 목록 썸네일·og:image 로 쓴다
+                manifest.insert(0, hero)
+                posts[0]["body"].insert(0, {"type": "image", "key": "hero"})
 
         if a.dry:
             fake = [(f"[이미지 {i+1}: {m['file']}]", m.get("caption")) for i, m in enumerate(manifest)]

@@ -75,6 +75,10 @@ on:
         description: "script 에 넘길 글 slug(ai_series.py 일 때, 예: vibe-coding-top10)"
         required: false
         type: string
+      batch:
+        description: "여러 글을 차례로 고쳐 쓴다(쉼표): top10:<slug>:<번호>, ai:<slug>:<번호>, script:<파일>:<번호>, digest:<번호>. 다른 입력은 무시"
+        required: false
+        type: string
       inspect:
         description: "check 때 이 글 번호들(쉼표)의 관리자 정보 항목을 찍는다(본문은 길이만)"
         required: false
@@ -93,7 +97,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: ${{ inputs.batch != '' && 150 || 15 }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -101,7 +105,46 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python pipeline/test_tistory_publish.py
-      - name: TOP10 글 먼저 쓰기
+      - name: 한글 글꼴·차트 도구(머리 그림)
+        run: |
+          sudo apt-get install -y -qq fonts-nanum >/dev/null 2>&1 || echo "::warning::fonts-nanum 설치 실패 — 머리 그림 없이 올린다"
+          fc-cache -f >/dev/null 2>&1 || true
+          pip install -q matplotlib
+      - name: 여러 글 차례로 고쳐 쓰기(batch)
+        if: inputs.batch != ''
+        env:
+          TISTORY_COOKIE:       ${{ secrets.TISTORY_COOKIE }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          BATCH: ${{ inputs.batch }}
+        run: |
+          # 항목: top10:<slug>:<번호> · ai:<slug>:<번호> · script:<파일>:<번호> · digest:<번호>  — 하나가 실패해도 다음으로 간다
+          fail=""
+          for item in $(echo "$BATCH" | tr ',' ' '); do
+            IFS=: read -r kind arg num <<< "$item"; [ "$kind" = "digest" ] && num="$arg"
+            echo "::group::$item"
+            rm -rf shots out; mkdir -p shots
+            ok=1
+            case "$kind" in
+              top10)
+                python -u pipeline/shot_pages.py "/jobs/status/open|open|지금 접수 중인 공공기관 채용 공고 (출처: K나라지원)|" || true
+                python -u pipeline/shot_top10.py --slug "$arg" || true
+                python -u pipeline/chart_top10.py --slug "$arg" && \
+                python -u pipeline/tistory_publish.py --slug "$arg" --mode full --composer top10 --images shots/manifest.json --update "$num" || ok=0 ;;
+              ai)
+                python -u pipeline/ai_series.py --slug "$arg" && \
+                python -u pipeline/tistory_publish.py --post-json out/post.json --images shots/manifest.json --update "$num" || ok=0 ;;
+              script)
+                python -u "pipeline/$arg" && \
+                python -u pipeline/tistory_publish.py --post-json out/post.json --images shots/manifest.json --update "$num" || ok=0 ;;
+              digest)
+                python -u pipeline/tistory_publish.py --redigest "$num" || ok=0 ;;
+              *) echo "모르는 항목: $item"; ok=0 ;;
+            esac
+            echo "::endgroup::"
+            [ $ok = 1 ] && echo "끝: $item" || { echo "::error::실패: $item"; fail="$fail $item"; }
+          done
+          [ -z "$fail" ] || { echo "실패한 항목:$fail"; exit 1; }      - name: TOP10 글 먼저 쓰기
         if: inputs.top10
         env:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
@@ -160,6 +203,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: 티스토리에 올리기
+        if: inputs.batch == ''
         env:
           TISTORY_COOKIE:       ${{ secrets.TISTORY_COOKIE }}
           TISTORY_CATEGORY:     ${{ vars.TISTORY_CATEGORY }}
