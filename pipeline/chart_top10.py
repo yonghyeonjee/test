@@ -131,6 +131,12 @@ def main() -> int:
     manifest = []
     have = lambda f: os.path.exists(os.path.join(a.out, f))   # noqa: E731 — shot_pages·shot_top10 이 먼저 찍어 둔 화면
     alt = st["name"].replace("TOP10", "").strip()
+    import ai_series                                    # 머리 그림(글 목록 썸네일·og:image) — 제목이 보이게
+    top = st["items"][0]
+    ai_series.draw({"kind": "hero", "center": True, "kicker": "순위 TOP10", "title": alt or st["name"],
+                    "sub": f"1위 {top['name']} · {b.BRAND}"},
+                   os.path.join(a.out, "hero.png"))
+    manifest.append({"key": "hero", "file": "hero.png", "caption": "", "alt": f"{alt} 순위 TOP10"})
     if have("open.png"):
         manifest.append({"key": "open", "file": "open.png", "caption": f"지금 접수 중인 공공기관 채용 공고 화면 (출처: {b.BRAND})", "alt": "지금 접수 중인 공공기관 채용 공고 목록 화면"})
     draw_overview(st, os.path.join(a.out, "overview.png"))

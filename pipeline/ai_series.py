@@ -96,6 +96,17 @@ def draw(spec: dict, path: str) -> None:
     plt, W, H, DPI = _fig()
     import numpy as np
     k = spec["kind"]
+    if k == "hero" and spec.get("center", True):    # 글 목록 썸네일(가운데를 세로로 잘라 쓴다)에 맞춘 가운데 정렬 머리 그림
+        fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI)
+        fig.patch.set_facecolor(spec.get("bg", BLUE_DARK))
+        fig.text(0.5, 0.83, spec.get("kicker", SERIES_NAME), fontsize=14, color=BLUE_LIGHT, weight="bold", ha="center")
+        lines = textwrap.wrap(spec["title"], spec.get("wrap", 9))[:4]
+        size = 30 if len(lines) <= 3 else 26
+        y0 = 0.50 + (len(lines) - 1) * 0.075
+        for i, ln in enumerate(lines):
+            fig.text(0.5, y0 - i * 0.15, ln, fontsize=size, color="white", weight="bold", ha="center", va="center")
+        fig.text(0.5, 0.12, spec.get("sub", ""), fontsize=12, color="#dbe8fb", ha="center")
+        fig.savefig(path, facecolor=fig.get_facecolor()); plt.close(fig); return
     if k == "hero":
         fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI)
         fig.patch.set_facecolor(BLUE_DARK)

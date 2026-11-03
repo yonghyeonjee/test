@@ -676,11 +676,11 @@ def text_len(content: str) -> int:
 
 
 def original_published(t: "Tistory", post_id: str) -> int:
-    """공개된 글이 처음 발행된 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않는다.
-    비공개 글(다시 공개하는 글)이거나 모르면 1(지금)."""
+    """공개된 글이 처음 발행된 시각, 공개 예약 글이면 그 예약 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않고
+    예약도 풀리지 않는다. 비공개 글(다시 공개하는 글)이거나 모르면 1(지금)."""
     try:
         for it in t.recent_posts() + t.recent_posts(2) + t.recent_posts(3):
-            if it["id"] == str(post_id) and it.get("visibility", "").upper() == "PUBLIC" and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
+            if it["id"] == str(post_id) and it.get("visibility", "").upper().endswith("PUBLIC") and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
                 kst = dt.datetime.strptime(it["date"][:16], "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=9)))
                 return int(kst.timestamp())
     except Exception:  # noqa: BLE001
