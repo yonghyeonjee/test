@@ -1,0 +1,29 @@
+name: google-crawl-diag
+
+# 구글 크롤 진단(2026-11-04). 서버의 Caddy 접속 기록(회전분 포함)과 fail2ban 기록에서 구글 요청만 추려 본다.
+# 손으로만 돌린다. 스크립트는 저장소의 deploy/lightsail/google_crawl_report.py 를 그때그때 올려서 돌린다(배포 없이).
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "최근 며칠"
+        default: "14"
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HOST: ${{ secrets.LIGHTSAIL_HOST }}
+      KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: 구글 크롤 진단
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id
+          ssh-keyscan -T 20 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          O="-o ConnectTimeout=20 -o StrictHostKeyChecking=no -i $HOME/.ssh/id"
+          scp $O deploy/lightsail/google_crawl_report.py ubuntu@$HOST:/tmp/google_crawl_report.py
+          ssh $O ubuntu@$HOST "sudo python3 /tmp/google_crawl_report.py ${{ inputs.days }}; rm -f /tmp/google_crawl_report.py"
