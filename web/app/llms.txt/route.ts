@@ -1,5 +1,5 @@
 import { getCoverage } from "@/lib/db";
-import { getAlioCounts, getJobOverview } from "@/lib/pubJobs";
+import { getAlioCounts, getJobOverview, getJobRegions } from "@/lib/pubJobs";
 
 /**
  * 생성형 검색(ChatGPT·Perplexity 등)이 읽는 안내 파일. 2026-11-03 public/llms.txt 에서 옮겼다.
@@ -48,10 +48,11 @@ const REST = `## 허브
 const n = (v: number) => v.toLocaleString("ko-KR");
 
 export async function GET() {
-  const [ov, alio, cov] = await Promise.all([
+  const [ov, alio, cov, regions] = await Promise.all([
     getJobOverview().catch(() => null),
     getAlioCounts().catch(() => null),
     getCoverage().catch(() => null),
+    getJobRegions().catch(() => [] as { sido: string; n: number }[]),
   ]);
   const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
   const lines: string[] = [];
@@ -63,7 +64,12 @@ export async function GET() {
   if (cov && cov.welfare > 0) lines.push(`- 복지·청년 지원사업: ${n(cov.welfare)}건 → https://jiwon.knowhow-it.com/policies`);
   if (cov && cov.business > 0) lines.push(`- 기업·소상공인 지원사업: ${n(cov.business)}건 → https://jiwon.knowhow-it.com/business`);
   const today = lines.length ? `## 오늘의 숫자 (${day} 기준, 매일 바뀜)\n${lines.join("\n")}\n\n` : "";
-  return new Response(`${HEAD}\n${today}${REST}\n`, {
+  // 2026-11-04 시·도별 접수 중 채용 수와 지역 채용 쪽. 구글이 아직 모르는 /jobs/region/<시·도> 로 가는 길이기도 하다.
+  const reg = regions.filter((r) => r.n > 0).sort((a, b) => b.n - a.n);
+  const byRegion = reg.length
+    ? `## 시·도별 접수 중 공공기관 채용 (${day} 기준)\n${reg.map((r) => `- [${r.sido}](https://jiwon.knowhow-it.com/jobs/region/${encodeURIComponent(r.sido)}): ${n(r.n)}건`).join("\n")}\n- 근무지·기관 이름·공고 제목에 든 시·도로 센다. 한 공고가 여러 시·도에 들어갈 수 있어 합은 전체 공고 수보다 크다.\n\n`
+    : "";
+  return new Response(`${HEAD}\n${today}${byRegion}${REST}\n`, {
     headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" },
   });
 }
