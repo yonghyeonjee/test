@@ -172,12 +172,36 @@ def google_publish(new_jobs: list[str], closed: list[str], dry: bool) -> None:
             print(f"구글 Indexing getMetadata 실패 {type(e).__name__}: {str(e)[:120]}", file=sys.stderr)
 
 
+def check_google(urls: list[str]) -> None:
+    """2026-11-05: 보낸 직후의 getMetadata 404 가 반영이 늦어서인지 진짜 저장이 안 된 것인지 가린다.
+    하루 이틀 전에 보낸 주소를 넣어 읽는다. 읽기만 하고 보내지 않는다."""
+    token = google_token()
+    if not token:
+        print("구글 Indexing: 인증 정보가 없다")
+        return
+    saved = 0
+    for url in urls:
+        m = requests.get("https://indexing.googleapis.com/v3/urlNotifications/metadata",
+                         params={"url": url}, headers={"Authorization": f"Bearer {token}"}, timeout=30)
+        if m.status_code == 200:
+            saved += 1
+            lu = (m.json().get("latestUpdate") or {})
+            print(f"저장됨 · {lu.get('type')} {lu.get('notifyTime')} · {url}")
+        else:
+            print(f"{m.status_code} · {url} {m.text[:120].strip()}")
+    print(f"getMetadata 확인: {len(urls)}건 중 저장됨 {saved}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=int, default=30)
     ap.add_argument("--dry", action="store_true")
     ap.add_argument("--urls", default="", help="쉼표로 나눈 경로·주소. 이것만 IndexNow 로 보내고 끝낸다(DB 안 읽음)")
+    ap.add_argument("--check", default="", help="쉼표로 나눈 주소. 구글 Indexing getMetadata 만 읽고 끝낸다(보내지 않음)")
     a = ap.parse_args()
+    if a.check:
+        check_google([u if u.startswith("http") else SITE + u for u in (x.strip() for x in a.check.split(",")) if u])
+        return
     if a.urls:
         urls = [u if u.startswith("http") else SITE + u for u in (x.strip() for x in a.urls.split(",")) if u]
         print(f"지정 주소 {len(urls)}건 → IndexNow(네이버·빙)만")
