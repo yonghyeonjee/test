@@ -59,9 +59,13 @@ function kindOf(path: string | undefined): string {
  */
 export function ogImageFor(title: string | undefined, description: string | undefined, path: string | undefined): string {
   const clean = (title ?? SITE_NAME).replace(/\s*\|\s*K?나라지원\s*$/, "").trim();
-  const [head, ...rest] = clean.split(/\s+—\s+/);
-  const sub = rest.join(" — ") || (description ?? "").split(/(?<=[.다])\s/)[0] || "";
-  const q = new URLSearchParams({ k: kindOf(path), t: head.slice(0, 60), s: sub.slice(0, 60) });
+  const [head] = clean.split(/\s+—\s+/);
+  // 그림 주소는 날마다 같아야 한다(2026-11-04). 제목·설명문에 그날 숫자("접수 중 1,168건 · 14,017곳")를 넣은 뒤로
+  // 그림 주소가 매일 바뀌어, 구글봇이 사흘 동안 쪽 12개를 읽는 사이 그림을 186번 새로 긁어 갔다(서버 기록).
+  // 바뀌는 작은 줄(s)은 빼고, 제목에서도 "N건·N곳·N명·N%" 부터 뒤를 뗀다. 그림 그리기는 글꼴 받기까지 있어 쪽보다 무겁다.
+  const stable = head.replace(/\s*\d[\d,.]*\s*(?:건|곳|명|%).*$/, "").trim() || head;
+  void description;
+  const q = new URLSearchParams({ k: kindOf(path), t: stable.slice(0, 60) });
   return `${SITE_URL}/og?${q}`;
 }
 
