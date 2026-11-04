@@ -18,6 +18,10 @@ on:
         description: "이 주소들만 IndexNow 로(쉼표). 비우면 최근 새 주소"
         default: ""
         type: string
+      check:
+        description: "구글 Indexing 저장 여부만 읽을 주소(쉼표). 보내지 않음"
+        default: ""
+        type: string
   schedule:
     - cron: "30 2 * * *"    # UTC 02:30 = KST 11:30
 
@@ -46,8 +50,10 @@ jobs:
           HOURS: ${{ inputs.hours || '30' }}
           DRY: ${{ inputs.dry }}
           URLS: ${{ inputs.urls }}
+          CHECK: ${{ inputs.check }}
         run: |
           args="--hours $HOURS"
           [ "$DRY" = "true" ] && args="$args --dry"
           [ -n "$URLS" ] && args="$args --urls $URLS"
+          [ -n "$CHECK" ] && args="$args --check $CHECK"
           python -u pipeline/indexing.py $args
