@@ -29,6 +29,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 SERIES = {
     "ai": {"dir": "ai_series", "name": "AI 활용 시리즈", "category": "IT", "kind": "ai"},
     "senior": {"dir": "senior_series", "name": "어르신 복지 시리즈", "category": "policy", "kind": "senior"},
+    # 시리즈가 아닌 단독 생활 정보 글(series: false — 시리즈 목록 블록 없음)
+    "guide": {"dir": "guide_posts", "name": "생활 금융 정보", "category": "policy", "kind": "guide", "jiwon_max": 2},   # jiwon 원문을 각색할 때 출처 링크 두 번까지
     # 우리 심리 사이트(jeepedia) 소개 시리즈 — 그 사이트 링크는 '한 도메인 몰림' 검사에서 빼고, 대신 글당 상한을 둔다
     "psy": {"dir": "psy_series", "name": "지피디아 심리테스트 시리즈", "category": "psychology", "kind": "psy",
             "home": "jeepedia.com", "home_max": 12},
@@ -307,8 +309,9 @@ def check(post: dict) -> list[str]:
     cnt = Counter(hosts)
     if cnt and cnt.most_common(1)[0][1] > max(3, len(hosts) // 3):
         errs.append(f"바깥 링크가 한 도메인에 몰림: {cnt.most_common(3)}")
-    if cnt.get("jiwon.knowhow-it.com", 0) > 1:
-        errs.append("jiwon 링크는 1개 이하")
+    jmax = SERIES[CUR].get("jiwon_max", 1)
+    if cnt.get("jiwon.knowhow-it.com", 0) > jmax:
+        errs.append(f"jiwon 링크는 {jmax}개 이하")
     if len(set(hosts)) < 4:
         errs.append(f"바깥 링크 도메인 4곳 이상(지금 {len(set(hosts))})")
     if post.get("series", True) and not any(b["type"] == "series" for b in body):

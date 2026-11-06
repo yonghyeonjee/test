@@ -75,6 +75,10 @@ on:
         description: "script 에 넘길 글 slug(ai_series.py 일 때, 예: vibe-coding-top10)"
         required: false
         type: string
+      daily_max:
+        description: "이번 실행만 하루 공개 한도를 바꾼다(기본 1). 사용자가 그날 한 편 더 내라고 할 때만"
+        required: false
+        type: string
       batch:
         description: "여러 글을 차례로 고쳐 쓴다(쉼표): top10:<slug>:<번호>, ai:<slug>:<번호 또는 @2026-11-13T19:00(새 글 예약)>, script:<파일>:<번호>, digest:<번호>. 다른 입력은 무시"
         required: false
@@ -117,6 +121,7 @@ jobs:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           BATCH: ${{ inputs.batch }}
+          TISTORY_DAILY_MAX: ${{ inputs.daily_max || '1' }}
         run: |
           # 항목: top10:<slug>:<번호> · ai:<slug>:<번호 또는 @예약시각> · script:<파일>:<번호> · digest:<번호>  — 하나가 실패해도 다음으로 간다
           fail=""
@@ -133,7 +138,7 @@ jobs:
                 python -u pipeline/tistory_publish.py --slug "$arg" --mode full --composer top10 --images shots/manifest.json --update "$num" || ok=0 ;;
               ai)                                        # 번호 대신 @2026-11-13T19:00 이면 새 글을 그 시각(KST)에 예약 발행
                 upd="--update $num"; at=""
-                case "$num" in @*) upd=""; at="$(echo "${num#@}" | tr T ' ')";; esac
+                case "$num" in @*) upd=""; at="$(echo "${num#@}" | tr T ' ')";; "") upd="";; esac   # 번호가 없으면 새 글을 바로 공개
                 python -u pipeline/ai_series.py --slug "$arg" && \
                 TISTORY_AT="$at" python -u pipeline/tistory_publish.py --post-json out/post.json --images shots/manifest.json $upd || ok=0 ;;
               script)
@@ -226,6 +231,7 @@ jobs:
           SCRIPT: ${{ inputs.script }}
           TISTORY_AT: ${{ inputs.at }}
           TISTORY_INSPECT: ${{ inputs.inspect }}
+          TISTORY_DAILY_MAX: ${{ inputs.daily_max || '1' }}
         run: |
           if [ -n "$TOP10_SLUG" ]; then SLUG="$TOP10_SLUG"; COMPOSER="top10"; MODE="full"; fi
           if [ -n "$SCRIPT" ]; then SLUG=""; COMPOSER=""; MODE="full"; fi
