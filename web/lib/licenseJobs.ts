@@ -18,7 +18,8 @@ export type LicenseJobs = {
   open: { id: string; title: string; org: string | null; end: string | null }[];
 };
 
-const clean = (name: string) => name.replace(/\(.*?\)/g, "").replace(/["*,().%_\\]/g, "").trim();
+// or() 안에서 쉼표·괄호·따옴표는 문법 글자라 뺀다. 따옴표로 감싸면 * 가 와일드카드로 안 읽혀 0건이 된다(2026-11-06).
+const clean = (name: string) => name.replace(/\(.*?\)/g, "").replace(/["*,().%_\\\s]/g, "").trim();
 
 export const getLicenseJobs = cache(async (name: string): Promise<LicenseJobs | null> => {
   const key = clean(name);
@@ -27,7 +28,7 @@ export const getLicenseJobs = cache(async (name: string): Promise<LicenseJobs | 
     const { data, error } = await db
       .from("job_summaries")
       .select("source_id")
-      .or(`summary->>requirements.ilike."*${key}*",summary->>preferred.ilike."*${key}*"`)
+      .or(`summary->>requirements.ilike.*${key}*,summary->>preferred.ilike.*${key}*`)
       .limit(1000);
     if (error || !data?.length) return null;
     const ids = Array.from(new Set((data as { source_id: string }[]).map((d) => d.source_id)));
