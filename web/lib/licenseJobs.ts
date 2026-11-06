@@ -6,7 +6,7 @@ import { todayKst } from "./calendar";
 /**
  * 이 자격증을 응시 자격·우대 사항에 적은 공공기관 채용 공고(2026-11-06).
  *
- * 큐넷 원문에는 없고 이 사이트만 셀 수 있는 숫자다 — 나라일터 공고문을 요약해 둔 job_summaries 의
+ * 큐넷 원문에는 없고 이 사이트만 셀 수 있는 숫자다 — 나라일터 공고문을 요약해 둔 job_summaries(읽기는 공개용 뷰 job_summaries_public, 원 표는 RLS 로 잠겨 있다)의
  * requirements·preferred 에서 종목 이름을 찾는다. 자격증 상세 쪽이 서치 콘솔에서 "크롤링됨 - 색인 안 됨" 이
  * 가장 많은 묶음이라(표본 20쪽 중 18쪽), 원문과 다른 내용을 붙이려는 것이다.
  * 요약이 있는 공고만 센다. 이름이 짧으면(3자 이하) 다른 낱말에 섞여 잘못 걸리므로 세지 않는다.
@@ -26,7 +26,7 @@ export const getLicenseJobs = cache(async (name: string): Promise<LicenseJobs | 
   if (!dbConfigured || key.length < 4) return null;
   try {
     const { data, error } = await db
-      .from("job_summaries")
+      .from("job_summaries_public")
       .select("source_id")
       .or(`summary->>requirements.ilike.*${key}*,summary->>preferred.ilike.*${key}*`)
       .limit(1000);
