@@ -13,6 +13,8 @@ import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ExamInsight from "@/components/ExamInsight";
 import ExamRoundsFor from "@/components/ExamRoundsFor";
+import LicenseJobs from "@/components/LicenseJobs";
+import { getLicenseJobs } from "@/lib/licenseJobs";
 import { licenseFaq, licenseIntro, seriesEligibility } from "@/lib/licenseText";
 import { difficulty, getExamSite, upcomingEvents } from "@/lib/examInsight";
 import { getExamRounds, gradeOfSeries, upcomingForSeries } from "@/lib/qnetExam";
@@ -92,9 +94,10 @@ export default async function LicensePage({ params }: { params: { code: string }
   if (!r) notFound();
   const { l, same } = r;
   // 일정은 못 읽어도 화면은 살린다. 자격증 설명이 주된 내용이다.
-  const [rounds, site] = await Promise.all([
+  const [rounds, site, jobs] = await Promise.all([
     getExamRounds().then((rs) => upcomingForSeries(rs, l.series)).catch(() => []),
     getExamSite(l.code),
+    getLicenseJobs(l.name),
   ]);
   // 국가전문자격은 등급별 통합 회차가 없다. 큐넷 종목 안내에서 읽어 둔 올해 일정이 있으면 그것이 "시험 일정" 이다.
   const siteOnly = !gradeOfSeries(l.series) && site.sched.length > 0;
@@ -143,6 +146,7 @@ export default async function LicensePage({ params }: { params: { code: string }
           "내가 볼 자격증의 다음 접수일" 을 여기서 보여 준다. */}
       {!siteOnly && <ExamRoundsFor series={l.series} name={l.name} list={rounds} />}
       <ExamInsight name={l.name} code={l.code} site={site} title={siteOnly ? "시험 일정과 난이도" : undefined} />
+      <LicenseJobs name={l.name} data={jobs} />
 
       <section className="mt-10 rounded-card border border-line bg-surface2 p-5">
         <h2 className="text-sm font-bold">응시 자격 (일반 기준)</h2>
