@@ -18,6 +18,7 @@ import datetime as dt
 import os
 import re
 import sys
+import time
 import urllib.parse
 
 import requests
@@ -55,16 +56,29 @@ class GSC:
     def __init__(self, token: str):
         self.h = {"Authorization": f"Bearer {token}"}
 
+    # 2026-11-07: URL 검사 API 가 60초 안에 답하지 않아 보고서·표본이 통째로 죽었다(ReadTimeout).
+    # 시간 초과·연결 끊김·5xx 는 잠깐 쉬고 두 번 더 해 보고, 그래도 안 되면 RuntimeError 로 넘겨 그 주소만 건너뛰게 한다.
+    def _call(self, method: str, path: str, **kw):
+        last = ""
+        for i in range(3):
+            try:
+                r = requests.request(method, API + path, headers=self.h, timeout=60, **kw)
+            except (requests.Timeout, requests.ConnectionError) as e:
+                last = f"{type(e).__name__} {path}"
+            else:
+                if r.status_code < 500:
+                    if r.status_code >= 400:
+                        raise RuntimeError(f"{r.status_code} {path}: {r.text[:300]}")
+                    return r.json()
+                last = f"{r.status_code} {path}: {r.text[:200]}"
+            time.sleep(5 * (i + 1))
+        raise RuntimeError(f"세 번 실패 — {last}")
+
     def get(self, path: str):
-        r = requests.get(API + path, headers=self.h, timeout=60)
-        r.raise_for_status()
-        return r.json()
+        return self._call("GET", path)
 
     def post(self, path: str, body: dict):
-        r = requests.post(API + path, headers=self.h, json=body, timeout=60)
-        if r.status_code >= 400:
-            raise RuntimeError(f"{r.status_code} {path}: {r.text[:300]}")
-        return r.json()
+        return self._call("POST", path, json=body)
 
 
 def pick_site(g: GSC) -> str:
@@ -164,7 +178,8 @@ def main() -> None:
         try:
             res = g.post("/v1/urlInspection/index:inspect", {"inspectionUrl": u, "siteUrl": site, "languageCode": "ko"})
         except RuntimeError as e:
-            print(f"  {u}: 실패 {e}")
+            # 부르는 쪽이 받아 그 주소만 건너뛴다(429·403 이면 멈춘다).
+            print(f"  {u}: 실패 {str(e)[:160]}")
             raise
         ir = res.get("inspectionResult", {})
         x = ir.get("indexStatusResult", {})
