@@ -28,7 +28,9 @@ export function jobSummary(job: Job): string {
     job.end ? ` 접수 마감 ${d(job.end)}.`
     : job.start ? ` ${d(job.start)}부터 접수.`
     : "";
-  return `${head}${when} 접수 방법과 자격 요건은 기관 원문에서 확인하세요.`;
+  // 2026-11-08 끝의 "접수 방법과 자격 요건은 기관 원문에서 확인하세요." 를 뺐다. 모든 공고 쪽의 설명문·구조화 데이터·본문
+  // 첫 문단에 똑같이 붙어, 구글 검색 결과에 "원문을 보라는 복사본" 으로 그대로 보였다(11/6 site: 캡처). 원문 링크는 쪽 안에 따로 있다.
+  return `${head}${when}`;
 }
 
 const STATUS_LINE: Record<Job["status"], string> = {
