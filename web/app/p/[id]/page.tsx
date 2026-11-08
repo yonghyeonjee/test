@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -60,6 +61,9 @@ export async function generateStaticParams() {
   }
 }
 
+/** 설명문과 본문이 같은 숫자를 한 번만 읽게. */
+const factsOf = cache((id: string) => getProgramFacts(id));
+
 /** 검색 결과에 그대로 노출되는 문장. 지역·대상을 앞쪽에 둔다. */
 /** "대구 서구 통합돌봄 사업 — 대구 서구에서 지원하는 저소득·장애인 서비스 사업" */
 function seoTitle(p: Detail) {
@@ -76,10 +80,18 @@ export async function generateMetadata({
 
   const where = p.sigungu || p.sido || "전국";
   const body = (p.summary || p.target_text || "").replace(/\s+/g, " ").trim();
+  // 2026-11-09 설명문 앞쪽에 이 사이트만 센 숫자(같은 지역 접수 중 사업 수, 같은 이름 사업을 하는 시·도 수)를 둔다.
+  // 예전에는 복지로 요약문 90자 + "…을 한눈에 정리했습니다." 였다 — 원문과 같은 문장에 모든 쪽이 같은 꼬리라,
+  // 검색 결과 설명문부터 원문의 복사본으로 보였다(서치 콘솔 표본: 지원사업 20쪽 중 14쪽 "크롤링됨 - 색인 안 됨").
+  const f = await factsOf(p.source_id);
+  const facts = [
+    f && f.same_area_n > 0 ? `${where}에서 지금 접수 중인 다른 사업 ${f.same_area_n.toLocaleString("ko-KR")}건` : null,
+    f && f.sidos_with_title > 1 ? `같은 이름 사업을 하는 시·도 ${f.sidos_with_title}곳` : null,
+  ].filter(Boolean).join(", ");
   // 설명문에도 사업 이름이 들어가야 한다. 요약문은 대개 이름 없이 시작한다.
-  const desc = `${p.title}. ${programTagline(p)}. ` + (
-    body ? `${body.slice(0, 90)}${body.length > 90 ? "…" : ""} ` : ""
-  ) + (isTagCriteria(p) ? "지원대상·지원내용·신청방법" : "지원대상·선정기준·신청방법") + "을 한눈에 정리했습니다.";
+  const desc = `${p.title}. ${programTagline(p)}. ` + (facts ? `${facts}. ` : "") + (
+    body ? `${body.slice(0, 70)}${body.length > 70 ? "…" : ""}` : ""
+  );
 
   return withOg({
     title: seoTitle(p),
@@ -118,7 +130,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
   // 낡은 금액을 보여 주는 것이 제일 나쁘다.
   const incomeYear = tableYear();
 
-  const [related, porg, facts] = await Promise.all([getRelated(p), findPublicOrg(p.org_name), getProgramFacts(p.source_id)]);
+  const [related, porg, facts] = await Promise.all([getRelated(p), findPublicOrg(p.org_name), factsOf(p.source_id)]);
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
