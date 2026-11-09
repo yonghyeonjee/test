@@ -61,25 +61,37 @@ export async function generateMetadata({ params }: { params: { code: string } })
   // 제목·설명문에 이 종목만의 숫자(다음 시험일, 3년 합격률, 한 해 접수자)를 넣는다 — 같은 종목을 소개하는 다른 사이트와
   // 검색 결과에서부터 다르게(2026-10-30). getExamSite 는 쪽 본문도 읽지만 Next 가 같은 요청 안에서 fetch 를 겹치지는
   // 않으니 표 두 개를 한 번 더 읽는다(종목 쪽은 하루 캐시라 부담이 작다).
-  const [applicants, site] = await Promise.all([
+  const [applicants, site, jobs] = await Promise.all([
     licenseApplicants(l.code).catch(() => null),
     getExamSite(l.code).catch(() => ({ sched: [], stats: [] })),
+    getLicenseJobs(l.name),
   ]);
   const next = upcomingEvents(site.sched)[0] ?? null;
   const diff = difficulty(site.stats);
-  const nextText = next ? `${next.stageName} ${next.examStart.slice(0, 10).replaceAll("-", ".")}` : null;
+  // 2026-11-10 시험 기간이 여러 날인 실기는 시작일이 지나도 끝날 때까지 upcomingEvents 에 남는다. 그때 시작일을
+  // "다음 시험" 으로 쓰면 11월에 "다음 시험 10.24" 처럼 지난 날짜가 제목에 나간다. 진행 중이면 끝나는 날로 쓴다.
+  const dot = (v: string) => v.slice(0, 10).replaceAll("-", ".");
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const nextText = !next ? null
+    : next.examStart.slice(0, 10) < today && next.examEnd
+      ? `${next.stageName} 시험 기간 ~${dot(next.examEnd).slice(5)}`
+      : `다음 시험 ${next.stageName} ${dot(next.examStart)}`;
   const rate = diff ? diff.rate[diff.by] : null;
   const bits = [
-    nextText ? `다음 시험 ${nextText}` : null,
+    nextText,
     rate !== null && diff ? `${diff.by} 합격률 ${rate}%` : null,
     diff?.applicantsPerYear ? `한 해 ${diff.applicantsPerYear.toLocaleString("ko-KR")}명 접수` : null,
   ].filter(Boolean) as string[];
   const title = bits.length
     ? `${l.name} 자격증 — ${bits.slice(0, 2).join(" · ")} · 응시 자격·지원 제도`
     : `${l.name} 자격증 — 응시 자격, 시험 일정, 취득 지원 제도`;
+  // 이 종목을 응시 자격·우대 사항에 적은 공공기관 채용 공고 수(본문 "…를 찾는 공공기관 채용" 상자와 같은 값, 3건 이상일 때만).
+  const jobsText = jobs && jobs.total >= 3
+    ? ` 공공기관 채용 공고 ${jobs.total.toLocaleString("ko-KR")}건이 이 자격을 요구·우대${jobs.openN > 0 ? `(지금 접수 중 ${jobs.openN.toLocaleString("ko-KR")}건)` : ""}.`
+    : "";
   const description = bits.length
-    ? `${l.name}(${l.series}, ${l.field}): ${bits.join(", ")}${diff ? `, 난이도 ${diff.level}` : ""}. 응시 자격과 학원비·응시료를 지원하는 정부 제도, 이 자격으로 지원할 수 있는 채용까지 큐넷 통계로 정리했습니다.`
-    : licenseDesc(l);
+    ? `${l.name}(${l.series}, ${l.field}): ${bits.join(", ")}${diff ? `, 난이도 ${diff.level}` : ""}.${jobsText} 응시 자격과 학원비·응시료를 지원하는 정부 제도도 함께 봅니다.`
+    : `${licenseDesc(l)}${jobsText}`;
   const thin = applicants !== null && !licenseIndexable(l, all, applicants);
   return withOg({
     title, description,
