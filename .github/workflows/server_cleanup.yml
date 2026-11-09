@@ -39,7 +39,7 @@ jobs:
             echo "-- 배포하다 남은 묶음(/tmp/bundle-*.tgz)"; sudo ls -lh /tmp/bundle-*.tgz 2>/dev/null; sudo rm -f /tmp/bundle-*.tgz /tmp/caddy.tgz /tmp/caddy
             echo "-- journal 100MB 로"; sudo journalctl --vacuum-size=100M 2>&1 | tail -2
             echo "-- apt 캐시"; sudo apt-get clean
-            echo "-- 회전된 로그(.gz, .1 중 3일 지난 것, caddy·fail2ban 은 남김)"; sudo find /var/log -xdev -type f \( -name "*.gz" -o -name "*.[0-9]" -o -name "*.[0-9].log" \) -mtime +3 -print -delete 2>/dev/null | wc -l
+            echo "-- 회전된 로그(.gz, .1 중 3일 지난 것, caddy·fail2ban 은 남김)"; sudo find /var/log -xdev -type f -not -path "/var/log/caddy/*" -not -name "fail2ban*" \( -name "*.gz" -o -name "*.[0-9]" -o -name "*.[0-9].log" \) -mtime +3 -print -delete 2>/dev/null | wc -l
             echo "-- 비대한 현재 로그(500MB 넘으면 비움)"; for f in /var/log/syslog /var/log/kern.log /var/log/auth.log /var/log/caddy/access.log /var/log/fail2ban.log; do
               [ -f "$f" ] && [ "$(sudo stat -c %s "$f")" -gt 524288000 ] && { echo "  truncate $f ($(sudo du -h "$f" | cut -f1))"; sudo truncate -s 0 "$f"; }
             done; true
