@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { josa } from "@/lib/faq";
 import { IllusJobs } from "@/components/Illus";
 import { YEAR, withOg } from "@/lib/seo";
 import Link from "next/link";
@@ -63,9 +64,20 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
       ? `${org} ${extra.join(" ")} 채용공고 — ${facts.length ? facts.join(" · ") : "접수 기간과 자격"}${tail}`
       : `${org} 채용공고 ${YEAR} — ${facts.length ? facts.join(" · ") : "접수 기간과 자주 뽑는 자리"}${tail}`,
     // 출처(나라일터·잡알리오)는 한 번만 적는다. 예전에는 "나라일터·잡알리오에 낸 … 나라일터 공고 …건"으로 두 번 나왔다.
-    description:
-      `${org}이(가) 낸 채용 공고를 나라일터·잡알리오에서 모았습니다. ${span}을 등록일순으로 보고, ` +
-      "접수 중인 공고와 접수 기간이 며칠이었는지를 함께 확인합니다.",
+    // 2026-11-11 설명문도 이 기관만의 숫자로 시작한다. 전에는 기관 이름만 바뀌고 "…모았습니다. …등록일순으로 보고,
+    // …함께 확인합니다." 가 1만 4천 쪽에 똑같았다. 숫자가 하나도 없으면 예전 문장으로 둔다.
+    description: (() => {
+      const nums = [
+        openN > 0 ? `지금 접수 중 ${openN}건` : null,
+        recent ? `최근 1년 공고 ${recent.toLocaleString()}건` : null,
+        stat?.avgDays ? `접수 기간 평균 ${Math.round(stat.avgDays)}일` : null,
+        peak ? `${peak.label}에 공고가 몰림` : null,
+        often.length ? `${often.join("·")} 자주 뽑음` : null,
+      ].filter(Boolean);
+      return nums.length
+        ? `${josa(org, "이가")} 낸 채용 공고: ${nums.join(", ")}. ${span}을 나라일터·잡알리오에서 모아 등록일순으로 봅니다.`
+        : `${josa(org, "이가")} 낸 채용 공고를 나라일터·잡알리오에서 모았습니다. ${span}을 등록일순으로 보고, 접수 중인 공고와 접수 기간을 함께 확인합니다.`;
+    })(),
     keywords: [`${org} 채용`, `${org} 채용공고`, `${org} 공고`, "공공기관 채용"],
     alternates: { canonical: jobCanonical(r) },
     robots: thin ? { index: false, follow: true } : jobRobots(r),
