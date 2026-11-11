@@ -10,16 +10,24 @@ import ShareButton from "@/components/ShareButton";
 import {
   CHECKED, KINDS, KIND_KEYS, WHO, WHO_KEYS, countFor, countOf, findPath, govFor,
   housingCounts, housingFaq, housingList, housingPath, housingTitle, shortSido, sidosFor,
-  type KindKey, type WhoKey,
+  type Count, type KindKey, type WhoKey,
 } from "@/lib/housing";
+import { josa } from "@/lib/faq";
 import { pageGraph } from "@/lib/schema";
 
 /** 쪽 설명. 메타데이터와 구조화 데이터가 같은 글을 쓰게 여기 둔다. */
-export function housingDescription(kind: KindKey, who: WhoKey, sido: string | undefined, n: number) {
+export function housingDescription(kind: KindKey, who: WhoKey, sido: string | undefined, n: number, counts?: Count[] | null) {
   const k = KINDS[kind], w = WHO[who];
-  return sido
-    ? `${sido} ${w.label} ${k.noun} 지원 총정리. 지금 접수 중인 시·군 사업 ${n}건과 주택도시기금 대출 조건을 한 화면에서 봅니다.`
-    : `${w.label}이(가) 받을 수 있는 ${k.noun} 지원 총정리. 주택도시기금 대출 조건과 지금 접수 중인 지자체 사업 ${n}건을 지역별로 봅니다.`;
+  // 2026-11-12 시·도별 사업 수로 쪽마다 다른 숫자를 앞에 둔다. 전국 쪽은 많은 시·도 셋, 시·도 쪽은 전국에서 몇 번째인지.
+  // 같은 틀의 주거 쪽 36개가 서치 콘솔 표본에서 "크롤링됨 - 색인 안 됨"·"알려지지 않음" 이 대부분이라서다. 못 세면 예전 문장.
+  const ranked = counts ? sidosFor(counts, kind, who) : [];
+  if (sido) {
+    const i = ranked.findIndex((r) => r.sido === sido);
+    const rank = i >= 0 && ranked.length >= 3 ? ` 전국 ${ranked.length}개 시·도 가운데 ${i + 1}번째로 많습니다.` : "";
+    return `${sido} ${w.label} ${k.noun} 지원 총정리. 지금 접수 중인 시·군 사업 ${n}건.${rank} 주택도시기금 대출 조건도 한 화면에서 봅니다.`;
+  }
+  const top = ranked.slice(0, 3).map((r) => `${shortSido(r.sido)} ${r.n}건`).join("·");
+  return `${josa(w.label, "이가")} 받을 수 있는 ${k.noun} 지원 총정리. 지금 접수 중인 지자체 사업 ${n}건${top ? `(많은 곳: ${top})` : ""}과 주택도시기금 대출 조건을 지역별로 봅니다.`;
 }
 
 /**
@@ -59,7 +67,7 @@ export default async function HousingPage({ kind, who, sido }: { kind: KindKey; 
   const ld = sido && n === 0 ? null : pageGraph({
     path,
     name: title,
-    description: housingDescription(kind, who, sido, n),
+    description: housingDescription(kind, who, sido, n, counts),
     dateModified: CHECKED,
     collection: true,
     crumbs: [
