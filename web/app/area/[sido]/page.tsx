@@ -33,10 +33,13 @@ export async function generateStaticParams() {
 }
 
 type Area = NonNullable<Awaited<ReturnType<typeof getArea>>>;
-const describe = (sido: string, a: Area) =>
-  `${sido} 정부 복지와 지원금 ${a.n}건을 한자리에. ` +
-  `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건. ` +
-  `${HOOK} 신청 방법과 활용 방법까지 정리했습니다.`;
+// 2026-11-13 전국에서 몇 번째로 많은지를 더하고, 모든 시·도에 같던 꼬리("신청 방법과 활용 방법까지 정리했습니다")를 뺐다.
+const describe = (sido: string, a: Area, all?: Area[] | null) => {
+  const i = all ? all.findIndex((x) => x.sido === sido) : -1;
+  const rank = all && i >= 0 && all.length >= 3 ? ` 전국 ${all.length}개 시·도 가운데 ${i + 1}번째로 많습니다.` : "";
+  return `${sido} 정부 복지와 지원금 ${a.n}건을 한자리에.${rank} ` +
+    `청년 ${a.youth}건, 어르신 ${a.senior}건, 저소득 ${a.low_income}건, 장애인 ${a.disabled}건, 가족 ${a.family}건. ${HOOK}`;
+};
 
 export async function generateMetadata({
   params,
@@ -44,11 +47,11 @@ export async function generateMetadata({
   params: { sido: string };
 }): Promise<Metadata> {
   const sido = decodeURIComponent(params.sido);
-  const a = await getArea(sido);
+  const [a, all] = await Promise.all([getArea(sido), getAreas().catch(() => null)]);
   if (!a) return withOg({ title: "찾을 수 없는 지역" });
 
   const title = `${sido} 청년지원금·복지서비스 ${a.n}건 총정리 (${YEAR})`;
-  const description = describe(sido, a);
+  const description = describe(sido, a, all);
 
   return withOg({
     title,
@@ -140,7 +143,7 @@ export default async function AreaPage({ params }: { params: { sido: string } })
         data={pageGraph({
           path: `/area/${encodeURIComponent(sido)}`,
           name: `${sido}에서 받을 수 있는 지원금과 복지서비스`,
-          description: describe(sido, area),
+          description: describe(sido, area, all),
           collection: true,
           // 화면 위 길잡이 "지원 / 서울특별시" 그대로.
           crumbs: [{ name: "지원", path: "/" }, { name: sido }],
