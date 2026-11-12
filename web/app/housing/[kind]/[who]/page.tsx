@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { kind: string; who
   const title = housingTitle(kind, who, undefined, n);
   return withOg({
     title,
-    description: housingDescription(kind, who, undefined, n),
+    description: housingDescription(kind, who, undefined, n, counts),
     keywords: [
       `${w.label} ${k.label} 지원`, `${w.label} ${k.label} 대출`, `${w.label} ${k.title}`,
       `${w.label} ${k.label}자금 대출이자 지원`, `${w.label} 주거 지원`, `${w.label} 주택 지원`,

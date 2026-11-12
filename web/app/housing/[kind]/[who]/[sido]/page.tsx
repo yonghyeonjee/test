@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: { kind: string; who
   const title = housingTitle(kind, who, sido, n);
   return withOg({
     title,
-    description: housingDescription(kind, who, sido, n),
+    description: housingDescription(kind, who, sido, n, counts),
     keywords: [
       `${sido} ${w.label} ${k.label} 지원`, `${sido} ${w.label} ${k.label} 대출`, `${sido} ${w.label} ${k.title}`,
       `${sido} ${w.label} ${k.label}자금 대출이자 지원`, `${sido} ${w.label} 주거비 지원`, `${sido} ${w.label} 주거 지원`,
