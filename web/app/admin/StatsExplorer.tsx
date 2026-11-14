@@ -61,9 +61,10 @@ function labelOf(unit: Unit, k: string) {
   return k.slice(5).replace("-", ".");
 }
 
-type Props = { initial: StatRow[] | null; initialError?: string | null };
+/** range 를 주면 기간은 바깥(StatsBoard)이 정한다. 이 안의 기간 고르기는 숨긴다(2026-11-15). */
+type Props = { initial: StatRow[] | null; initialError?: string | null; range?: Range };
 
-export default function StatsExplorer({ initial, initialError }: Props) {
+export default function StatsExplorer({ initial, initialError, range: outer }: Props) {
   const [src, setSrc] = useState<Src>("visit");
   const [preset, setPreset] = useState("30d");
   const [custom, setCustom] = useState<{ from: string; to: string }>({ from: kst(Date.now() - 29 * 86400_000), to: kst(Date.now()) });
@@ -74,11 +75,12 @@ export default function StatsExplorer({ initial, initialError }: Props) {
   const [busy, setBusy] = useState(false);
   const [first, setFirst] = useState(true);
 
-  const range: Range = useMemo(() => {
+  const own: Range = useMemo(() => {
     if (preset !== "custom") return presetRange(preset);
     const from = kstStart(custom.from), to = kstStart(custom.to) + 86400_000;
     return from < to ? { from, to } : { from: to - 86400_000, to };
   }, [preset, custom]);
+  const range: Range = outer ?? own;
 
   // 기간을 바꾸면 단위를 거기 맞는 것으로. 사람이 단위를 따로 고르면 그 뒤로는 손대지 않는다(unitTouched).
   const [unitTouched, setUnitTouched] = useState(false);
@@ -89,7 +91,7 @@ export default function StatsExplorer({ initial, initialError }: Props) {
 
   useEffect(() => {
     // 처음 한 번은 서버가 준 자료(30일·일·채널)를 그대로 쓴다.
-    if (first && initial && src === "visit" && preset === "30d" && unit === "day" && dim === "channel") { setFirst(false); return; }
+    if (first && initial && !outer && src === "visit" && preset === "30d" && unit === "day" && dim === "channel") { setFirst(false); return; }
     setFirst(false);
     const ctl = new AbortController();
     const qs = new URLSearchParams({ src, from: new Date(range.from).toISOString(), to: new Date(range.to).toISOString(), unit, dim });
@@ -135,6 +137,7 @@ export default function StatsExplorer({ initial, initialError }: Props) {
       <div className="grid gap-3 text-xs sm:grid-cols-[auto_1fr] sm:items-center">
         <span className="font-bold text-muted">자료</span>
         <Seg value={src} items={(Object.keys(SRC_LABEL) as Src[]).map((s) => ({ v: s, t: SRC_LABEL[s] }))} onPick={setSrc} />
+        {!outer && (<>
         <span className="font-bold text-muted">기간</span>
         <div className="flex flex-wrap items-center gap-2">
           <Seg value={preset} items={[...PRESETS.map((p) => ({ v: p.key, t: p.label })), { v: "custom", t: "직접" }]} onPick={setPreset} />
@@ -146,6 +149,7 @@ export default function StatsExplorer({ initial, initialError }: Props) {
             </span>
           )}
         </div>
+        </>)}
         <span className="font-bold text-muted">단위</span>
         <Seg value={unit} items={UNITS.map((u) => ({ v: u, t: UNIT_LABEL[u], off: unitDisabled(u) }))} onPick={(u) => { setUnitTouched(true); setUnit(u); }} />
         <span className="font-bold text-muted">나누기</span>
