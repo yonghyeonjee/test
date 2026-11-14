@@ -162,6 +162,22 @@ export type WelfareQuery = {
   q?: string;
 };
 
+/**
+ * 같은 사업이 번호만 달리 두 번 올라온 것을 목록에서 하나로(2026-11-15).
+ * 복지로·기업마당 원본이 같은 사업을 다른 번호로 다시 올린다(예: 충북 "어린이날 행사" WLF00003633·WLF00006557,
+ * 기업마당 "변경 공고"·"추가모집"). programs_public 8,307건 중 55쌍. 제목·기관·지역이 같으면 먼저 온 것만 남긴다.
+ * 상세 쪽(/p/번호)은 둘 다 그대로 열린다.
+ */
+export function dedupePrograms<T extends { title: string; sido?: string | null; sigungu?: string | null; org_name?: string | null }>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    const k = [r.title, r.org_name ?? "", r.sido ?? "", r.sigungu ?? ""].join("|").replace(/\s+/g, "");
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 export async function matchWelfare(q: WelfareQuery, limit = 60, live = false) {
   const { data, error } = await (live ? dbLive : db).rpc("match_welfare", {
     p_sido: q.sido || null,
@@ -173,7 +189,7 @@ export async function matchWelfare(q: WelfareQuery, limit = 60, live = false) {
     p_q: expandQuery(q.q),
   });
   if (error) throw error;
-  return (data ?? []) as Program[];
+  return dedupePrograms((data ?? []) as Program[]);
 }
 
 /** 조건에 걸리는 복지 사업의 전체 건수. 목록은 60건까지만 받으므로 따로 센다. */
@@ -211,7 +227,7 @@ export async function matchBusiness(q: BusinessQuery, limit = 60, live = false) 
     p_q: expandQuery(q.q),
   });
   if (error) throw error;
-  return (data ?? []) as Program[];
+  return dedupePrograms((data ?? []) as Program[]);
 }
 
 export async function countBusiness(q: BusinessQuery, live = false): Promise<number> {
@@ -345,7 +361,8 @@ export async function getRelated(p: Program, limit = 5) {
     .limit(limit);
   q = p.sigungu ? q.eq("sigungu", p.sigungu) : p.sido ? q.eq("sido", p.sido) : q;
   const { data } = await q.order("norm_confidence", { ascending: false });
-  return (data ?? []) as Program[];
+  // 지금 보는 사업과 제목·기관·지역이 같은 쌍둥이도 뺀다.
+  return dedupePrograms([p, ...((data ?? []) as Program[])]).slice(1);
 }
 
 export type Area = {
@@ -382,7 +399,7 @@ export async function listByArea(sido: string, limit = 100) {
     .order("norm_confidence", { ascending: false })
     .limit(limit);
   if (error) throw new Error(`지역 목록: ${error.message}`);
-  return (data ?? []) as Program[];
+  return dedupePrograms((data ?? []) as Program[]);
 }
 
 /** 분야(topics) 하나로 전국 목록. 확신도 순. */
@@ -398,7 +415,7 @@ export async function listByTopic(topic: string, limit = 60) {
   // 오류를 삼키면 "건수는 74건인데 목록은 0건" 같은 모양이 조용히 생긴다.
   // 실제로 뷰에 없는 칸(first_seen_at)으로 정렬하다 그렇게 됐다.
   if (error) throw new Error(`분야 목록: ${error.message}`);
-  return (data ?? []) as Program[];
+  return dedupePrograms((data ?? []) as Program[]);
 }
 
 /** 분야별 건수. 홈 격자에 쓴다. 분야 수만큼 HEAD 요청을 보낸다. */
