@@ -14,6 +14,9 @@
 # 머리글은 이름표(User-Agent)·리퍼러·언어만 남기려고 나머지 흔한 것을 지운다. 이름표는 fail2ban 이 검색엔진을 빼는 데 쓴다.
 # 쿠키·인증·기기 열쇠(X-Device-Key)는 지운다.
 # 미리 받기 표시(Sec-Purpose·Purpose)는 남긴다. 구글 검색 결과의 미리 받기와 진짜 방문을 가르는 데 쓴다(2026-10-15).
+# Sec-Fetch-Site 도 남긴다(2026-11-15). 진짜 브라우저는 늘 보내고 흉내 낸 수집기는 안 보낸다 —
+# 브라우저 이름표로 여러 IP 에서 /jobs/N 을 훑는 요청(6분에 1,060건·IP 869개)이 사람인지 가르려는 것.
+# 하루치를 보고, 이 머리글이 없는 요청에 사람이 섞이지 않으면 그때 막는다. 값만 남기고 아직 막지 않는다.
 # 20MB 씩 7개, 7일 넘은 것은 지운다. IP 를 담으니 오래 두지 않는다(개인정보 처리방침 '접속 기록').
 (access) {
 	log {
@@ -48,7 +51,6 @@
 				request>headers>Sec-Ch-Ua-Platform delete
 				request>headers>Sec-Fetch-Dest delete
 				request>headers>Sec-Fetch-Mode delete
-				request>headers>Sec-Fetch-Site delete
 				request>headers>Sec-Fetch-User delete
 				request>headers>Rsc delete
 				request>headers>Next-Router-Prefetch delete
