@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { unstable_cache } from "next/cache";
 import { db, dbLive, dbConfigured } from "./db";
 import { readAll } from "./pubJobs";
@@ -101,6 +102,42 @@ function loadCached(kind: AgencyKind, sido?: string, q?: string) {
   if (q?.trim()) return load(kind, sido, q);
   const tag = `${kind}|${sido ?? ""}|`;
   return unstable_cache(() => load(kind, sido, q), ["agency-v2", tag], { revalidate: 21600 })();
+}
+
+// ── 상세 쪽(/agency/{slug}) ─────────────────────────────────
+// 저장된 id 는 "business:기관|사업명" 꼴의 긴 한글이라 주소로 못 쓴다. 갈래 한 글자 + sha1 앞 10자리로 줄인다.
+// 화면이 알리오를 직접 불러 받은 항목(id 에 갈래가 안 붙음)도 같은 주소가 나오게 갈래를 붙여서 센다.
+const KIND_CHAR: Record<AgencyKind, string> = { business: "b", event: "e", facility: "f" };
+const CHAR_KIND: Record<string, AgencyKind> = { b: "business", e: "event", f: "facility" };
+
+export const AGENCY_KIND: Record<AgencyKind, { label: string; list: string; listName: string }> = {
+  business: { label: "사업", list: "/agency", listName: "공공기관 사업" },
+  event: { label: "행사", list: "/agency/events", listName: "공공기관 행사" },
+  facility: { label: "시설", list: "/agency/facilities", listName: "공공기관 시설" },
+};
+
+export function agencySlug(kind: AgencyKind, id: string): string {
+  const raw = (id.startsWith(`${kind}:`) ? id : `${kind}:${id}`).slice(0, 500);
+  return KIND_CHAR[kind] + createHash("sha1").update(raw).digest("hex").slice(0, 10);
+}
+export const agencyHref = (kind: AgencyKind, id: string) => `/agency/${agencySlug(kind, id)}`;
+
+/** 본문이 이만큼은 돼야 검색에 내놓는다. 그보다 짧으면 알리오 한 줄을 옮긴 것뿐이라 noindex,follow. */
+export const AGENCY_TEXT_MIN = 300;
+
+/**
+ * 주소의 slug 로 한 건을 찾는다. 같은 갈래의 나머지(관련 항목용)도 함께 돌려준다.
+ * 없는 slug 면 null(→ 404). 저장분을 못 읽으면 예외 — "없음"으로 굳혀 404 를 캐시하지 않는다(getJob 과 같은 원칙).
+ */
+export async function agencyItemBySlug(slug: string): Promise<{ kind: AgencyKind; item: AlioItem; all: AlioItem[] } | null> {
+  const kind = CHAR_KIND[slug[0]];
+  if (!kind || !/^[bef][0-9a-f]{10}$/.test(slug)) return null;
+  if (!dbConfigured) return null;
+  // 캐시에 실패(null)가 굳어 있을 수 있어 한 번은 직접 읽어 본다.
+  const all = (await loadCached(kind)) ?? (await load(kind));
+  if (!all) throw new Error(`[agency_items ${kind}] 저장분을 읽지 못했다`);
+  const item = all.find((it) => agencySlug(kind, it.id) === slug);
+  return item ? { kind, item, all } : null;
 }
 
 /**
