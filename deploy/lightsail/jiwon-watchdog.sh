@@ -18,6 +18,15 @@ if curl -sf -m 10 -o /dev/null http://127.0.0.1:3000/robots.txt    && printf '%s
 fi
 n=$(( $(cat "$STATE" 2>/dev/null || echo 0) + 1 ))
 echo "$n" > "$STATE"
+# 2026-11-15 CPU 버스트가 바닥나 느린 것(steal)이면 다시 띄우지 않는다. 다시 띄우면 메모리 캐시가 비어 첫 화면부터
+# 새로 그리느라 CPU 를 더 쓰고, 그 사이 또 10초를 넘겨 다시 띄우는 일이 되풀이됐다(11/14 15:56~17:12 열 번).
+# 메모리가 높은 경우(10/8 같은 힙 부풂)는 그대로 다시 띄운다.
+CPU60=$(awk '/^some/{for(i=1;i<=NF;i++) if($i ~ /^avg60=/){split($i,a,"="); print int(a[2])}}' /proc/pressure/cpu 2>/dev/null || echo 0)
+MEM=$(systemctl show jiwon -p MemoryCurrent --value 2>/dev/null || echo 0)
+if [ "$n" -ge 2 ] && [ "${CPU60:-0}" -ge 30 ] && [ "${MEM:-0}" -lt 471859200 ]; then
+  logger -t jiwon-watchdog "느림 ${n}회 연속이지만 CPU 압박 ${CPU60}%·메모리 ${MEM} — CPU 부족이라 다시 띄우지 않음"
+  exit 0
+fi
 if [ "$n" -ge 2 ]; then
   logger -t jiwon-watchdog "3000 포트가 10초 안에 답하지 않거나 첫 화면이 오류 화면 ${n}회 연속 — jiwon 다시 띄움 (메모리 $(systemctl show jiwon -p MemoryCurrent --value 2>/dev/null))"
   systemctl restart jiwon

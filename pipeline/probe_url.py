@@ -7,7 +7,7 @@ import requests
 urls = [u.strip() for u in (sys.argv[1] if len(sys.argv) > 1 else "https://jiwon.knowhow-it.com/").split(",") if u.strip()]
 for u in urls:
     try:
-        r = requests.get(u, timeout=30, headers={"User-Agent": "Mozilla/5.0 (probe)"}, allow_redirects=False)
+        r = requests.get(u, timeout=30, headers={"User-Agent": "Mozilla/5.0 (probe)", "Accept-Language": "ko-KR,ko;q=0.9"}, allow_redirects=False)
         print(f"\n== {u}\n   status {r.status_code}  {r.elapsed.total_seconds()*1000:.0f}ms  len {len(r.content)}")
         for k in ("cache-control", "content-type", "location", "via", "x-nextjs-cache", "x-middleware-rewrite"):
             if k in r.headers: print(f"   {k}: {r.headers[k]}")
