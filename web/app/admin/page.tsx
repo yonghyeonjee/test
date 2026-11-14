@@ -3,6 +3,7 @@ import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 import SavedPanel, { type Account, type SavedCond } from "./SavedPanel";
 import SettingsPanel from "./SettingsPanel";
+import BlogPanel from "./BlogPanel";
 import StatsExplorer from "./StatsExplorer";
 import type { StatRow } from "@/lib/adminStats";
 import { AdsPanel, SeoPanel } from "./SeoAdsPanel";
@@ -29,7 +30,7 @@ function svc() {
 type Row = Record<string, unknown>;
 
 const JUMPS: [string, string][] = [
-  ["#a-health", "점검"], ["#a-visit", "유입"], ["#a-saved", "저장 조건"], ["#a-search", "검색"],
+  ["#a-health", "점검"], ["#a-blog", "블로그"], ["#a-visit", "유입"], ["#a-saved", "저장 조건"], ["#a-search", "검색"],
   ["#a-collect", "수집"], ["#a-seo", "SEO"], ["#a-ads", "광고"], ["#a-settings", "설정"],
 ];
 
@@ -338,6 +339,9 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         {(rows.length >= SAMPLE || visitRows.length >= SAMPLE) &&
           ` 아래 순위와 그래프는 최근 ${SAMPLE.toLocaleString()}건을 표본으로 합니다.`}
       </p>
+
+      {/* 블로그 글 작성·수정·삭제(2026-11-15). */}
+      <div id="a-blog" className="scroll-mt-14"><BlogPanel /></div>
 
       <Panel id="a-visit" title="통계 탐색" note="유입·검색 × 기간 × 단위 × 나누기 · DB 전체를 셈(표본 아님)">
         <StatsExplorer initial={series} initialError={seriesError} />

@@ -226,3 +226,76 @@ export async function refreshCache() {
   revalidatePath("/", "layout");
   return { error: null };
 }
+
+// ── 블로그 글(blog_posts) 작성·수정·삭제 ─────────────────────
+// 2026-11-15. 전에는 사람이 쓴 사례 글도 SQL 로 넣었다. 관리자 화면에서 마크다운으로 쓰고 블록으로 저장한다
+// (lib/storyMd.ts). 글 주소(slug)는 한 번 정하면 바꾸지 않는다 — 검색엔진에 알려진 주소가 죽지 않게.
+
+export type BlogListRow = { slug: string; kind: string; title: string; published_at: string; updated_at: string };
+export type BlogPostRow = BlogListRow & { subject: string; summary: string; keywords: string[]; body: unknown[] };
+export type BlogInput = {
+  slug: string; kind: string; subject: string; title: string; summary: string;
+  keywords: string[]; body: unknown[]; published_at: string;
+  /** 새 글이면 true. 같은 주소의 글이 이미 있으면 덮어쓰지 않고 막는다. */
+  isNew: boolean;
+};
+
+const BLOG_KINDS = ["case", "topic", "org", "role", "region", "license", "sigungu", "daily"];
+const BLOG_LIST_COLS = "slug,kind,title,published_at,updated_at";
+
+export async function listBlogPosts(onlyHuman = true): Promise<{ error: string | null; rows: BlogListRow[] }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", rows: [] };
+  let q = admin().from("blog_posts").select(BLOG_LIST_COLS).order("published_at", { ascending: false }).order("updated_at", { ascending: false }).limit(200);
+  if (onlyHuman) q = q.eq("kind", "case");
+  const { data, error } = await q;
+  return { error: error ? error.message : null, rows: (data ?? []) as BlogListRow[] };
+}
+
+export async function getBlogPost(slug: string): Promise<{ error: string | null; post: BlogPostRow | null }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다.", post: null };
+  const { data, error } = await admin().from("blog_posts")
+    .select("slug,kind,subject,title,summary,keywords,body,published_at,updated_at").eq("slug", slug).maybeSingle();
+  if (error) return { error: error.message, post: null };
+  return { error: data ? null : "그 글이 없습니다.", post: (data as BlogPostRow | null) ?? null };
+}
+
+export async function saveBlogPost(input: BlogInput): Promise<{ error: string | null }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다." };
+  const slug = input.slug.trim();
+  const title = input.title.trim();
+  const summary = input.summary.trim();
+  if (!/^[a-z0-9][a-z0-9-]{2,79}$/.test(slug)) return { error: "글 주소는 영문 소문자·숫자·하이픈으로 3~80자여야 합니다. 예: jeonse-loan-guide" };
+  if (!title) return { error: "제목을 적어 주세요." };
+  if (summary.length < 20) return { error: "요약을 20자 이상 적어 주세요. 검색 결과와 목록에 그대로 나옵니다." };
+  if (!BLOG_KINDS.includes(input.kind)) return { error: "갈래가 올바르지 않습니다." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.published_at)) return { error: "발행일은 2026-11-15 꼴로 적어 주세요." };
+  if (!Array.isArray(input.body) || !input.body.length) return { error: "본문이 비어 있습니다." };
+  const keywords = input.keywords.map((k) => k.trim()).filter(Boolean).slice(0, 12);
+
+  const db = admin();
+  const { data: exists, error: e0 } = await db.from("blog_posts").select("slug").eq("slug", slug).maybeSingle();
+  if (e0) return { error: e0.message };
+  if (input.isNew && exists) return { error: "같은 주소의 글이 이미 있습니다. 주소를 바꾸거나 그 글을 열어 고치세요." };
+  if (!input.isNew && !exists) return { error: "고치려는 글이 없습니다(지워졌을 수 있습니다)." };
+
+  const row = {
+    slug, kind: input.kind, subject: input.subject.trim() || title.slice(0, 40), title, summary, keywords,
+    body: input.body, published_at: input.published_at, updated_at: new Date().toISOString(),
+  };
+  const { error } = input.isNew
+    ? await db.from("blog_posts").insert(row)
+    : await db.from("blog_posts").update(row).eq("slug", slug);
+  if (error) return { error: error.message };
+  revalidatePath(`/story/${slug}`);
+  revalidatePath("/story");
+  return { error: null };
+}
+
+export async function deleteBlogPost(slug: string): Promise<{ error: string | null }> {
+  if (!isLoggedIn()) return { error: "로그인이 필요합니다." };
+  const { error } = await admin().from("blog_posts").delete().eq("slug", slug);
+  if (error) return { error: error.message };
+  revalidatePath(`/story/${slug}`);
+  revalidatePath("/story");
+  return { error: null };
+}
