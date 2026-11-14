@@ -44,7 +44,7 @@ import { pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg } from "@/lib/seo";
 import { SIDO_SHORT } from "@/lib/geo";
 import {
-  countByTopic,
+  countByTopic, getCoverage,
   countBusiness, countWelfare, feedClosing, feedNew, getBusinessRegions, getHomeBundle,
   logSearch, matchBusiness, matchWelfare, type Program,
 } from "@/lib/db";
@@ -72,10 +72,13 @@ function botLike() {
   return isBot(h.get("user-agent")) || !h.get("accept-language");
 }
 
-export function businessMetadata(): Metadata {
+export async function businessMetadata(): Promise<Metadata> {
+  // 2026-11-14 지금 조회되는 기업 지원사업 수를 제목·설명에 싣는다(첫 화면 탭 숫자와 같은 coverage). 못 읽으면 고정 문장.
+  const n = await getCoverage().then((c) => c.business).catch(() => 0);
+  const count = n > 0 ? n.toLocaleString("ko-KR") : null;
   return withOg({
-    title: { absolute: BIZ_TITLE },
-    description: BIZ_DESC,
+    title: { absolute: count ? `K나라지원 — 중소기업·소상공인 지원사업 ${count}건 조회, 지역·업종·업력으로` : BIZ_TITLE },
+    description: count ? `지금 신청할 수 있는 기업·소상공인 지원사업 ${count}건. ${BIZ_DESC}` : BIZ_DESC,
     keywords: ["K나라지원", "나라지원", "소상공인 지원사업", "중소기업 지원사업", "창업 지원사업", "정부 지원사업 조회"],
     // 물음표 주소(/?tab=business)는 Next 가 정본 주소에서 물음표 뒤를 떼어 버려
     // 첫 화면과 같은 쪽으로 보였다. 그래서 /business 라는 제 길을 줬다.
