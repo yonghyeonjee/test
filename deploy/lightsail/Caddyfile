@@ -75,6 +75,8 @@
 #  3) 이름표(User-Agent)가 없는 요청. 403. 브라우저·검색엔진은 반드시 단다.
 #  4) 봇이 robots.txt 로 막은 경로에 오면 403(아래 @robotsdeny).
 #  5) AI 답변 봇이 공유 그림(/og)을 그려 가면 403(아래 @ogbot). robots.txt 와 같다.
+#  6) 브라우저 이름표인데 Accept-Language 가 없는 쪽 요청. 403(아래 @nolang).
+#  7) 방문을 보내 주지 않는 수집 봇 둘(Amzn-SearchBot·ElevenlabsCrawler). 429(아래 @restbot, 임시).
 # 검색엔진(Googlebot·Yeti·Daum·bingbot)·AdSense·AI 답변 봇(PerplexityBot·OAI-SearchBot·Claude-User 등)은 건드리지 않는다.
 (guard) {
 	@scan {
@@ -121,6 +123,15 @@
 		not header Accept-Language *
 	}
 	respond @nolang 403
+	#  7) 2026-11-15 방문을 보내 주지 않는 수집 봇 둘은 잠깐 쉬게 한다(429). 버스트가 바닥난 44분 동안
+	#     Amzn-SearchBot 276건·ElevenlabsCrawler 72건이 쪽을 긁었다(전체의 약 11%). 아마존 검색·음성 합성 쪽은
+	#     우리 사이트로 사람을 보내지 않는다. OAI-SearchBot·Claude-SearchBot·PerplexityBot 은 방문을 보내므로 그대로 둔다.
+	#     부하가 가라앉으면 이 규칙은 지운다.
+	@restbot {
+		not path /robots.txt
+		header_regexp restua User-Agent (?i)(Amzn-SearchBot|ElevenlabsCrawler)
+	}
+	respond @restbot 429
 }
 
 (app) {
