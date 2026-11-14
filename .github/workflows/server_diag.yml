@@ -32,16 +32,14 @@ jobs:
           # 2026-11-15 언어 머리글 기준 봇 판별 보고. 배포 없이 그때그때 올려서 돌린다.
           scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no -i $HOME/.ssh/id deploy/lightsail/lang_report.py ubuntu@$HOST:/tmp/lang_report.py || true
           # 2026-11-15 끊긴 진단이 남긴 grep·find·du 가 40분 넘게 디스크를 읽고 있었다. 먼저 치운다.
-          $S 'sudo pkill -f "^[g]rep -lF " ; sudo pkill -f "^[d]u -sh? /srv/jiwon" ; true' || true
+          # 같은 날 폴더별 du·find 는 CPU 가 바닥난 서버에서 10분을 넘겨 뺐다(디스크 사용량은 df 로 본다).
+          $S 'sudo pkill -f "^[g]rep -lF " ; sudo pkill -f "^[d]u -sh? /srv/jiwon" ; sudo pkill -f "^[f]ind /srv/jiwon" ; true' || true
           $S "sudo timeout 60 python3 /tmp/lang_report.py ${{ inputs.minutes }}; rm -f /tmp/lang_report.py" || true
           $S 'set +e
             echo "== 시각·가동 시간·부하"; date -u; uptime
             echo; echo "== 메모리(MB)"; free -m
             echo; echo "== 디스크"; df -h / | tail -1
-            echo "-- 많이 쓰는 곳"; sudo timeout 40 du -sh /srv/jiwon/releases/* /var/log/journal /var/lib/caddy /tmp 2>/dev/null | sort -h | tail -8 || echo "(40초 넘어 그만 — 디스크 읽기가 느림)"
             echo "-- 지금 배포의 Next 캐시"; sudo timeout 40 du -sh /srv/jiwon/current/.next/cache /srv/jiwon/current/.next/server 2>/dev/null || echo "(40초 넘어 그만)"
-            echo "-- 페이지 캐시가 쌓이는 경로(상위 12)"; sudo timeout 40 du -s /srv/jiwon/current/.next/server/app/* /srv/jiwon/current/.next/server/app/*/* 2>/dev/null | sort -n | tail -12 || echo "(40초 넘어 그만)"
-            echo "-- 경로별 파일 수"; for d in /srv/jiwon/current/.next/server/app/*/; do printf "%s %s\n" "$(sudo timeout 20 find "$d" -type f | wc -l)" "$d"; done | sort -n | tail -8
             echo; echo "== CPU 압박(PSI)"; cat /proc/pressure/cpu 2>/dev/null; echo "-- 메모리 압박"; cat /proc/pressure/memory 2>/dev/null; echo "-- 디스크 I/O 압박"; cat /proc/pressure/io 2>/dev/null; echo "-- vmstat 5초"; vmstat 1 5
             echo; echo "== CPU 도둑(steal) 포함 사용률 — 버스트 소진이면 st 가 큼"; top -bn1 | head -5
             echo; echo "== 메모리 많이 쓰는 프로세스"; ps aux --sort=-rss | head -12
