@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { startTransition, useEffect } from "react";
 
 /**
  * 그리다 터졌을 때의 화면(2026-10-25). 이 파일이 없으면 Next 가 어느 사이트나 똑같은
@@ -13,7 +14,21 @@ import { useEffect } from "react";
  * (2) noindex 를 머리에 꽂아 색인·중복 판정에서 빼고 (3) 사람에게는 다시 시도할 길을 준다.
  */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const router = useRouter();
   useEffect(() => {
+    // 2026-11-14 한 번은 조용히 다시 그린다. 11/13 구글봇이 /jobs·/business 를 그리다 일시 오류를 만나(그 시각 DB 는 정상)
+    // 아래 noindex 를 받아 갔고, 구글은 허브를 몇 주에 한 번 오므로 그 판정이 오래 남는다. 같은 주소에서 두 번째로
+    // 터질 때(진짜로 못 그리는 쪽)만 noindex 를 꽂는다.
+    const w = window as unknown as { __kErr?: Record<string, number> };
+    const key = window.location.pathname;
+    w.__kErr = w.__kErr ?? {};
+    w.__kErr[key] = (w.__kErr[key] ?? 0) + 1;
+    if (w.__kErr[key] === 1) {
+      console.error("[K나라지원] 화면을 그리다 멈춤, 다시 그림:", error?.digest ?? error?.message);
+      // 서버에서 받은 조각까지 다시 받으려면 refresh 와 reset 을 함께 부른다(Next 14 권장 방식).
+      const t = window.setTimeout(() => startTransition(() => { router.refresh(); reset(); }), 800);
+      return () => window.clearTimeout(t);
+    }
     // 응답은 이미 200 으로 나갔으니 상태 코드는 못 바꾼다. 렌더된 DOM 의 noindex 는 구글이 읽는다.
     const m = document.createElement("meta");
     m.name = "robots";
@@ -22,7 +37,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     document.title = "잠시 뒤 다시 열어 주세요 | K나라지원";
     console.error("[K나라지원] 화면을 그리다 멈춤:", error?.digest ?? error?.message);
     return () => { m.remove(); };
-  }, [error]);
+  }, [error, reset, router]);
 
   return (
     <div className="py-16">
