@@ -23,7 +23,7 @@ async function build(): Promise<Slide[]> {
 
   if (!dbConfigured) return pinned;
 
-  // 오늘의 채용 브리핑(blog_daily 가 매일 아침 쓰는 글). 이틀 안에 쓴 것만. 제목에서 건수를 읽는다.
+  // 채용 주간 브리핑(blog_daily 가 월요일 아침 쓰는 글, 2026-11-15 부터 주 1회). 이레 안에 쓴 것만. 제목에서 건수를 읽는다.
   const brief: PromiseLike<Slide[]> = db
     .from("blog_public")
     .select("slug,title,published_at")
@@ -33,15 +33,16 @@ async function build(): Promise<Slide[]> {
     .then(({ data }): Slide[] => {
       const r = (data ?? [])[0] as { slug: string; title: string; published_at: string } | undefined;
       if (!r) return [];
-      // 쓴 날이 오늘이나 어제여야 "오늘"이다(글은 매일 아침 9시 반에 쓴다).
+      // 이번 주에 쓴 글이어야 한다(글은 월요일 아침 9시 반에 쓴다). 그보다 오래됐으면 숫자가 낡아 싣지 않는다.
       const age = -daysLeft(String(r.published_at).slice(0, 10), today);
-      if (age > 1) return [];
+      if (age > 7) return [];
       const m = String(r.title).match(/새 공고 ([\d,]+)건.*?마감 ([\d,]+)건/);
       const d = new Date(`${String(r.published_at).slice(0, 10)}T00:00:00Z`);
       return [{
         key: `brief-${r.slug}`, kind: "brief", days: 0,
-        title: m ? `오늘 새 공고 ${m[1]}건 · 사흘 안 마감 ${m[2]}건` : "오늘의 공공기관 채용 브리핑",
-        sub: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 공공기관 채용 브리핑 · 지역별 새 공고와 마감 임박`,
+        title: m ? `이번 주 새 공고 ${m[1]}건 · 7일 안 마감 ${m[2]}건` : "공공기관 채용 주간 브리핑",
+        // Home 이 " 공공기관" 앞을 잘라 "11월 16일 주간"으로 쓴다(app/_home/Home.tsx briefDay).
+        sub: `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 주간 공공기관 채용 브리핑 · 지역별 새 공고와 마감 임박`,
         href: `/story/${encodeURIComponent(r.slug)}`, end: iso(today),
       }];
     }, () => [] as Slide[]);

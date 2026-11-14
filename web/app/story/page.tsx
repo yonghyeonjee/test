@@ -40,7 +40,15 @@ const STORIES: Article[] = [
 export const revalidate = 3600;
 
 export default async function StoryIndex() {
-  const posts = await getStories(60);
+  // 채용 브리핑은 가장 새 것 하나만 목록에 둔다(2026-11-15). 날짜만 다른 같은 제목이 줄줄이 깔려 다른 글이 묻혔다.
+  // 지난 브리핑 쪽은 주소로는 그대로 열린다.
+  let briefShown = false;
+  const posts = (await getStories(60)).filter((s) => {
+    if (s.kind !== "daily") return true;
+    if (briefShown) return false;
+    briefShown = true;
+    return true;
+  });
   const items: Article[] = [
     ...STORIES,
     ...posts.map((s): Article => ({
@@ -60,7 +68,7 @@ export default async function StoryIndex() {
       <JsonLd
         data={pageGraph({
           path: "/story",
-          name: "블로그 — 자료가 말해 주는 것, 매일 세 편",
+          name: "블로그 — 자료가 말해 주는 것과 실제 사례",
           description: DESC,
           collection: true,
           items: items.map((a) => ({ name: a.title, path: a.href })).slice(0, 20),
@@ -68,9 +76,9 @@ export default async function StoryIndex() {
       />
       <header className="pt-4 sm:pt-8">
         <p className="eyebrow">블로그</p>
-        <h1 className="article-title mt-2 text-[1.75rem] leading-tight sm:text-[2.125rem]">자료가 말해 주는 것, 매일 세 편</h1>
+        <h1 className="article-title mt-2 text-[1.75rem] leading-tight sm:text-[2.125rem]">자료가 말해 주는 것, 그리고 실제 사례</h1>
         <p className="mt-3 text-[15px] leading-relaxed text-muted">
-          모아 둔 자료를 세어 나온 것을 매일 세 편씩 적습니다. 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지,
+          모아 둔 자료를 세어 나온 것을 매주 적습니다. 채용 브리핑은 월요일에 한 번. 어느 기관이 언제 뽑는지, 어떤 지원이 어느 지역에 몇 건 있는지,
           자격증 합격률은 어떤지. 사례 글은 여러 경우를 섞어 각색합니다.
         </p>
       </header>

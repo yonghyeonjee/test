@@ -32,7 +32,7 @@ export type Story = {
 
 export const KIND_LABEL: Record<string, string> = {
   topic: "지원 주제", org: "기관별 채용", role: "직무별 채용", region: "지역 현황",
-  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "오늘의 채용 브리핑", case: "실제 사례",
+  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "주간 채용 브리핑", case: "실제 사례",
 };
 
 const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated_at";

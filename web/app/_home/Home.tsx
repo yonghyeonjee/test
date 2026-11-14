@@ -371,7 +371,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
   const todayTiles: TodayTile[] = [
     ...(briefNew > 0 && brief
       ? [{ k: `${briefDay ?? "오늘"} 새 채용 공고`, n: briefNew, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: brief.href },
-         { k: "사흘 안 마감 채용", n: briefDue, tag: "서두르세요", tone: "bg-alertSoft text-alert", href: "/jobs" }]
+         { k: "7일 안 마감 채용", n: briefDue, tag: "서두르세요", tone: "bg-alertSoft text-alert", href: "/jobs" }]
       : [{ k: "접수 중 채용 공고", n: jobOpen, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: "/jobs" }]),
     { k: `최근 ${settings.newDays}일 새 지원사업`, n: fresh.length, tag: "지원금", tone: "bg-cat-greenSoft text-cat-green", href: "/policies" },
     { k: `${settings.closingDays}일 안 마감 지원사업`, n: closingCount, tag: "마감 임박", tone: "bg-accentSoft text-accent", href: "/calendar" },
