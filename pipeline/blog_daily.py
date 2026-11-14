@@ -878,15 +878,17 @@ def drop_alio_twins(rows: list[dict]) -> list[dict]:
 
 
 def daily_stats(sb) -> dict:
-    """지난 24시간에 새로 들어온 공공기관 채용 공고와 사흘 안에 마감되는 공고. 검색 유입의 8할이 채용 쪽이라 날마다 쓴다."""
+    """지난 7일에 새로 들어온 공공기관 채용 공고와 7일 안에 마감되는 공고.
+    2026-11-15 까지는 날마다(지난 24시간·사흘 안 마감) 썼다. 날짜만 다른 같은 틀의 글이 날마다 쌓여 주 1회로 줄였다."""
     t = today()
-    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=24)).isoformat()
+    since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)).isoformat()
     cols = "source_id,title,org,region,hire,end_date,reg_date"
+    # PostgREST 는 한 번에 1,000줄까지. 한 주 새 공고가 그보다 많으면 건수는 1,000 에서 멈춘다(지금은 하루 90건 안팎).
     fresh = (sb.table("job_posts").select(cols).in_("source", ["gojobs", "alio"]).gte("first_seen_at", since)
-             .or_(f"end_date.gte.{t.isoformat()},end_date.is.null").order("reg_date", desc=True).limit(400).execute().data or [])
+             .or_(f"end_date.gte.{t.isoformat()},end_date.is.null").order("reg_date", desc=True).limit(1000).execute().data or [])
     closing = (sb.table("job_posts").select(cols).in_("source", ["gojobs", "alio"])
-               .gte("end_date", t.isoformat()).lte("end_date", (t + dt.timedelta(days=2)).isoformat())
-               .order("end_date").limit(300).execute().data or [])
+               .gte("end_date", t.isoformat()).lte("end_date", (t + dt.timedelta(days=6)).isoformat())
+               .order("end_date").limit(600).execute().data or [])
     fresh = drop_alio_twins([r for r in fresh if is_opening(r.get("title") or "")])
     closing = drop_alio_twins([r for r in closing if is_opening(r.get("title") or "")])
     fresh_ids = {r["source_id"] for r in fresh}
@@ -917,7 +919,9 @@ def write_daily(s: dict) -> dict:
     top_orgs = sorted(orgs.items(), key=lambda kv: -kv[1])[:5]
 
     day = f"{t.month}월 {t.day}일"
-    lead = f"**{day}** 기준 지난 하루 동안 나라일터와 잡알리오에 새로 올라온 공공기관 채용 공고는 **{n(len(fresh))}건**, 사흘 안에 접수가 끝나는 공고는 **{n(len(closing))}건**입니다. "
+    w0 = t - dt.timedelta(days=7)
+    week = f"{w0.month}월 {w0.day}일~{day}"
+    lead = f"지난 한 주(**{week}**) 동안 나라일터와 잡알리오에 새로 올라온 공공기관 채용 공고는 **{n(len(fresh))}건**, 앞으로 7일 안에 접수가 끝나는 공고는 **{n(len(closing))}건**입니다. "
     if regions and len(fresh):
         most = max(regions, key=lambda kv: len(kv[1]))
         lead += f"새 공고는 **{most[0]}**{josa_k(most[0], '이가')[len(most[0]):]} {n(len(most[1]))}건으로 가장 많습니다."
@@ -941,19 +945,19 @@ def write_daily(s: dict) -> dict:
             blocks.append(P(f"나머지 {n(len(fresh) - shown)}건은 [접수 중 공고](/jobs/status/open)에서 등록일순으로 봅니다."))
 
     if closing:
-        toc.append(("closing", "사흘 안에 마감"))
-        blocks.append(H2("사흘 안에 마감", "closing"))
-        blocks.append(P("오늘부터 모레까지 접수가 끝나는 공고입니다. 마감 시각은 공고마다 달라 보통 오후 6시 전후이니 그날 오전에 내는 편이 안전합니다."))
-        blocks.append(LINKS([link(r) for r in closing[:15]]))
-        if len(closing) > 15:
-            blocks.append(P(f"그 밖에 {n(len(closing) - 15)}건이 더 있습니다. [마감 달력](/calendar)에서 날짜별로, [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
+        toc.append(("closing", "7일 안에 마감"))
+        blocks.append(H2("7일 안에 마감", "closing"))
+        blocks.append(P("오늘부터 7일 안에 접수가 끝나는 공고를 마감이 빠른 순으로 적었습니다. 마감 시각은 공고마다 달라 보통 오후 6시 전후이니 그날 오전에 내는 편이 안전합니다."))
+        blocks.append(LINKS([link(r) for r in closing[:20]]))
+        if len(closing) > 20:
+            blocks.append(P(f"그 밖에 {n(len(closing) - 20)}건이 더 있습니다. [마감 달력](/calendar)에서 날짜별로, [마감 임박 공고](/jobs/status/open)에서 마감순으로 봅니다."))
 
     if len(fresh) >= 5:
         toc.append(("mix", "어떤 자리인가"))
         blocks.append(H2("어떤 자리인가", "mix"))
         blocks.append(BARS([{"label": k, "n": v} for k, v in sorted(hire.items(), key=lambda kv: -kv[1])[:8]]))
         if top_orgs:
-            blocks.append(P("오늘 공고를 많이 낸 기관: " + ", ".join(f"[{o}]({org_href(o)}) {n(c)}건" for o, c in top_orgs) + "."))
+            blocks.append(P("이번 주 공고를 많이 낸 기관: " + ", ".join(f"[{o}]({org_href(o)}) {n(c)}건" for o, c in top_orgs) + "."))
 
     toc.append(("howto", "놓치지 않으려면"))
     blocks.append(H2("놓치지 않으려면", "howto"))
@@ -962,11 +966,12 @@ def write_daily(s: dict) -> dict:
         "가고 싶은 기관이 있으면 [기관별 채용](/jobs/org)에서 그 기관의 지난 공고와 채용 시기를 먼저 봅니다. 요구 자격은 회차가 바뀌어도 거의 같습니다.",
         "자기소개서·직무수행계획서는 [기관별 작성 가이드](/jobs/guide)에 공고문에서 뽑은 항목이 정리돼 있습니다.",
     ]))
-    blocks.append(NOTE(f"{s['date']} 오전 기준, 인사혁신처 나라일터와 잡알리오에 올라온 공고를 {BRAND}이 모은 것입니다. 기관 홈페이지에만 올리는 공고는 빠질 수 있습니다. 이 브리핑은 매일 아침 새로 씁니다."))
+    blocks.append(NOTE(f"{s['date']} 오전 기준, 인사혁신처 나라일터와 잡알리오에 올라온 공고를 {BRAND}이 모은 것입니다. 기관 홈페이지에만 올리는 공고는 빠질 수 있습니다. 이 브리핑은 매주 월요일 아침 새로 씁니다."))
 
-    title = f"{t.year}년 {day} 공공기관 채용 브리핑 — 새 공고 {n(len(fresh))}건, 사흘 안 마감 {n(len(closing))}건"
-    summary = f"{day} 새로 올라온 공공기관·공무직·임기제 채용 공고 {n(len(fresh))}건을 지역별로 모으고, 사흘 안에 접수가 끝나는 공고 {n(len(closing))}건을 마감순으로 정리했습니다."
-    kw = [BRAND, "공공기관 채용", f"{t.month}월 채용 공고", "나라일터 채용", "공무직 채용", "오늘의 채용", f"{day} 채용"]
+    # 제목에는 날짜를 넣지 않는다(2026-11-15). 날짜만 다른 제목이 목록에 줄줄이 깔렸다. 기간은 본문 첫 문장에 있다.
+    title = f"공공기관 채용 주간 브리핑 — 새 공고 {n(len(fresh))}건, 7일 안 마감 {n(len(closing))}건"
+    summary = f"지난 한 주 새로 올라온 공공기관·공무직·임기제 채용 공고 {n(len(fresh))}건을 지역별로 모으고, 7일 안에 접수가 끝나는 공고 {n(len(closing))}건을 마감순으로 정리했습니다."
+    kw = [BRAND, "공공기관 채용", "주간 채용 공고", "나라일터 채용", "공무직 채용", "이번 주 채용"]
     return {"slug": f"jobs-{s['date']}", "kind": DAILY, "subject": s["date"], "title": title, "summary": summary,
             "keywords": kw, "body": blocks, "toc": toc}
 
@@ -1082,6 +1087,7 @@ def main():
     ap.add_argument("--subject")
     ap.add_argument("--count", type=int, default=1, help="오늘 차례에서 몇 갈래를 쓸지(갈래를 지정하면 무시)")
     ap.add_argument("--dry", action="store_true")
+    ap.add_argument("--skip-daily", action="store_true", help="채용 브리핑은 쓰지 않고 오늘 차례의 갈래 글만(브리핑은 주 1회, 월요일)")
     a = ap.parse_args()
 
     from supabase import create_client
@@ -1096,7 +1102,8 @@ def main():
     done = {(r["kind"], r["subject"]) for r in rows}
     # 채용 브리핑은 날마다 먼저 쓰고, 그다음 오늘 차례의 갈래를 쓴다. --count 0 이면 브리핑만.
     # 2026-10-17: 사이트 전체가 구글 색인에서 빠져(틀에 박힌 자동 글이 많다는 판단) 자동 글은 주 2회 한 편으로 줄였다.
-    kinds = [a.kind] if a.kind else [DAILY] + (kinds_today(a.count) if a.count > 0 else [])
+    # 2026-11-15: 브리핑은 주 1회(월요일). 워크플로가 목요일에는 --skip-daily 로 갈래 글만 쓴다.
+    kinds = [a.kind] if a.kind else ([] if a.skip_daily else [DAILY]) + (kinds_today(a.count) if a.count > 0 else [])
     written = 0
     for kind in kinds:
         try:

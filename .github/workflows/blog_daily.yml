@@ -1,8 +1,9 @@
 name: blog-daily
 
-# 모아 둔 자료로 쓰는 블로그 글: 채용 브리핑(daily) 한 편은 날마다(첫 화면 띠가 쓴다, 검색엔진에는 noindex),
-# 나머지 갈래 글은 월·목요일에만 한 편. 2026-10-17 사이트 전체가 구글 색인에서 빠진 뒤 자동 글을 줄였다
-# (하루 세 편 → 브리핑 + 주 2편). 손으로 돌릴 때는 count 를 그대로 쓴다.
+# 모아 둔 자료로 쓰는 블로그 글: 채용 브리핑(daily, 이름만 daily 이고 2026-11-15 부터 주간)은 월요일에 한 편
+# (첫 화면 "오늘의 숫자"가 쓴다, 검색엔진에는 noindex), 나머지 갈래 글은 월·목요일에 한 편.
+# 2026-10-17 사이트 전체가 구글 색인에서 빠진 뒤 자동 글을 줄였다(하루 세 편 → 브리핑 + 주 2편),
+# 2026-11-15 날짜만 다른 브리핑이 날마다 쌓여 브리핑도 주 1회로 줄였다. 손으로 돌릴 때는 count 를 그대로 쓴다.
 # 수집·정규화가 끝난 아침에 돈다.
 # 갈래: daily 오늘의 채용 브리핑 / topic 지원 주제 / org 기관 / role 직무 / region 시·도 / license 자격증 / sigungu 시·군·구
 on:
@@ -26,7 +27,7 @@ on:
         default: false
         type: boolean
   schedule:
-    - cron: "30 0 * * *"    # UTC 00:30 = KST 09:30
+    - cron: "30 0 * * 1,4"    # 월·목 UTC 00:30 = KST 09:30
 
 concurrency:
   group: blog-daily
@@ -53,9 +54,12 @@ jobs:
           DRY: ${{ inputs.dry }}
           EVENT: ${{ github.event_name }}
         run: |
-          # 예약 실행은 월(1)·목(4)요일에만 갈래 글 한 편, 나머지 날은 브리핑만.
-          if [ "$EVENT" = "schedule" ]; then case "$(date -u +%u)" in 1|4) COUNT=1 ;; *) COUNT=0 ;; esac; fi
+          # 예약 실행: 월(1)요일은 주간 브리핑 + 갈래 글 한 편, 목(4)요일은 갈래 글 한 편만.
           args="--count $COUNT"
+          if [ "$EVENT" = "schedule" ]; then
+            args="--count 1"
+            [ "$(date -u +%u)" = "1" ] || args="$args --skip-daily"
+          fi
           [ -n "$KIND" ] && args="$args --kind $KIND"
           [ -n "$SUBJECT" ] && args="$args --subject \"$SUBJECT\""
           [ "$DRY" = "true" ] && args="$args --dry"
