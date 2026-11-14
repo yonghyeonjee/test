@@ -67,7 +67,7 @@ export default async function AgencyEvents({ searchParams }: { searchParams: SP 
         art={<IllusAgency />}
       />
       <AgencyList
-        base="/agency/events" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
+        base="/agency/events" kind="event" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[
           { name: "sido", label: "지역", options: SIDO_SHORT.map((s) => ({ code: s, label: s })) },
           { name: "cate", label: "유형", options: EVT_CATE },

@@ -89,7 +89,7 @@ export default async function AgencyPage({ searchParams }: { searchParams: SP })
         342곳의 주무부처·소재지·홈페이지·채용 이력을 봅니다.
       </p>
       <AgencyList
-        base="/agency" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
+        base="/agency" kind="business" items={items} ok={res.ok} reason={res.ok ? null : res.reason}
         facets={[
           { name: "life", label: "생애주기", options: LIFE_CYCLE },
           { name: "cate", label: "분야", options: BSN_CATE },

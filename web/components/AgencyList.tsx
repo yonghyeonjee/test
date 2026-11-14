@@ -2,6 +2,7 @@ import Link from "next/link";
 import { dot, type AlioItem } from "@/lib/alioplus";
 import CalendarAdd from "./CalendarAdd";
 import { agencyEvents } from "@/lib/calEvents";
+import { agencyHref, type AgencyKind } from "@/lib/agencyStore";
 
 export type Facet = { name: string; label: string; options: { code: string; label: string }[] };
 
@@ -22,9 +23,11 @@ function href(base: string, cur: Record<string, string | undefined>, patch: Reco
 const PER_PAGE = 24;
 
 export default function AgencyList({
-  base, items, ok, reason, facets, current, qName, empty, external, page = 1,
+  base, kind, items, ok, reason, facets, current, qName, empty, external, page = 1,
 }: {
   base: string;
+  /** 사업·행사·시설 중 무엇인지. 카드가 우리 상세 쪽(/agency/{slug})으로 잇는 데 쓴다. */
+  kind: AgencyKind;
   items: AlioItem[];
   ok: boolean;
   reason: string | null;
@@ -108,7 +111,7 @@ export default function AgencyList({
           ) : (
             <>
               <ul className="grid gap-3 sm:grid-cols-2">
-                {shown.map((it) => <AgencyCard key={it.id} it={it} />)}
+                {shown.map((it) => <AgencyCard key={it.id} it={it} kind={kind} />)}
               </ul>
               {pages > 1 && (
                 <nav aria-label="쪽 넘기기" className="mt-6 flex items-center justify-center gap-2 text-sm">
@@ -130,7 +133,7 @@ export default function AgencyList({
 }
 
 /** 오늘(KST) 기준 행사 상태. 날짜가 없으면 null. */
-function phase(it: AlioItem): { label: string; cls: string } | null {
+export function phase(it: AlioItem): { label: string; cls: string } | null {
   const today = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 10);
   if (!it.start && !it.end) return null;
   if (it.end && it.end < today) return { label: "끝남", cls: "badge-closed" };
@@ -139,7 +142,7 @@ function phase(it: AlioItem): { label: string; cls: string } | null {
 }
 
 /** "행사 > 문화/예술 > 연극/공연" → "연극/공연". 맨 앞의 큰 갈래 이름(행사·시설·사업)은 뺀다. */
-function lastCate(cate: string | null): string | null {
+export function lastCate(cate: string | null): string | null {
   if (!cate) return null;
   const parts = cate.split(">").map((x) => x.trim()).filter(Boolean);
   return parts.length ? parts[parts.length - 1] : null;
@@ -149,7 +152,7 @@ function lastCate(cate: string | null): string | null {
  * 기관이 붙여 넣은 긴 설명("1. … ㅇ 공연내용: … ㅇ 운영장소: … - 3~4월: …")을 줄로 나눈다.
  * 한 덩어리로 보이면 읽을 수가 없었다(2026-10-17 휴대폰 화면). 번호·ㅇ·○·•·- 표시 앞에서 끊는다.
  */
-function descLines(desc: string): string[] {
+export function descLines(desc: string): string[] {
   return desc
     .replace(/\s+/g, " ")
     .split(/\s(?=(?:\d{1,2}\.\s)|(?:[ㅇ○◦•▶■□※]\s?)|(?:-\s)|(?:\*\s))/)
@@ -162,20 +165,17 @@ function descLines(desc: string): string[] {
  * 2026-10-17: 설명 전체가 카드에 그대로 펼쳐져(줄임이 block 에 덮여 안 먹었다) 휴대폰에서 한 건이 한 화면을 넘었고,
  * 원문 주소가 있는 것이 행사 22건 중 6건, 시설 1,114건 중 136건뿐이라 대부분 눌러도 갈 데가 없었다.
  * 그래서 설명은 접어 두고, 원문이 없으면 지도(주소)와 검색으로라도 잇는다.
+ * 2026-11-15: 카드의 단추가 전부 바깥(원문·지도·검색)이라 목록에서 바로 사이트를 떠났다. 카드는 우리 상세 쪽
+ * (/agency/{slug})으로만 잇고, 원문·지도·검색은 상세 쪽에서 내용을 본 다음에 누르게 옮겼다.
  */
-function AgencyCard({ it }: { it: AlioItem }) {
+function AgencyCard({ it, kind }: { it: AlioItem; kind: AgencyKind }) {
   const st = phase(it);
   const fee = it.tags.find((t) => t === "무료" || t === "유료");
   const avail = it.tags.find((t) => t === "신청 가능" || t === "예약 가능");
   const rest = it.tags.filter((t) => t !== fee && t !== avail);
   const cate = lastCate(it.cate);
-  const lines = it.desc ? descLines(it.desc) : [];
   const events = agencyEvents(it);
-  const q = encodeURIComponent([it.org, it.title].filter(Boolean).join(" "));
-  const actions: { href: string; label: string; primary?: boolean }[] = [];
-  if (it.url) actions.push({ href: it.url.replace(/^(https?:\/\/)\s+/, "$1"), label: avail === "예약 가능" ? "예약·원문" : avail ? "신청·원문" : "원문 보기", primary: true });
-  if (it.address) actions.push({ href: `https://map.kakao.com/link/search/${encodeURIComponent(it.address)}`, label: "지도" });
-  if (!it.url) actions.push({ href: `https://search.naver.com/search.naver?query=${q}`, label: "검색해 보기" });
+  const detail = agencyHref(kind, it.id);
 
   return (
     <li className="card flex flex-col overflow-hidden p-0">
@@ -187,7 +187,7 @@ function AgencyCard({ it }: { it: AlioItem }) {
           {cate && <span className="badge badge-quiet">{cate}</span>}
           {rest.slice(0, 2).map((t) => <span key={t} className="badge badge-quiet">{t}</span>)}
         </div>
-        <b className="mt-2.5 line-clamp-2 text-[15.5px] font-bold leading-snug">{it.title}</b>
+        <Link href={detail} className="mt-2.5 line-clamp-2 block text-[15.5px] font-bold leading-snug hover:text-brand">{it.title}</Link>
         <dl className="mt-2.5 grid grid-cols-[3.2em_1fr] gap-x-2 gap-y-1 text-[13px] leading-snug">
           {it.address && (<><dt className="text-faint">장소</dt><dd className="truncate text-ink2">{it.address}</dd></>)}
           {it.org && (<><dt className="text-faint">기관</dt><dd className="truncate text-ink2">{it.org}</dd></>)}
@@ -196,27 +196,12 @@ function AgencyCard({ it }: { it: AlioItem }) {
           )}
           {it.target && (<><dt className="text-faint">대상</dt><dd className="line-clamp-1 text-ink2">{it.target}</dd></>)}
         </dl>
-        {lines.length > 0 && (
-          <details className="group mt-3">
-            <summary className="cursor-pointer list-none text-[13px] font-semibold text-brand">
-              <span className="group-open:hidden">자세히 보기 ▾</span>
-              <span className="hidden group-open:inline">접기 ▴</span>
-            </summary>
-            <ul className="mt-2 space-y-1 text-[13.5px] leading-relaxed text-ink2">
-              {lines.map((l, i) => <li key={i}>{l}</li>)}
-            </ul>
-          </details>
-        )}
+        {it.desc && <p className="mt-3 line-clamp-2 text-[13.5px] leading-relaxed text-muted">{it.desc}</p>}
       </div>
-      <div className="flex border-t border-line">
-        {actions.map((a, i) => (
-          <a key={a.label} href={a.href} target="_blank" rel="noopener noreferrer"
-             className={`flex-1 py-3 text-center text-[13.5px] font-semibold transition-colors hover:bg-ground
-                         ${i > 0 ? "border-l border-line" : ""} ${a.primary ? "text-brand" : "text-ink2"}`}>
-            {a.label} <span aria-hidden>↗</span>
-          </a>
-        ))}
-      </div>
+      <Link href={detail}
+            className="block border-t border-line py-3 text-center text-[13.5px] font-semibold text-brand transition-colors hover:bg-ground">
+        {avail === "예약 가능" ? "내용 보고 예약하기" : avail ? "내용 보고 신청하기" : "자세히 보기"} <span aria-hidden>›</span>
+      </Link>
       {/* 캘린더 단추는 카드 아래에. 링크 안에 단추를 넣으면 눌림이 겹친다. */}
       {events.length > 0 && (
         <div className="flex justify-end border-t border-line px-3 py-2">
