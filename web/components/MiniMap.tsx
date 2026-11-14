@@ -63,13 +63,25 @@ export default function MiniMap({
     );
   };
   const links = mapLinks(query);
+  const more = `/map?kind=${kind}&lat=${lat}&lng=${lng}`;
 
   return (
     <div className="card overflow-hidden" ref={box}>
-      {show
-        ? <MapCanvas pins={pins} kind={kind} me={null} meLabel="" radius={0} selected={null} onSelect={() => {}}
-                     loadItems={async () => []} interactive={false} className="h-44 w-full bg-ground" />
-        : <div className="h-44 w-full bg-ground" aria-hidden="true" />}
+      {/* 지도는 미리보기 그림으로만 둔다(2026-11-15). 조작을 꺼도 지도 SDK 가 터치를 가로채
+          휴대폰에서 지도 위에 손가락이 닿으면 쪽 스크롤이 멈췄다. 홈 지도(HomeMap)처럼 지도 전체를
+          덮는 링크를 올려 터치는 쪽 스크롤로 가고, 누르면 정책지도에서 크게 본다. */}
+      <div className="relative isolate h-44 w-full bg-ground">
+        {show && (
+          <MapCanvas pins={pins} kind={kind} me={null} meLabel="" radius={0} selected={null} onSelect={() => {}}
+                     loadItems={async () => []} interactive={false} className="h-full w-full" />
+        )}
+        <Link href={more} aria-label={`${label} 주변 지도 크게 보기`} className="absolute inset-0 z-[1000]"
+              onClick={() => track("map_open", { where: "mini" })}>
+          <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2.5 py-1 text-[12px] font-semibold text-ink2 shadow-sm">
+            지도 크게 보기
+          </span>
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 text-[13px]">
         <b className="text-[14px]">{label}</b>
         {approx && <span className="text-faint">시·도 가운데 기준</span>}
@@ -82,7 +94,7 @@ export default function MiniMap({
         <span className="ml-auto flex flex-wrap gap-1.5">
           <a href={links.kakao} target="_blank" rel="noopener noreferrer" className="chip !py-0.5 !text-[12px]">카카오맵</a>
           <a href={links.naver} target="_blank" rel="noopener noreferrer" className="chip !py-0.5 !text-[12px]">네이버지도</a>
-          <Link href={`/map?kind=${kind}&lat=${lat}&lng=${lng}`} className="chip !py-0.5 !text-[12px]">주변 더 보기</Link>
+          <Link href={more} className="chip !py-0.5 !text-[12px]">주변 더 보기</Link>
         </span>
       </div>
     </div>
