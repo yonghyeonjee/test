@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SIDO_SHORT } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/consts";
-import { dot, facets, filterJobs, jobTermsUsed, type JobBoard } from "@/lib/pubJobs";
+import { dot, facets, filterJobs, jobTermsUsed, type Job, type JobBoard } from "@/lib/pubJobs";
 import MyRegionJobs from "./MyRegionJobs";
 import OrgMark from "./OrgMark";
 import { IllusEmpty } from "./Illus";
@@ -11,6 +11,32 @@ import { jobPath, jobPathPage, jobPathWith, PER_PAGE, type JobRoute } from "@/li
 const BADGE: Record<string, string> = {
   ongoing: "badge-open", always: "badge-open", upcoming: "badge-soon", closed: "badge-closed",
 };
+
+const WD = ["일", "월", "화", "수", "목", "금", "토"];
+const todayKst = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+const dayNo = (ymd: string) => Math.floor(Date.parse(`${ymd.slice(0, 10)}T00:00:00Z`) / 86400_000);
+
+/**
+ * 지원하려는 사람에게 가장 먼저 필요한 것은 "며칠 남았나"다(2026-11-15).
+ * 전에는 모든 카드에 같은 "진행 중" 딱지가 붙고 마감일은 맨 아래 작은 회색 글씨였다.
+ * 남은 날을 맨 앞 딱지로 올린다: 오늘 마감·D-3 까지는 빨강, 그 뒤는 보통, 마감·접수 예정은 제 색.
+ * 목록 쪽은 캐시되므로 날짜가 바뀐 직후에는 하루 어긋날 수 있다(다음 갱신에서 맞는다).
+ */
+function dday(j: Job, today: string): { t: string; cls: string } | null {
+  if (j.status === "closed") return { t: "마감", cls: "badge-closed" };
+  if (j.status === "upcoming") return { t: "접수 예정", cls: "badge-soon" };
+  if (!j.end) return j.start ? { t: "접수 중", cls: "badge-open" } : null;
+  const d = dayNo(j.end) - dayNo(today);
+  if (d < 0) return { t: "마감", cls: "badge-closed" };
+  if (d === 0) return { t: "오늘 마감", cls: "badge-hot" };
+  return { t: `D-${d}`, cls: d <= 3 ? "badge-hot" : "badge-open" };
+}
+
+/** "11.15(일)" */
+function shortDay(ymd: string) {
+  const d = new Date(`${ymd.slice(0, 10)}T00:00:00Z`);
+  return `${d.getUTCMonth() + 1}.${d.getUTCDate()}(${WD[d.getUTCDay()]})`;
+}
 
 /**
  * 1 … 4 5 [6] 7 8 … 20 처럼 쪽 번호를 추린다. 3,000건이면 75쪽이라
@@ -69,6 +95,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   const showRegions = !route.region && !route.org && (regions.length > 0 || noRegionN > 0);
   // "경비" 로 찾았는데 경호·보안 공고가 같이 나왔으면 그 사실을 적는다.
   const also = route.q ? jobTermsUsed(list, route.q) : [];
+  const today = todayKst();
 
   return (
     <div id="list" className="mt-6 scroll-mt-24">
@@ -191,35 +218,51 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         </div>
       ) : (
         <ul className="grid gap-3">
-          {shown.map((j) => (
-            <li key={j.id}>
-              {/* 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
-                  안 주는 공고가 많아 예전에는 눌러도 아무 일이 없었다. */}
-              <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="card card-link flex gap-3.5 p-4 sm:p-5">
-                <OrgMark org={j.org} hire={j.hire} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    {(j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
-                    {j.reg && <span className="num badge badge-quiet">{dot(j.reg)} 등록</span>}
-                    {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
-                    {j.recruit && <span className="badge badge-quiet">{j.recruit.replace(/\s*외\s*\d+$/, " 등")}</span>}
-                    {j.id.startsWith("a") && <span className="badge badge-quiet">잡알리오</span>}
-                  </span>
-                  <b className="mt-2 block text-[15px] leading-snug">{j.title}</b>
-                  <span className="mt-1 block text-[13px] text-muted">
-                    {[j.org, j.region, j.sectors, j.headcount && `${j.headcount}명`]
-                      .filter(Boolean).join(" · ")}
-                  </span>
-                  {(j.start || j.end) && (
-                    <span className="num mt-1.5 block text-xs text-muted">
-                      {/* 잡알리오는 접수 시작일을 주지 않아 시작 칸이 등록일이다. 마감만 적는다. */}
-                      {j.id.startsWith("a") ? `${dot(j.end) ?? "—"} 마감` : `접수 ${dot(j.start) ?? "—"} ~ ${dot(j.end) ?? "—"}`}
-                    </span>
-                  )}
-                </span>
-              </Link>
-            </li>
-          ))}
+          {shown.map((j) => {
+            const dd = dday(j, today);
+            const isNew = Boolean(j.reg) && dayNo(today) - dayNo(j.reg!) <= 2 && j.status !== "closed";
+            return (
+              <li key={j.id}>
+                {/* 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
+                    안 주는 공고가 많아 예전에는 눌러도 아무 일이 없었다.
+                    2026-11-15: 카드 한 장을 article 로, 제목을 h3 로. 맨 앞은 남은 날, 마감일은 요일까지 또렷하게. */}
+                <article className="card card-link flex gap-3.5 p-4 sm:p-5">
+                  <OrgMark org={j.org} hire={j.hire} />
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-1.5">
+                      {dd ? <span className={`num badge ${dd.cls}`}>{dd.t}</span>
+                          : (j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
+                      {isNew && <span className="badge badge-new">새 공고</span>}
+                      {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
+                      {j.recruit && <span className="badge badge-quiet">{j.recruit.replace(/\s*외\s*\d+$/, " 등")}</span>}
+                      {j.headcount && <span className="num badge badge-quiet">{j.headcount}명</span>}
+                    </p>
+                    <h3 className="mt-2 text-[15.5px] font-bold leading-snug">
+                      {/* after: 카드 전체가 눌린다. 링크 글자는 제목 그대로라 읽어 주는 기기에도 뜻이 통한다. */}
+                      <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="after:absolute after:inset-0 after:content-[''] hover:text-brand">
+                        {j.title}
+                      </Link>
+                    </h3>
+                    <p className="mt-1 text-[13px] text-muted">
+                      {[j.org, j.region, j.sectors].filter(Boolean).join(" · ")}
+                    </p>
+                    <p className="num mt-1.5 flex flex-wrap items-baseline gap-x-2 text-[13px]">
+                      {j.end ? (
+                        <span className={dd?.cls === "badge-hot" ? "font-bold text-alert" : "font-semibold text-ink2"}>
+                          <time dateTime={j.end}>{shortDay(j.end)}</time> 마감
+                        </span>
+                      ) : (
+                        <span className="text-muted">마감일은 공고문에서 확인</span>
+                      )}
+                      {/* 잡알리오는 접수 시작일을 주지 않아 시작 칸이 등록일이다. 등록일만 적는다. */}
+                      {j.reg && <span className="text-xs text-faint"><time dateTime={j.reg}>{dot(j.reg)}</time> 등록</span>}
+                      {j.id.startsWith("a") && <span className="text-xs text-faint">잡알리오</span>}
+                    </p>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
         </ul>
       )}
 
