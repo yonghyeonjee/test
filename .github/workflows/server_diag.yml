@@ -21,6 +21,7 @@ jobs:
       HOST: ${{ secrets.LIGHTSAIL_HOST }}
       KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
     steps:
+      - uses: actions/checkout@v5
       - name: 들여다보기
         run: |
           umask 077
@@ -28,6 +29,9 @@ jobs:
           printf '%s\n' "$KEY" > ~/.ssh/id
           ssh-keyscan -T 20 -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
           S="ssh -o ConnectTimeout=20 -o StrictHostKeyChecking=no -i $HOME/.ssh/id ubuntu@$HOST"
+          # 2026-11-15 언어 머리글 기준 봇 판별 보고. 배포 없이 그때그때 올려서 돌린다.
+          scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no -i $HOME/.ssh/id deploy/lightsail/lang_report.py ubuntu@$HOST:/tmp/lang_report.py || true
+          $S "sudo timeout 60 python3 /tmp/lang_report.py ${{ inputs.minutes }}; rm -f /tmp/lang_report.py" || true
           $S 'set +e
             echo "== 시각·가동 시간·부하"; date -u; uptime
             echo; echo "== 메모리(MB)"; free -m
