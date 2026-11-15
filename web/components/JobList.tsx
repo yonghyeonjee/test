@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SIDO_SHORT } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/consts";
-import { dot, facets, filterJobs, jobTermsUsed, type Job, type JobBoard } from "@/lib/pubJobs";
+import { dot, exactQuery, facets, filterJobs, isExactQuery, jobTermsUsed, unquoteQuery, type Job, type JobBoard } from "@/lib/pubJobs";
 import MyRegionJobs from "./MyRegionJobs";
 import OrgMark from "./OrgMark";
 import { IllusEmpty } from "./Illus";
@@ -96,12 +96,17 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   // "경비" 로 찾았는데 경호·보안 공고가 같이 나왔으면 그 사실을 적는다.
   const also = route.q ? jobTermsUsed(list, route.q) : [];
   const today = todayKst();
+  const exact = isExactQuery(route.q);
 
   return (
     <div id="list" className="mt-6 scroll-mt-24">
       <RecentStrip kind="job" className="mb-6" />
+      {/* 검색 조건 영역(2026-11-15): 검색어 · 거르기(접수 상태·구분·지역) · 걸린 조건 · 연관어 켜기/끄기를 한 칸에 모은다.
+          전에는 검색창·칩·지역·조건 줄이 따로 흩어져 있어 "지금 무엇으로 찾고 있나"가 한눈에 안 보였다. */}
+      <section aria-labelledby="jobs-cond" className="card p-4 sm:p-5">
+      <h2 id="jobs-cond" className="text-[13px] font-bold text-muted">검색 조건</h2>
       {/* 찾기를 누르면 쪽이 새로 그려진다. 머리 띠를 지나 목록으로 돌아오게 #list. */}
-      <form action="/jobs/search#list" method="get" className="flex gap-2">
+      <form action="/jobs/search#list" method="get" role="search" className="mt-2 flex gap-2">
         {route.region && <input type="hidden" name="region" value={route.region} />}
         {route.org && <input type="hidden" name="org" value={route.org} />}
         {route.hire && <input type="hidden" name="hire" value={route.hire} />}
@@ -116,7 +121,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <button type="submit" className="btn btn-primary shrink-0 px-5 py-2.5">찾기</button>
       </form>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="거르기">
+        <span className="mr-0.5 text-[12.5px] font-bold text-muted">거르기</span>
         <Link href={jobPathWith(route, { open: !route.open })}
               className={`chip ${route.open ? "chip-on" : ""}`}>
           접수 중만 <span className="num text-[12px] opacity-70">{openN}</span>
@@ -168,7 +174,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
           <span className="text-muted">걸린 조건</span>
           {[
-            route.q && { t: `"${route.q}"`, href: jobPathWith(route, { q: undefined }) },
+            route.q && { t: `"${unquoteQuery(route.q)}"${exact ? " · 연관어 끔" : ""}`, href: jobPathWith(route, { q: undefined }) },
             route.region && !route.org && { t: route.region, href: jobPathWith(route, { region: undefined }) },
             route.hire && { t: route.hire, href: jobPathWith(route, { hire: undefined }) },
             route.open && { t: "접수 중만", href: jobPathWith(route, { open: false }) },
@@ -196,8 +202,23 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
               {t}
             </Link>
           ))}
+          {/* 연관어 끄기: 그 말이 들어간 공고만. 낱말을 따옴표로 감싼 주소로 간다(lib/jobFilter). */}
+          <Link href={jobPathWith(route, { q: exactQuery(route.q), page: 1 })}
+                className="ml-1 rounded-pill border border-line2 bg-white px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
+            연관어 빼고 ‘{unquoteQuery(route.q)}’만 보기
+          </Link>
         </p>
       )}
+      {exact && (
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+          <span>‘{unquoteQuery(route.q)}’가 들어간 공고만 보고 있습니다(연관어 끔).</span>
+          <Link href={jobPathWith(route, { q: unquoteQuery(route.q), page: 1 })}
+                className="rounded-pill border border-line2 bg-white px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
+            연관어도 함께 찾기
+          </Link>
+        </p>
+      )}
+      </section>
 
       <div className="mb-3 mt-8 flex items-baseline justify-between">
         <h2 className="text-[1.0625rem] font-bold">

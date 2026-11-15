@@ -27,8 +27,28 @@ const hayOf = (j: Job) => `${j.title} ${j.org ?? ""} ${j.sectors ?? ""}`.toLower
  */
 function termGroups(q?: string): string[][] {
   return (q ?? "").trim().toLowerCase().split(/\s+/).filter((w) => w.length >= 1)
-    .map((w) => Array.from(new Set([...expandTerms(w), ...placeStems(w)].map((t) => t.toLowerCase()))));
+    .map((w) => {
+      // 따옴표로 감싼 낱말("홍보")은 그 말만 찾는다 — 연관어로 넓히지 않는다(2026-11-15).
+      const exact = QUOTED.exec(w);
+      if (exact) return [exact[1]];
+      return Array.from(new Set([...expandTerms(w), ...placeStems(w)].map((t) => t.toLowerCase())));
+    });
 }
+
+/**
+ * 연관어 끄기(2026-11-15). "홍보"로 찾았는데 경영·기획·총무·인사 공고가 111건 섞여 나왔다 —
+ * 넓게 찾고 싶은 사람에게는 도움이지만, 그 말만 찾는 사람에게는 잡음이다. 낱말을 따옴표로 감싸면
+ * 그 낱말은 넓히지 않는다. 주소는 /jobs/q/"홍보" 꼴 그대로라 새 조각이 필요 없고,
+ * 검색창에 직접 따옴표를 쳐도 같은 뜻이 된다. 화면은 아래 셋으로 단추를 만든다.
+ */
+const QUOTED = /^["“”'‘’](.+)["“”'‘’]$/;
+const wordsOf = (q?: string) => (q ?? "").trim().split(/\s+/).filter(Boolean);
+/** 모든 낱말이 따옴표로 감싸여 있나(= 연관어를 끈 검색인가). */
+export const isExactQuery = (q?: string) => { const ws = wordsOf(q); return ws.length > 0 && ws.every((w) => QUOTED.test(w)); };
+/** 따옴표를 벗긴 검색어. 화면에 적거나 연관어를 다시 켤 때. */
+export const unquoteQuery = (q?: string) => wordsOf(q).map((w) => w.replace(QUOTED, "$1")).join(" ");
+/** 낱말마다 따옴표를 씌운 검색어. 연관어를 끌 때. */
+export const exactQuery = (q?: string) => wordsOf(unquoteQuery(q)).map((w) => `"${w}"`).join(" ");
 
 /**
  * "남동구" 로 찾으면 "남동" 도 함께 본다. 공고는 "인천남동우체국" 처럼 시·군·구를
@@ -79,6 +99,7 @@ export function jobTermsUsed(list: Job[], q?: string): string[] {
   const words = (q ?? "").trim().toLowerCase().split(/\s+/).filter(Boolean);
   const out: string[] = [];
   for (const w of words) {
+    if (QUOTED.test(w)) continue; // 연관어를 끈 낱말
     for (const t of expandTerms(w).slice(1)) {
       const lt = t.toLowerCase();
       if (out.includes(t)) continue;

@@ -33,7 +33,7 @@ export const SOURCE_VAL = JOB_SOURCES.length === 1 ? JOB_SOURCES[0] : `(${JOB_SO
  */
 export const DETAIL_SOURCES = ["gojobs", "alio"];
 
-export { filterJobs, jobTermsUsed, regionTokens, type JobFilter } from "./jobFilter";
+export { filterJobs, jobTermsUsed, regionTokens, isExactQuery, unquoteQuery, exactQuery, type JobFilter } from "./jobFilter";
 
 /**
  * 공공기관 채용정보 (인사혁신처 나라일터, PblJobService).
