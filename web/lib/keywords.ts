@@ -48,17 +48,44 @@ const STOP = new Set([
 // 낱말 끝의 조사. "신혼부부의" → "신혼부부".
 const PARTICLE = /(은|는|이|가|을|를|의|에|도|만|로|으로|에서|에게|께|와|과|랑|이랑)$/;
 
+/**
+ * 연관어 끄기(2026-11-15). 낱말을 따옴표로 감싸면("홍보") 그 말만 찾는다 — 동의어로 넓히지 않는다.
+ * 채용 목록(lib/jobFilter)과 같은 약속이다. 따옴표는 곧은 큰따옴표로 고쳐 적는다.
+ */
+const QUOTED = /^["“”'‘’](.+)["“”'‘’]$/;
+/** 따옴표로 감싼 낱말인가. */
+export const isQuoted = (w: string) => QUOTED.test(w);
+/** 따옴표를 벗긴 낱말. */
+export const unquote = (w: string) => w.replace(QUOTED, "$1");
+/** 검색어의 낱말(조건 말 빼고)에 따옴표를 씌운다 — 연관어를 끌 때. */
+export const quoteWords = (q: string, only?: string[]) =>
+  (q || "").trim().split(/\s+/).filter(Boolean).map((t) => {
+    if (isQuoted(t)) return `"${unquote(t)}"`;
+    const k = tokenize(t)[0];
+    // only 를 주면 그 낱말만 감싼다 — 지역·나이처럼 조건으로 알아들은 말은 그대로 둬야 한다.
+    return k && (!only || only.includes(k)) ? `"${k}"` : t;
+  }).join(" ");
+/** 따옴표를 모두 벗긴 검색어 — 연관어를 다시 켤 때. */
+export const unquoteWords = (q: string) =>
+  (q || "").trim().split(/\s+/).filter(Boolean).map(unquote).join(" ");
+/** 따옴표로 감싼 낱말이 하나라도 있나. */
+export const hasQuoted = (q?: string | null) => (q ?? "").trim().split(/\s+/).some(isQuoted);
+
 export function tokenize(q: string): string[] {
   return (q || "")
     .split(/[\s,·/]+/)
     .map((t) => t.trim())
-    .map((t) => (t.length > 2 ? t.replace(PARTICLE, "") : t))
-    .filter((t) => t.length >= 2 && !STOP.has(t) && !/^\d+$/.test(t))
+    .map((t) => {
+      if (isQuoted(t)) return `"${unquote(t).replace(/["“”'‘’]/g, "")}"`;
+      return t.length > 2 ? t.replace(PARTICLE, "") : t;
+    })
+    .filter((t) => (isQuoted(t) ? t.length >= 4 : t.length >= 2 && !STOP.has(t) && !/^\d+$/.test(t)))
     .slice(0, 4);
 }
 
 /** 낱말 하나를 동의어 묶음('전세|전월세|…')으로. 모르는 말은 그대로. */
 export function expandWord(w: string): string {
+  if (isQuoted(w)) return unquote(w);
   const hit = SYNONYMS.find((g) => g.some((s) => w.includes(s) || s.includes(w)));
   if (!hit) return w;
   // 원래 낱말도 남긴다 — 사전에 없는 변형("신혼 부부")을 놓치지 않으려고.

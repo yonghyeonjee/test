@@ -223,26 +223,60 @@ export default function SearchView({
 
           <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
             <div className="min-w-0">
-              <p className="text-[13.5px] text-muted">
-                {conds.length > 0 && <>조건으로 알아들은 것: <b className="text-ink2">{conds.join(" · ")}</b>{r.term && " · "}</>}
-                {r.term && <>낱말: <b className="text-ink2">‘{r.term}’</b></>}
-                {" · "}모두 <b className="num text-ink2">{grand.toLocaleString("ko-KR")}건</b>
-                {r.mapHref && !biz && (
-                  <>{" · "}<Link href={r.mapHref} className="font-semibold text-brand underline underline-offset-4">{r.parsed.sigungu?.split(/\s+/).pop() ?? r.parsed.sido} 지도에서 보기</Link></>
-                )}
-              </p>
-              {r.expanded.length > 0 && (
-                <p className="mt-1 text-[13px] text-muted">
-                  {r.expanded.map((e) => (
-                    <span key={e.word} className="mr-3 inline-block">
-                      ‘{e.word}’의 연관어 <b className="text-ink2">{e.also.slice(0, 5).join("·")}</b>도 함께 찾았습니다.
-                    </span>
+              {/* 검색 조건 영역(2026-11-15): 무엇으로 찾았는지 · 연관어 켜기/끄기 · 지역으로 좁히기 · 갈래별 상세 검색을 한 칸에.
+                  채용 목록(components/JobList)과 같은 틀이다. */}
+              <section aria-labelledby="search-cond" className="card p-4 sm:p-5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h2 id="search-cond" className="text-[15px] font-bold">검색 조건</h2>
+                  <p className="text-[13px] text-muted">모두 <b className="num text-ink2">{grand.toLocaleString("ko-KR")}건</b></p>
+                </div>
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[13px]">
+                  {conds.map((c) => (
+                    <span key={c} className="rounded-pill bg-brandSoft px-2.5 py-1 font-semibold text-brand">{c}</span>
                   ))}
-                </p>
-              )}
-
-              {/* 지역을 적지 않고 찾았으면 사는 곳으로 좁히는 단추를 결과 위에(2026-11-15). */}
-              {!r.parsed.sido && grand > 0 && <RegionNarrow q={q} base={base} />}
+                  {r.term && (
+                    <span className="rounded-pill bg-surface2 px-2.5 py-1 font-semibold text-ink2 ring-1 ring-inset ring-line">
+                      낱말 ‘{r.term}’{r.exact && " · 연관어 끔"}
+                    </span>
+                  )}
+                  {r.mapHref && !biz && (
+                    <Link href={r.mapHref} className="font-semibold text-brand underline underline-offset-4">
+                      {r.parsed.sigungu?.split(/\s+/).pop() ?? r.parsed.sido} 지도에서 보기
+                    </Link>
+                  )}
+                </div>
+                {r.expanded.length > 0 && (
+                  <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
+                    {r.expanded.map((e) => (
+                      <span key={e.word} className="mr-3 inline-block">
+                        ‘{e.word}’의 연관어 <b className="text-ink2">{e.also.slice(0, 5).join("·")}</b>도 함께 찾았습니다.
+                      </span>
+                    ))}
+                    {/* 연관어 끄기: 낱말을 따옴표로 감싼 주소로(lib/keywords). */}
+                    <Link href={`${base}?q=${encodeURIComponent(r.exactQ)}`} rel="nofollow"
+                          className="inline-block font-semibold text-brand underline underline-offset-4">
+                      연관어 빼고 ‘{r.term}’만 찾기
+                    </Link>
+                  </p>
+                )}
+                {r.exact && (
+                  <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
+                    ‘{r.term}’가 들어간 것만 찾았습니다(연관어 끔).{" "}
+                    <Link href={`${base}?q=${encodeURIComponent(r.looseQ)}`} rel="nofollow"
+                          className="font-semibold text-brand underline underline-offset-4">
+                      연관어도 함께 찾기
+                    </Link>
+                  </p>
+                )}
+                {/* 지역을 적지 않고 찾았으면 사는 곳으로 좁히는 단추(2026-11-15). */}
+                {!r.parsed.sido && grand > 0 && <RegionNarrow q={q} base={base} />}
+                <div className="mt-3 border-t border-line pt-3">
+                  <p className="mb-1.5 text-[12.5px] font-semibold text-muted">갈래별로 조건 더 걸기</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {detail.map(([label, href]) => <Link key={label} href={href} className="chip !py-1 !text-[13px]">{label}</Link>)}
+                  </div>
+                </div>
+              </section>
 
               {/* 휴대폰: 연관 검색어를 결과 위에 한 줄로. 넓은 화면은 오른쪽 기둥에. */}
               {r.related.length > 0 && (
@@ -285,16 +319,6 @@ export default function SearchView({
               {/* 갈래 순서는 찾는 말에 맞춰(lib/search orderSections). "경비" 면 채용이 먼저. */}
               {biz ? (<>{business}{agency}{guides}</>) : r.order.map((k) => <Fragment key={k}>{({ welfare, business, jobs, guides, licenses, agency })[k]}</Fragment>)}
 
-              {/* 휴대폰: 상세 검색을 맨 아래에. 넓은 화면은 오른쪽 기둥. */}
-              <section className="card mt-10 p-4 lg:hidden">
-                <h2 className={H2}>상세 검색</h2>
-                <p className="mt-1 text-[13.5px] leading-relaxed text-muted">
-                  갈래마다 조건이 다릅니다. 지금 적은 말을 그대로 들고 조건을 더 거는 화면으로 갑니다.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {detail.map(([label, href]) => <Link key={label} href={href} className="chip">{label}</Link>)}
-                </div>
-              </section>
             </div>
 
             <aside aria-label="검색 도움" className="hidden min-w-0 space-y-4 lg:block">
@@ -310,17 +334,6 @@ export default function SearchView({
                   </div>
                 </Box>
               )}
-              <Box title="상세 검색" sub="지금 적은 말 그대로">
-                <ul className="divide-y divide-line">
-                  {detail.map(([label, href]) => (
-                    <li key={label}>
-                      <Link href={href} className="flex items-center justify-between gap-2 py-2 text-[13.5px] text-ink2 hover:text-brand">
-                        {label}<span aria-hidden className="text-faint">›</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </Box>
               <HotRank terms={hot} base={base} sub="자주 찾는 말" />
             </aside>
           </div>

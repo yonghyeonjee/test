@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { cleanQuery } from "@/lib/keywords";
+import { cleanQuery, expandWord, hasQuoted, isQuoted, quoteWords, unquote, unquoteWords } from "@/lib/keywords";
 import { track } from "./Gtm";
 
 /**
@@ -30,6 +30,8 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
   };
 
   const active = cleanQuery(current);
+  // 동의어로 넓혀지는 낱말(따옴표로 끈 것은 빼고).
+  const widened = active.split(" ").filter((w) => w && !isQuoted(w) && expandWord(w) !== w);
 
   return (
     <div className="mt-6">
@@ -57,7 +59,7 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
       </form>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {suggest.map((w) => {
-          const on = active.split(" ").includes(w);
+          const on = active.split(" ").map(unquote).includes(w);
           return (
             <button
               key={w}
@@ -65,7 +67,7 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
               aria-pressed={on}
               onClick={() => {
                 const words = active ? active.split(" ") : [];
-                const next = on ? words.filter((x) => x !== w) : [...words, w];
+                const next = on ? words.filter((x) => unquote(x) !== w) : [...words, w];
                 apply(next.join(" "));
               }}
               className={`chip ${on ? "chip-on" : ""}`}
@@ -75,6 +77,26 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
           );
         })}
       </div>
+      {/* 연관어 켜기/끄기(2026-11-15). "전세"는 전월세·임차·보증금까지 함께 찾는다 — 그 말만 보고 싶으면 끈다.
+          낱말을 따옴표로 감싼 q 로 보낸다(lib/keywords). */}
+      {widened.length > 0 && (
+        <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
+          {widened.map((w) => `‘${w}’`).join("·")}는 비슷한 말까지 함께 찾습니다.{" "}
+          <button type="button" onClick={() => apply(quoteWords(active))}
+                  className="font-semibold text-brand underline underline-offset-4">
+            연관어 빼고 그 말만 찾기
+          </button>
+        </p>
+      )}
+      {hasQuoted(active) && (
+        <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
+          적은 말이 들어간 것만 찾고 있습니다(연관어 끔).{" "}
+          <button type="button" onClick={() => apply(unquoteWords(active))}
+                  className="font-semibold text-brand underline underline-offset-4">
+            연관어도 함께 찾기
+          </button>
+        </p>
+      )}
     </div>
   );
 }

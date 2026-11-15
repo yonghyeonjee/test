@@ -9,7 +9,7 @@
  */
 
 import { BIZ_FIELD, BIZ_TARGET, EMPLOYMENT, HOUSEHOLD, INDUSTRY } from "./consts";
-import { tokenize } from "./keywords";
+import { isQuoted, tokenize } from "./keywords";
 
 export type Parsed = {
   sido?: string;
@@ -100,9 +100,12 @@ export function parseQuery(
   raw: string,
   sggIndex: Map<string, { sido: string; full: string }>
 ): Parsed {
-  const text = (raw || "").trim();
+  const full = (raw || "").trim();
   const out: Parsed = { household: [], keywords: [], leftover: [] };
-  if (!text) return out;
+  if (!full) return out;
+  // 따옴표로 감싼 낱말("청년")은 조건으로 읽지 않고 그 말 그대로 찾는다(연관어 끄기, lib/keywords).
+  const lits = full.split(/\s+/).filter(isQuoted);
+  const text = full.split(/\s+/).filter((t) => !isQuoted(t)).join(" ");
   // 조건으로 알아들은 조각은 지워 나간다. 끝에 남는 것이 검색어다.
   // 알아들은 조각이 든 낱말(띄어쓰기 단위)을 통째로 뺀다. "기초수급" 에서
   // "기초" 만 빼면 "수급" 이 검색어로 남아 엉뚱한 것을 거른다.
@@ -178,7 +181,7 @@ export function parseQuery(
   }
 
   // 7) 남은 낱말은 본문 검색어. "사는", "지원금" 같은 군말은 tokenize 가 거른다.
-  out.keywords = tokenize(rest);
+  out.keywords = [...tokenize(lits.join(" ")), ...tokenize(rest)].slice(0, 4);
 
   const known =
     (out.sido ? 1 : 0) + (out.age !== undefined ? 1 : 0) +

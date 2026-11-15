@@ -29,7 +29,7 @@ export default function RegionNarrow({ q, base }: { q: string; base: string }) {
   const mineSido = mine?.split(" ")[0];
 
   return (
-    <nav aria-label="사는 곳으로 좁히기" className="mt-4 rounded-card border border-line bg-white px-4 py-3">
+    <nav aria-label="사는 곳으로 좁히기" className="mt-3 border-t border-line pt-3">
       <p className="text-[13.5px] font-bold text-ink2">
         사는 곳으로 좁히기 <span className="ml-1 font-normal text-muted">지원금은 사는 지역에 따라 받을 수 있는 것이 다릅니다</span>
       </p>

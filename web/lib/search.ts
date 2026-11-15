@@ -9,7 +9,7 @@ import { FREE_GROUPS } from "./freeServices";
 import { SIDO_SHORT, locate } from "./geo";
 import { jobPath } from "./jobRoute";
 import { dropAlioTwins } from "./jobTwins";
-import { tokenize } from "./keywords";
+import { isQuoted, quoteWords, tokenize, unquote, unquoteWords } from "./keywords";
 import { describe, parseQuery, toParams, type Parsed } from "./parse";
 import { POSTS } from "./posts";
 import { getLicenses, type License } from "./qnet";
@@ -42,8 +42,13 @@ export type SearchResult = {
   parsed: Parsed;
   /** 알아들은 조건을 사람 말로. "충청북도", "35세" */
   bits: string[];
-  /** 조건을 뺀 낱말. 본문 검색어. */
+  /** 조건을 뺀 낱말. 본문 검색어(따옴표는 벗긴 것). */
   term: string;
+  /** 연관어를 끈 검색인가(낱말이 모두 따옴표로 감싸여 있다). */
+  exact: boolean;
+  /** 연관어를 끈 검색어 / 다시 켠 검색어. 화면의 켜기·끄기 단추가 쓴다. */
+  exactQ: string;
+  looseQ: string;
   welfare: Section<Program>;
   business: Section<Program>;
   /** also: 낱말 말고 같이 OR 로 찾은 연관어("경비" 에 경호·보안·방호). */
@@ -123,10 +128,11 @@ const PAGES: Page[] = [
 const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 
 function findGuides(words: string[]): GuideHit[] {
-  const ws = words.map(norm).filter((w) => w.length >= 2);
+  const kept = words.filter((w) => norm(unquote(w)).length >= 2);
+  const ws = kept.map((w) => norm(unquote(w)));
   if (!ws.length) return [];
-  // 낱말 그대로 걸리면 2점, 연관어("대학생" → 청년)로 걸리면 1점.
-  const exp = ws.map((w) => expandTerms(w).map(norm).filter((t) => t !== w && t.length >= 2));
+  // 낱말 그대로 걸리면 2점, 연관어("대학생" → 청년)로 걸리면 1점. 따옴표로 감싼 낱말은 넓히지 않는다.
+  const exp = ws.map((w, i) => (isQuoted(kept[i]) ? [] : expandTerms(w).map(norm).filter((t) => t !== w && t.length >= 2)));
   return PAGES
     .map((p) => {
       const hay = [p.title, ...p.keys].map(norm);
@@ -197,12 +203,14 @@ function orderSections(words: string[], r: SearchResult): SectionKey[] {
 
 async function searchJobs(words: string[], sido?: string, sigungu?: string) {
   const empty = { items: [] as JobHit[], total: 0, openOnly: true, allTotal: null as number | null, also: [] as string[] };
-  const ws = words.map(safe).filter((w) => w.length >= 2);
+  const kept = words.filter((w) => safe(unquote(w)).length >= 2);
+  const ws = kept.map((w) => safe(unquote(w)));
   if (!dbConfigured || !ws.length) return empty;
   const today = new Date().toISOString().slice(0, 10);
   let region = regionClause(sido, sigungu);
   // 낱말마다 연관어 묶음. 접수 중 공고는 수백 건이라 OR 가 스물 넷이어도 빠르다.
-  const groups = ws.map((w) => Array.from(new Set(expandTerms(w).map(safe).filter((t) => t.length >= 2))));
+  // 따옴표로 감싼 낱말("홍보")은 그 말만 — 연관어 끄기(2026-11-15).
+  const groups = ws.map((w, i) => (isQuoted(kept[i]) ? [w] : Array.from(new Set(expandTerms(w).map(safe).filter((t) => t.length >= 2)))));
   const also = Array.from(new Set(groups.flatMap((g) => g.slice(1))));
 
   const base = (expand: boolean) => {
@@ -250,13 +258,15 @@ async function searchJobs(words: string[], sido?: string, sigungu?: string) {
 
 // ── 자격증 ───────────────────────────────────────────
 async function searchLicenses(words: string[]): Promise<Section<License>> {
+  const exactOnly = words.some(isQuoted);
+  words = words.map(unquote);
   const ws = words.map(norm).filter((w) => w.length >= 2);
   const href = `/license?q=${encodeURIComponent(words.join(" "))}`;
   if (!ws.length) return { items: [], total: 0, href };
   const board = await getLicenses();
   const byName = (t: string) => board.all.filter((l) => norm(l.name).includes(t));
   const direct = board.all.filter((l) => ws.some((w) => norm(l.name).includes(w)));
-  if (direct.length) return { items: direct.slice(0, PER), total: direct.length, href };
+  if (direct.length || exactOnly) return { items: direct.slice(0, PER), total: direct.length, href };
   // 종목 이름에 그 말이 없으면 연관어로 한 번 더("경호" → 경비지도사). 다만
   // 종목의 2할 넘게 걸리는 말(기능사·기사)은 찾는 말이 아니라 등급이라 뺀다.
   const cap = board.all.length * 0.2;
@@ -272,7 +282,7 @@ async function searchLicenses(words: string[]): Promise<Section<License>> {
 
 // ── 공공기관 ─────────────────────────────────────────
 async function searchAgency(words: string[]): Promise<Section<AlioItem>> {
-  const term = words.join(" ").trim();
+  const term = words.map(unquote).join(" ").trim();
   const href = `/agency?q=${encodeURIComponent(term)}`;
   if (!term) return { items: [], total: 0, href };
   const items = (await agencyFromStore("business", { q: term })) ?? [];
@@ -286,7 +296,11 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   const parsed = parseQuery(q, idx);
   const bits = describe(parsed);
   const words = parsed.keywords.length ? parsed.keywords : tokenize(q);
+  // term 은 따옴표를 그대로 둔다 — 복지·기업(DB 함수)과 채용 목록이 그것을 보고 연관어를 끈다.
   const term = words.join(" ");
+  const plain = words.map(unquote);
+  const plainTerm = plain.join(" ");
+  const loose = words.filter((w) => !isQuoted(w));
   const { sido, sigungu, age, employment, household } = parsed;
   const hasCond = Boolean(sido || age || employment || household.length);
 
@@ -299,16 +313,19 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
 
   const empty = <T,>(href: string): Section<T> => ({ items: [], total: 0, href });
   const out: SearchResult = {
-    q, parsed, bits, term,
+    q, parsed, bits, term: plainTerm,
+    exact: words.length > 0 && loose.length === 0,
+    exactQ: quoteWords(q, loose),
+    looseQ: unquoteWords(q),
     welfare: empty(`/?${sp}`),
     business: empty(`/business?${bsp}`),
     jobs: { ...empty<JobHit>(jobPath({ q: term, page: 1 })), openOnly: true, allTotal: null, also: [] },
-    licenses: empty(`/license?q=${encodeURIComponent(term)}`),
-    agency: empty(`/agency?q=${encodeURIComponent(term)}`),
+    licenses: empty(`/license?q=${encodeURIComponent(plainTerm)}`),
+    agency: empty(`/agency?q=${encodeURIComponent(plainTerm)}`),
     guides: findGuides(words),
     failed: [],
-    related: relatedTerms(words, 10),
-    expanded: expansions(words),
+    related: relatedTerms(plain, 10),
+    expanded: expansions(loose),
     order: ["welfare", "business", "jobs", "guides", "licenses", "agency"],
     mapHref: null,
   };
@@ -327,7 +344,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
     searchJobs(words, sido, sigungu),
     searchLicenses(words),
     searchAgency(words),
-    searchStories(words),
+    searchStories(plain),
   ]);
 
   const take = <T,>(r: PromiseSettledResult<T>, name: string, d: T): T => {
@@ -351,7 +368,7 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   out.agency = take(a, "공공기관", out.agency);
   // 같은 이름이 두 번 들어갈 수 있다(목록·건수). 하나로.
   out.failed = Array.from(new Set(out.failed));
-  out.order = orderSections(words, out);
+  out.order = orderSections(plain, out);
   return out;
 }
 
