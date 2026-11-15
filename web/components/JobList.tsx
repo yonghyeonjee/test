@@ -313,7 +313,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           </Link>
         </div>
       ) : (
-        <ul className="grid gap-3">
+        <ul className="grid gap-2 sm:gap-3">
           {shown.map((j) => {
             const dd = dday(j, today);
             const isNew = Boolean(j.reg) && dayNo(today) - dayNo(j.reg!) <= 2 && j.status !== "closed";
@@ -322,42 +322,49 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
               <li key={j.id}>
                 {/* 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
                     안 주는 공고가 많아 예전에는 눌러도 아무 일이 없었다.
-                    2026-11-15: 카드 한 장을 article 로, 제목을 h3 로. 맨 앞은 남은 날, 마감일은 요일까지 또렷하게. */}
-                <article className="card card-link flex gap-3.5 p-4 sm:p-5">
-                  <OrgMark org={j.org} hire={j.hire} />
+                    2026-11-15: 카드 한 장을 article 로, 제목을 h3 로. 맨 앞은 남은 날, 마감일은 요일까지 또렷하게.
+                    2026-11-15 휴대폰에서 줄였다: 카드 한 장이 5~6줄이라 40건이면 스크롤이 끝없었다. 휴대폰은 세 줄 —
+                    ① 남은 날·고용 형태·급수 ② 제목(두 줄까지) ③ 기관·지역 … 마감일. 기관 머리글자·기관 구분·모집 분야·인원·등록일은
+                    넓은 화면에서만(상세 쪽에 다 있다). */}
+                <article className={`card card-link flex gap-3.5 p-3.5 sm:p-5 ${j.status === "closed" ? "opacity-70" : ""}`}>
+                  <span className="hidden sm:block"><OrgMark org={j.org} hire={j.hire} /></span>
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5">
                       {dd ? <span className={`num badge ${dd.cls}`}>{dd.t}</span>
                           : (j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
                       {isNew && <span className="badge badge-new">새 공고</span>}
                       {/* 고용 형태·급수를 먼저(지원 여부를 가르는 것). 기관 구분은 그 뒤. */}
-                      {cls.types.slice(0, 2).map((t) => <span key={t} className="badge badge-quiet font-bold text-ink2">{t}</span>)}
+                      {cls.types.slice(0, 2).map((t, i) => <span key={t} className={`badge badge-quiet font-bold text-ink2 ${i ? "max-sm:hidden" : ""}`}>{t}</span>)}
                       {cls.grades[0] && <span className="badge badge-quiet">{cls.grades.length > 1 ? `${cls.grades[0]} 외` : cls.grades[0]}</span>}
-                      {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
-                      {j.recruit && <span className="badge badge-quiet">{j.recruit.replace(/\s*외\s*\d+$/, " 등")}</span>}
-                      {j.headcount && <span className="num badge badge-quiet">{j.headcount}명</span>}
+                      {j.hire && <span className="badge badge-quiet max-sm:hidden">{j.hire}</span>}
+                      {j.recruit && <span className="badge badge-quiet max-sm:hidden">{j.recruit.replace(/\s*외\s*\d+$/, " 등")}</span>}
+                      {j.headcount && <span className="num badge badge-quiet max-sm:hidden">{j.headcount}명</span>}
                     </p>
-                    <h3 className="mt-2 text-[15.5px] font-bold leading-snug">
+                    <h3 className="mt-1.5 line-clamp-2 text-[15px] font-bold leading-snug sm:mt-2 sm:text-[15.5px]">
                       {/* after: 카드 전체가 눌린다. 링크 글자는 제목 그대로라 읽어 주는 기기에도 뜻이 통한다. */}
                       <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="after:absolute after:inset-0 after:content-[''] hover:text-brand">
                         {j.title}
                       </Link>
                     </h3>
-                    <p className="mt-1 text-[13px] text-muted">
-                      {[j.org, j.region, j.sectors].filter(Boolean).join(" · ")}
-                    </p>
-                    <p className="num mt-1.5 flex flex-wrap items-baseline gap-x-2 text-[13px]">
-                      {j.end ? (
-                        <span className={dd?.cls === "badge-hot" ? "font-bold text-alert" : "font-semibold text-ink2"}>
-                          <time dateTime={j.end}>{shortDay(j.end)}</time> 마감
-                        </span>
-                      ) : (
-                        <span className="text-muted">마감일은 공고문에서 확인</span>
-                      )}
-                      {/* 잡알리오는 접수 시작일을 주지 않아 시작 칸이 등록일이다. 등록일만 적는다. */}
-                      {j.reg && <span className="text-xs text-faint"><time dateTime={j.reg}>{dot(j.reg)}</time> 등록</span>}
-                      {j.id.startsWith("a") && <span className="text-xs text-faint">잡알리오</span>}
-                    </p>
+                    {/* 휴대폰: 기관·지역과 마감일을 한 줄에(기관이 길면 말줄임). 넓은 화면: 예전처럼 두 줄. */}
+                    <div className="mt-1 flex items-baseline gap-2 text-[13px] sm:block">
+                      <p className="min-w-0 flex-1 truncate text-muted sm:whitespace-normal">
+                        {[j.org, j.region].filter(Boolean).join(" · ")}
+                        {j.sectors && <span className="max-sm:hidden"> · {j.sectors}</span>}
+                      </p>
+                      <p className="num shrink-0 sm:mt-1.5 sm:flex sm:flex-wrap sm:items-baseline sm:gap-x-2">
+                        {j.end ? (
+                          <span className={dd?.cls === "badge-hot" ? "font-bold text-alert" : "font-semibold text-ink2"}>
+                            <time dateTime={j.end}>{shortDay(j.end)}</time> 마감
+                          </span>
+                        ) : (
+                          <span className="text-muted"><span className="max-sm:hidden">마감일은 </span>공고문<span className="max-sm:hidden">에서</span> 확인</span>
+                        )}
+                        {/* 잡알리오는 접수 시작일을 주지 않아 시작 칸이 등록일이다. 등록일만 적는다. */}
+                        {j.reg && <span className="text-xs text-faint max-sm:hidden"><time dateTime={j.reg}>{dot(j.reg)}</time> 등록</span>}
+                        {j.id.startsWith("a") && <span className="text-xs text-faint max-sm:hidden">잡알리오</span>}
+                      </p>
+                    </div>
                   </div>
                 </article>
               </li>
