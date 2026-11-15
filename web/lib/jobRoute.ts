@@ -157,7 +157,8 @@ export function jobRouteLabel(r: JobRoute): string[] {
     r.region,
     r.hire,
     r.open ? "접수 중만" : undefined,
-    r.q ? `"${r.q}"` : undefined,
+    // 연관어를 끈 검색어는 이미 따옴표로 감싸여 있다("홍보"). 겹치지 않게 벗기고 한 번만 씌운다.
+    r.q ? `"${r.q.replace(/["“”'‘’]/g, "")}"` : undefined,
   ].filter((v): v is string => Boolean(v));
 }
 
