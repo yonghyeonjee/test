@@ -44,8 +44,12 @@ export type JobRoute = {
 
 export const JOBS_BASE = "/jobs";
 
-/** 한 쪽에 보여 줄 공고 수. 주소를 만들 때도 쪽 수를 세야 해서 여기 둔다. */
-export const PER_PAGE = 40;
+/**
+ * 한 쪽에 보여 줄 공고 수. 주소를 만들 때도 쪽 수를 세야 해서 여기 둔다.
+ * 2026-11-15 40 → 20. 휴대폰에서 카드를 세 줄로 줄여도 40건이면 화면 여섯 장이 넘었다. 쪽 수가 늘 뿐
+ * 예전 쪽 번호(/jobs/page/N)는 모두 그대로 있으니 색인된 주소가 404 가 되지 않는다. 사이트맵은 쪽 번호를 싣지 않는다.
+ */
+export const PER_PAGE = 20;
 
 const dec = (s: string) => {
   try {
