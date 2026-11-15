@@ -13,8 +13,9 @@ import RelatedLinks from "@/components/RelatedLinks";
 import { AGENCY_KIND, AGENCY_TEXT_MIN, agencyHref, agencyItemBySlug, type AgencyKind } from "@/lib/agencyStore";
 import { dot, type AlioItem } from "@/lib/alioplus";
 import { agencyEvents } from "@/lib/calEvents";
-import { mapLinks } from "@/lib/geo";
-import { getPublicOrgs, type PublicOrg } from "@/lib/govData";
+import { SIDO_SHORT, mapLinks } from "@/lib/geo";
+import { getPublicOrgStrict, getPublicOrgs, type PublicOrg } from "@/lib/govData";
+import { getJobsByOrg } from "@/lib/pubJobs";
 import { agencyRelated } from "@/lib/related";
 import { pageGraph } from "@/lib/schema";
 import { withOg } from "@/lib/seo";
@@ -41,6 +42,9 @@ type P = { params: { id: string } };
 const bare = (name: string) => name.replace(/^\((사|재|주|특|학)\)\s*/, "").replace(/\s+/g, "").trim();
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 const cleanUrl = (u: string) => u.replace(/^(https?:\/\/)\s+/, "$1");
+/** "o 가\no 나" 같은 줄을 목록으로. 머리 기호는 뗀다(app/orgs/[id] 와 같은 방식). */
+const bullets = (text: string | null): string[] =>
+  (text ?? "").split("\n").map((l) => l.replace(/^[o○•\-·ㅇ*]\s*/, "").trim()).filter(Boolean);
 
 function describe(kind: AgencyKind, it: AlioItem): string {
   const k = AGENCY_KIND[kind].label;
@@ -91,6 +95,25 @@ export default async function AgencyItemPage({ params }: P) {
   // 기관 정보(잡알리오 342곳)와 잇는다. 이름이 꼭 같지 않아 법인 표시·빈칸을 떼고 견준다.
   const orgs = it.org ? await getPublicOrgs().catch(() => [] as PublicOrg[]) : [];
   const org = it.org ? orgs.find((o) => bare(o.name) === bare(it.org!)) ?? null : null;
+
+  // 내용 채우기(2026-11-15). 알리오 플러스가 준 것이 설명 두세 줄뿐인 항목이 많다(사업 923건 중 743건이 300자 미만,
+  // 대상·기간·주소가 비어 "한눈에 보기"에 운영 기관 한 줄만 남았다). 지어낼 수는 없으니, 이미 갖고 있는 사실로 채운다 —
+  // 운영 기관이 무슨 일을 하는 곳인지(잡알리오 기관 정보: 하는 일·설립근거·소재지·홈페이지)와 그 기관의 채용 공고.
+  // 곁가지라 못 읽어도 쪽은 그대로 낸다.
+  const [full, board] = org
+    ? await Promise.all([
+        getPublicOrgStrict(org.id).catch(() => null),
+        getJobsByOrg(bare(org.name), 30)
+          .then((b) => (b.jobs.length || bare(org.name) === org.name ? b : getJobsByOrg(org.name, 30)))
+          .catch(() => null),
+      ])
+    : [null, null];
+  const roles = bullets(full?.roles ?? null).slice(0, 6);
+  const openJobs = (board?.jobs ?? []).filter((j) => j.status !== "closed").slice(0, 4);
+  const shownJobs = openJobs.length ? openJobs : (board?.jobs ?? []).slice(0, 3);
+  const orgPlace = org ? [org.sido ? SIDO_SHORT[org.sido] ?? org.sido : "", org.sigungu].filter(Boolean).join(" ") : "";
+  const orgLinks = org?.address ? mapLinks(`${orgPlace} ${org.address.split(",")[0]}`.trim()) : null;
+  const orgTotal = it.org ? all.filter((x) => x.org === it.org).length : 0;
 
   const links = it.address ? mapLinks(it.address) : null;
   const searchQ = encodeURIComponent([it.org, it.title].filter(Boolean).join(" "));
@@ -145,6 +168,28 @@ export default async function AgencyItemPage({ params }: P) {
           )}
           {it.cate && (<><dt className="text-muted">분류</dt><dd>{it.cate}</dd></>)}
           {fee && (<><dt className="text-muted">요금</dt><dd>{fee}</dd></>)}
+          {org?.ministry && (<><dt className="text-muted">소관 부처</dt><dd>{org.ministry}</dd></>)}
+          {org?.kind && (<><dt className="text-muted">기관 유형</dt><dd>{org.kind}</dd></>)}
+          {org?.address && (
+            <><dt className="text-muted">기관 소재지</dt>
+            <dd>
+              {orgPlace && !org.address.includes(orgPlace.split(" ")[0]) ? `${orgPlace} ` : ""}{org.address}
+              {!it.address && orgLinks && (
+                <span className="ml-2 inline-flex gap-1.5 align-middle">
+                  <a href={orgLinks.kakao} target="_blank" rel="noopener noreferrer" className="chip !py-0.5 !text-[12px]">카카오맵</a>
+                  <a href={orgLinks.naver} target="_blank" rel="noopener noreferrer" className="chip !py-0.5 !text-[12px]">네이버지도</a>
+                </span>
+              )}
+            </dd></>
+          )}
+          {org?.homepage && (
+            <><dt className="text-muted">홈페이지</dt>
+            <dd className="break-all"><a href={org.homepage} target="_blank" rel="noopener noreferrer" className="text-brand underline underline-offset-4">{org.homepage}</a></dd></>
+          )}
+          {orgTotal > 1 && (
+            <><dt className="text-muted">이 기관의 {K.label}</dt>
+            <dd><Link href={`${K.list}?q=${encodeURIComponent(bare(it.org ?? "").slice(0, 8))}`} className="text-brand underline underline-offset-4">모두 <span className="num">{orgTotal}</span>건 보기</Link></dd></>
+          )}
         </dl>
         {events.length > 0 && (
           <div className="mt-4 flex justify-end border-t border-line pt-3">
@@ -177,12 +222,48 @@ export default async function AgencyItemPage({ params }: P) {
                 <span className="text-[12.5px] text-muted">{[org.kind, org.ministry ? `${org.ministry} 소관` : "", org.sido].filter(Boolean).join(" · ")}</span>
               </div>
             </div>
-            {org.intro && <p className="mt-3 line-clamp-4 text-[14px] leading-relaxed text-ink2">{org.intro}</p>}
+            {org.intro && <p className="mt-3 line-clamp-6 text-[14px] leading-relaxed text-ink2">{org.intro}</p>}
+            {roles.length > 0 && (
+              <>
+                <h3 className="mt-5 text-[14px] font-bold">이 기관이 하는 일</h3>
+                <ul className="mt-2 grid gap-1.5">
+                  {roles.map((r, i) => <li key={i} className="flex gap-2.5 text-[14px] leading-relaxed text-ink2"><span className="text-brand" aria-hidden>•</span><span>{r}</span></li>)}
+                </ul>
+              </>
+            )}
+            {(full?.basis || full?.head) && (
+              <dl className="mt-5 grid gap-x-6 gap-y-2 border-t border-line pt-4 text-[13.5px] sm:grid-cols-[5.5rem_1fr]">
+                {full?.basis && (<><dt className="text-muted">설립 근거</dt><dd className="leading-relaxed">{full.basis}</dd></>)}
+                {full?.head && (<><dt className="text-muted">기관장</dt><dd>{full.head.replace(/\s+/g, "")}</dd></>)}
+              </dl>
+            )}
             <div className="mt-4 flex flex-wrap gap-2">
               <Link href={`/orgs/${org.id}`} className="btn btn-ghost px-4 py-2 text-[13.5px]">기관 정보 보기</Link>
               <Link href={`/jobs/org/${encodeURIComponent(org.name.replace(/^\((사|재|주|특|학)\)\s*/, ""))}`} className="btn btn-ghost px-4 py-2 text-[13.5px]">이 기관 채용 공고</Link>
             </div>
           </div>
+        </section>
+      )}
+
+      {org && shownJobs.length > 0 && (
+        <section className="mt-10">
+          <h2 className="border-b-2 border-line2 pb-2 text-[1.0625rem] font-bold">
+            {it.org}의 {openJobs.length ? "접수 중인 채용 공고" : "최근 채용 공고"}
+          </h2>
+          <ul className="mt-4 grid gap-2">
+            {shownJobs.map((j) => (
+              <li key={j.id} className="card card-link flex items-start gap-3 p-4">
+                <span className={`badge ${j.status === "closed" ? "badge-closed" : j.status === "upcoming" ? "badge-soon" : "badge-open"}`}>
+                  {j.status === "closed" ? "마감" : j.status === "upcoming" ? "접수 예정" : "접수 중"}
+                </span>
+                <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="min-w-0 flex-1 text-[14.5px] font-bold leading-snug hover:text-brand">{j.title}</Link>
+                <span className="num shrink-0 text-[12.5px] text-muted">{j.end ? `~${dot(j.end)}` : j.reg ? dot(j.reg) : ""}</span>
+              </li>
+            ))}
+          </ul>
+          <Link href={`/jobs/org/${encodeURIComponent(board?.jobs[0]?.org ?? bare(org.name))}`} className="mt-3 inline-flex text-sm font-semibold text-brand hover:underline">
+            {it.org} 채용 공고 모두 보기 →
+          </Link>
         </section>
       )}
 
@@ -211,6 +292,8 @@ export default async function AgencyItemPage({ params }: P) {
         <div className="mt-4 flex flex-wrap gap-2">
           {it.url ? (
             <a href={cleanUrl(it.url)} target="_blank" rel="noopener noreferrer" className="btn btn-primary px-5 py-2.5 text-[14px]">{outLabel} ↗</a>
+          ) : org?.homepage ? (
+            <a href={org.homepage} target="_blank" rel="noopener noreferrer" className="btn btn-primary px-5 py-2.5 text-[14px]">{it.org} 홈페이지 ↗</a>
           ) : (
             <a href={`https://search.naver.com/search.naver?query=${searchQ}`} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-primary px-5 py-2.5 text-[14px]">기관 안내 검색해 보기 ↗</a>
           )}
