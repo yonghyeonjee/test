@@ -6,7 +6,8 @@ import MyRegionJobs from "./MyRegionJobs";
 import OrgMark from "./OrgMark";
 import { IllusEmpty } from "./Illus";
 import RecentStrip from "./RecentStrip";
-import { jobPath, jobPathPage, jobPathWith, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
+import { jobPath, jobPathPage, jobPathWith, jobRobots, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
+import { JOB_TYPES, classifyJob } from "@/lib/jobClass";
 
 const BADGE: Record<string, string> = {
   ongoing: "badge-open", always: "badge-open", upcoming: "badge-soon", closed: "badge-closed",
@@ -83,13 +84,40 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
 
   // 목록 자체를 이미 기관·지역으로 좁혀 받은 경우가 있다. 그때 같은
   // 조건을 한 번 더 거는 것은 값이 없지만, 걸어도 결과는 같다.
-  const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open };
-  const { regions, hires, openN, noRegionN } = facets(board.jobs, filter);
+  const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field };
+  const { regions, hires, openN, noRegionN, types, grades, fields } = facets(board.jobs, filter);
   const list = filterJobs(board.jobs, filter);
   const last = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const cur = Math.min(Math.max(1, route.page), last);
   const shown = list.slice((cur - 1) * PER_PAGE, cur * PER_PAGE);
-  const filtered = Boolean(route.q || route.region || route.hire || route.open);
+  const filtered = Boolean(route.q || route.region || route.hire || route.open || route.type || route.grade || route.field);
+
+  /**
+   * 거르기 표(2026-11-15). 채용 사이트(사람인·잡코리아·나라일터)처럼 왼쪽에 항목 이름, 오른쪽에 고를 것을 한 줄씩.
+   * 같은 줄 안에서는 하나만 고르고, 다시 누르면 풀린다. 숫자는 다른 조건을 건 채로 그것을 고르면 남는 공고 수(lib/pubJobs facets).
+   * 조건을 둘 이상 겹친 쪽은 색인하지 않으므로(jobRobots) 그런 링크에는 nofollow 를 단다 — 검색 로봇이 조합을 끝없이 훑지 않게.
+   */
+  const pick = (patch: Partial<JobRoute>) => {
+    const next = { ...route, ...patch, page: 1 };
+    return { href: jobPath(next), rel: jobRobots(next).index ? undefined : "nofollow" };
+  };
+  type Opt = { t: string; n: number; on: boolean; title?: string } & ReturnType<typeof pick>;
+  /** 고른 값은 숫자가 0이어도(다른 조건과 겹치는 것이 없어도) 남겨 둬야 풀 수 있다. */
+  const opts = (vals: { v: string; n: number }[], sel: string | undefined, key: "hire" | "type" | "grade" | "field", desc?: (v: string) => string | undefined): Opt[] => {
+    const all = sel && !vals.some((x) => x.v === sel) ? [...vals, { v: sel, n: 0 }] : vals;
+    return all.map((x) => {
+      const patch: Partial<JobRoute> = {};
+      patch[key] = sel === x.v ? undefined : x.v;
+      return { t: x.v, n: x.n, on: sel === x.v, title: desc?.(x.v), ...pick(patch) };
+    });
+  };
+  const rows: { label: string; items: Opt[] }[] = [
+    { label: "접수", items: [{ t: "접수 중만", n: openN, on: Boolean(route.open), ...pick({ open: !route.open }) }] },
+    { label: "고용 형태", items: opts(types, route.type, "type", (v) => JOB_TYPES.find((t) => t.v === v)?.desc) },
+    { label: "직무", items: opts(fields, route.field, "field") },
+    { label: "급수", items: opts(grades, route.grade, "grade", (v) => (v.startsWith("임기제") ? "임기제 공무원 등급. 가급이 가장 높고 마급이 가장 낮습니다." : "공무원·임기제 자리의 급수")) },
+    { label: "기관 구분", items: opts(hires.slice(0, 6), route.hire, "hire") },
+  ];
   // 지역 칩은 전체 목록에서만 뜻이 있다. 지역별·기관별 쪽에서는 이미
   // 좁혀져 있어 눌러 봐야 갈 데가 없다.
   const showRegions = !route.region && !route.org && (regions.length > 0 || noRegionN > 0);
@@ -110,6 +138,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         {route.region && <input type="hidden" name="region" value={route.region} />}
         {route.org && <input type="hidden" name="org" value={route.org} />}
         {route.hire && <input type="hidden" name="hire" value={route.hire} />}
+        {route.type && <input type="hidden" name="type" value={route.type} />}
+        {route.grade && <input type="hidden" name="grade" value={route.grade} />}
+        {route.field && <input type="hidden" name="field" value={route.field} />}
         {route.open && <input type="hidden" name="open" value="1" />}
         <input
           name="q"
@@ -121,17 +152,21 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <button type="submit" className="btn btn-primary shrink-0 px-5 py-2.5">찾기</button>
       </form>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="거르기">
-        <span className="mr-0.5 text-[12.5px] font-bold text-muted">거르기</span>
-        <Link href={jobPathWith(route, { open: !route.open })}
-              className={`chip ${route.open ? "chip-on" : ""}`}>
-          접수 중만 <span className="num text-[12px] opacity-70">{openN}</span>
-        </Link>
-        {hires.slice(0, 6).map((h) => (
-          <Link key={h.v} href={jobPathWith(route, { hire: route.hire === h.v ? undefined : h.v })}
-                className={`chip ${route.hire === h.v ? "chip-on" : ""}`}>
-            {h.v} <span className="num text-[12px] opacity-70">{h.n}</span>
-          </Link>
+      {/* 휴대폰은 줄마다 옆으로 밀어 본다(줄이 열 칸 넘게 쌓이면 공고가 화면 밖으로 밀린다). 넓은 화면은 줄바꿈. */}
+      <div className="mt-4 overflow-hidden rounded-card border border-line" role="group" aria-label="거르기">
+        {rows.filter((r) => r.items.length > 0).map((r) => (
+          <div key={r.label} className="flex border-b border-line last:border-b-0">
+            <span className="flex w-[4.5rem] shrink-0 items-center bg-ground px-3 text-[12.5px] font-bold text-ink2 sm:w-24">{r.label}</span>
+            <div role="list" aria-label={r.label}
+                 className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-2.5 py-2 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
+              {r.items.map((i) => (
+                <Link key={i.t} role="listitem" href={i.href} rel={i.rel} title={i.title} aria-current={i.on ? "true" : undefined}
+                      className={`chip shrink-0 !py-1 !text-[13px] ${i.on ? "chip-on" : ""}`}>
+                  {i.t} <span className="num text-[12px] opacity-70">{i.n}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
       {/* 지역은 거르기(필터)다. 열일곱 줄이 결과 앞에 깔려 있으면 공고가 화면 밖으로 밀려난다.
@@ -177,6 +212,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
             route.q && { t: `"${unquoteQuery(route.q)}"${exact ? " · 연관어 끔" : ""}`, href: jobPathWith(route, { q: undefined }) },
             route.region && !route.org && { t: route.region, href: jobPathWith(route, { region: undefined }) },
             route.hire && { t: route.hire, href: jobPathWith(route, { hire: undefined }) },
+            route.type && { t: route.type, href: jobPathWith(route, { type: undefined }) },
+            route.field && { t: route.field, href: jobPathWith(route, { field: undefined }) },
+            route.grade && { t: route.grade, href: jobPathWith(route, { grade: undefined }) },
             route.open && { t: "접수 중만", href: jobPathWith(route, { open: false }) },
           ]
             .filter((x): x is { t: string; href: string } => Boolean(x))
@@ -242,6 +280,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           {shown.map((j) => {
             const dd = dday(j, today);
             const isNew = Boolean(j.reg) && dayNo(today) - dayNo(j.reg!) <= 2 && j.status !== "closed";
+            const cls = classifyJob(j);
             return (
               <li key={j.id}>
                 {/* 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
@@ -254,6 +293,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
                       {dd ? <span className={`num badge ${dd.cls}`}>{dd.t}</span>
                           : (j.start || j.end) && <span className={`badge ${BADGE[j.status]}`}>{STATUS_LABEL[j.status]}</span>}
                       {isNew && <span className="badge badge-new">새 공고</span>}
+                      {/* 고용 형태·급수를 먼저(지원 여부를 가르는 것). 기관 구분은 그 뒤. */}
+                      {cls.types.slice(0, 2).map((t) => <span key={t} className="badge badge-quiet font-bold text-ink2">{t}</span>)}
+                      {cls.grades[0] && <span className="badge badge-quiet">{cls.grades.length > 1 ? `${cls.grades[0]} 외` : cls.grades[0]}</span>}
                       {j.hire && <span className="badge badge-quiet">{j.hire}</span>}
                       {j.recruit && <span className="badge badge-quiet">{j.recruit.replace(/\s*외\s*\d+$/, " 등")}</span>}
                       {j.headcount && <span className="num badge badge-quiet">{j.headcount}명</span>}

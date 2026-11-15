@@ -86,7 +86,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
   const canon = route.open ? { ...route, open: false } : route;
   const shown = (() => {
     if (route.open || !board.ok) return [];
-    const list = filterJobs(board.jobs, { q: route.q, region: route.region, hire: route.hire, open: route.open });
+    const list = filterJobs(board.jobs, { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field });
     const cur = Math.min(route.page, Math.max(1, Math.ceil(list.length / PER_PAGE)));
     return list.slice((cur - 1) * PER_PAGE, (cur - 1) * PER_PAGE + 20);
   })();
@@ -129,7 +129,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
         />
       )}
       <JobList board={board} route={route} />
-      {route.page === 1 && !route.q && !route.region && !route.hire && <JobsPulse jobs={board.jobs} />}
+      {route.page === 1 && !route.q && !route.region && !route.hire && !route.type && !route.grade && !route.field && <JobsPulse jobs={board.jobs} />}
       <MidAd name="detail_mid" context="job" seed="jobs" className="mt-10" />
 
       <p className="mt-3 text-xs leading-relaxed text-muted">
