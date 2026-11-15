@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { track } from "./Gtm";
 import { toast } from "./Toast";
 
@@ -67,14 +68,51 @@ export default function ShareButton({
 }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  /**
+   * 판을 단추 바로 아래(자리가 없으면 바로 위)에 놓는다(2026-11-15).
+   * 전에는 휴대폰에서 fixed bottom 으로 화면 맨 아래에 띄웠는데, 단추는 쪽 위쪽 제목 밑에 있어 손과 눈이 한참 내려가야 했다.
+   * 게다가 조상에 transform 이 걸린 쪽에서는 fixed 가 화면이 아니라 그 상자 기준이 돼 쪽 맨 끝에 떴다.
+   * 그래서 body 로 내보내고(createPortal) 단추 자리를 재서 화면 좌표로 놓는다. 스크롤·화면 크기가 바뀌면 다시 잰다.
+   */
+  const place = useCallback(() => {
+    const b = box.current?.getBoundingClientRect();
+    if (!b) return;
+    const vw = window.innerWidth, vh = window.innerHeight, gap = 12;
+    const width = Math.min(320, vw - gap * 2);
+    const left = Math.max(gap, Math.min(b.left, vw - width - gap));
+    const h = panel.current?.offsetHeight ?? 240;
+    const below = b.bottom + 6;
+    const top = below + h <= vh - gap ? below : Math.max(gap, b.top - h - 6);
+    setPos({ top, left, width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) { setPos(null); return; }
+    place();
+    window.addEventListener("scroll", place, { passive: true });
+    window.addEventListener("resize", place);
+    return () => { window.removeEventListener("scroll", place); window.removeEventListener("resize", place); };
+  }, [open, place]);
 
   useEffect(() => {
     if (!open) return;
-    const away = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const away = (e: MouseEvent | TouchEvent) => {
+      const t = e.target as Node;
+      if (box.current?.contains(t) || panel.current?.contains(t)) return;
+      setOpen(false);
+    };
     const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", away);
+    document.addEventListener("touchstart", away, { passive: true });
     document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", away); document.removeEventListener("keydown", esc); };
+    return () => {
+      document.removeEventListener("mousedown", away);
+      document.removeEventListener("touchstart", away);
+      document.removeEventListener("keydown", esc);
+    };
   }, [open]);
 
   const flash = (m: string) => toast(m);
@@ -143,14 +181,10 @@ export default function ShareButton({
         공유·저장
       </button>
 
-      {open && (
-        <>
-        {/* 휴대폰: 화면 아래 시트. 판이 단추 왼쪽에 붙어 오른쪽이 잘렸다. 뒤를 눌러도 닫힌다. */}
-        <button type="button" aria-label="닫기" onClick={() => setOpen(false)}
-                className="fixed inset-0 z-30 bg-black/30 sm:hidden" />
-        <div role="menu" aria-label="공유하거나 저장하기"
-             className="fixed inset-x-3 bottom-3 z-40 rounded-card border border-line bg-white p-2 shadow-lift
-                        sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+6px)] sm:z-30 sm:w-[20rem]">
+      {open && createPortal(
+        <div ref={panel} role="menu" aria-label="공유하거나 저장하기"
+             style={pos ? { top: pos.top, left: pos.left, width: pos.width } : { top: 0, left: 0, visibility: "hidden" }}
+             className="fixed z-[1200] rounded-card border border-line bg-white p-2 shadow-lift">
           <div className="grid grid-cols-3">
             <button type="button" role="menuitem" onClick={kakao} className={item}>
               <span className={`${ic} bg-[#FEE500] text-[#191919]`}>
@@ -193,8 +227,8 @@ export default function ShareButton({
             카카오톡에서 <b className="font-semibold text-muted">나와의 채팅</b>을 고르면 내 카카오톡에 저장됩니다.
             메모 앱에 저장은 구글 킵·삼성 노트·애플 메모로 보냅니다.
           </p>
-        </div>
-        </>
+        </div>,
+        document.body,
       )}
     </div>
   );

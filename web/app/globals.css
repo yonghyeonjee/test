@@ -236,8 +236,10 @@
 @keyframes bounce-in { 0% { transform: scale(1); } 35% { transform: scale(1.35) rotate(-8deg); } 70% { transform: scale(.92); } 100% { transform: scale(1); } }
 .bounce-in { animation: bounce-in .5s ease; }
 /* 화면 아래 알림. */
-@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
-.toast { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 60; animation: toast-in .25s ease-out both; }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, -12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+/* 2026-11-15 알림은 머리말 바로 아래에 띄운다. 전에는 화면 맨 아래(bottom: 84px)라 제목 밑 저장·공유 단추를 누른 눈에서 멀었고,
+   아래 광고 띠에 가려지기도 했다. */
+.toast { position: fixed; left: 50%; top: 124px; transform: translateX(-50%); z-index: 1300; animation: toast-in .25s ease-out both; }
 /* 바로가기 아이콘이 손을 올리면 살짝 커진다. */
 .group:hover .ic-fun { transform: scale(1.12) rotate(-4deg); }
 .ic-fun { transition: transform .2s cubic-bezier(.2,.7,.2,1); }
