@@ -2,7 +2,7 @@
 # fail2ban 규칙 시험. 배포 전에 deploy_aws.yml 이 돌린다. 로컬: sudo apt-get install fail2ban && bash deploy/lightsail/fail2ban/test.sh
 #
 # sample-access.log 는 이 Caddyfile 로 실제로 띄운 Caddy 가 남긴 31줄(IP 만 문서용 주소로 바꿈).
-#  쪽·API 요청 14줄은 센다(스캐너·막힌 봇·이름표 없음 포함), 검색엔진 5줄은 뺀다(Googlebot·Yeti),
+#  쪽·API 요청 12줄은 센다(스캐너·막힌 봇·이름표 없음 포함), 검색엔진·AI 답변 봇 7줄은 뺀다(Googlebot·Yeti·Claude-User·PerplexityBot),
 #  정적 파일·미리 받기(?_rsc=)·robots·sitemap 12줄은 세지 않는다. 스캐너 규칙은 /wp-login.php·/.env 2줄만.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -14,7 +14,7 @@ want() {  # 필터 기대한_결과
   [ "$got" = "$2" ] || { echo "::error::$1 기대: $2"; exit 1; }
   [ "$dates" = "31" ] || { echo "::error::$1 날짜를 다 못 읽음"; exit 1; }
 }
-want jiwon-flood "Lines: 31 lines, 5 ignored, 14 matched, 12 missed"
+want jiwon-flood "Lines: 31 lines, 7 ignored, 12 matched, 12 missed"
 want jiwon-scan  "Lines: 31 lines, 0 ignored, 2 matched, 29 missed"
 
 # 감옥 설정이 읽히는지(설치된 기본 설정 위에 얹어 본다)
