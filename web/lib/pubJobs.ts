@@ -4,6 +4,7 @@ import { SIDO_SHORT, normSido } from "./geo";
 import { dropAlioTwins, isAlioId, isTwin } from "./jobTwins";
 import { gojobsFileUrl, type GojobsDetail } from "./gojobsDetail";
 import { filterJobs, regionTokens, type JobFilter } from "./jobFilter";
+import { JOB_FIELDS, JOB_GRADES, JOB_TYPES, classifyJob } from "./jobClass";
 import { stageOf } from "./jobRole";
 import { toLoadedSummary, type JobSummary } from "./jobSummary";
 
@@ -64,6 +65,10 @@ export type Job = {
   url: string | null;
   /** 원천(나라일터·잡알리오)에서 마지막으로 확인한 날(YYYY-MM-DD). 상세에서만 채워진다. */
   checked?: string | null;
+  /** 나라일터 모집 직급("지방시간선택제임기제 라급 1명"). 목록만 읽는다 — 고용 형태·급수 거르기(lib/jobClass)에 쓴다. */
+  post?: string | null;
+  /** 잡알리오 고용 형태("정규직", "비정규직 외 1"). 목록만 읽는다. */
+  kind?: string | null;
   status: ApplyStatus;
 };
 
@@ -76,7 +81,7 @@ export type JobBoard = {
   failed?: boolean;
 };
 
-const ALIAS: Record<keyof Omit<Job, "status" | "checked">, string[]> = {
+const ALIAS: Record<keyof Omit<Job, "status" | "checked" | "post" | "kind">, string[]> = {
   id: ["idx", "pbancNo", "id", "seq"],
   title: ["title", "pbancNm", "subject", "recrutPbancTtl"],
   org: ["orgName", "instNm", "ognNm", "orgNm", "instName"],
@@ -137,7 +142,15 @@ type Stored = {
   start_date: string | null; end_date: string | null; reg_date: string | null; url: string | null;
   /** 원천에서 마지막으로 확인한 시각. 상세(getJob)만 읽는다. */
   fetched_at?: string | null;
+  post?: string | null;
+  kind?: string | null;
 };
+
+/**
+ * 목록이 읽는 칸. raw 통째가 아니라 거르기에 쓰는 두 값만 뽑아 온다(2026-11-15) —
+ * 나라일터 모집 직급(raw.gojobs.grade)과 잡알리오 고용 형태(raw.kind).
+ */
+const LIST_COLS = "source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url,post:raw->gojobs->>grade,kind:raw->>kind";
 
 /** 저장된 한 줄을 화면이 쓰는 모양으로. */
 function toStoredJob(r: Stored): Job {
@@ -146,6 +159,8 @@ function toStoredJob(r: Stored): Job {
     recruit: r.recruit, sectors: r.sectors, headcount: r.headcount,
     start: r.start_date, end: r.end_date, reg: r.reg_date, url: r.url,
     checked: r.fetched_at ? r.fetched_at.slice(0, 10) : null,
+    post: r.post ?? null,
+    kind: r.kind ?? null,
     status: applyStatus({ apply_start: r.start_date, apply_end: r.end_date, is_always_on: false }),
   };
 }
@@ -217,13 +232,13 @@ async function fromStore(): Promise<JobBoard | null> {
     const today = new Date().toISOString().slice(0, 10);
     const [recent, open] = await Promise.all([
       db.from("job_posts")
-        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url", { count: "estimated" })
+        .select(LIST_COLS, { count: "estimated" })
         .filter("source", SOURCE_OP, SOURCE_VAL)
         .order("reg_date", { ascending: false, nullsFirst: false })
         .order("end_date", { ascending: false, nullsFirst: false })
         .limit(LIST_MAX),
       readAll<Stored>((from, to) => db.from("job_posts")
-        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+        .select(LIST_COLS)
         .filter("source", SOURCE_OP, SOURCE_VAL)
         .gte("end_date", today)
         .order("end_date", { ascending: true }).order("source_id")
@@ -303,7 +318,18 @@ export function facets(jobs: Job[], f: JobFilter = {}) {
   // 지역 칩을 셀 때는 지역 조건을 빼고, 고용형태 칩을 셀 때는 고용형태를 뺀다.
   const forRegion = filterJobs(jobs, { ...f, region: undefined });
   const forHire = filterJobs(jobs, { ...f, hire: undefined });
+  // 고용 형태·급수·직무(lib/jobClass). 한 공고가 둘 이상에 들 수 있어 칩 숫자의 합은 목록 수보다 클 수 있다.
+  const byClass = (key: "types" | "grades" | "fields", order: string[], dim: "type" | "grade" | "field") => {
+    const m = new Map<string, number>();
+    const g: JobFilter = { ...f };
+    g[dim] = undefined;
+    for (const j of filterJobs(jobs, g)) for (const v of classifyJob(j)[key]) m.set(v, (m.get(v) ?? 0) + 1);
+    return order.filter((v) => m.has(v)).map((v) => ({ v, n: m.get(v)! }));
+  };
   return {
+    types: byClass("types", JOB_TYPES.map((t) => t.v), "type"),
+    grades: byClass("grades", JOB_GRADES, "grade"),
+    fields: byClass("fields", JOB_FIELDS, "field"),
     regions: count(forRegion.flatMap((j) => regionTokens(j.region))),
     /** 지역이 적히지 않은 공고(중앙부처 공고 대부분). 지역 칩 수와 목록 수가
      *  안 맞아 보이지 않게 같이 보여 준다. */
@@ -492,12 +518,12 @@ export const getJobsByRegion = cache(async (sido: string, limit = 200): Promise<
     // 3분의 1을 차지해 접수 중 공고가 빠지던 것(서울 194건 중 133건만 보임)을 막는다.
     const [recent, open] = await Promise.all([
       db.from("job_posts")
-        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+        .select(LIST_COLS)
         .filter("source", SOURCE_OP, SOURCE_VAL).or(clause)
         .order("reg_date", { ascending: false, nullsFirst: false })
         .limit(limit),
       db.from("job_posts")
-        .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+        .select(LIST_COLS)
         .filter("source", SOURCE_OP, SOURCE_VAL).or(clause).gte("end_date", today)
         .order("end_date", { ascending: true })
         .limit(PAGE_ROWS),
@@ -736,7 +762,7 @@ export const getJobsByOrg = cache(async (org: string, limit = 300): Promise<JobB
     // 출처마다 따로 읽는다(perSource). in() 으로 물으면 (org, reg_date) 색인을 못 타 1.4ms → 11~70ms.
     const read = () => perSource((src) => db
       .from("job_posts")
-      .select("source_id,title,org,region,hire,recruit,sectors,headcount,start_date,end_date,reg_date,url")
+      .select(LIST_COLS)
       .eq("source", src).eq("org", org)
       .order("reg_date", { ascending: false, nullsFirst: false })
       .limit(limit));

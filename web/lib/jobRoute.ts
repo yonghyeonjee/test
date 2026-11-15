@@ -20,14 +20,19 @@
  * 400 대신 404 를 낸다 — 없는 쪽이니 없다고 하는 게 맞다.
  *
  * 같은 내용이 두 주소로 나오면 안 되므로 순서를 하나로 못 박는다
- * (org → region → hire → status → q → page). 다른 순서로 들어오면
+ * (org → region → hire → type → grade → field → status → q → page). 다른 순서로 들어오면
  * 정한 순서로 넘긴다(301).
  */
+import { JOB_FIELDS, JOB_GRADES, JOB_TYPES } from "./jobClass";
 
 export type JobRoute = {
   org?: string;
   region?: string;
   hire?: string;
+  /** 고용 형태·급수·직무(lib/jobClass, 2026-11-15). /jobs/type/임기제 · /jobs/grade/7급 · /jobs/field/전산·IT */
+  type?: string;
+  grade?: string;
+  field?: string;
   /** 접수 중만 보기. 경로로는 status/open. */
   open?: boolean;
   q?: string;
@@ -76,6 +81,19 @@ export function parseJobPath(segs: string[]): JobRoute | null {
         if (r.hire) return null;
         r.hire = val;
         break;
+      // 정해 둔 값만 받는다. 아무 말이나 받으면 같은 빈 목록이 주소마다 생긴다.
+      case "type":
+        if (r.type || !JOB_TYPES.some((t) => t.v === val)) return null;
+        r.type = val;
+        break;
+      case "grade":
+        if (r.grade || !JOB_GRADES.includes(val)) return null;
+        r.grade = val;
+        break;
+      case "field":
+        if (r.field || !JOB_FIELDS.includes(val)) return null;
+        r.field = val;
+        break;
       case "q":
         if (r.q) return null;
         r.q = val.slice(0, 60);
@@ -109,6 +127,9 @@ export function jobPath(r: JobRoute): string {
   add("org", r.org);
   add("region", r.region);
   add("hire", r.hire);
+  add("type", r.type);
+  add("grade", r.grade);
+  add("field", r.field);
   if (r.open) p.push("status", "open");
   add("q", r.q);
   if (r.page > 1) p.push("page", String(r.page));
@@ -138,7 +159,8 @@ export function jobPathPage(r: JobRoute, page: number): string {
  * 쪽과 2쪽 이후는 그대로 색인한다. 정본(jobCanonical)은 손대지 않는다.
  */
 export function jobRobots(r: JobRoute) {
-  const filters = [r.org, r.region, r.hire].filter(Boolean).length;
+  // 2026-11-15 고용 형태·급수·직무도 한 조건으로 센다. "임기제 채용", "7급 채용" 하나짜리 쪽은 색인하고, 겹친 것은 하지 않는다.
+  const filters = [r.org, r.region, r.hire, r.type, r.grade, r.field].filter(Boolean).length;
   return r.q || r.open || filters >= 2 ? { index: false, follow: true } : { index: true, follow: true };
 }
 
@@ -156,6 +178,9 @@ export function jobRouteLabel(r: JobRoute): string[] {
     r.org,
     r.region,
     r.hire,
+    r.type,
+    r.grade,
+    r.field,
     r.open ? "접수 중만" : undefined,
     // 연관어를 끈 검색어는 이미 따옴표로 감싸여 있다("홍보"). 겹치지 않게 벗기고 한 번만 씌운다.
     r.q ? `"${r.q.replace(/["“”'‘’]/g, "")}"` : undefined,
@@ -183,7 +208,7 @@ export function peekJobRoute(prefix: string[], seg: string[] = []): JobRoute {
 }
 
 /** 미들웨어가 쓰는 이름표. 이 이름으로 시작하는 경로만 손댄다. */
-export const JOB_KEYS = ["org", "region", "hire", "status", "q", "page"] as const;
+export const JOB_KEYS = ["org", "region", "hire", "type", "grade", "field", "status", "q", "page"] as const;
 
 /**
  * 들어온 그대로의 경로를 정본과 견주려고 다시 쓴 것.

@@ -1,6 +1,7 @@
 import type { Job } from "./pubJobs";
 import { SIDO_SHORT, normSido } from "./geo";
 import { expandTerms } from "./thesaurus";
+import { classifyJob } from "./jobClass";
 
 /**
  * 채용 목록 거르기. react 를 끌어오지 않는 순수 함수만 — 테스트가 node 에서
@@ -16,7 +17,8 @@ export function regionTokens(region: string | null) {
     .filter((s) => s.length >= 2);
 }
 
-export type JobFilter = { q?: string; region?: string; hire?: string; open?: boolean };
+/** type·grade·field 는 고용 형태·급수·직무(lib/jobClass, 2026-11-15). */
+export type JobFilter = { q?: string; region?: string; hire?: string; open?: boolean; type?: string; grade?: string; field?: string };
 
 const hayOf = (j: Job) => `${j.title} ${j.org ?? ""} ${j.sectors ?? ""}`.toLowerCase();
 
@@ -82,6 +84,12 @@ export function filterJobs(jobs: Job[], f: JobFilter) {
     if (f.open && (j.status === "closed")) return false;
     if (f.region && !regionMatches(j, f.region)) return false;
     if (f.hire && j.hire !== f.hire) return false;
+    if (f.type || f.grade || f.field) {
+      const c = classifyJob(j);
+      if (f.type && !c.types.includes(f.type)) return false;
+      if (f.grade && !c.grades.includes(f.grade)) return false;
+      if (f.field && !c.fields.includes(f.field)) return false;
+    }
     if (groups.length) {
       const hay = hayOf(j);
       if (!groups.every((g) => g.some((t) => hay.includes(t)))) return false;
