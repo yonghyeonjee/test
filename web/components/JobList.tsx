@@ -314,12 +314,19 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         </div>
       ) : (
         <ul className="grid gap-2 sm:gap-3">
-          {shown.map((j) => {
+          {shown.map((j, i) => {
             const dd = dday(j, today);
             const isNew = Boolean(j.reg) && dayNo(today) - dayNo(j.reg!) <= 2 && j.status !== "closed";
             const cls = classifyJob(j);
+            // 마감 임박순에서는 마감된 공고가 뒤에 몰린다. 어디부터 끝난 공고인지 줄을 긋는다.
+            const firstClosed = !route.sort && j.status === "closed" && (i === 0 ? cur > 1 && list[(cur - 1) * PER_PAGE - 1]?.status !== "closed" : shown[i - 1].status !== "closed");
             return (
               <li key={j.id}>
+                {firstClosed && (
+                  <p className="mb-2 mt-3 flex items-center gap-3 text-[12.5px] font-semibold text-faint">
+                    <span className="h-px flex-1 bg-line2" />여기부터 마감된 공고<span className="h-px flex-1 bg-line2" />
+                  </p>
+                )}
                 {/* 공고마다 우리 쪽 상세 페이지를 둔다. 나라일터는 원문 주소를
                     안 주는 공고가 많아 예전에는 눌러도 아무 일이 없었다.
                     2026-11-15: 카드 한 장을 article 로, 제목을 h3 로. 맨 앞은 남은 날, 마감일은 요일까지 또렷하게.
