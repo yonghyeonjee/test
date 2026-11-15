@@ -79,6 +79,7 @@
 #  7) 방문을 보내 주지 않는 수집 봇 둘(Amzn-SearchBot·ElevenlabsCrawler). 429(아래 @restbot, 임시).
 #  8) 브라우저로 꾸며 상세 쪽만 훑는 수집기. 사람은 통과하는 자바스크립트 한 번 문(아래 @scrape).
 # 검색엔진(Googlebot·Yeti·Daum·bingbot)·AdSense·AI 답변 봇(PerplexityBot·OAI-SearchBot·Claude-User 등)은 건드리지 않는다.
+# 속도 제한(fail2ban jiwon-flood)에서도 이 봇들은 뺀다(2026-11-15).
 (guard) {
 	@scan {
 		path *.php *.asp *.aspx *.jsp *.cgi /wp-* /wordpress* /.env* /.git* /.aws* /.ssh* /.vscode* /.DS_Store
@@ -120,7 +121,9 @@
 	@nolang {
 		not path /_next/* /favicon* /icon* /apple-icon* /robots.txt /sitemap* /llms.txt /og /og/* /manifest* /ads.txt
 		header_regexp nlua User-Agent ^Mozilla/
-		not header_regexp nlbot User-Agent (?i)(bot|crawler|spider|slurp|google|yeti|daum|naver|bing|facebookexternalhit|kakaotalk|slack|discord|whatsapp|line/|preview|lighthouse|telegram)
+		# 2026-11-15 AI 답변 쪽의 "사용자가 시킨 방문"(Claude-User·Perplexity-User)은 이름표에 bot 이 없고 언어 머리글도 없어
+		# 여기에 걸릴 수 있었다. 답변에 출처로 달려 손님을 보내는 요청이라 이름으로 뺀다(8번 문과 같은 목록).
+		not header_regexp nlbot User-Agent (?i)(bot|crawler|spider|slurp|google|yeti|daum|naver|bing|facebookexternalhit|kakao|slack|discord|whatsapp|line/|preview|lighthouse|telegram|chatgpt|claude|perplexity|gpt|duckduck|zum)
 		not header Accept-Language *
 	}
 	respond @nolang 403
@@ -148,7 +151,7 @@
 		path_regexp scpath ^/(jobs|p|orgs|license|agency)/.+
 		not path /jobs/region* /jobs/org /jobs/hire* /jobs/status* /jobs/guide* /jobs/search* /agency/events /agency/facilities /license/schedule* /license/pro*
 		header_regexp scua User-Agent ^Mozilla/
-		not header_regexp scbot User-Agent (?i)(bot|crawler|spider|slurp|google|yeti|daum|naver|bing|facebookexternalhit|kakaotalk|slack|discord|whatsapp|line/|preview|lighthouse|telegram|chatgpt|claude|perplexity|gpt|applebot)
+		not header_regexp scbot User-Agent (?i)(bot|crawler|spider|slurp|google|yeti|daum|naver|bing|facebookexternalhit|kakaotalk|slack|discord|whatsapp|line/|preview|lighthouse|telegram|chatgpt|claude|perplexity|gpt|applebot|duckduck|zum)
 		header_regexp sclang Accept-Language ^en-US
 		header Sec-Fetch-Site none
 		not header Referer *
