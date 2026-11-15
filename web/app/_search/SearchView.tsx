@@ -2,6 +2,8 @@ import { Fragment } from "react";
 import Link from "next/link";
 import PortalSearch from "@/components/PortalSearch";
 import ProgramEntry from "@/components/ProgramEntry";
+import RegionNarrow from "@/components/RegionNarrow";
+import { agencyHref } from "@/lib/agencyStore";
 import TopStripAd from "@/components/TopStripAd";
 import { Box, HotRank } from "@/components/PortalHome";
 import { SEARCH_SUGGEST, type JobHit, type SearchResult, type SectionKey } from "@/lib/search";
@@ -167,9 +169,8 @@ export default function SearchView({
       <ul className="card divide-y divide-line">
         {r.agency.items.map((a) => (
           <li key={a.id} className="px-4 py-3">
-            {a.url ? (
-              <a href={a.url} target="_blank" rel="noopener noreferrer" className="font-semibold hover:text-brand">{a.title}</a>
-            ) : <span className="font-semibold">{a.title}</span>}
+            {/* 바깥 원문이 아니라 우리 상세 쪽으로(2026-11-15, /agency/{slug}). */}
+            <Link href={agencyHref("business", a.id)} className="font-semibold hover:text-brand">{a.title}</Link>
             <p className="mt-0.5 text-[13px] text-muted">{[a.org, a.cate].filter(Boolean).join(" · ")}</p>
           </li>
         ))}
@@ -207,9 +208,9 @@ export default function SearchView({
                                                  after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:rounded-t after:bg-brand">
               통합 <span className="num ml-0.5 text-[12.5px] font-bold text-brand">{grand.toLocaleString("ko-KR")}</span>
             </span>
-            {counts.map(([label, n, id]) => (
-              <a key={id} href={`#${id}`}
-                 className={`shrink-0 px-3 py-2.5 font-semibold transition-colors ${n > 0 ? "text-ink2 hover:text-ink" : "pointer-events-none text-faint/70"}`}>
+            {/* 0건인 갈래는 탭에서 뺀다(2026-11-15). 눌리지도 않는 회색 글자가 줄을 차지해 있는 갈래가 밀려났다. */}
+            {counts.filter(([, n]) => n > 0).map(([label, n, id]) => (
+              <a key={id} href={`#${id}`} className="shrink-0 px-3 py-2.5 font-semibold text-ink2 transition-colors hover:text-ink">
                 {label} <span className="num ml-0.5 text-[12.5px] font-medium text-faint">{n.toLocaleString("ko-KR")}</span>
               </a>
             ))}
@@ -239,6 +240,9 @@ export default function SearchView({
                   ))}
                 </p>
               )}
+
+              {/* 지역을 적지 않고 찾았으면 사는 곳으로 좁히는 단추를 결과 위에(2026-11-15). */}
+              {!r.parsed.sido && grand > 0 && <RegionNarrow q={q} base={base} />}
 
               {/* 휴대폰: 연관 검색어를 결과 위에 한 줄로. 넓은 화면은 오른쪽 기둥에. */}
               {r.related.length > 0 && (
