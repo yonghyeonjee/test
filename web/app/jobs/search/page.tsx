@@ -10,14 +10,20 @@ export const dynamic = "force-dynamic";
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v)?.trim() || undefined;
+const many = (v: SP[string]) => ([] as string[]).concat(v ?? []).map((s) => s.trim()).filter(Boolean).join(",") || undefined;
 
+// 보통은 미들웨어가 먼저 넘긴다. 미들웨어를 거치지 않은 경우를 위한 몫.
 export default async function JobsSearch({ searchParams }: { searchParams: SP }) {
   redirect(
     jobPath({
       org: one(searchParams.org),
       region: one(searchParams.region),
-      hire: one(searchParams.hire),
+      hire: many(searchParams.hire),
+      type: many(searchParams.type),
+      grade: many(searchParams.grade),
+      field: many(searchParams.field),
       open: one(searchParams.open) === "1",
+      sort: one(searchParams.sort) === "new" ? "new" : undefined,
       q: one(searchParams.q),
       page: 1,
     }),

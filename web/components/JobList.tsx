@@ -6,8 +6,10 @@ import MyRegionJobs from "./MyRegionJobs";
 import OrgMark from "./OrgMark";
 import { IllusEmpty } from "./Illus";
 import RecentStrip from "./RecentStrip";
-import { jobPath, jobPathPage, jobPathWith, jobRobots, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
-import { JOB_TYPES, classifyJob } from "@/lib/jobClass";
+import { jobPath, jobPathPage, jobPathWith, jobRobots, multi, PER_PAGE, type JobRoute } from "@/lib/jobRoute";
+import { JOB_FIELDS, JOB_GRADES, JOB_TYPES, classifyJob } from "@/lib/jobClass";
+import { sortNewest } from "@/lib/jobFilter";
+import FilterMenu from "./FilterMenu";
 
 const BADGE: Record<string, string> = {
   ongoing: "badge-open", always: "badge-open", upcoming: "badge-soon", closed: "badge-closed",
@@ -86,41 +88,60 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   // 조건을 한 번 더 거는 것은 값이 없지만, 걸어도 결과는 같다.
   const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field };
   const { regions, hires, openN, noRegionN, types, grades, fields } = facets(board.jobs, filter);
-  const list = filterJobs(board.jobs, filter);
+  const matched = filterJobs(board.jobs, filter);
+  const list = route.sort === "new" ? sortNewest(matched) : matched;
   const last = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const cur = Math.min(Math.max(1, route.page), last);
   const shown = list.slice((cur - 1) * PER_PAGE, cur * PER_PAGE);
   const filtered = Boolean(route.q || route.region || route.hire || route.open || route.type || route.grade || route.field);
 
   /**
-   * 거르기 표(2026-11-15). 채용 사이트(사람인·잡코리아·나라일터)처럼 왼쪽에 항목 이름, 오른쪽에 고를 것을 한 줄씩.
-   * 같은 줄 안에서는 하나만 고르고, 다시 누르면 풀린다. 숫자는 다른 조건을 건 채로 그것을 고르면 남는 공고 수(lib/pubJobs facets).
-   * 조건을 둘 이상 겹친 쪽은 색인하지 않으므로(jobRobots) 그런 링크에는 nofollow 를 단다 — 검색 로봇이 조합을 끝없이 훑지 않게.
+   * 거르기(2026-11-15 다시 짬). 처음에는 항목마다 칩을 한 줄씩 늘어놓은 표였는데, 휴대폰에서 줄마다 옆으로 밀어야 하고
+   * 하나만 고를 수 있었다. 채용 사이트처럼 항목마다 단추를 두고(FilterMenu), 누르면 펼쳐지는 창에서 고른다.
+   * 항목마다 맞는 방식이 다르다:
+   *   고용 형태·직무·급수·기관 구분 — 여럿 고르기(체크 상자 + 적용). "임기제 또는 정규직"을 한 번에 보고 싶은 사람이 많다.
+   *   지역 — 하나만(누르면 바로 간다). 지역 쪽은 따로 안내 글이 있는 쪽이라 둘을 섞지 않는다.
+   *   접수 중만 — 켜고 끄는 스위치. 정렬 — 마감 임박순 / 최신 등록순 두 칸.
+   * 창 안의 체크 상자는 폼이라 검색 로봇이 따라가지 않는다. 한 조건짜리 쪽(/jobs/type/임기제)으로 가는 길은 아래 "분류별로 보기" 링크가 맡는다.
    */
   const pick = (patch: Partial<JobRoute>) => {
     const next = { ...route, ...patch, page: 1 };
     return { href: jobPath(next), rel: jobRobots(next).index ? undefined : "nofollow" };
   };
-  type Opt = { t: string; n: number; on: boolean; title?: string } & ReturnType<typeof pick>;
+  type Dim = "type" | "field" | "grade" | "hire";
   /** 고른 값은 숫자가 0이어도(다른 조건과 겹치는 것이 없어도) 남겨 둬야 풀 수 있다. */
-  const opts = (vals: { v: string; n: number }[], sel: string | undefined, key: "hire" | "type" | "grade" | "field", desc?: (v: string) => string | undefined): Opt[] => {
-    const all = sel && !vals.some((x) => x.v === sel) ? [...vals, { v: sel, n: 0 }] : vals;
-    return all.map((x) => {
-      const patch: Partial<JobRoute> = {};
-      patch[key] = sel === x.v ? undefined : x.v;
-      return { t: x.v, n: x.n, on: sel === x.v, title: desc?.(x.v), ...pick(patch) };
-    });
+  const optsOf = (vals: { v: string; n: number }[], dim: Dim, desc?: (v: string) => string | undefined) => {
+    const sel = multi(route[dim]);
+    const all = [...vals, ...sel.filter((s) => !vals.some((x) => x.v === s)).map((v) => ({ v, n: 0 }))];
+    return all.map((x) => ({ v: x.v, n: x.n, on: sel.includes(x.v), desc: desc?.(x.v) }));
   };
-  const rows: { label: string; items: Opt[] }[] = [
-    { label: "접수", items: [{ t: "접수 중만", n: openN, on: Boolean(route.open), ...pick({ open: !route.open }) }] },
-    { label: "고용 형태", items: opts(types, route.type, "type", (v) => JOB_TYPES.find((t) => t.v === v)?.desc) },
-    { label: "직무", items: opts(fields, route.field, "field") },
-    { label: "급수", items: opts(grades, route.grade, "grade", (v) => (v.startsWith("임기제") ? "임기제 공무원 등급. 가급이 가장 높고 마급이 가장 낮습니다." : "공무원·임기제 자리의 급수")) },
-    { label: "기관 구분", items: opts(hires.slice(0, 6), route.hire, "hire") },
+  /** 창마다 폼이 따로라, 그 창이 다루지 않는 조건은 숨은 칸으로 함께 보낸다. */
+  const hiddenOf = (except: string) =>
+    ([
+      ["org", route.org], ["region", route.region], ["hire", route.hire], ["type", route.type], ["grade", route.grade],
+      ["field", route.field], ["open", route.open ? "1" : undefined], ["sort", route.sort], ["q", route.q],
+    ] as [string, string | undefined][]).filter((e): e is [string, string] => e[0] !== except && Boolean(e[1]));
+  /** 그 조건 하나만 건 주소(분류별로 보기). */
+  const onlyPath = (d: Dim, v: string) => { const r: JobRoute = { page: 1 }; r[d] = v; return jobPath(r); };
+  /** 한 줄(dim)의 값만 바꾼 주소. */
+  const setDim = (d: Dim, v?: string) => { const p: Partial<JobRoute> = {}; p[d] = v; return jobPathWith(route, p); };
+  const summary = (dim: Dim) => { const s = multi(route[dim]); return s.length ? (s.length > 1 ? `${s[0]} 외 ${s.length - 1}` : s[0]) : undefined; };
+  const menus: { dim: Dim; label: string; opts: ReturnType<typeof optsOf> }[] = [
+    { dim: "type", label: "고용 형태", opts: optsOf(types, "type", (v) => JOB_TYPES.find((t) => t.v === v)?.desc) },
+    { dim: "field", label: "직무", opts: optsOf(fields, "field") },
+    { dim: "grade", label: "급수", opts: optsOf(grades, "grade", (v) => (v.startsWith("임기제") ? "가급이 가장 높고 마급이 가장 낮습니다." : v === "4급 이상" ? "서기관 이상" : undefined)) },
+    { dim: "hire", label: "기관 구분", opts: optsOf(hires.slice(0, 8), "hire") },
   ];
-  // 지역 칩은 전체 목록에서만 뜻이 있다. 지역별·기관별 쪽에서는 이미
-  // 좁혀져 있어 눌러 봐야 갈 데가 없다.
-  const showRegions = !route.region && !route.org && (regions.length > 0 || noRegionN > 0);
+  // 기관별 쪽에서는 지역을 고를 까닭이 없다(기관 하나가 곧 지역이다).
+  const showRegions = !route.org && (regions.length > 0 || noRegionN > 0 || Boolean(route.region));
+  const chosen: { t: string; href: string }[] = [
+    route.q && { t: `"${unquoteQuery(route.q)}"${isExactQuery(route.q) ? " · 연관어 끔" : ""}`, href: jobPathWith(route, { q: undefined }) },
+    route.region && !route.org && { t: route.region, href: jobPathWith(route, { region: undefined }) },
+    ...(["type", "field", "grade", "hire"] as Dim[]).flatMap((d) => {
+      const s = multi(route[d]);
+      return s.map((v) => ({ t: v, href: setDim(d, s.filter((x) => x !== v).join(",") || undefined) }));
+    }),
+  ].filter((x): x is { t: string; href: string } => Boolean(x));
   // "경비" 로 찾았는데 경호·보안 공고가 같이 나왔으면 그 사실을 적는다.
   const also = route.q ? jobTermsUsed(list, route.q) : [];
   const today = todayKst();
@@ -135,13 +156,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
       <h2 id="jobs-cond" className="text-[13px] font-bold text-muted">검색 조건</h2>
       {/* 찾기를 누르면 쪽이 새로 그려진다. 머리 띠를 지나 목록으로 돌아오게 #list. */}
       <form action="/jobs/search#list" method="get" role="search" className="mt-2 flex gap-2">
-        {route.region && <input type="hidden" name="region" value={route.region} />}
-        {route.org && <input type="hidden" name="org" value={route.org} />}
-        {route.hire && <input type="hidden" name="hire" value={route.hire} />}
-        {route.type && <input type="hidden" name="type" value={route.type} />}
-        {route.grade && <input type="hidden" name="grade" value={route.grade} />}
-        {route.field && <input type="hidden" name="field" value={route.field} />}
-        {route.open && <input type="hidden" name="open" value="1" />}
+        {hiddenOf("q").map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         <input
           name="q"
           defaultValue={route.q ?? ""}
@@ -152,80 +167,83 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <button type="submit" className="btn btn-primary shrink-0 px-5 py-2.5">찾기</button>
       </form>
 
-      {/* 휴대폰은 줄마다 옆으로 밀어 본다(줄이 열 칸 넘게 쌓이면 공고가 화면 밖으로 밀린다). 넓은 화면은 줄바꿈. */}
-      <div className="mt-4 overflow-hidden rounded-card border border-line" role="group" aria-label="거르기">
-        {rows.filter((r) => r.items.length > 0).map((r) => (
-          <div key={r.label} className="flex border-b border-line last:border-b-0">
-            <span className="flex w-[4.5rem] shrink-0 items-center bg-ground px-3 text-[12.5px] font-bold text-ink2 sm:w-24">{r.label}</span>
-            <div role="list" aria-label={r.label}
-                 className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-2.5 py-2 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden">
-              {r.items.map((i) => (
-                <Link key={i.t} role="listitem" href={i.href} rel={i.rel} title={i.title} aria-current={i.on ? "true" : undefined}
-                      className={`chip shrink-0 !py-1 !text-[13px] ${i.on ? "chip-on" : ""}`}>
-                  {i.t} <span className="num text-[12px] opacity-70">{i.n}</span>
-                </Link>
-              ))}
+      {/* 거르기 단추 줄. 휴대폰은 옆으로 밀어 보고(펼침 창은 화면 아래에서 올라온다), 넓은 화면은 줄바꿈하고 창이 단추 아래에 뜬다. */}
+      <div role="group" aria-label="거르기"
+           className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+        {showRegions && (
+          <FilterMenu label="지역" value={route.region ? SIDO_SHORT[route.region] ?? route.region : undefined} active={Boolean(route.region)}>
+            <div className="flex items-center justify-between px-4 pb-2 pt-3">
+              <b className="text-[15px]">지역</b>
+              <span className="text-[12px] text-muted">하나를 누르면 바로 바뀝니다</span>
             </div>
-          </div>
-        ))}
-      </div>
-      {/* 지역은 거르기(필터)다. 열일곱 줄이 결과 앞에 깔려 있으면 공고가 화면 밖으로 밀려난다.
-          접어 두고 펼치면 칸으로. 자바스크립트 없이 details 로 — 링크는 접혀 있어도 문서에 있다. */}
-      {showRegions && (
-        <details className="group mt-3 rounded-card border border-line bg-surface">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-2.5 text-[13.5px] [&::-webkit-details-marker]:hidden">
-            <span className="font-bold text-ink2">지역별 보기</span>
-            <span className="flex min-w-0 items-center gap-2 text-[12.5px] text-muted">
-              <span className="truncate">{regions.slice(0, 3).map((r) => SIDO_SHORT[r.v] ?? r.v).join(" · ")}{regions.length > 3 && ` 외 ${regions.length - 3}곳`}</span>
-              <span className="shrink-0 font-semibold text-brand group-open:hidden">더보기</span>
-              <span className="hidden shrink-0 font-semibold text-brand group-open:inline">접기</span>
-              <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="m5 8 5 5 5-5" /></svg>
-            </span>
-          </summary>
-          <div className="border-t border-line px-3 pb-3 pt-2.5">
-            <MyRegionJobs current={route.region} />
-            <ul className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-5 lg:grid-cols-6">
-              {regions.slice(0, 20).map((r) => (
-                <li key={r.v}>
-                  <Link href={jobPathWith(route, { region: r.v })} title={r.v}
-                        className="flex items-center justify-between gap-1 rounded-lg bg-ground px-2.5 py-2 text-[13px] text-ink2 transition-colors hover:text-brand">
-                    <span className="truncate">{SIDO_SHORT[r.v] ?? r.v}</span>
-                    <span className="num shrink-0 text-[12px] text-faint">{r.n}</span>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4">
+              <MyRegionJobs current={route.region} />
+              <ul className="mt-1.5 grid grid-cols-3 gap-1.5">
+                <li>
+                  <Link href={jobPathWith(route, { region: undefined })} aria-current={!route.region ? "true" : undefined}
+                        className={`flex items-center justify-center rounded-lg px-2.5 py-2.5 text-[13.5px] font-semibold ${!route.region ? "bg-brand text-white" : "bg-ground text-ink2 hover:text-brand"}`}>
+                    전국
                   </Link>
                 </li>
-              ))}
+                {regions.slice(0, 20).map((r) => (
+                  <li key={r.v}>
+                    <Link href={jobPathWith(route, { region: r.v })} title={r.v} rel={pick({ region: r.v }).rel}
+                          aria-current={route.region === r.v ? "true" : undefined}
+                          className={`flex items-center justify-between gap-1 rounded-lg px-2.5 py-2.5 text-[13.5px] transition-colors ${route.region === r.v ? "bg-brand font-bold text-white" : "bg-ground text-ink2 hover:text-brand"}`}>
+                      <span className="truncate">{SIDO_SHORT[r.v] ?? r.v}</span>
+                      <span className="num shrink-0 text-[12px] opacity-70">{r.n}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
               {noRegionN > 0 && (
-                <li className="flex items-center justify-between gap-1 rounded-lg px-2.5 py-2 text-[13px] text-faint"
-                    title="공고에 근무 지역이 적혀 있지 않은 것. 중앙부처 공고가 대부분입니다.">
-                  <span className="truncate">미표기</span><span className="num shrink-0 text-[12px]">{noRegionN}</span>
-                </li>
+                <p className="mt-2 text-[12px] text-faint">근무 지역이 공고에 안 적힌 것 {noRegionN.toLocaleString()}건(중앙부처 공고가 대부분)은 지역을 고르면 빠집니다.</p>
               )}
-            </ul>
-          </div>
-        </details>
-      )}
+            </div>
+          </FilterMenu>
+        )}
+        {menus.filter((m) => m.opts.length > 0).map((m) => (
+          <FilterMenu key={m.dim} label={m.label} value={summary(m.dim)} active={Boolean(route[m.dim])}>
+            <form action="/jobs/search#list" method="get" className="flex min-h-0 flex-1 flex-col">
+              {hiddenOf(m.dim).map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+              <div className="flex items-center justify-between px-4 pb-2 pt-3">
+                <b className="text-[15px]">{m.label}</b>
+                <span className="text-[12px] text-muted">여럿 고를 수 있습니다</span>
+              </div>
+              <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2">
+                {m.opts.map((o) => (
+                  <li key={o.v}>
+                    <label className="flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2.5 hover:bg-ground">
+                      <input type="checkbox" name={m.dim} value={o.v} defaultChecked={o.on} className="h-[18px] w-[18px] shrink-0 accent-brand" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[14.5px] font-semibold text-ink">{o.v}</span>
+                        {o.desc && <span className="mt-0.5 block text-[12px] leading-snug text-muted">{o.desc}</span>}
+                      </span>
+                      <span className="num shrink-0 text-[12.5px] text-faint">{o.n.toLocaleString()}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex shrink-0 gap-2 border-t border-line p-3">
+                <Link href={setDim(m.dim)} rel="nofollow" className="btn btn-ghost flex-1 py-2.5">초기화</Link>
+                <button type="submit" className="btn btn-primary flex-[2] py-2.5">적용</button>
+              </div>
+            </form>
+          </FilterMenu>
+        ))}
+      </div>
 
-      {filtered && (
+      {chosen.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
           <span className="text-muted">걸린 조건</span>
-          {[
-            route.q && { t: `"${unquoteQuery(route.q)}"${exact ? " · 연관어 끔" : ""}`, href: jobPathWith(route, { q: undefined }) },
-            route.region && !route.org && { t: route.region, href: jobPathWith(route, { region: undefined }) },
-            route.hire && { t: route.hire, href: jobPathWith(route, { hire: undefined }) },
-            route.type && { t: route.type, href: jobPathWith(route, { type: undefined }) },
-            route.field && { t: route.field, href: jobPathWith(route, { field: undefined }) },
-            route.grade && { t: route.grade, href: jobPathWith(route, { grade: undefined }) },
-            route.open && { t: "접수 중만", href: jobPathWith(route, { open: false }) },
-          ]
-            .filter((x): x is { t: string; href: string } => Boolean(x))
-            .map((x) => (
+          {chosen.map((x) => (
               <Link key={x.t} href={x.href}
                     className="rounded-pill bg-brandSoft px-2.5 py-1 font-semibold text-brand hover:opacity-80">
                 {x.t} <span aria-hidden="true">×</span>
                 <span className="sr-only">조건 지우기</span>
               </Link>
             ))}
-          <Link href={jobPath({ org: route.org, page: 1 })}
+          <Link href={jobPath({ org: route.org, open: route.open, sort: route.sort, page: 1 })}
                 className="text-muted underline underline-offset-4 hover:text-brand">
             모두 지우기
           </Link>
@@ -258,13 +276,32 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
       )}
       </section>
 
-      <div className="mb-3 mt-8 flex items-baseline justify-between">
-        <h2 className="text-[1.0625rem] font-bold">
-          {filtered ? "조건에 맞는 공고" : board.jobs.some((j) => j.reg || j.end) ? "최근 공고" : "공고 목록"}
-        </h2>
-        <span className="num text-sm text-muted">
-          {list.length.toLocaleString()}건{last > 1 && ` · ${cur}/${last}쪽`}
-        </span>
+      {/* 목록 머리: 건수 · 접수 중만(스위치) · 정렬(두 칸). 보는 방식을 바꾸는 것이라 목록 바로 위에 둔다.
+          둘 다 같은 목록을 달리 보여 주는 것이라 색인하지 않는 주소로 간다(jobRobots) — nofollow. */}
+      <div className="mb-3 mt-8">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-[1.0625rem] font-bold">{filtered ? "조건에 맞는 공고" : "채용 공고"}</h2>
+          <span className="num text-sm text-muted">
+            {list.length.toLocaleString()}건{last > 1 && ` · ${cur}/${last}쪽`}
+          </span>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <Link href={pick({ open: !route.open }).href} rel="nofollow" role="switch" aria-checked={Boolean(route.open)}
+                className="flex items-center gap-2 text-[13.5px] font-semibold text-ink2">
+            <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${route.open ? "bg-brand" : "bg-line2"}`} aria-hidden>
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${route.open ? "left-[18px]" : "left-0.5"}`} />
+            </span>
+            접수 중만 보기 <span className="num text-[12.5px] font-normal text-muted">{openN.toLocaleString()}</span>
+          </Link>
+          <nav aria-label="정렬" className="flex rounded-pill bg-ground p-0.5 text-[13px] font-semibold">
+            {([[undefined, "마감 임박순"], ["new", "최신 등록순"]] as const).map(([v, t]) => (
+              <Link key={t} href={pick({ sort: v }).href} rel={v ? "nofollow" : undefined} aria-current={route.sort === v ? "true" : undefined}
+                    className={`rounded-pill px-3 py-1.5 transition-colors ${route.sort === v ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"}`}>
+                {t}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {list.length === 0 ? (
@@ -346,6 +383,24 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           {cur < last && (
             <Link href={jobPathPage(route, cur + 1)} rel="next" className="chip px-3 py-1.5">다음</Link>
           )}
+        </nav>
+      )}
+
+      {/* 분류별로 보기: 한 조건짜리 쪽(/jobs/type/임기제)으로 가는 보통 링크. 위 거르기 창은 폼이라 검색 로봇이 따라가지 않으니,
+          "임기제 채용"·"7급 채용" 같은 쪽이 발견되고 색인되는 길은 여기다. 사람에게는 바로 가기. */}
+      {!route.org && (
+        <nav aria-labelledby="jobs-by-class" className="mt-10 rounded-card bg-ground p-4 sm:p-5">
+          <h2 id="jobs-by-class" className="text-[14px] font-bold text-ink2">분류별로 보기</h2>
+          {([["고용 형태", "type", JOB_TYPES.map((t) => t.v)], ["직무", "field", JOB_FIELDS], ["급수", "grade", JOB_GRADES]] as const).map(([label, key, vs]) => (
+            <p key={key} className="mt-2.5 flex flex-wrap gap-x-3 gap-y-1.5 text-[13px]">
+              <span className="w-14 shrink-0 font-semibold text-muted">{label}</span>
+              {vs.map((v) => (
+                <Link key={v} href={onlyPath(key, v)} className="text-ink2 underline-offset-4 hover:text-brand hover:underline">
+                  {v} 채용
+                </Link>
+              ))}
+            </p>
+          ))}
         </nav>
       )}
     </div>

@@ -70,18 +70,21 @@ function redirect308(req: NextRequest, path: string) {
 }
 
 const one = (v: string | null) => v?.trim() || undefined;
+/** 거르기 창의 체크 상자는 같은 이름으로 여럿 온다(?field=행정·사무&field=전산·IT). 쉼표로 잇는다. */
+const many = (q: URLSearchParams, k: string) => q.getAll(k).flatMap((v) => v.split(",")).map((v) => v.trim()).filter(Boolean).join(",") || undefined;
 
-/** 옛 ?key=value 주소를 경로 주소로. */
+/** 옛 ?key=value 주소와 거르기 창이 보낸 것을 경로 주소로. */
 function fromQuery(q: URLSearchParams) {
   const page = Number(one(q.get("page")) ?? 1);
   return jobPath({
     org: one(q.get("org")),
     region: one(q.get("region")),
-    hire: one(q.get("hire")),
-    type: one(q.get("type")),
-    grade: one(q.get("grade")),
-    field: one(q.get("field")),
+    hire: many(q, "hire"),
+    type: many(q, "type"),
+    grade: many(q, "grade"),
+    field: many(q, "field"),
     open: one(q.get("open")) === "1",
+    sort: one(q.get("sort")) === "new" ? "new" : undefined,
     q: one(q.get("q")),
     page: Number.isInteger(page) && page > 1 ? page : 1,
   });

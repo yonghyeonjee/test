@@ -24,6 +24,7 @@ import { KIND_KEYS, SIDO_SITEMAP_MIN, WHO_KEYS, housingCounts, housingPath, sido
 import { POSTS } from "./posts";
 import { getPublicOrgs } from "./govData";
 import { getStories, storyIndexable } from "./stories";
+import { JOB_FIELDS, JOB_GRADES, JOB_TYPES } from "./jobClass";
 import { ORG_INDEX_MIN, getJobHires, getJobRegions, getOrgRecentCounts, getTopJobIds, getTopOrgs } from "./pubJobs";
 import { LICENSE_DEMAND_MIN, getLicenses, licenseApplicants, licenseIndexable } from "./qnet";
 import { TOPICS } from "./topics";
@@ -120,6 +121,10 @@ async function jobs(): Promise<Entry[]> {
   return [
     // 기관별 작성 가이드(/jobs/guide 와 그 아래)는 자동으로 쓴 글이라 noindex 로 돌리며 뺐다(2026-10-17).
     ...hires.map((h) => e(`/jobs/hire/${encodeURIComponent(h.hire)}`, "daily", 0.7)),
+    // 2026-11-15 고용 형태·직무·급수 한 조건짜리 쪽(색인하는 쪽). 값이 정해져 있어 32개로 고정이다.
+    ...JOB_TYPES.map((t) => e(`/jobs/type/${encodeURIComponent(t.v)}`, "daily", 0.7)),
+    ...JOB_FIELDS.map((f) => e(`/jobs/field/${encodeURIComponent(f)}`, "daily", 0.6)),
+    ...JOB_GRADES.map((g) => e(`/jobs/grade/${encodeURIComponent(g)}`, "daily", 0.6)),
     ...regions.map((r) => e(`/jobs/region/${encodeURIComponent(r.sido)}`, "daily", 0.7)),
     ...orgs.map((o) => e(`/jobs/org/${encodeURIComponent(o.org)}`, "weekly", 0.6)),
     ...ids.map((j) => e(`/jobs/${encodeURIComponent(j.id)}`, "weekly", 0.6, day(j.updated))),
