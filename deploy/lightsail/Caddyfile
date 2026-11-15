@@ -77,6 +77,7 @@
 #  5) AI 답변 봇이 공유 그림(/og)을 그려 가면 403(아래 @ogbot). robots.txt 와 같다.
 #  6) 브라우저 이름표인데 Accept-Language 가 없는 쪽 요청. 403(아래 @nolang).
 #  7) 방문을 보내 주지 않는 수집 봇 둘(Amzn-SearchBot·ElevenlabsCrawler). 429(아래 @restbot, 임시).
+#  8) 브라우저로 꾸며 상세 쪽만 훑는 수집기. 사람은 통과하는 자바스크립트 한 번 문(아래 @scrape).
 # 검색엔진(Googlebot·Yeti·Daum·bingbot)·AdSense·AI 답변 봇(PerplexityBot·OAI-SearchBot·Claude-User 등)은 건드리지 않는다.
 (guard) {
 	@scan {
@@ -132,6 +133,30 @@
 		header_regexp restua User-Agent (?i)(Amzn-SearchBot|ElevenlabsCrawler)
 	}
 	respond @restbot 429
+	#  8) 2026-11-15 브라우저로 꾸며 상세 쪽만 훑는 수집기. 사람은 통과하는 "자바스크립트 한 번" 문.
+	#     새 서버로 옮긴 직후 10분 동안 쪽 요청 1,617건 중 1,545건이 IP 1,397개에서 왔다. 그 가운데 자바스크립트·CSS 를
+	#     받아 간 IP 는 하나뿐이고(그 하나가 ko-KR 로 72쪽을 본 진짜 방문), 나머지는 전부 같은 꼴이었다:
+	#     Accept-Language 가 en-US, 리퍼러 없음, Sec-Fetch-Site: none, 주소는 /jobs/번호·/p/번호 차례대로. 서버 시간의 75%.
+	#     6)의 "언어 머리글 없음"을 피하려고 언어를 붙여 온 같은 수집기다.
+	#     막는 조건을 좁게 잡는다 — 다섯 가지가 모두 맞을 때만: 상세 쪽 주소 · 브라우저 이름표(검색·AI·미리보기 봇 아님) ·
+	#     언어 en-US · 리퍼러 없음 · Sec-Fetch-Site none · jw_h 쿠키 없음. 검색 결과·ChatGPT·다른 쪽에서 눌러 온 사람은
+	#     리퍼러가 있거나 cross-site 라 걸리지 않고, 한국어 브라우저도 걸리지 않는다.
+	#     걸린 사람(영어 브라우저로 주소를 직접 연 경우)은 아래 짧은 HTML 이 쿠키를 심고 같은 주소를 다시 열어 바로 본다.
+	#     수집기는 자바스크립트를 돌리지 않아 여기서 멈춘다. 응답은 403 — 200 으로 내면 검색엔진이 쪽 내용으로 볼 수 있다.
+	#     첫 화면·목록·검색·지도·글은 조건에 넣지 않았다. 되돌리려면 이 묶음만 지운다.
+	@scrape {
+		path_regexp scpath ^/(jobs|p|orgs|license|agency)/.+
+		not path /jobs/region* /jobs/org /jobs/hire* /jobs/status* /jobs/guide* /jobs/search* /agency/events /agency/facilities /license/schedule* /license/pro*
+		header_regexp scua User-Agent ^Mozilla/
+		not header_regexp scbot User-Agent (?i)(bot|crawler|spider|slurp|google|yeti|daum|naver|bing|facebookexternalhit|kakaotalk|slack|discord|whatsapp|line/|preview|lighthouse|telegram|chatgpt|claude|perplexity|gpt|applebot)
+		header_regexp sclang Accept-Language ^en-US
+		header Sec-Fetch-Site none
+		not header Referer *
+		not header_regexp scck Cookie jw_h=1
+	}
+	header @scrape Content-Type "text/html; charset=utf-8"
+	header @scrape Cache-Control "no-store"
+	respond @scrape `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="robots" content="noindex"><title>K나라지원</title><script>document.cookie="jw_h=1; path=/; max-age=2592000; SameSite=Lax";location.replace(location.href)</script><noscript><p>이 쪽을 보려면 자바스크립트를 켜 주세요. <a href="/">K나라지원 첫 화면으로</a></p></noscript></html>` 403
 }
 
 (app) {

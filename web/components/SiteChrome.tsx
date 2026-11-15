@@ -9,7 +9,6 @@ import { HeaderFx } from "./Motion";
 import { BrandMark } from "./Illus";
 import PortalIcon from "./PortalIcon";
 import TopSearch from "./TopSearch";
-import MapTip from "./MapTip";
 import { NAV, WRAP, current, hit } from "@/lib/nav";
 
 /** 첫 화면(복지·기업)에서는 큰 검색창이 바로 아래 있다. 머리말 검색창을 겹쳐 두지 않는다. */
@@ -83,21 +82,17 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
           </div>
 
           {/* 갈래 탭. 휴대폰에서도 머리말이 위에 붙어 따라오니 이 줄이 늘 손 닿는 곳에 있다. */}
-          {/* relative 칸: "정책지도" 아래 말풍선(MapTip)이 메뉴 띠 밖에 뜬다. */}
-          <div className="relative">
-            <nav aria-label="주 메뉴"
-                 className="menu-band -mx-5 flex overflow-x-auto px-2 text-[14.5px] [scrollbar-width:none]
-                            sm:mx-0 sm:-ml-3 sm:px-0 sm:text-[15px] [&::-webkit-scrollbar]:hidden">
-              {NAV.map((n) => (
-                <Link key={n.href} href={n.href}
-                      aria-current={open ? (open.href === n.href ? "page" : undefined) : hit(path, n) ? "page" : undefined}
-                      className="shrink-0 whitespace-nowrap px-2.5 py-2 font-semibold transition-colors sm:px-3 sm:py-2.5">
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-            <MapTip path={path} />
-          </div>
+          <nav aria-label="주 메뉴"
+               className="menu-band -mx-5 flex overflow-x-auto px-2 text-[14.5px] [scrollbar-width:none]
+                          sm:mx-0 sm:-ml-3 sm:px-0 sm:text-[15px] [&::-webkit-scrollbar]:hidden">
+            {NAV.map((n) => (
+              <Link key={n.href} href={n.href}
+                    aria-current={open ? (open.href === n.href ? "page" : undefined) : hit(path, n) ? "page" : undefined}
+                    className="shrink-0 whitespace-nowrap px-2.5 py-2 font-semibold transition-colors sm:px-3 sm:py-2.5">
+                {n.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </header>
       {sheet && <MenuSheet onClose={() => setSheet(false)} />}
