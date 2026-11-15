@@ -78,17 +78,22 @@ function regionMatches(j: Job, region: string): boolean {
   return names.some((n) => text.includes(n));
 }
 
+/** 쉼표로 이은 값(여럿 고르기). 같은 줄 안은 "또는", 줄끼리는 "그리고". */
+const vals = (v?: string) => (v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []);
+const anyOf = (have: string[], want: string[]) => want.some((w) => have.includes(w));
+
 export function filterJobs(jobs: Job[], f: JobFilter) {
   const groups = termGroups(f.q);
+  const [hire, type, grade, field] = [vals(f.hire), vals(f.type), vals(f.grade), vals(f.field)];
   return jobs.filter((j) => {
     if (f.open && (j.status === "closed")) return false;
     if (f.region && !regionMatches(j, f.region)) return false;
-    if (f.hire && j.hire !== f.hire) return false;
-    if (f.type || f.grade || f.field) {
+    if (hire.length && !hire.includes(j.hire ?? "")) return false;
+    if (type.length || grade.length || field.length) {
       const c = classifyJob(j);
-      if (f.type && !c.types.includes(f.type)) return false;
-      if (f.grade && !c.grades.includes(f.grade)) return false;
-      if (f.field && !c.fields.includes(f.field)) return false;
+      if (type.length && !anyOf(c.types, type)) return false;
+      if (grade.length && !anyOf(c.grades, grade)) return false;
+      if (field.length && !anyOf(c.fields, field)) return false;
     }
     if (groups.length) {
       const hay = hayOf(j);
@@ -96,6 +101,15 @@ export function filterJobs(jobs: Job[], f: JobFilter) {
     }
     return true;
   });
+}
+
+/**
+ * 최신 등록순(2026-11-15). 기본 순서(마감 임박순, pubJobs sortJobs)와 달리 막 올라온 공고부터.
+ * 등록일이 없으면 접수 시작일, 그것도 없으면 맨 뒤. 원래 배열은 건드리지 않는다(캐시된 목록을 함께 쓴다).
+ */
+export function sortNewest(jobs: Job[]): Job[] {
+  const key = (j: Job) => (j.reg ?? j.start ?? "").slice(0, 10);
+  return [...jobs].sort((a, b) => key(b).localeCompare(key(a)));
 }
 
 /**

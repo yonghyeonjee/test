@@ -20,7 +20,7 @@
  * 400 대신 404 를 낸다 — 없는 쪽이니 없다고 하는 게 맞다.
  *
  * 같은 내용이 두 주소로 나오면 안 되므로 순서를 하나로 못 박는다
- * (org → region → hire → type → grade → field → status → q → page). 다른 순서로 들어오면
+ * (org → region → hire → type → grade → field → status → sort → q → page). 다른 순서로 들어오면
  * 정한 순서로 넘긴다(301).
  */
 import { JOB_FIELDS, JOB_GRADES, JOB_TYPES } from "./jobClass";
@@ -35,6 +35,8 @@ export type JobRoute = {
   field?: string;
   /** 접수 중만 보기. 경로로는 status/open. */
   open?: boolean;
+  /** 정렬. 비우면 마감 임박순(접수 중 → 예정 → 마감). "new" 는 최신 등록순. 경로로는 sort/new. */
+  sort?: "new";
   q?: string;
   /** 1부터. 1쪽은 주소에 적지 않는다. */
   page: number;
@@ -77,22 +79,27 @@ export function parseJobPath(segs: string[]): JobRoute | null {
         if (r.region) return null;
         r.region = val;
         break;
+      // 여럿 고르기(2026-11-15): 값을 쉼표로 잇는다(/jobs/field/행정·사무,전산·IT). 같은 줄 안은 "또는".
       case "hire":
-        if (r.hire) return null;
+        if (r.hire || !multiOk(val)) return null;
         r.hire = val;
         break;
       // 정해 둔 값만 받는다. 아무 말이나 받으면 같은 빈 목록이 주소마다 생긴다.
       case "type":
-        if (r.type || !JOB_TYPES.some((t) => t.v === val)) return null;
+        if (r.type || !multiOk(val, JOB_TYPES.map((t) => t.v))) return null;
         r.type = val;
         break;
       case "grade":
-        if (r.grade || !JOB_GRADES.includes(val)) return null;
+        if (r.grade || !multiOk(val, JOB_GRADES)) return null;
         r.grade = val;
         break;
       case "field":
-        if (r.field || !JOB_FIELDS.includes(val)) return null;
+        if (r.field || !multiOk(val, JOB_FIELDS)) return null;
         r.field = val;
+        break;
+      case "sort":
+        if (val !== "new" || r.sort) return null;
+        r.sort = "new";
         break;
       case "q":
         if (r.q) return null;
@@ -118,6 +125,20 @@ export function parseJobPath(segs: string[]): JobRoute | null {
   return r;
 }
 
+/** 쉼표로 이은 값을 나눈다. 고르기 줄 하나에 여럿을 고른 것. */
+export const multi = (v?: string) => (v ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+/** 값이 겹치지 않고, 정해 둔 목록이 있으면 그 안에 있나. 열 개 넘게는 받지 않는다. */
+function multiOk(v: string, allowed?: string[]) {
+  const vs = multi(v);
+  return vs.length > 0 && vs.length <= 10 && new Set(vs).size === vs.length && (!allowed || vs.every((x) => allowed.includes(x)));
+}
+/** 같은 고르기를 한 주소로: 정해 둔 목록 순서(없으면 가나다)로 늘어놓는다. */
+function multiNorm(v: string | undefined, order?: string[]) {
+  const vs = Array.from(new Set(multi(v)));
+  if (!vs.length) return undefined;
+  return vs.sort((a, b) => (order ? order.indexOf(a) - order.indexOf(b) : a.localeCompare(b, "ko"))).join(",");
+}
+
 /** 정한 순서대로 주소를 만든다. 이게 정본(canonical)이다. */
 export function jobPath(r: JobRoute): string {
   const p: string[] = [];
@@ -126,11 +147,12 @@ export function jobPath(r: JobRoute): string {
   };
   add("org", r.org);
   add("region", r.region);
-  add("hire", r.hire);
-  add("type", r.type);
-  add("grade", r.grade);
-  add("field", r.field);
+  add("hire", multiNorm(r.hire));
+  add("type", multiNorm(r.type, JOB_TYPES.map((t) => t.v)));
+  add("grade", multiNorm(r.grade, JOB_GRADES));
+  add("field", multiNorm(r.field, JOB_FIELDS));
   if (r.open) p.push("status", "open");
+  if (r.sort === "new") p.push("sort", "new");
   add("q", r.q);
   if (r.page > 1) p.push("page", String(r.page));
   return p.length ? `${JOBS_BASE}/${p.join("/")}` : JOBS_BASE;
@@ -160,16 +182,17 @@ export function jobPathPage(r: JobRoute, page: number): string {
  */
 export function jobRobots(r: JobRoute) {
   // 2026-11-15 고용 형태·급수·직무도 한 조건으로 센다. "임기제 채용", "7급 채용" 하나짜리 쪽은 색인하고, 겹친 것은 하지 않는다.
-  const filters = [r.org, r.region, r.hire, r.type, r.grade, r.field].filter(Boolean).length;
-  return r.q || r.open || filters >= 2 ? { index: false, follow: true } : { index: true, follow: true };
+  // 여럿 고른 줄(임기제,정규직)은 값 수만큼 센다 — 조합이라 색인하지 않는다. 정렬만 바꾼 쪽도 같은 목록이라 색인하지 않는다.
+  const filters = (r.org ? 1 : 0) + (r.region ? 1 : 0) + [r.hire, r.type, r.grade, r.field].reduce((n, v) => n + multi(v).length, 0);
+  return r.q || r.open || r.sort || filters >= 2 ? { index: false, follow: true } : { index: true, follow: true };
 }
 
 /**
- * 정본 주소. 접수 중만 보기는 전체 목록과 거의 같은 내용이라, 스스로를
- * 정본이라 하지 않고 조건을 뺀 쪽을 가리킨다.
+ * 정본 주소. 접수 중만 보기·정렬 바꾸기는 같은 목록을 달리 보여 주는 것이라, 스스로를
+ * 정본이라 하지 않고 그것을 뺀 쪽을 가리킨다.
  */
 export function jobCanonical(r: JobRoute): string {
-  return jobPath(r.open ? { ...r, open: false } : r);
+  return jobPath({ ...r, open: false, sort: undefined });
 }
 
 /** 화면 맨 위에 적을 조건 이름. */
@@ -177,10 +200,7 @@ export function jobRouteLabel(r: JobRoute): string[] {
   return [
     r.org,
     r.region,
-    r.hire,
-    r.type,
-    r.grade,
-    r.field,
+    ...[r.hire, r.type, r.grade, r.field].map((v) => multi(v).join("·") || undefined),
     r.open ? "접수 중만" : undefined,
     // 연관어를 끈 검색어는 이미 따옴표로 감싸여 있다("홍보"). 겹치지 않게 벗기고 한 번만 씌운다.
     r.q ? `"${r.q.replace(/["“”'‘’]/g, "")}"` : undefined,
@@ -208,7 +228,7 @@ export function peekJobRoute(prefix: string[], seg: string[] = []): JobRoute {
 }
 
 /** 미들웨어가 쓰는 이름표. 이 이름으로 시작하는 경로만 손댄다. */
-export const JOB_KEYS = ["org", "region", "hire", "type", "grade", "field", "status", "q", "page"] as const;
+export const JOB_KEYS = ["org", "region", "hire", "type", "grade", "field", "status", "sort", "q", "page"] as const;
 
 /**
  * 들어온 그대로의 경로를 정본과 견주려고 다시 쓴 것.
