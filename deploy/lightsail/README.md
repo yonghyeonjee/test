@@ -39,6 +39,9 @@ knowhow-it.com 의 네임서버는 Cloudflare(adam·cloe.ns.cloudflare.com)다. 
 ## 앞단: CloudFront (2026-11-16)
 
 붙이기 전에 쟀다: 같은 KT 회선에서 CloudFront 는 서울 거점(ICN)으로 간다(사본이 있으면 0.09초).
+16:47 KST 에 전환했다. 배포 `E2IUVLIZH5Q6VS`(d2n509ho841pau.cloudfront.net), 캐시 정책 `jiwon-origin-cc`
+(460e044d-b5c0-428e-8076-5e9bfbabd1ad), 서버와 같은 AWS 계정(관리 계정). 전환 뒤 KT 에서 첫 화면 0.04~0.12초,
+사본이 없는 쪽 0.6초 안팎. 만들 때 쓴 설정 파일은 CloudShell(us-east-1) 홈의 `dist.json`·`cp.json`.
 
 - DNS(Cloudflare, 프록시 끔): `origin.jiwon` A → 3.34.85.98, `jiwon` CNAME → 배포의 `dxxxx.cloudfront.net`.
 - 인증서: ACM(us-east-1) `jiwon.knowhow-it.com`, DNS 검증 CNAME 은 Cloudflare 에.

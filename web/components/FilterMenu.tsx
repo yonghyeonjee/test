@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * 거르기 단추 하나와 그 펼침 창(2026-11-15).
@@ -19,6 +20,9 @@ export default function FilterMenu({ label, value, active, children }: {
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
+  // 창 안의 링크·폼으로 주소가 바뀌면 닫는다. 쪽을 새로 열지 않고 옮겨 가므로(스크롤 유지) 그대로 두면 열린 채 남는다.
+  const pathname = usePathname();
+  useEffect(() => { if (ref.current) ref.current.open = false; }, [pathname]);
 
   useEffect(() => {
     const el = ref.current;
