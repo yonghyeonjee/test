@@ -19,5 +19,9 @@ export function allow(key: string, limit: number, windowMs = 60_000): boolean {
   return true;
 }
 
+/**
+ * 손님 주소. Caddy 가 X-Real-IP 를 자기가 정한 client_ip 로 덮어써 넘긴다(deploy/lightsail/Caddyfile).
+ * Cloudflare 를 거치면 X-Forwarded-For 맨 앞은 손님이 써 넣은 값일 수 있어 그다음으로만 본다(2026-11-16).
+ */
 export const ipOf = (req: Request) =>
-  (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || req.headers.get("x-real-ip") || "?";
+  req.headers.get("x-real-ip")?.trim() || (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "?";

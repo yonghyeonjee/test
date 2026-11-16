@@ -8,6 +8,19 @@
 # 2026-10-06 서버가 멈췄을 때 맨 "502" 글자만 보였다. 503 + Retry-After 는 검색엔진에 "잠깐만" 이라는 뜻이라
 # 색인이 빠지지 않는다. 파일이 없으면(옛 서버) 그냥 짧은 글로 답한다.
 
+# Cloudflare 앞단(2026-11-16). knowhow-it.com 의 DNS 를 Cloudflare 로 옮기면 jiwon 으로 오는 요청은 모두
+# Cloudflare 주소에서 들어온다. 그대로 두면 접속 기록·fail2ban·속도 제한이 손님 대신 Cloudflare 를 보고,
+# fail2ban 이 Cloudflare 를 막으면 사이트 전체가 끊긴다. 그래서:
+#  - Cloudflare 대역(https://www.cloudflare.com/ips-v4 · ips-v6)에서 온 요청만 믿고, CF-Connecting-IP 를 손님 주소(client_ip)로 쓴다.
+#  - 그 밖의 주소에서 온 요청(서버 IP 로 바로 오는 것)은 CF-Connecting-IP 를 붙여 와도 믿지 않는다(속여 넣을 수 없게).
+# 대역이 바뀌면 이 목록과 fail2ban/jail.d/jiwon.local 의 ignoreip 를 함께 고친다. DNS 를 옮기기 전에 올려 두어도 해가 없다.
+{
+	servers {
+		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
+		client_ip_headers CF-Connecting-IP
+	}
+}
+
 # 접속 기록(2026-10-14). 전에는 오류만 남아 누가 얼마나 긁는지 알 수 없었다.
 # fail2ban(deploy/lightsail/fail2ban)이 이 파일을 읽어 너무 빠른 IP 를 방화벽에서 막는다.
 # 시각은 ISO8601 이라야 fail2ban 이 읽는다(기본 epoch 는 줄 중간에서 못 찾는다).
@@ -61,6 +74,13 @@
 				request>headers>X-Device-Key delete
 				request>headers>Baggage delete
 				request>headers>Sentry-Trace delete
+				# Cloudflare 가 붙이는 것. 손님 주소는 client_ip 에 이미 있다. 나라(Cf-Ipcountry)는 남긴다.
+				request>headers>Cf-Connecting-Ip delete
+				request>headers>X-Forwarded-For delete
+				request>headers>X-Forwarded-Proto delete
+				request>headers>Cf-Ray delete
+				request>headers>Cf-Visitor delete
+				request>headers>Cdn-Loop delete
 				request>tls delete
 				resp_headers delete
 				user_id delete
@@ -192,6 +212,9 @@
 	import guard
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3000 {
+		# 앱의 속도 제한(web/lib/rateLimit.ts)이 읽는 손님 주소. X-Forwarded-For 맨 앞은 손님이 써 넣을 수 있어
+		# Cloudflare 를 거치면 속일 수 있다. Caddy 가 정한 client_ip 로 덮어쓴다.
+		header_up X-Real-IP {client_ip}
 		transport http {
 			dial_timeout 3s
 			# /api/cron/* 는 한 번에 최대 60초(maxDuration) 일한다. 40초로 두었을 때 큐넷 수집이 40초 만에 끊겨
