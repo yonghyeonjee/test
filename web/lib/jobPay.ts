@@ -20,7 +20,9 @@ export function weeklyHours(text: string | null | undefined): number | null {
   return m ? Number(m[1]) : null;
 }
 
-export type MonthlyPay = { won: number; basis: "월" | "연봉÷12"; floor: boolean };
+const MIN_FULLTIME_WON = 2_000_000;
+
+export type MonthlyPay ={ won: number; basis: "월" | "연봉÷12"; floor: boolean };
 
 /** 요약의 보수 글 → 월 금액(원). 확실하지 않으면 null. */
 export function monthlyPay(pay: string | null | undefined, hours: string | null | undefined, positions: number): MonthlyPay | null {
@@ -35,9 +37,11 @@ export function monthlyPay(pay: string | null | undefined, hours: string | null 
   // 하한과 상한이 세 배 넘게 벌어지면 서로 다른 자리의 금액이 섞인 것이다.
   if (v.minValue && v.maxValue && v.maxValue > v.minValue * 3) return null;
   const floor = v.value === undefined;
-  if (v.unitText === "MONTH") return { won: amount, basis: "월", floor };
-  if (v.unitText === "YEAR") return { won: Math.round(amount / 12), basis: "연봉÷12", floor };
-  return null;
+  const won = v.unitText === "MONTH" ? amount : v.unitText === "YEAR" ? Math.round(amount / 12) : 0;
+  // 전일제 월급이 200만 원 아래일 수는 없다(2026년 최저임금 월 환산액이 215만 원쯤). 그 아래는 시간제이거나 수당·일부 금액을
+  // 잘못 읽은 것이라 버린다(첫 배포에서 "가장 낮은 108만 원"이 비교에 섞여 나왔다).
+  if (won < MIN_FULLTIME_WON) return null;
+  return { won, basis: v.unitText === "MONTH" ? "월" : "연봉÷12", floor };
 }
 
 type Entry = { id: string; won: number; role: string | null; hire: string | null };
@@ -72,7 +76,7 @@ const getOpenPays = unstable_cache(async () => {
   } catch {
     return [] as Entry[];
   }
-}, ["open-pays-v1"], { revalidate: 21600 });
+}, ["open-pays-v2"], { revalidate: 21600 });
 
 export type PayCompare = {
   mine: MonthlyPay;
@@ -87,6 +91,8 @@ export type PayCompare = {
   /** 그림에 찍을 금액들(이 공고 제외, 최대 80개). */
   others: number[];
 };
+
+const HIRE_GROUP: Record<string, string> = { 국가: "국가기관", 교육: "교육기관", 지자체: "지자체", 공공: "공공기관" };
 
 const med = (xs: number[]) => {
   const s = [...xs].sort((a, b) => a - b);
@@ -105,7 +111,8 @@ export async function getPayCompare(job: Job, sum: JobSummary | null | undefined
   const role = detectRole(job.title, job.org)?.name ?? null;
   const tries: [string, Entry[], number][] = [
     [role ? `${role} 공고` : "", role ? all.filter((e) => e.role === role) : [], 4],
-    [job.hire ? `${job.hire} 공고` : "", job.hire ? all.filter((e) => e.hire === job.hire) : [], 7],
+    // hire 칸은 기관 구분이다(국가·교육·지자체·공공).
+    [job.hire ? `${HIRE_GROUP[job.hire] ?? job.hire} 공고` : "", job.hire ? all.filter((e) => e.hire === job.hire) : [], 7],
     ["공고 전체", all, 19],
   ];
   for (const [group, list, min] of tries) {

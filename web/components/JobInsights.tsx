@@ -24,7 +24,7 @@ function MonthsChart({ months }: { months: JobHistory["months"] }) {
     cells.push({ ym, n: hit?.n ?? 0, self: hit?.self ?? false });
   }
   const filled = cells.filter((c) => c.n > 0);
-  const label = `지난 3년 가운데 같은 자리 공고가 올라온 달: ${filled.map((c) => `${c.ym.replace("-", "년 ")}월 ${c.n}건`).join(", ")}`;
+  const label = `지난 3년 가운데 같은 자리 공고가 올라온 달: ${filled.map((c) => `${c.ym.slice(0, 4)}년 ${Number(c.ym.slice(5))}월 ${c.n}건`).join(", ")}`;
   return (
     <svg viewBox="0 0 364 46" className="mt-3 h-auto w-full" role="img" aria-label={label}>
       <title>{label}</title>

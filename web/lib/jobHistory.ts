@@ -36,6 +36,11 @@ const PROC = new RegExp(
   "g",
 );
 
+const NOT_RECRUIT = /합격|면접|결과\s*(안내|발표|공고)|시험\s*(일정|장소)|취소|중단/;
+
+/** 잡알리오 공고 번호는 a 로 시작한다. 같은 모집이 나라일터와 잡알리오에 둘 다 올라오므로 출처가 같은 것끼리만 엮는다. */
+const sameSource = (a: string, b: string) => a.startsWith("a") === b.startsWith("a");
+
 /** 같은 자리를 가리는 열쇠. 너무 짧으면(세 글자 미만) 빈 문자열 — "직원 채용 공고" 같은 제목은 묶지 않는다. */
 export function posKey(title: string, org: string | null): string {
   let t = title.replace(/^\s*(\[[^\]]*\]\s*)+/, "");
@@ -112,6 +117,8 @@ function buildRounds(posts: OrgPost[], org: string | null) {
     if (!key) continue;
     const st = stageOf(p.title);
     if (st === "interview" || st === "final") stages.push({ key, id: p.id, reg: p.reg, kind: st });
+    // stageOf 가 못 잡은 절차 공고("면접시험 결과 안내", "필기시험 장소 공고")는 모집도 발표도 아닌 것으로 버린다.
+    else if (NOT_RECRUIT.test(p.title)) continue;
     else {
       const from = p.start ?? p.reg;
       recruits.push({
@@ -142,7 +149,8 @@ export const getJobHistory = cache(async (job: Job): Promise<JobHistory | null> 
   if (!job.org || !job.reg) return null;
   const st = stageOf(job.title);
   if (st === "interview" || st === "final") return null;
-  const posts = await getOrgPosts(job.org);
+  // 첫 배포에서 같은 모집의 잡알리오 판이 "지난 공고"로 세어졌다. 이 공고와 출처가 같은 것만 본다.
+  const posts = (await getOrgPosts(job.org)).filter((p) => sameSource(p.id, job.id));
   if (!posts.length) return null;
   const rounds = buildRounds(posts, job.org);
   const key = posKey(job.title, job.org);
@@ -168,11 +176,10 @@ export const getJobHistory = cache(async (job: Job): Promise<JobHistory | null> 
   const paceOf = (rs: PastRound[], scope: "same" | "org", min: number): JobHistory["pace"] => {
     const withData = rs.filter((r) => r.interview || r.final);
     if (withData.length < min) return null;
-    return {
-      scope, rounds: withData.length,
-      interview: median(withData.flatMap((r) => (r.interview ? [r.interview.after] : []))),
-      final: median(withData.flatMap((r) => (r.final ? [r.final.after] : []))),
-    };
+    const final = median(withData.flatMap((r) => (r.final ? [r.final.after] : [])));
+    const interview = median(withData.flatMap((r) => (r.interview ? [r.interview.after] : [])));
+    // 두 값은 서로 다른 모집에서 나올 수 있다. 서류 안내가 최종 발표보다 늦거나 같게 나오면 서류 쪽을 적지 않는다.
+    return { scope, rounds: withData.length, interview: final != null && interview != null && interview >= final ? null : interview, final };
   };
   const pace = paceOf(past, "same", 1) ?? paceOf(rounds.filter((r) => r.id !== job.id), "org", 3);
 
