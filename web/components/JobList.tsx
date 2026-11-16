@@ -10,6 +10,7 @@ import { jobPath, jobPathPage, jobPathWith, jobRobots, multi, PER_PAGE, type Job
 import { JOB_FIELDS, JOB_GRADES, JOB_TYPES, classifyJob } from "@/lib/jobClass";
 import { sortNewest } from "@/lib/jobFilter";
 import FilterMenu from "./FilterMenu";
+import KeepScroll from "./KeepScroll";
 
 const BADGE: Record<string, string> = {
   ongoing: "badge-open", always: "badge-open", upcoming: "badge-soon", closed: "badge-closed",
@@ -151,7 +152,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   const exact = isExactQuery(route.q);
 
   return (
-    <div id="list" className="mt-6 scroll-mt-24">
+    // 조건을 바꿔도 보던 자리를 지킨다(2026-11-16): 폼은 KeepScroll 이 쪽을 새로 열지 않고 보내고, 조건·정렬·칸 링크는 scroll={false}.
+    // 전에는 검색하거나 조건을 하나 바꿀 때마다 화면이 맨 위로 튀었다. 쪽 넘기기만 원래대로 위로 간다.
+    <KeepScroll id="list" className="mt-6 scroll-mt-24">
       <RecentStrip kind="job" className="mb-6" />
       {/* 검색 조건 영역(2026-11-15): 검색어 · 거르기(접수 상태·구분·지역) · 걸린 조건 · 연관어 켜기/끄기를 한 칸에 모은다.
           전에는 검색창·칩·지역·조건 줄이 따로 흩어져 있어 "지금 무엇으로 찾고 있나"가 한눈에 안 보였다. */}
@@ -183,14 +186,14 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
               <MyRegionJobs current={route.region} />
               <ul className="mt-1.5 grid grid-cols-3 gap-1.5">
                 <li>
-                  <Link href={jobPathWith(route, { region: undefined })} aria-current={!route.region ? "true" : undefined}
+                  <Link scroll={false} href={jobPathWith(route, { region: undefined })} aria-current={!route.region ? "true" : undefined}
                         className={`flex items-center justify-center rounded-lg px-2.5 py-2.5 text-[13.5px] font-semibold ${!route.region ? "bg-brand text-white" : "bg-ground text-ink2 hover:text-brand"}`}>
                     전국
                   </Link>
                 </li>
                 {regions.slice(0, 20).map((r) => (
                   <li key={r.v}>
-                    <Link href={jobPathWith(route, { region: r.v })} title={r.v} rel={pick({ region: r.v }).rel}
+                    <Link scroll={false} href={jobPathWith(route, { region: r.v })} title={r.v} rel={pick({ region: r.v }).rel}
                           aria-current={route.region === r.v ? "true" : undefined}
                           className={`flex items-center justify-between gap-1 rounded-lg px-2.5 py-2.5 text-[13.5px] transition-colors ${route.region === r.v ? "bg-brand font-bold text-white" : "bg-ground text-ink2 hover:text-brand"}`}>
                       <span className="truncate">{SIDO_SHORT[r.v] ?? r.v}</span>
@@ -228,7 +231,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
                 ))}
               </ul>
               <div className="flex shrink-0 gap-2 border-t border-line p-3">
-                <Link href={setDim(m.dim)} rel="nofollow" className="btn btn-ghost flex-1 py-2.5">초기화</Link>
+                <Link scroll={false} href={setDim(m.dim)} rel="nofollow" className="btn btn-ghost flex-1 py-2.5">초기화</Link>
                 <button type="submit" className="btn btn-primary flex-[2] py-2.5">적용</button>
               </div>
             </form>
@@ -240,13 +243,13 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[13px]">
           <span className="text-muted">걸린 조건</span>
           {chosen.map((x) => (
-              <Link key={x.t} href={x.href}
+              <Link scroll={false} key={x.t} href={x.href}
                     className="rounded-pill bg-brandSoft px-2.5 py-1 font-semibold text-brand hover:opacity-80">
                 {x.t} <span aria-hidden="true">×</span>
                 <span className="sr-only">조건 지우기</span>
               </Link>
             ))}
-          <Link href={jobPath({ org: route.org, kind: route.kind, open: route.open, sort: route.sort, page: 1 })}
+          <Link scroll={false} href={jobPath({ org: route.org, kind: route.kind, open: route.open, sort: route.sort, page: 1 })}
                 className="text-muted underline underline-offset-4 hover:text-brand">
             모두 지우기
           </Link>
@@ -256,13 +259,13 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <p className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] text-muted">
           <span>연관어도 함께 찾았습니다 —</span>
           {also.map((t) => (
-            <Link key={t} href={jobPathWith(route, { q: t, page: 1 })}
+            <Link scroll={false} key={t} href={jobPathWith(route, { q: t, page: 1 })}
                   className="font-semibold text-brand underline decoration-brand/40 underline-offset-4 hover:decoration-brand">
               {t}
             </Link>
           ))}
           {/* 연관어 끄기: 그 말이 들어간 공고만. 낱말을 따옴표로 감싼 주소로 간다(lib/jobFilter). */}
-          <Link href={jobPathWith(route, { q: exactQuery(route.q), page: 1 })}
+          <Link scroll={false} href={jobPathWith(route, { q: exactQuery(route.q), page: 1 })}
                 className="ml-1 rounded-pill border border-line2 bg-white px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
             연관어 빼고 ‘{unquoteQuery(route.q)}’만 보기
           </Link>
@@ -271,7 +274,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
       {exact && (
         <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
           <span>‘{unquoteQuery(route.q)}’가 들어간 공고만 보고 있습니다(연관어 끔).</span>
-          <Link href={jobPathWith(route, { q: unquoteQuery(route.q), page: 1 })}
+          <Link scroll={false} href={jobPathWith(route, { q: unquoteQuery(route.q), page: 1 })}
                 className="rounded-pill border border-line2 bg-white px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
             연관어도 함께 찾기
           </Link>
@@ -286,7 +289,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
             목록의 열에 하나 남짓이 지원할 수 없는 공고였다. 이미 지원한 사람은 오른쪽 칸에서 본다. 오른쪽은 색인하지 않는 쪽이라 nofollow. */}
         <nav aria-label="공고 종류" className="flex border-b border-line text-[14.5px] font-bold">
           {([[undefined, "채용 공고", jobN], ["result", "합격자·일정 공고", resultN]] as const).map(([v, t, n]) => (
-            <Link key={t} href={jobPathWith(route, { kind: v })} rel={v ? "nofollow" : undefined} aria-current={route.kind === v ? "page" : undefined}
+            <Link scroll={false} key={t} href={jobPathWith(route, { kind: v })} rel={v ? "nofollow" : undefined} aria-current={route.kind === v ? "page" : undefined}
                   className={`-mb-px flex items-baseline gap-1.5 border-b-2 px-3 py-2.5 first:pl-1 ${route.kind === v ? "border-brand text-ink" : "border-transparent text-muted hover:text-ink"}`}>
               {t} <span className="num text-[12.5px] font-semibold opacity-70">{n.toLocaleString()}</span>
             </Link>
@@ -300,7 +303,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         </div>
         {route.kind && <p className="mt-1 text-[12.5px] text-muted">서류전형 합격자, 면접·시험 일정, 최종 합격자처럼 이미 진행 중인 채용의 소식입니다. 제목으로 가려 몇 건은 잘못 들어올 수 있습니다.</p>}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <Link href={pick({ open: !route.open }).href} rel="nofollow" role="switch" aria-checked={Boolean(route.open)}
+          <Link scroll={false} href={pick({ open: !route.open }).href} rel="nofollow" role="switch" aria-checked={Boolean(route.open)}
                 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink2">
             <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${route.open ? "bg-brand" : "bg-line2"}`} aria-hidden>
               <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${route.open ? "left-[18px]" : "left-0.5"}`} />
@@ -309,7 +312,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           </Link>
           <nav aria-label="정렬" className="flex rounded-pill bg-ground p-0.5 text-[13px] font-semibold">
             {([[undefined, "마감 임박순"], ["new", "최신 등록순"]] as const).map(([v, t]) => (
-              <Link key={t} href={pick({ sort: v }).href} rel={v ? "nofollow" : undefined} aria-current={route.sort === v ? "true" : undefined}
+              <Link scroll={false} key={t} href={pick({ sort: v }).href} rel={v ? "nofollow" : undefined} aria-current={route.sort === v ? "true" : undefined}
                     className={`rounded-pill px-3 py-1.5 transition-colors ${route.sort === v ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink"}`}>
                 {t}
               </Link>
@@ -468,6 +471,6 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           ))}
         </nav>
       )}
-    </div>
+    </KeepScroll>
   );
 }
