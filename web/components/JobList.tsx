@@ -331,10 +331,16 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
             const isNew = Boolean(j.reg) && dayNo(today) - dayNo(j.reg!) <= 2 && j.status !== "closed";
             const cls = classifyJob(j);
             // 마감 임박순에서는 마감된 공고가 뒤에 몰린다. 어디부터 끝난 공고인지 줄을 긋는다.
-            const firstClosed = !route.sort && j.status === "closed" && (i === 0 ? cur > 1 && list[(cur - 1) * PER_PAGE - 1]?.status !== "closed" : shown[i - 1].status !== "closed");
+            const firstClosed = !route.sort && j.status === "closed" && (i === 0 ? list[(cur - 1) * PER_PAGE - 1]?.status !== "closed" : shown[i - 1].status !== "closed");
+            // 맨 처음부터 마감된 공고면(접수 중이 하나도 없으면) 줄 대신 그렇다고 적는다.
+            const noneOpen = firstClosed && cur === 1 && i === 0;
             return (
               <li key={j.id}>
-                {firstClosed && (
+                {noneOpen ? (
+                  <p className="mb-2 rounded-card bg-surface2 px-4 py-3 text-[13px] text-muted ring-1 ring-inset ring-line">
+                    지금 접수 중인 {route.kind ? "소식" : "채용 공고"}는 없습니다. 아래는 마감된 것입니다.
+                  </p>
+                ) : firstClosed && (
                   <p className="mb-2 mt-3 flex items-center gap-3 text-[12.5px] font-semibold text-faint">
                     <span className="h-px flex-1 bg-line2" />여기부터 마감된 공고<span className="h-px flex-1 bg-line2" />
                   </p>
