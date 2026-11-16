@@ -5,7 +5,15 @@ import type { QA } from "@/lib/faq";
  * 자주 묻는 질문. 접힌 목록으로 두고, 검색엔진에는 FAQPage 로 알린다.
  * 스크립트 없이 <details> 로만 열고 닫힌다.
  */
-export default function Faq({ items, title = "자주 묻는 질문" }: { items: QA[]; title?: string }) {
+export default function Faq({ items, title = "자주 묻는 질문", schema = true }: {
+  items: QA[];
+  title?: string;
+  /**
+   * FAQPage 표시를 낼지. 칸에서 자동으로 지은 문답(지원사업·자격증 상세)은 false 로 끈다(2026-11-16) — 같은 질문이
+   * 수천 쪽에 구조화 데이터로 붙으면 손으로 쓴 문답인 척하는 틀이 된다. 화면의 문답은 그대로 보인다.
+   */
+  schema?: boolean;
+}) {
   if (!items.length) return null;
   const ld = {
     "@context": "https://schema.org",
@@ -18,7 +26,7 @@ export default function Faq({ items, title = "자주 묻는 질문" }: { items: 
   };
   return (
     <section id="faq" className="mt-14 scroll-mt-24">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      {schema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />}
       <h2 className="sec-title text-[1.0625rem] font-extrabold">{title}</h2>
       <div className="rows mt-4 rounded-card border border-line bg-surface px-5">
         {items.map((x) => (

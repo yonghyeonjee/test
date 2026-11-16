@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
+import { josa } from "@/lib/faq";
 import { descLines, lastCate, phase } from "@/components/AgencyList";
 import CalendarAdd from "@/components/CalendarAdd";
 import GuideBanner from "@/components/GuideBanner";
@@ -48,7 +49,7 @@ const bullets = (text: string | null): string[] =>
 
 function describe(kind: AgencyKind, it: AlioItem): string {
   const k = AGENCY_KIND[kind].label;
-  const head = `${it.org ?? "공공기관"}이 운영하는 ${k} ‘${it.title}’.`;
+  const head = `${josa(it.org ?? "공공기관", "이가")} 운영하는 ${k} ‘${it.title}’.`;
   const facts = [
     it.target ? `대상 ${cut(it.target, 40)}` : "",
     it.start || it.end ? `기간 ${dot(it.start) ?? ""}~${dot(it.end) ?? ""}` : "",
@@ -135,7 +136,7 @@ export default async function AgencyItemPage({ params }: P) {
       <PageBanner tone="indigo"
         eyebrow={`공공기관 ${K.label}${it.org ? ` · ${it.org}` : ""}`}
         title={it.title}
-        sub={it.target ? `대상: ${cut(it.target, 90)}` : `${it.org ?? "공공기관"}이 직접 운영하는 ${K.label}입니다.`}
+        sub={it.target ? `대상: ${cut(it.target, 90)}` : `${josa(it.org ?? "공공기관", "이가")} 직접 운영하는 ${K.label}입니다.`}
         art={<IllusAgency />}
       >
         <div className="mt-4 flex flex-wrap items-center gap-1.5">

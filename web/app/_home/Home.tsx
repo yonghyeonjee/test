@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { isBot } from "@/lib/bot";
+import { josaOnly } from "@/lib/faq";
 import { getHotSlides } from "@/lib/hotBanner";
 import { Suspense } from "react";
 import AlertBox from "@/components/AlertBox";
@@ -167,7 +168,7 @@ function Results({ results, total, label, myAge, terms, q }: {
             입력하신 조건에 걸리는 사업을 찾지 못했습니다.
             <br />
             {q
-              ? `‘${q}’ 을(를) 다른 말로 바꾸거나 빼고, 지역을 시·도 단위로 넓혀 보세요.`
+              ? `‘${q}’${josaOnly(q, "을를")} 다른 말로 바꾸거나 빼고, 지역을 시·도 단위로 넓혀 보세요.`
               : "지역을 시·도 단위로 넓히거나 선택을 줄여 보세요."}
           </p>
           <Link href="/" className="btn btn-ghost mt-5">처음부터 다시</Link>

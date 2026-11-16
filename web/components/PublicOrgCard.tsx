@@ -1,16 +1,13 @@
 import Link from "next/link";
+import { josaOnly } from "@/lib/faq";
 import { orgGroup, sidoShort, type PublicOrg } from "@/lib/govData";
 
 /**
  * 공고·지원사업 상세에 붙는 "이 기관은 어떤 곳인가" 카드(2026-10-21). 공고 원문을 그대로 실은 사이트에는 없는
  * 내용(주무부처·유형·소재지·소개)이라 쪽마다 우리 것이 하나 더 생긴다. 공공기관 정보(잡알리오)에서 받은 것이다.
  */
-/** 토씨 은/는. 마지막 글자에 받침이 있으면 은("공단은"), 없으면 는("적십자사는"). 한글이 아니면 은(는). */
-export const eunNeun = (w: string) => {
-  const c = w.charCodeAt(w.length - 1);
-  if (c < 0xac00 || c > 0xd7a3) return "은(는)";
-  return (c - 0xac00) % 28 === 0 ? "는" : "은";
-};
+/** 토씨 은/는. 마지막 글자에 받침이 있으면 은("공단은"), 없으면 는("적십자사는"). 한글이 아닌 끝(KOTRA, 119)도 lib/faq josa 가 가린다. */
+export const eunNeun = (w: string) => josaOnly(w, "은는");
 
 export default function PublicOrgCard({ org, heading }: { org: PublicOrg; heading?: string }) {
   const bare = org.name.replace(/^\((사|재|주|특|학)\)\s*/, "").trim();

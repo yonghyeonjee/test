@@ -9,7 +9,6 @@ import GuideBanner from "@/components/GuideBanner";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
-import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ExamInsight from "@/components/ExamInsight";
 import ExamRoundsFor from "@/components/ExamRoundsFor";
@@ -216,7 +215,7 @@ export default async function LicensePage({ params }: { params: { code: string }
         <Link href={`/jobs/q/${encodeURIComponent(l.field)}`} className="btn btn-ghost">이 분야 공공기관 채용</Link>
       </div>
 
-      <Faq items={licenseFaq(l)} />
+      <Faq items={licenseFaq(l)} schema={false} />
 
       {same.length > 0 && (
         <section className="mt-14">
@@ -235,7 +234,7 @@ export default async function LicensePage({ params }: { params: { code: string }
 
       <GuideBanner title="취업·이직을 준비하신다면 이것도" />
       <RelatedLinks items={licenseRelated()} />
-      <PromoBanner placement="license-detail" context="job" />
+      {/* 바깥 자료 홍보(PromoBanner)는 이 종목과 관계없는 묶음이라 상세 쪽에서 뺐다(2026-11-16). */}
     </div>
   );
 }

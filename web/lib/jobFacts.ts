@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { db, dbConfigured } from "./db";
+import { josa } from "./faq";
 import { getOrgStat, peakMonths, type Job, type OrgStat } from "./pubJobs";
 import { getOrgTrend, hireIndex, indexWord } from "./jobTrend";
 
@@ -112,5 +113,5 @@ export function factsLine(job: Job, f: JobFacts): string {
   if (f.peak) bits.push(`주로 ${f.peak.label}에 올라옴`);
   if (f.orgOpen > 1) bits.push(`지금 접수 중 ${f.orgOpen}건`);
   if (!bits.length) return "";
-  return `${org}은 ${bits.join(", ")}.`;
+  return `${josa(org, "은는")} ${bits.join(", ")}.`;
 }
