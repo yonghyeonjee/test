@@ -8,16 +8,18 @@
 # 2026-10-06 서버가 멈췄을 때 맨 "502" 글자만 보였다. 503 + Retry-After 는 검색엔진에 "잠깐만" 이라는 뜻이라
 # 색인이 빠지지 않는다. 파일이 없으면(옛 서버) 그냥 짧은 글로 답한다.
 
-# Cloudflare 앞단(2026-11-16). knowhow-it.com 의 DNS 를 Cloudflare 로 옮기면 jiwon 으로 오는 요청은 모두
-# Cloudflare 주소에서 들어온다. 그대로 두면 접속 기록·fail2ban·속도 제한이 손님 대신 Cloudflare 를 보고,
-# fail2ban 이 Cloudflare 를 막으면 사이트 전체가 끊긴다. 그래서:
-#  - Cloudflare 대역(https://www.cloudflare.com/ips-v4 · ips-v6)에서 온 요청만 믿고, CF-Connecting-IP 를 손님 주소(client_ip)로 쓴다.
-#  - 그 밖의 주소에서 온 요청(서버 IP 로 바로 오는 것)은 CF-Connecting-IP 를 붙여 와도 믿지 않는다(속여 넣을 수 없게).
-# 대역이 바뀌면 이 목록과 fail2ban/jail.d/jiwon.local 의 ignoreip 를 함께 고친다. DNS 를 옮기기 전에 올려 두어도 해가 없다.
+# CloudFront 앞단(2026-11-16). jiwon 은 CloudFront(서울 거점)를 거쳐 origin.jiwon.knowhow-it.com 으로 들어온다.
+# (Cloudflare 프록시는 한국 회선이 LAX 로 가 2~3초가 걸려 쓰지 않는다. Cloudflare 는 DNS 만.)
+# 연결은 모두 CloudFront 주소에서 오므로, 그대로 두면 접속 기록·속도 제한이 손님 대신 CloudFront 를 본다. 그래서:
+#  - CloudFront 가 원본에 올 때 쓰는 대역(ip-ranges.json 의 CLOUDFRONT_ORIGIN_FACING, 2026-11-16 판)만 믿는다.
+#  - X-Forwarded-For 는 오른쪽부터 읽어 믿지 않는 첫 주소를 손님으로 본다(trusted_proxies_strict).
+#    CloudFront 는 손님 주소를 맨 뒤에 붙이고, 맨 앞은 손님이 써 넣을 수 있다.
+# 대역이 늘어 목록이 낡으면 그 대역으로 온 요청의 client_ip 가 CloudFront 주소로 남는다(기록·앱 속도 제한만 부정확해지고
+# 사이트는 돈다 — fail2ban 은 CloudFront 를 거친 요청을 세지 않는다). 가끔 ip-ranges.json 과 맞춘다.
 {
 	servers {
-		trusted_proxies static 173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20 197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22 2400:cb00::/32 2606:4700::/32 2803:f800::/32 2405:b500::/32 2405:8100::/32 2a06:98c0::/29 2c0f:f248::/32
-		client_ip_headers CF-Connecting-IP
+		trusted_proxies static 13.124.199.0/24 130.176.0.0/18 130.176.128.0/21 130.176.136.0/23 130.176.140.0/22 130.176.144.0/20 130.176.160.0/19 130.176.192.0/19 130.176.64.0/21 130.176.72.0/22 130.176.76.0/24 130.176.78.0/23 130.176.80.0/22 130.176.86.0/23 130.176.88.0/21 130.176.96.0/19 15.158.0.0/16 18.68.0.0/16 204.246.166.0/24 205.251.218.0/24 24.110.128.0/17 3.172.0.0/18 3.172.64.0/18 3.29.57.0/26 51.74.20.0/24 51.74.21.0/24 51.74.22.0/24 52.46.0.0/18 52.82.128.0/23 52.82.134.0/23 54.182.128.0/20 54.182.144.0/21 54.182.154.0/23 54.182.156.0/22 54.182.160.0/21 54.182.172.0/22 54.182.176.0/21 54.182.184.0/22 54.182.188.0/23 54.182.224.0/21 54.182.240.0/21 54.182.248.0/22 54.239.134.0/23 54.239.170.0/23 54.239.204.0/22 54.239.208.0/21 64.252.128.0/18 64.252.64.0/18 70.132.0.0/18 2600:9000:1000::/36 2600:9000:5200::/40 2600:9000:6000::/36
+		trusted_proxies_strict
 	}
 }
 
@@ -74,13 +76,12 @@
 				request>headers>X-Device-Key delete
 				request>headers>Baggage delete
 				request>headers>Sentry-Trace delete
-				# Cloudflare 가 붙이는 것. 손님 주소는 client_ip 에 이미 있다. 나라(Cf-Ipcountry)는 남긴다.
-				request>headers>Cf-Connecting-Ip delete
+				# CloudFront 가 붙이는 것. 손님 주소는 client_ip 에 이미 있다.
 				request>headers>X-Forwarded-For delete
 				request>headers>X-Forwarded-Proto delete
-				request>headers>Cf-Ray delete
-				request>headers>Cf-Visitor delete
-				request>headers>Cdn-Loop delete
+				request>headers>X-Amz-Cf-Id delete
+				request>headers>Via delete
+				request>headers>X-Edge delete
 				request>tls delete
 				resp_headers delete
 				user_id delete
@@ -213,8 +214,12 @@
 	encode zstd gzip
 	reverse_proxy 127.0.0.1:3000 {
 		# 앱의 속도 제한(web/lib/rateLimit.ts)이 읽는 손님 주소. X-Forwarded-For 맨 앞은 손님이 써 넣을 수 있어
-		# Cloudflare 를 거치면 속일 수 있다. Caddy 가 정한 client_ip 로 덮어쓴다.
+		# 앞단을 거치면 속일 수 있다. Caddy 가 정한 client_ip 로 덮어쓴다.
 		header_up X-Real-IP {client_ip}
+		# 앱은 늘 공개 주소로 들어온 것으로 안다. CloudFront 는 origin.… 이름으로 오는데, 그대로 넘기면
+		# 미들웨어의 308(web/middleware.ts redirect308)이 손님을 origin.… 으로 보낸다.
+		header_up Host jiwon.knowhow-it.com
+		header_up X-Forwarded-Host jiwon.knowhow-it.com
 		transport http {
 			dial_timeout 3s
 			# /api/cron/* 는 한 번에 최대 60초(maxDuration) 일한다. 40초로 두었을 때 큐넷 수집이 40초 만에 끊겨
@@ -240,8 +245,19 @@
 	}
 }
 
-# origin.jiwon.knowhow-it.com 은 CloudFront 를 둘 때 DNS 와 함께 다시 넣는다. DNS 없이 적어 두면
-# Caddy 가 2분마다 인증서를 받으려다 실패한 기록을 남긴다.
+# CloudFront 가 찾아오는 주소(2026-11-16). DNS 는 이 서버를 바로 가리켜(A 3.34.85.98) Caddy 가 인증서를 스스로 갱신한다.
+# CloudFront 는 원본 요청에 X-Edge: cf-jiwon 을 붙인다(배포의 원본 사용자 지정 헤더). 그것 없이 바로 온 요청은
+# 같은 내용을 주되 검색엔진에는 숨긴다 — origin.… 이 jiwon 의 복제 사이트로 색인되지 않게. 비밀이 아니라 표시일 뿐이다.
+# 길게 걸리는 작업(/api/cron/orgsites·probe, 90~120초)은 CloudFront(원본 응답 60초 한도)를 거치지 않고 이 주소를 바로 부른다.
+origin.jiwon.knowhow-it.com {
+	@direct not header X-Edge cf-jiwon
+	header @direct X-Robots-Tag "noindex, nofollow"
+	import access
+	import app
+}
+
+# 옛 길: jiwon 이 이 서버를 바로 가리키던 때의 것. DNS 가 CloudFront 로 넘어간 뒤에는 인증서 갱신이 되지 않으니
+# (HTTP-01 이 CloudFront 로 간다) 전환이 자리 잡으면 지운다. 되돌릴 때를 위해 잠시 둔다.
 jiwon.knowhow-it.com {
 	import access
 	import app

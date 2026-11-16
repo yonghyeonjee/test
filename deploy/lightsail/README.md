@@ -34,23 +34,30 @@ knowhow-it.com 의 네임서버는 Cloudflare(adam·cloe.ns.cloudflare.com)다. 
 
 **jiwon 프록시를 켜지 말 것.** 켜 보니 한국(KT) 회선이 Cloudflare 무료 요금제에서 로스앤젤레스(LAX) 거점으로 갔다.
 첫 화면이 직결 0.07초 → Cloudflare 경유 2~3초(캐시 안 된 HTML). 한국 방문자가 손님 대부분이라 곧바로 껐다.
-한국 거점(ICN)은 Cloudflare 상위 요금제에서만 기대할 수 있다. 앞단이 필요하면 서울 거점이 있는 CloudFront(아래)를 본다.
+한국 거점(ICN)은 Cloudflare 상위 요금제에서만 기대할 수 있다. 앞단은 서울 거점이 있는 CloudFront 로 둔다(아래).
 
-서버 쪽 준비(PR #358)는 그대로 두었다. 프록시가 꺼져 있으면 아무 일도 하지 않는다:
-- Caddyfile 맨 위 전역 옵션: Cloudflare 대역만 믿고 `CF-Connecting-IP` 를 client_ip 로. 앱에는 `X-Real-IP` 로 넘긴다.
-- fail2ban `ignoreip` 에 Cloudflare 대역. Cloudflare 를 거친 손님의 속도 제한은 Cloudflare 규칙이 맡는다.
-- Cloudflare SSL 은 Full (strict). Caddy 인증서(Let's Encrypt)는 HTTP-01 로 그대로 갱신된다.
-- 대역이 바뀌면(https://www.cloudflare.com/ips-v4 · ips-v6) 두 곳을 함께 고친다.
+## 앞단: CloudFront (2026-11-16)
 
-## (보류) CloudFront
+붙이기 전에 쟀다: 같은 KT 회선에서 CloudFront 는 서울 거점(ICN)으로 간다(사본이 있으면 0.09초).
 
-`origin.jiwon.knowhow-it.com` A 레코드 → 고정 IP, CloudFront 원본을 그 주소(HTTPS)로, 인증서는 ACM(us-east-1)에서
-`jiwon.knowhow-it.com` DNS 검증, 캐시 정책은 원본 헤더 따르기(UseOriginCacheControlHeaders-QueryStrings),
-원본 요청 정책은 AllViewerExceptHostHeader. 그다음 `jiwon` 을 CloudFront 주소로 CNAME.
-
-CloudFront 를 앞에 두면 서버에 닿는 주소가 전부 CloudFront 것이 된다. 그때 할 일:
-- Caddyfile 전역 옵션에 `servers { trusted_proxies static <CloudFront 대역> }` 와 `client_ip_headers CloudFront-Viewer-Address X-Forwarded-For` 를 넣어 기록의 client_ip 가 손님 주소가 되게 한다.
-- fail2ban 은 방화벽에서 막으므로 CloudFront 뒤에서는 소용없다. `jiwon-flood`·`jiwon-flood-long` 을 끄고 AWS WAF 속도 규칙으로 옮긴다. 안 그러면 CloudFront 주소를 막아 사이트가 통째로 막힌다.
+- DNS(Cloudflare, 프록시 끔): `origin.jiwon` A → 3.34.85.98, `jiwon` CNAME → 배포의 `dxxxx.cloudfront.net`.
+- 인증서: ACM(us-east-1) `jiwon.knowhow-it.com`, DNS 검증 CNAME 은 Cloudflare 에.
+- 원본: `origin.jiwon.knowhow-it.com` HTTPS 만, 응답 대기 60초, 사용자 지정 헤더 `X-Edge: cf-jiwon`.
+- 원본 요청 정책: AllViewerExceptHostHeader(관리형). Host 는 Caddy 가 jiwon 으로 바꿔 앱에 넘긴다.
+- 캐시 정책(직접 만든 것): 원본의 Cache-Control 을 따른다(최소·기본 0초). 키 = 쿼리스트링 전부 +
+  머리글 `RSC`·`Next-Router-Prefetch`·`Next-Router-State-Tree`·`Next-Router-Segment-Prefetch`·`Next-Url`. 쿠키는 키에 넣지 않는다.
+  관리형 UseOriginCacheControlHeaders 를 쓰지 않는 이유: 그 키에는 RSC 머리글이 없어, 누가 `RSC: 1` 을 붙여 쪽 주소를 부르면
+  RSC 조각이 HTML 자리에 5분 동안 저장된다. 쿠키를 키에 넣으면 GA 쿠키 때문에 사람마다 사본이 갈려 소용이 없다
+  (s-maxage 가 붙는 쪽은 쿠키를 읽지 않는 ISR 쪽뿐이다).
+- 오류 응답(403·404·429·500·502·503·504)은 저장하지 않는다(오류 캐시 최소 TTL 0). Caddy 가 수집기에게 준 403 이
+  같은 주소를 연 사람·검색엔진에게 나가면 안 된다.
+- 서버: Caddyfile 전역 옵션이 CloudFront 원본 대역만 믿고 X-Forwarded-For 를 오른쪽부터 읽는다. fail2ban 은 CloudFront 를
+  거친 요청(host 가 origin.…)을 세지 않는다 — 방화벽에서 막을 수 있는 것은 CloudFront 주소뿐이라서다.
+  봇이 몰리는 것은 CloudFront 사본과 Caddy 의 이름표 규칙(guard)이 받는다. IP 별 속도 제한이 필요해지면 AWS WAF(유료)를 본다.
+- 길게 걸리는 작업(org_sites·server_probe 워크플로)은 `https://origin.jiwon.knowhow-it.com` 을 바로 부른다.
+- 되돌리기: Cloudflare 에서 `jiwon` 을 A 3.34.85.98 로 되돌린다(5분). Caddy 의 jiwon 블록 인증서가 살아 있는 동안만 된다 —
+  CloudFront 뒤에서는 그 인증서가 갱신되지 않는다(90일).
+- 비용: CloudFront 상시 무료 한도(매달 1TB·요청 1천만 건) 안이면 0원. 첫 청구서에서 확인한다.
 
 ## 백업
 
