@@ -46,7 +46,7 @@ jobs:
     steps:
       - name: 서버 단계
         env:
-          SITE: https://jiwon.knowhow-it.com
+          SITE: https://origin.jiwon.knowhow-it.com # CloudFront(원본 응답 60초 한도)를 거치지 않고 서버를 바로 부른다
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -u
