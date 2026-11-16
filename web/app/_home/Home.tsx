@@ -443,7 +443,8 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
                       className="flex items-baseline justify-between gap-1 rounded-[8px] px-2 py-2 text-[14px]
                                  transition-colors hover:bg-ground">
                   <span className="truncate font-medium text-ink2">
-                    <span className="sm:hidden">{SIDO_SHORT[a.sido] ?? a.sido}</span>
+                    {/* 휴대폰 네 칸에는 두 글자만 들어간다. "전남·광주"는 "전…"으로 잘려 어느 지역인지 알 수 없었다(2026-11-16) — 앞 조각만 적는다. */}
+                    <span className="sm:hidden">{(SIDO_SHORT[a.sido] ?? a.sido).split("·")[0]}</span>
                     <span className="hidden sm:inline">{a.sido}</span>
                   </span>
                   <span className="num text-[12px] text-faint">{a.n}</span>

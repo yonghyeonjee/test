@@ -25,11 +25,17 @@ export default function LicenseJobs({ name, data }: { name: string; data: Data |
       {data.open.length > 0 && (
         <ul className="mt-3 divide-y divide-line rounded-card border border-line bg-surface">
           {data.open.map((j) => (
-            <li key={j.id} className="flex items-baseline gap-3 px-4 py-3">
-              <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="min-w-0 flex-1 truncate text-[14.5px] font-semibold hover:text-brand">
+            // 휴대폰에서는 두 줄로 쌓는다(2026-11-16). 한 줄에 두었을 때 기관 이름이 길면("과학기술정보통신부 우정사업본부
+            // 전남지방우정청 강진우체국") 줄지 않는 오른쪽 칸이 줄을 다 차지해 공고 제목이 0폭으로 사라지고 칸 밖으로 넘쳤다.
+            // 넓은 화면에서도 기관 칸은 절반까지만 차지하고 넘치면 줄인다. 마감일은 늘 보이게 따로 둔다.
+            <li key={j.id} className="px-4 py-3 sm:flex sm:items-baseline sm:gap-3">
+              <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="line-clamp-2 text-[14.5px] font-semibold hover:text-brand sm:line-clamp-none sm:block sm:min-w-0 sm:flex-1 sm:truncate">
                 {j.title}
               </Link>
-              <span className="shrink-0 text-[12.5px] text-muted">{j.org ? `${j.org} · ` : ""}{dot(j.end)} 마감</span>
+              <span className="mt-1 flex min-w-0 items-baseline gap-1 text-[12.5px] text-muted sm:mt-0 sm:max-w-[50%] sm:shrink-0">
+                {j.org && <span className="min-w-0 truncate">{j.org}</span>}
+                <span className="shrink-0">{j.org ? "· " : ""}{dot(j.end)} 마감</span>
+              </span>
             </li>
           ))}
         </ul>
