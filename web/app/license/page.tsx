@@ -12,7 +12,7 @@ import LicenseList from "@/components/LicenseList";
 import LicenseFinder from "@/components/LicenseFinder";
 import ExamDeadlines from "@/components/ExamDeadlines";
 import { getLicenses, groupByField, proBoard, techBoard } from "@/lib/qnet";
-import { getExamRounds, upcoming } from "@/lib/qnetExam";
+import { getExamRounds, mergeUpcoming, upcoming } from "@/lib/qnetExam";
 import { licenseRelated } from "@/lib/related";
 import { LICENSE_FAQ } from "@/lib/pageFaq";
 import { pageGraph } from "@/lib/schema";
@@ -36,9 +36,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const title = n > 0
     ? `국가자격증 ${n}종 찾기 — 종목별 응시 자격·시험 일정·지원 제도`
     : "국가자격증 찾기 — 종목별 응시 자격·시험 일정·지원 제도";
+  // 설명: 제목과 같은 종목 수 + 가장 가까운 원서접수 창(화면의 마감 임박 목록 맨 위와 같다). 2026-11-17.
+  // 예전 설명은 "600여 종목" 고정이라 제목(613종)과 숫자가 달랐다.
+  const next = await getExamRounds().then((r) => mergeUpcoming(upcoming(r))[0] ?? null).catch(() => null);
+  const md = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8, 10))}일`;
+  const when = next
+    ? `${next.round.grade} ${next.stage.label} ${next.state === "open" ? `접수 중(${md(next.stage.to)} 마감)` : `${md(next.stage.from)}~${md(next.stage.to)}`}`
+    : null;
+  const description = n > 0
+    ? `국가기술자격 ${n}종목을 이름으로 찾고 응시 자격을 확인하세요.${when ? ` 가장 가까운 원서접수: ${when}.` : ""} ` +
+      "자격증 응시료·학원비를 지원하는 정부 제도도 함께 안내합니다."
+    : DESC;
   return withOg({
     title,
-  description: DESC,
+    description,
   keywords: [
       ...brandKeys("자격증", "국가자격"),
     "국가자격증 종류",
