@@ -86,8 +86,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
 
   // 목록 자체를 이미 기관·지역으로 좁혀 받은 경우가 있다. 그때 같은
   // 조건을 한 번 더 거는 것은 값이 없지만, 걸어도 결과는 같다.
-  const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field };
-  const { regions, hires, openN, noRegionN, types, grades, fields } = facets(board.jobs, filter);
+  // 합격자·시험 일정 공고는 기본 목록에서 빼고 따로 본다(2026-11-16, kind/result). 목록 위 두 칸으로 오간다.
+  const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field, kind: route.kind ?? ("job" as const) };
+  const { regions, hires, openN, noRegionN, types, grades, fields, jobN, resultN } = facets(board.jobs, filter);
   const matched = filterJobs(board.jobs, filter);
   const list = route.sort === "new" ? sortNewest(matched) : matched;
   const last = Math.max(1, Math.ceil(list.length / PER_PAGE));
@@ -119,7 +120,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   const hiddenOf = (except: string) =>
     ([
       ["org", route.org], ["region", route.region], ["hire", route.hire], ["type", route.type], ["grade", route.grade],
-      ["field", route.field], ["open", route.open ? "1" : undefined], ["sort", route.sort], ["q", route.q],
+      ["field", route.field], ["kind", route.kind], ["open", route.open ? "1" : undefined], ["sort", route.sort], ["q", route.q],
     ] as [string, string | undefined][]).filter((e): e is [string, string] => e[0] !== except && Boolean(e[1]));
   /** 그 조건 하나만 건 주소(분류별로 보기). */
   const onlyPath = (d: Dim, v: string) => { const r: JobRoute = { page: 1 }; r[d] = v; return jobPath(r); };
@@ -243,7 +244,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
                 <span className="sr-only">조건 지우기</span>
               </Link>
             ))}
-          <Link href={jobPath({ org: route.org, open: route.open, sort: route.sort, page: 1 })}
+          <Link href={jobPath({ org: route.org, kind: route.kind, open: route.open, sort: route.sort, page: 1 })}
                 className="text-muted underline underline-offset-4 hover:text-brand">
             모두 지우기
           </Link>
@@ -279,12 +280,23 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
       {/* 목록 머리: 건수 · 접수 중만(스위치) · 정렬(두 칸). 보는 방식을 바꾸는 것이라 목록 바로 위에 둔다.
           둘 다 같은 목록을 달리 보여 주는 것이라 색인하지 않는 주소로 간다(jobRobots) — nofollow. */}
       <div className="mb-3 mt-8">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-[1.0625rem] font-bold">{filtered ? "조건에 맞는 공고" : "채용 공고"}</h2>
+        {/* 채용 공고 / 합격자·일정 공고 두 칸(2026-11-16). 나라일터는 "서류전형 합격자 및 면접 일정 공고"도 같은 칸에 올려
+            목록의 열에 하나 남짓이 지원할 수 없는 공고였다. 이미 지원한 사람은 오른쪽 칸에서 본다. 오른쪽은 색인하지 않는 쪽이라 nofollow. */}
+        <nav aria-label="공고 종류" className="flex border-b border-line text-[14.5px] font-bold">
+          {([[undefined, "채용 공고", jobN], ["result", "합격자·일정 공고", resultN]] as const).map(([v, t, n]) => (
+            <Link key={t} href={jobPathWith(route, { kind: v })} rel={v ? "nofollow" : undefined} aria-current={route.kind === v ? "page" : undefined}
+                  className={`-mb-px flex items-baseline gap-1.5 border-b-2 px-3 py-2.5 first:pl-1 ${route.kind === v ? "border-brand text-ink" : "border-transparent text-muted hover:text-ink"}`}>
+              {t} <span className="num text-[12.5px] font-semibold opacity-70">{n.toLocaleString()}</span>
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-4 flex items-baseline justify-between gap-3">
+          <h2 className="text-[1.0625rem] font-bold">{route.kind ? "합격자·일정 공고" : filtered ? "조건에 맞는 공고" : "채용 공고"}</h2>
           <span className="num text-sm text-muted">
             {list.length.toLocaleString()}건{last > 1 && ` · ${cur}/${last}쪽`}
           </span>
         </div>
+        {route.kind && <p className="mt-1 text-[12.5px] text-muted">서류전형 합격자, 면접·시험 일정, 최종 합격자처럼 이미 진행 중인 채용의 소식입니다. 제목으로 가려 몇 건은 잘못 들어올 수 있습니다.</p>}
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
           <Link href={pick({ open: !route.open }).href} rel="nofollow" role="switch" aria-checked={Boolean(route.open)}
                 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink2">

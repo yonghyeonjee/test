@@ -337,6 +337,9 @@ export function facets(jobs: Job[], f: JobFilter = {}) {
     hires: count(forHire.map((j) => j.hire)),
     /** "접수 중만" 칩에 붙일 수. 여기도 접수 여부를 뺀 나머지 조건 기준. */
     openN: filterJobs(jobs, { ...f, open: false }).filter((j) => j.status !== "closed").length,
+    /** 채용 공고 / 합격자·일정 공고 탭에 붙일 수. 나머지 조건은 같다. */
+    jobN: filterJobs(jobs, { ...f, kind: "job" }).length,
+    resultN: filterJobs(jobs, { ...f, kind: "result" }).length,
   };
 }
 
