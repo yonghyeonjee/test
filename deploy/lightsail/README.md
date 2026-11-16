@@ -26,10 +26,17 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
 7. DNS: `jiwon` A 레코드를 고정 IP 로(TTL 300). Caddy 가 몇 분 안에 인증서를 받는다.
 8. Vercel 크론은 vercel.json 에서 뺐고 cron-jobs 가 대신 돈다. Vercel 프로젝트의 Git 연결을 끊는다.
 
-## 앞단: Cloudflare (2026-11-16, CloudFront 대신)
+## 앞단: Cloudflare — DNS 만 쓴다, 프록시는 끔 (2026-11-16)
 
-knowhow-it.com 의 네임서버를 Cloudflare 로 옮기고(도메인 구입처 Porkbun, 그전 DNS 는 카페24), `jiwon` 만 프록시를 켠다.
-워드프레스(카페24)·메일 기록은 '프록시 끔'으로 두어 지금과 같다. 서버 쪽 준비는 이미 들어가 있다:
+knowhow-it.com 의 네임서버는 Cloudflare(adam·cloe.ns.cloudflare.com)다. 도메인 구입처는 Porkbun, 그전 DNS 는 카페24
+(카페24 쪽 기록은 지우지 않았다 — 되돌릴 때 Porkbun 네임서버를 ns1/ns2.cafe24.com·.co.kr 넷으로).
+모든 기록이 '프록시 끔(DNS only)'이다. 워드프레스(카페24 183.111.183.77)·메일(MX mw-002.cafe24.com)·jiwon(3.34.85.98).
+
+**jiwon 프록시를 켜지 말 것.** 켜 보니 한국(KT) 회선이 Cloudflare 무료 요금제에서 로스앤젤레스(LAX) 거점으로 갔다.
+첫 화면이 직결 0.07초 → Cloudflare 경유 2~3초(캐시 안 된 HTML). 한국 방문자가 손님 대부분이라 곧바로 껐다.
+한국 거점(ICN)은 Cloudflare 상위 요금제에서만 기대할 수 있다. 앞단이 필요하면 서울 거점이 있는 CloudFront(아래)를 본다.
+
+서버 쪽 준비(PR #358)는 그대로 두었다. 프록시가 꺼져 있으면 아무 일도 하지 않는다:
 - Caddyfile 맨 위 전역 옵션: Cloudflare 대역만 믿고 `CF-Connecting-IP` 를 client_ip 로. 앱에는 `X-Real-IP` 로 넘긴다.
 - fail2ban `ignoreip` 에 Cloudflare 대역. Cloudflare 를 거친 손님의 속도 제한은 Cloudflare 규칙이 맡는다.
 - Cloudflare SSL 은 Full (strict). Caddy 인증서(Let's Encrypt)는 HTTP-01 로 그대로 갱신된다.
