@@ -167,6 +167,13 @@ jobs:
             D=/srv/jiwon/releases/$REL
             mkdir -p \$D && tar -C \$D -xzf /tmp/bundle-$REL.tgz && rm /tmp/bundle-$REL.tgz
             mkdir -p \$D/.next/cache && chmod -R g+rwX \$D
+            # CloudFront 앞단(2026-11-16): 앞단은 쪽 HTML 을 5분까지 들고 있다. 배포 직후 그 옛 HTML 이 부르는
+            # 옛 CSS·JS(/_next/static, 이름에 해시)가 새 폴더에 없으면 화면이 꾸밈 없이 뜬다. 직전 배포의 정적 파일 가운데
+            # 사흘 안에 만든 것을 새 폴더에 함께 둔다(이름이 겹치지 않아 덮어쓰지 않는다. 수정 시각을 지켜 사흘 뒤에는 따라오지 않는다).
+            P=\$(readlink -f /srv/jiwon/current 2>/dev/null || true)
+            if [ -n \"\$P\" ] && [ \"\$P\" != \"\$D\" ] && [ -d \"\$P/.next/static\" ]; then
+              (cd \"\$P/.next/static\" && find . -type f -mtime -3 -exec cp -np --parents {} \"\$D/.next/static/\" \\;) || echo '::warning::직전 배포의 정적 파일을 옮기지 못했다. 배포는 계속한다.'
+            fi
             ln -sfn \$D /srv/jiwon/current
             # 서비스 정의(환경변수·메모리 한도)가 바뀌었으면 같이 갱신한다.
             if ! cmp -s \$D/jiwon.service /etc/systemd/system/jiwon.service; then
