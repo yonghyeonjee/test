@@ -26,7 +26,16 @@ Lightsail 서버 1대(서울, 512MB, 월 $5. 실측 메모리 80MB 안팎, 모�
 7. DNS: `jiwon` A 레코드를 고정 IP 로(TTL 300). Caddy 가 몇 분 안에 인증서를 받는다.
 8. Vercel 크론은 vercel.json 에서 뺐고 cron-jobs 가 대신 돈다. Vercel 프로젝트의 Git 연결을 끊는다.
 
-## 다음 단계: CloudFront
+## 앞단: Cloudflare (2026-11-16, CloudFront 대신)
+
+knowhow-it.com 의 네임서버를 Cloudflare 로 옮기고(도메인 구입처 Porkbun, 그전 DNS 는 카페24), `jiwon` 만 프록시를 켠다.
+워드프레스(카페24)·메일 기록은 '프록시 끔'으로 두어 지금과 같다. 서버 쪽 준비는 이미 들어가 있다:
+- Caddyfile 맨 위 전역 옵션: Cloudflare 대역만 믿고 `CF-Connecting-IP` 를 client_ip 로. 앱에는 `X-Real-IP` 로 넘긴다.
+- fail2ban `ignoreip` 에 Cloudflare 대역. Cloudflare 를 거친 손님의 속도 제한은 Cloudflare 규칙이 맡는다.
+- Cloudflare SSL 은 Full (strict). Caddy 인증서(Let's Encrypt)는 HTTP-01 로 그대로 갱신된다.
+- 대역이 바뀌면(https://www.cloudflare.com/ips-v4 · ips-v6) 두 곳을 함께 고친다.
+
+## (보류) CloudFront
 
 `origin.jiwon.knowhow-it.com` A 레코드 → 고정 IP, CloudFront 원본을 그 주소(HTTPS)로, 인증서는 ACM(us-east-1)에서
 `jiwon.knowhow-it.com` DNS 검증, 캐시 정책은 원본 헤더 따르기(UseOriginCacheControlHeaders-QueryStrings),
