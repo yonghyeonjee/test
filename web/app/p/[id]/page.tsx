@@ -14,7 +14,6 @@ import { StatusBadge, StatusNotice } from "@/components/LiveStatus";
 import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword, programTagline } from "@/lib/faq";
 import { manwon, standardFor, tableYear } from "@/lib/medianIncome";
 import { ORG_ID, pageGraph } from "@/lib/schema";
-import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import ShareButton from "@/components/ShareButton";
 import SaveItemButton from "@/components/SaveItemButton";
@@ -409,7 +408,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
       {porg && <PublicOrgCard org={porg} heading={`이 사업을 하는 ${porg.name.replace(/^\((사|재|주|특|학)\)\s*/, "")}${eunNeun(porg.name)} 어떤 곳인가`} />}
 
-      <Faq items={programFaq(p)} />
+      <Faq items={programFaq(p)} schema={false} />
 
       {related.length > 0 && (
         <section className="mt-16">
@@ -434,7 +433,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       <AdSlot name="detail_bottom" tall />
 
       <RelatedLinks items={programRelated(p.sido)} />
-      <PromoBanner placement="program" context={promoContextForProgram(p)} />
+      {/* 바깥 자료 홍보(PromoBanner)는 이 사업과 관계없는 묶음이라 상세 쪽에서 뺐다(2026-11-16). */}
     </article>
   );
 }

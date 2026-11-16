@@ -19,14 +19,25 @@ export type QA = { q: string; a: string };
  * ("서울로", "물로"). 그래서 종성 번호를 따로 본다.
  */
 export function josa(word: string, pair: "은는" | "이가" | "을를" | "과와" | "으로") {
-  const last = word.charCodeAt(word.length - 1);
+  // 2026-11-16 한글로 끝나지 않는 이름도 받침을 가린다. 전에는 못 가리는 곳마다 "이(가)"·"은(는)"을 그대로 적어 그 글이
+  // 구글 검색 결과 요약에 보였다. 끝의 괄호("한국전력공사(KEPCO)")·따옴표·마침표는 떼고 읽는 소리로 본다:
+  // 숫자는 영·일·삼·육·칠·팔, 로마자는 L·M·N·R 에 받침이 있다(ㄹ 받침은 일·칠·팔·L·R).
+  const core = word.replace(/\s*[(（\[][^)）\]]*[)）\]]\s*$/, "").replace(/[\s"'’”」』.,·]+$/, "") || word;
+  const ch = core.charAt(core.length - 1);
+  const last = ch.charCodeAt(0);
   const korean = last >= 0xac00 && last <= 0xd7a3;
-  const jong = korean ? (last - 0xac00) % 28 : 0;
-  const has = korean ? jong !== 0 : false;
+  const jong = korean ? (last - 0xac00) % 28
+    : /[178lLrR]/.test(ch) ? 8
+    : /[036mMnN]/.test(ch) ? 1
+    : 0;
+  const has = jong !== 0;
   if (pair === "으로") return word + (!has || jong === 8 ? "로" : "으로");
   const [a, b] = pair === "은는" ? ["은", "는"] : pair === "이가" ? ["이", "가"] : pair === "을를" ? ["을", "를"] : ["과", "와"];
   return word + (has ? a : b);
 }
+
+/** 조사만. 이름을 <strong> 같은 태그로 감싸 따로 그릴 때 쓴다. */
+export const josaOnly = (word: string, pair: Parameters<typeof josa>[1]) => josa(word, pair).slice(word.length);
 
 /** 검색에서 많이 치는 말로 이 사업을 한 단어로 부른다. */
 export function topicKeyword(p: Detail) {
@@ -220,9 +231,9 @@ export function programFaq(p: Detail): QA[] {
   const w = who(p);
   const out: QA[] = [];
   out.push({
-    q: `${p.title}은 누가 신청할 수 있나요?`,
+    q: `${josa(p.title, "은는")} 누가 신청할 수 있나요?`,
     a: w.length
-      ? `${where}에 거주하는 ${w.join(", ")}이 대상입니다. ${clip(p.target_text, 120) || "세부 자격은 공고 원문에서 확인하세요."}`
+      ? `${where}에 거주하는 ${josa(w.join(", "), "이가")} 대상입니다. ${clip(p.target_text, 120) || "세부 자격은 공고 원문에서 확인하세요."}`
       : clip(p.target_text, 160) || `${where} 거주자 가운데 공고에 적힌 조건을 갖춘 분입니다. 원문에서 세부 자격을 확인하세요.`,
   });
   out.push({
@@ -244,10 +255,7 @@ export function programFaq(p: Detail): QA[] {
           : "기업마당 공고 원문의 접수처(주관 기관 누리집 또는 이메일)로 신청합니다.")
       : `관할 주민센터(행정복지센터) 방문 또는 복지로 온라인 신청이 일반적입니다. 원문에서 접수처를 확인하세요.`),
   });
-  out.push({
-    q: "다른 지원금과 같이 받을 수 있나요?",
-    a: "성격이 다른 지원(예: 현금 수당과 요금 감면)은 대개 함께 받을 수 있지만, 같은 목적의 지원은 중복이 제한되는 경우가 많습니다. 공고의 '중복 수급' 항목을 보거나 문의처에 확인하세요.",
-  });
+  // "다른 지원금과 같이 받을 수 있나요?" 문답은 모든 사업 쪽에 글자 그대로 같은 답이라 뺐다(2026-11-16).
   if (p.contact) out.push({ q: "문의는 어디로 하나요?", a: `${p.dept_name || p.org_name || "담당 기관"} ${p.contact}` });
   return out;
 }

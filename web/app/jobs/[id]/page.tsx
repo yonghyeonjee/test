@@ -2,11 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import AdSlot from "@/components/AdSlot";
-import Faq from "@/components/Faq";
-import GuideBanner from "@/components/GuideBanner";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
-import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import RecentTracker from "@/components/RecentTracker";
 import SaveItemButton from "@/components/SaveItemButton";
@@ -26,8 +23,9 @@ import { getJobSummary, getJobSummaryStrict } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { factsLine, getJobFacts } from "@/lib/jobFacts";
 import JobFactsBox from "@/components/JobFactsBox";
-import { jobFaq, jobIntro, jobSummary } from "@/lib/jobText";
-import { HIRE_TEXT, STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
+import { jobSummary } from "@/lib/jobText";
+import { STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
+import { josaOnly } from "@/lib/faq";
 import { employmentFromTitle, jobLocation, salaryFromPay } from "@/lib/jobSchema";
 import type { JobSummary } from "@/lib/jobSummary";
 import { isAlioId } from "@/lib/jobTwins";
@@ -102,9 +100,14 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   // 5건 미만이라 "이 공고를 숫자로" 상자도 비는 것 — 만 noindex,follow. 구글 쪽 설명으로는 같은 틀의 복사본 묶음에서
   // 빠져나오려면 쪽 내용이 크게 달라야 하는데, 그런 쪽은 제목·날짜뿐이라 다를 수가 없다. 요약을 못 읽었으면(DB 오류)
   // 요약이 있는 것으로 쳐서 색인을 남긴다(sumRead === "error").
+  //
+  // 2026-11-16 색인 규칙(사용자 결정, 10/29·10/30 규칙을 뒤집는다): 접수 중이고 공고 요약이 붙은 모집 공고만 색인한다.
+  // 서치 콘솔에서 색인에 남은 461쪽은 전부 10/13 이전에 마지막으로 긁힌 쪽이었고, 그 뒤에 다시 긁힌 쪽은 홈까지 하나도
+  // 남지 않았다 — 쪽 하나가 아니라 사이트 전체에 대한 판정이다. 그때 색인 대상으로 열려 있던 것은 마감 공고 23만여 쪽이고,
+  // 그 쪽들에 이 공고만의 내용은 제목과 날짜뿐이었다(기관 숫자는 같은 기관의 모든 공고에 같다). 접수 중 + 요약은 1,260쪽쯤.
+  // 마감 공고 쪽은 그대로 열리고(noindex,follow) 기관·지역 쪽으로 잇는다. 사이트맵(getTopJobIds)은 이미 같은 기준이다.
   const hasSummary = sumRead === "error" || sumRead !== null;
-  const bare = job.status === "closed" && !hasSummary && facts.orgTotal < 5;
-  const noindex = stage === "final" || stage === "interview" || bare;
+  const noindex = stage === "final" || stage === "interview" || job.status === "closed" || !hasSummary;
   // 설명문은 검색 결과에 160자쯤만 보인다. 요약 한 줄이 있으면 그것이 먼저, 파일 이름이 길면 앞의 것만.
   const names = attach ? attach.files.slice(0, 3).map((f) => f.name.replace(/\.[a-z0-9]+$/i, "")) : [];
   const fileNote = attach && attach.files.length
@@ -183,7 +186,8 @@ function jobNode(job: Job, sum?: JobSummary | null) {
   const role = detectRole(job.title, job.org);
   const employment = role?.employment ?? employmentFromTitle(job.title)
     ?? employmentFromTitle(sum.positions.map((p) => p.type).join(" "));
-  const lead = role ? `${role.name} 자리입니다. ${role.does} ${jobSummary(job)}` : jobSummary(job);
+  // 직무 일반 설명(role.does)은 같은 직무의 모든 공고에 같은 글이라 뺐다(2026-11-16).
+  const lead = role ? `${role.name} 자리입니다. ${jobSummary(job)}` : jobSummary(job);
   // 급여·자격·근무 시간까지. 구글이 권하는 칸(baseSalary 등)이 여기서 찬다.
   const salary = salaryFromPay(sum.work.pay);
   const openings = job.headcount && /^\d+$/.test(job.headcount) ? Number(job.headcount)
@@ -239,11 +243,7 @@ export default async function JobDetail({ params }: P) {
   // 기관 쪽(/jobs/org)은 2026-10-17 부터 잡알리오 공고도 목록에 올리므로 잡알리오에만 내는 기관도 쪽이 있다. 늘 잇는다.
   const orgLink = Boolean(job.org);
   const role = detectRole(job.title, job.org);
-  // "무도실무관 (무도실무관)" 처럼 괄호 안이 직무 이름 그대로면 두 번 적지 않는다.
-  const rawDetail = detailOf(job.title);
-  const detail = rawDetail && rawDetail !== role?.name ? rawDetail : null;
   const stage = stageOf(job.title);
-  const hireText = job.hire ? HIRE_TEXT[job.hire] : undefined;
   const ld = pageGraph({
     path: `/jobs/${encodeURIComponent(job.id)}`,
     name: job.title,
@@ -464,83 +464,46 @@ export default async function JobDetail({ params }: P) {
         </section>
       )}
 
-      {/* 이 자리가 무슨 일인지. 제목에서 읽은 직무의 통례다 — 이 공고의 사실이 아니라는 것을 매번 적는다. */}
-      <section className="mt-10">
-        <h2 className="sec-title text-[1.0625rem] font-extrabold">
-          {role ? `${role.name}${detail ? ` (${detail})` : ""}, 어떤 일인가` : "이 자리는 어떤 채용인가"}
-        </h2>
-        {role ? (
-          <>
-            <p className="mt-4 text-[15px] leading-[1.85] text-ink2">{role.does}</p>
-            <h3 className="mt-5 text-[14px] font-bold">이런 자리에서 대개 요구하는 것</h3>
-            <ul className="mt-2 space-y-1.5 text-[14.5px] leading-relaxed text-ink2">
-              {role.needs.map((n) => (
-                <li key={n} className="flex gap-2.5">
-                  <span className="mt-[10px] h-1.5 w-1.5 shrink-0 rounded-full bg-brand" aria-hidden />
-                  <span>{n}</span>
-                </li>
-              ))}
-            </ul>
-            {role.licenses && role.licenses.length > 0 && (
-              <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
-                관련 국가자격:{" "}
-                {role.licenses.map((q, i) => (
-                  <span key={q}>
-                    {i > 0 && " · "}
-                    <Link href={`/license?q=${encodeURIComponent(q)}`}
-                          className="underline underline-offset-4 hover:text-brand">{q}</Link>
-                  </span>
-                ))}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="mt-4 text-[15px] leading-[1.85] text-ink2">
-            제목만으로는 직무를 특정하기 어려운 공고입니다. 무슨 일을 맡는지는 원문 공고문의
-            담당 업무 항목에 적혀 있습니다.
-          </p>
-        )}
-        {hireText && (
-          <p className="mt-4 text-[14.5px] leading-[1.85] text-ink2">
-            <b className="font-bold">{job.hire} 채용의 절차.</b> {hireText}
-          </p>
-        )}
-        <p className="mt-3 text-xs leading-relaxed text-faint">
-          위 설명은 이 직무의 일반적인 통례입니다. 이 공고의 실제 담당 업무·자격 요건·보수는
-          기관이 올린 원문에만 있습니다.
+      {/* 2026-11-16 "{직무}, 어떤 일인가"(직무의 통례·대개 요구하는 것·고용 형태별 절차)를 뺐다. 같은 직무의 모든 공고에
+          글자 그대로 같은 글이었고, 쪽이 스스로 "이 공고의 사실이 아니다"라고 적고 있었다. 제목에서 읽은 직무와 이어지는
+          자격증 링크만 남긴다. */}
+      {role?.licenses && role.licenses.length > 0 && (
+        <p className="mt-8 text-[13.5px] leading-relaxed text-muted">
+          {role.name} 관련 국가자격:{" "}
+          {role.licenses.map((q, i) => (
+            <span key={q}>
+              {i > 0 && " · "}
+              <Link href={`/license?q=${encodeURIComponent(q)}`}
+                    className="underline underline-offset-4 hover:text-brand">{q}</Link>
+            </span>
+          ))}
         </p>
-      </section>
-
+      )}
       {/* 본문 중간 광고. 공고 요약·첨부·직무 설명을 읽은 다음, 읽는 길 가운데에 하나만 둔다.
           예전엔 맨 아래 광고(detail_bottom) 바로 위에 있어, 켜면 둘이 붙었다(2026-10-08 옮김). */}
       <MidAd name="detail_mid" seed={job.id} context="job" className="mt-12" />
 
-      <section className="mt-12">
-        <h2 className="sec-title text-[1.0625rem] font-extrabold">이 공고, 이렇게 보세요</h2>
-        <div className="mt-4 space-y-4 text-[15px] leading-[1.85] text-ink2">
-          <p>{jobIntro(job)}</p>
-        </div>
-        {guide && (
-          <Link href={guidePath(guide.slug)} className="card card-link mt-4 flex items-center justify-between gap-3 border-brand/30 bg-brandSoft/40 px-5 py-4">
-            <span>
-              <span className="text-[12px] font-bold text-brand">작성 가이드</span>
-              <b className="mt-0.5 block text-[15px] leading-snug">{guide.org} 자기소개서·직무수행계획서 작성법</b>
-            </span>
-            <span aria-hidden className="text-faint">›</span>
-          </Link>
-        )}
-      </section>
-
+      {/* "이 공고, 이렇게 보세요" 문단(기관·지역·접수 기간을 문장으로 다시 적은 것)은 머리글·기본 정보 표와 같은 내용이라
+          뺐다(2026-11-16). 기관별 작성 가이드로 가는 길만 남긴다. */}
+      {guide && (
+        <Link href={guidePath(guide.slug)} className="card card-link mt-10 flex items-center justify-between gap-3 border-brand/30 bg-brandSoft/40 px-5 py-4">
+          <span>
+            <span className="text-[12px] font-bold text-brand">작성 가이드</span>
+            <b className="mt-0.5 block text-[15px] leading-snug">{guide.org} 자기소개서·직무수행계획서 작성법</b>
+          </span>
+          <span aria-hidden className="text-faint">›</span>
+        </Link>
+      )}
       {/* 이 기관이 언제·얼마나 뽑는지. 공고 원문을 그대로 실은 사이트에는 없는
           것이라 이 쪽이 따로 설 자리가 된다. 합격자 발표 쪽에서는 "다음 공고는
           언제쯤"이 곧 답이다. */}
       {stat && stat.n >= 5 && (
         <section className="mt-12">
           <h2 className="sec-title text-[1.0625rem] font-extrabold">
-            {orgShort(job.org)}{stage === "final" || stage === "interview" ? ", 다음 채용은 언제쯤" : "은 얼마나 자주 뽑나"}
+            {orgShort(job.org)}{stage === "final" || stage === "interview" ? ", 다음 채용은 언제쯤" : `${josaOnly(orgShort(job.org), "은는")} 얼마나 자주 뽑나`}
           </h2>
           <p className="mt-4 text-[15px] leading-[1.85] text-ink2">
-            <strong>{job.org}</strong>{stat.firstReg ? `은 ${stat.firstReg.slice(0, 4)}년부터 지금까지` : "은"} 나라일터에
+            <strong>{job.org}</strong>{josaOnly(job.org ?? "", "은는")}{stat.firstReg ? ` ${stat.firstReg.slice(0, 4)}년부터 지금까지` : ""} 나라일터에
             공고 <strong className="num">{stat.n.toLocaleString("ko-KR")}건</strong>을 올렸습니다.
             {stat.avgDays !== null && <> 접수 기간은 평균 <strong className="num">{stat.avgDays}일</strong>입니다.</>}
             {peak ? <> 공고는 <strong>{peak.label}</strong>에 {peak.share}%가 몰립니다.</> : " 특정 달에 몰리지 않고 연중 올라옵니다."}
@@ -587,7 +550,8 @@ export default async function JobDetail({ params }: P) {
         민간 사이트로, 인사혁신처나 각 기관이 운영하는 공식 사이트가 아닙니다.
       </p>
 
-      <Faq items={jobFaq(job, role, sum?.summary, facts)} />
+      {/* 자동으로 만든 "자주 묻는 질문"과 그 FAQPage 표시를 뺐다(2026-11-16). 답이 공고 요약·기관 숫자 상자에 이미 있는
+          내용을 문답 꼴로 한 번 더 적은 것이었고, 공고 수천 쪽에 같은 질문이 구조화 데이터로 붙어 있었다. */}
 
       {related.length > 0 && (
         <section className="mt-14">
@@ -617,8 +581,7 @@ export default async function JobDetail({ params }: P) {
 
       <AdSlot name="detail_bottom" tall />
 
-      <GuideBanner />
-      <PromoBanner placement="job-detail" context="job" />
+      {/* 사이트 안내 띠(GuideBanner)와 바깥 자료 홍보(PromoBanner)는 공고와 관계없는 묶음이라 공고 쪽에서 뺐다(2026-11-16). */}
       <RelatedLinks items={jobsRelated()} />
     </article>
   );

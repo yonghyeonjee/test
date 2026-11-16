@@ -142,7 +142,7 @@ export default async function JobsByOrg({ params }: P) {
       <PageBanner tone="blue"
         eyebrow="채용 · 기관별"
         title={org}
-        sub={`${org}이(가) 나라일터·잡알리오에 낸 채용 공고입니다. 접수 중인 것이 앞에 오고, 그 뒤로 지난 공고가 등록일순으로 이어집니다.`}
+        sub={`${josa(org, "이가")} 나라일터·잡알리오에 낸 채용 공고입니다. 접수 중인 것이 앞에 오고, 그 뒤로 지난 공고가 등록일순으로 이어집니다.`}
         art={<IllusJobs />}
       >
         {totalN > 0 && (
@@ -158,7 +158,7 @@ export default async function JobsByOrg({ params }: P) {
         data={pageGraph({
           path: jobPath(route),
           name: `${org} 채용 공고`,
-          description: `${org}이(가) 나라일터·잡알리오에 낸 채용 공고${totalN ? ` ${totalN.toLocaleString()}건` : ""}. 접수 중인 공고, 연도별 공고 수, 주로 뽑는 자리, 지원서 준비.`,
+          description: `${josa(org, "이가")} 나라일터·잡알리오에 낸 채용 공고${totalN ? ` ${totalN.toLocaleString()}건` : ""}. 접수 중인 공고, 연도별 공고 수, 주로 뽑는 자리, 지원서 준비.`,
           dateModified: lastReg,
           collection: true,
           // 거르거나 넘긴 쪽(지역·고용형태·접수 중·2쪽 이후)은 화면 목록이 달라 적지 않는다. 기관 첫 쪽만.

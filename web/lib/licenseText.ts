@@ -1,5 +1,5 @@
 import type { License } from "./qnet";
-import type { QA } from "./faq";
+import { josa, type QA } from "./faq";
 
 /**
  * 종목 상세의 글. 종목마다 원문 설명이 없으므로 등급(계열)과 분야로
@@ -54,7 +54,7 @@ export function seriesEligibility(series: string) {
 export function licenseIntro(l: License) {
   const s = l.series;
   const kind = l.kind === "T" ? "국가기술자격" : l.kindName || "국가자격";
-  return `${l.name}은(는) ${l.field}${l.subField ? ` 가운데 ${l.subField}` : ""} 분야의 ${kind}${ELIG[s] ? ` ${s} 등급` : ""}입니다. ${seriesRole(s)}`;
+  return `${josa(l.name, "은는")} ${l.field}${l.subField ? ` 가운데 ${l.subField}` : ""} 분야의 ${kind}${ELIG[s] ? ` ${s} 등급` : ""}입니다. ${seriesRole(s)}`;
 }
 
 export function licenseFaq(l: License): QA[] {

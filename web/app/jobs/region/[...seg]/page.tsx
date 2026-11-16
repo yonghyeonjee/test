@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IllusJobs } from "@/components/Illus";
+import { josa } from "@/lib/faq";
 import { withOg } from "@/lib/seo";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,7 +56,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     ? [`접수 중 ${f.openN}건`, f.soon ? `이번 주 마감 ${f.soon}건` : null, f.fresh ? `새 공고 ${f.fresh}건` : null].filter(Boolean).join(" · ")
     : null;
   const orgNote = f && f.topOrgs.length ? ` ${f.topOrgs.map(([o, n]) => `${o} ${n}건`).join(", ")} 순으로 많이 뽑고` : "";
-  const hireNote = f?.topHire ? ` ${f.topHire[0]}이 ${f.topHire[1]}건으로 가장 많습니다.` : "";
+  const hireNote = f?.topHire ? ` ${josa(f.topHire[0], "이가")} ${f.topHire[1]}건으로 가장 많습니다.` : "";
   return withOg({
     title: facts
       ? `${sido} 공공기관 채용공고 — ${facts}`
@@ -100,7 +101,7 @@ export default async function JobsByRegion({ params }: P) {
             지금 {sido}에서 가장 많이 뽑는 곳은 {f.topOrgs.map(([o, n], i) => (
               <span key={o}>{i > 0 && ", "}<Link href={`/jobs/org/${encodeURIComponent(o)}`} className="font-semibold underline-offset-2 hover:underline">{o}</Link> {n}건</span>
             ))}입니다.
-            {f.topHire && <> 고용 형태는 {f.topHire[0]}이 {f.topHire[1]}건으로 가장 많습니다.</>}
+            {f.topHire && <> 고용 형태는 {josa(f.topHire[0], "이가")} {f.topHire[1]}건으로 가장 많습니다.</>}
           </p>
         )}
       </PageBanner>
