@@ -90,6 +90,8 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
   const filter = { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field, kind: route.kind ?? ("job" as const) };
   const { regions, hires, openN, noRegionN, types, grades, fields, jobN, resultN } = facets(board.jobs, filter);
   const matched = filterJobs(board.jobs, filter);
+  /** 아직 끝나지 않은 합격자·일정 공고 — 채용이 진행 중이라는 표시. 채용 공고 칸 맨 위에 짧게 보여 준다. */
+  const active = route.kind ? [] : filterJobs(board.jobs, { ...filter, kind: "result" }).filter((j) => j.status !== "closed");
   const list = route.sort === "new" ? sortNewest(matched) : matched;
   const last = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const cur = Math.min(Math.max(1, route.page), last);
@@ -316,6 +318,35 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         </div>
       </div>
 
+      {/* 진행 중인 채용(2026-11-16). 합격자·일정 공고를 다른 칸으로 빼자, 법무부처럼 지금 채용이 한창인 기관이
+          마지막 채용 공고가 지난 것이라 "아무것도 안 뽑는 곳"처럼 보였다. 그 소식 가운데 아직 끝나지 않은 것을 1쪽 맨 위에 짧게 올린다. */}
+      {!route.kind && cur === 1 && active.length > 0 && (
+        <section aria-labelledby="jobs-active" className="mb-3 rounded-card bg-brandSoft/60 p-3.5 ring-1 ring-inset ring-brand/15 sm:p-4">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 id="jobs-active" className="text-[14px] font-bold text-ink">진행 중인 채용 <span className="num text-brand">{active.length}</span></h3>
+            <span className="text-[12px] text-muted">서류 합격자 발표·면접 일정 등</span>
+          </div>
+          <ul className="mt-2 grid gap-1">
+            {active.slice(0, 4).map((j) => {
+              const dd = dday(j, today);
+              return (
+                <li key={j.id}>
+                  <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="flex items-center gap-2 rounded-lg px-1 py-1.5 text-[13.5px] hover:bg-white/70">
+                    {dd && <span className={`num badge shrink-0 ${dd.cls}`}>{dd.t}</span>}
+                    <span className="min-w-0 flex-1 truncate font-semibold text-ink2">{j.title}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {active.length > 4 && (
+            <Link href={jobPathWith(route, { kind: "result" })} rel="nofollow" className="mt-1.5 inline-block px-1 text-[13px] font-semibold text-brand hover:underline">
+              {active.length}건 모두 보기 →
+            </Link>
+          )}
+        </section>
+      )}
+
       {list.length === 0 ? (
         <div className="card p-8 text-center">
           <div className="mx-auto h-28 w-40"><IllusEmpty /></div>
@@ -338,7 +369,9 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
               <li key={j.id}>
                 {noneOpen ? (
                   <p className="mb-2 rounded-card bg-surface2 px-4 py-3 text-[13px] text-muted ring-1 ring-inset ring-line">
-                    지금 접수 중인 {route.kind ? "소식" : "채용 공고"}는 없습니다. 아래는 마감된 것입니다.
+                    {!route.kind && active.length > 0
+                      ? "새로 지원받는 채용 공고는 지금 없습니다. 위 '진행 중인 채용'은 접수를 마치고 전형이 이어지는 것입니다. 아래는 마감된 공고입니다."
+                      : `지금 접수 중인 ${route.kind ? "소식" : "채용 공고"}는 없습니다. 아래는 마감된 것입니다.`}
                   </p>
                 ) : firstClosed && (
                   <p className="mb-2 mt-3 flex items-center gap-3 text-[12.5px] font-semibold text-faint">
