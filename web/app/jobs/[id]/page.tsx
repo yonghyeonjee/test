@@ -23,6 +23,9 @@ import { getJobSummary, getJobSummaryStrict } from "@/lib/jobSummary";
 import { dot, findJobSource, getJob, getJobAttach, getOrgStat, getRelatedJobs, peakMonths, type Job } from "@/lib/pubJobs";
 import { factsLine, getJobFacts } from "@/lib/jobFacts";
 import JobFactsBox from "@/components/JobFactsBox";
+import JobInsights from "@/components/JobInsights";
+import { getJobHistory, historyLine } from "@/lib/jobHistory";
+import { getPayCompare } from "@/lib/jobPay";
 import { jobSummary } from "@/lib/jobText";
 import { STAGE_TEXT, detailOf, detectRole, stageOf } from "@/lib/jobRole";
 import { josaOnly } from "@/lib/faq";
@@ -90,7 +93,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   const stage = stageOf(job.title);
   // 요약은 엄격한 판으로 읽는다. 못 읽었으면(DB 오류) 요약이 있는 것으로 쳐서 색인을 남긴다 — 잠깐의 오류로
   // noindex 가 사흘 캐시에 남으면 안 된다(2026-10-17).
-  const [attach, sumRead, facts] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const), getJobFacts(job)]);
+  const [attach, sumRead, facts, history] = await Promise.all([getJobAttach(job.id), getJobSummaryStrict(job.id).catch(() => "error" as const), getJobFacts(job), getJobHistory(job).catch(() => null)]);
   const sum = sumRead === "error" ? null : sumRead;
   // 2026-10-29 색인 규칙(사용자 결정): 지난 공고도 색인한다. 마감일·요약 유무로 noindex 하지 않는다.
   // 10/17~10/26 에 넣었던 "1년 넘은 것·마감 90일 넘은 것·요약 없는 것" noindex 를 걷었다. 지난 공고 쪽에는
@@ -122,7 +125,10 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
     description: (() => {
       const uniq = factsLine(job, facts);
       const base = `${job.title}. ${sum?.summary.one_line ? `${sum.summary.one_line}. ` : role ? `${role.name} 자리입니다. ` : ""}${uniq ? `${uniq} ` : ""}${jobSummary(job)}`;
-      return base.length < 150 ? `${base}${fileNote}` : base;
+      // 2026-11-16 이 자리의 모집 이력·발표까지 걸린 날(lib/jobHistory)은 이 공고에만 해당하는 내용이라 첨부 이름보다 먼저 붙인다.
+      const hist = historyLine(history);
+      const withHist = hist && base.length < 120 ? `${base} ${hist}` : base;
+      return withHist.length < 150 ? `${withHist}${fileNote}` : withHist;
     })(),
     keywords: [
       job.org, job.region && `${job.region} 채용`, job.hire,
@@ -237,6 +243,11 @@ export default async function JobDetail({ params }: P) {
     getJobSummary(job.id),
     findPublicOrg(job.org),
     getJobFacts(job),
+  ]);
+  // 이 공고에만 해당하는 자료(2026-11-16): 같은 자리의 모집 이력·발표까지 걸린 날, 접수 중 공고와 견준 보수. 못 읽으면 그 칸만 빠진다.
+  const [history, pay] = await Promise.all([
+    getJobHistory(job).catch(() => null),
+    getPayCompare(job, sum?.summary).catch(() => null),
   ]);
   const story = job.org ? await getStory(`org-${job.org.replace(/[^0-9A-Za-z가-힣]+/g, "-").replace(/^-|-$/g, "")}`) : null;
   const peak = stat ? peakMonths(stat.months) : null;
@@ -463,6 +474,8 @@ export default async function JobDetail({ params }: P) {
           </p>
         </section>
       )}
+
+      <JobInsights job={job} history={history} pay={pay} />
 
       {/* 2026-11-16 "{직무}, 어떤 일인가"(직무의 통례·대개 요구하는 것·고용 형태별 절차)를 뺐다. 같은 직무의 모든 공고에
           글자 그대로 같은 글이었고, 쪽이 스스로 "이 공고의 사실이 아니다"라고 적고 있었다. 제목에서 읽은 직무와 이어지는
