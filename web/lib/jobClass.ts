@@ -132,3 +132,15 @@ export function classifyJob(j: ClassInput): JobClass {
   memo.set(j, out);
   return out;
 }
+
+/**
+ * 합격자·시험 일정 공고(2026-11-16). 나라일터는 "서류전형 합격자 및 면접시험 일정 공고", "최종합격자 공고",
+ * "채용시험 일정 변경 공고"도 채용 공고 칸에 올린다. 최근 120일 공고의 14% 남짓 — 이미 지원한 사람에게는 쓸모 있지만
+ * 지원할 곳을 찾는 사람에게는 목록만 길게 만든다. 기본 목록에서 빼고 따로 본다(/jobs/kind/result).
+ * 제목으로만 가른다. 채용 공고를 고쳐 다시 낸 것("채용 공고(면접일정 등 수정)")은 채용 공고로 둔다.
+ */
+const NOTICE = /합[격력]자|합격\s*(공고|발표|안내|및|결정|예정)|최종\s*합격|(전형|심사|시험|선발|서류)\s*결과|결과\s*(공고|발표|안내|알림)|(시험|면접|전형|심사|검정)\s*(일정|장소)|채용\s*일정\s*변경|일정\s*변경\s*(계획\s*)?공고|(서류|필기|면접|실기|체력)\s*(시험|전형|심사)\s*(공고|안내|계획)/;
+const REPOSTED = /채용\s*공고\s*\([^)]*수정\)/;
+export function isResultNotice(j: { title: string }): boolean {
+  return NOTICE.test(j.title) && !REPOSTED.test(j.title);
+}

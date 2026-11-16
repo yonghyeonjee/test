@@ -20,7 +20,7 @@
  * 400 대신 404 를 낸다 — 없는 쪽이니 없다고 하는 게 맞다.
  *
  * 같은 내용이 두 주소로 나오면 안 되므로 순서를 하나로 못 박는다
- * (org → region → hire → type → grade → field → status → sort → q → page). 다른 순서로 들어오면
+ * (org → region → hire → type → grade → field → kind → status → sort → q → page). 다른 순서로 들어오면
  * 정한 순서로 넘긴다(301).
  */
 import { JOB_FIELDS, JOB_GRADES, JOB_TYPES } from "./jobClass";
@@ -33,6 +33,8 @@ export type JobRoute = {
   type?: string;
   grade?: string;
   field?: string;
+  /** 합격자·시험 일정 공고만(2026-11-16, lib/jobClass isResultNotice). 비우면 채용 공고만. 경로로는 kind/result. */
+  kind?: "result";
   /** 접수 중만 보기. 경로로는 status/open. */
   open?: boolean;
   /** 정렬. 비우면 마감 임박순(접수 중 → 예정 → 마감). "new" 는 최신 등록순. 경로로는 sort/new. */
@@ -101,6 +103,10 @@ export function parseJobPath(segs: string[]): JobRoute | null {
         if (r.field || !multiOk(val, JOB_FIELDS)) return null;
         r.field = val;
         break;
+      case "kind":
+        if (val !== "result" || r.kind) return null;
+        r.kind = "result";
+        break;
       case "sort":
         if (val !== "new" || r.sort) return null;
         r.sort = "new";
@@ -155,6 +161,7 @@ export function jobPath(r: JobRoute): string {
   add("type", multiNorm(r.type, JOB_TYPES.map((t) => t.v)));
   add("grade", multiNorm(r.grade, JOB_GRADES));
   add("field", multiNorm(r.field, JOB_FIELDS));
+  if (r.kind === "result") p.push("kind", "result");
   if (r.open) p.push("status", "open");
   if (r.sort === "new") p.push("sort", "new");
   add("q", r.q);
@@ -188,7 +195,8 @@ export function jobRobots(r: JobRoute) {
   // 2026-11-15 고용 형태·급수·직무도 한 조건으로 센다. "임기제 채용", "7급 채용" 하나짜리 쪽은 색인하고, 겹친 것은 하지 않는다.
   // 여럿 고른 줄(임기제,정규직)은 값 수만큼 센다 — 조합이라 색인하지 않는다. 정렬만 바꾼 쪽도 같은 목록이라 색인하지 않는다.
   const filters = (r.org ? 1 : 0) + (r.region ? 1 : 0) + [r.hire, r.type, r.grade, r.field].reduce((n, v) => n + multi(v).length, 0);
-  return r.q || r.open || r.sort || filters >= 2 ? { index: false, follow: true } : { index: true, follow: true };
+  // 합격자·일정 공고 쪽(kind/result)은 지원할 곳을 찾는 검색에 내보낼 것이 아니라 색인하지 않는다.
+  return r.q || r.open || r.sort || r.kind || filters >= 2 ? { index: false, follow: true } : { index: true, follow: true };
 }
 
 /**
@@ -205,6 +213,7 @@ export function jobRouteLabel(r: JobRoute): string[] {
     r.org,
     r.region,
     ...[r.hire, r.type, r.grade, r.field].map((v) => multi(v).join("·") || undefined),
+    r.kind === "result" ? "합격자·일정 공고" : undefined,
     r.open ? "접수 중만" : undefined,
     // 연관어를 끈 검색어는 이미 따옴표로 감싸여 있다("홍보"). 겹치지 않게 벗기고 한 번만 씌운다.
     r.q ? `"${r.q.replace(/["“”'‘’]/g, "")}"` : undefined,
@@ -232,7 +241,7 @@ export function peekJobRoute(prefix: string[], seg: string[] = []): JobRoute {
 }
 
 /** 미들웨어가 쓰는 이름표. 이 이름으로 시작하는 경로만 손댄다. */
-export const JOB_KEYS = ["org", "region", "hire", "type", "grade", "field", "status", "sort", "q", "page"] as const;
+export const JOB_KEYS = ["org", "region", "hire", "type", "grade", "field", "kind", "status", "sort", "q", "page"] as const;
 
 /**
  * 들어온 그대로의 경로를 정본과 견주려고 다시 쓴 것.

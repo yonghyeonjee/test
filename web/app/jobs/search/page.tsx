@@ -22,6 +22,7 @@ export default async function JobsSearch({ searchParams }: { searchParams: SP })
       type: many(searchParams.type),
       grade: many(searchParams.grade),
       field: many(searchParams.field),
+      kind: one(searchParams.kind) === "result" ? "result" : undefined,
       open: one(searchParams.open) === "1",
       sort: one(searchParams.sort) === "new" ? "new" : undefined,
       q: one(searchParams.q),

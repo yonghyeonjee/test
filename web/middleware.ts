@@ -83,6 +83,7 @@ function fromQuery(q: URLSearchParams) {
     type: many(q, "type"),
     grade: many(q, "grade"),
     field: many(q, "field"),
+    kind: one(q.get("kind")) === "result" ? "result" : undefined,
     open: one(q.get("open")) === "1",
     sort: one(q.get("sort")) === "new" ? "new" : undefined,
     q: one(q.get("q")),

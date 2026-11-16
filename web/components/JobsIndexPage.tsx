@@ -86,7 +86,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
   const canon = route.open ? { ...route, open: false } : route;
   const shown = (() => {
     if (route.open || !board.ok) return [];
-    const list = filterJobs(board.jobs, { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field });
+    const list = filterJobs(board.jobs, { q: route.q, region: route.region, hire: route.hire, open: route.open, type: route.type, grade: route.grade, field: route.field, kind: route.kind ?? "job" });
     const cur = Math.min(route.page, Math.max(1, Math.ceil(list.length / PER_PAGE)));
     return list.slice((cur - 1) * PER_PAGE, (cur - 1) * PER_PAGE + 20);
   })();
