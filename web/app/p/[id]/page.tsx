@@ -11,7 +11,9 @@ import AdSlot from "@/components/AdSlot";
 import Faq from "@/components/Faq";
 import MidAd from "@/components/MidAd";
 import { StatusBadge, StatusNotice } from "@/components/LiveStatus";
-import { korDate, programBeforeApply, programChecks, programFaq, programIntro, topicKeyword, programTagline } from "@/lib/faq";
+import ProgramCompare from "@/components/ProgramCompare";
+import { getProgramCompare } from "@/lib/programCompare";
+import { korDate, programChecks, programFaq, programIntro, topicKeyword, programTagline } from "@/lib/faq";
 import { manwon, standardFor, tableYear } from "@/lib/medianIncome";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import RelatedLinks from "@/components/RelatedLinks";
@@ -129,7 +131,9 @@ export default async function ProgramPage({ params }: { params: { id: string } }
   // 낡은 금액을 보여 주는 것이 제일 나쁘다.
   const incomeYear = tableYear();
 
-  const [related, porg, facts] = await Promise.all([getRelated(p), findPublicOrg(p.org_name), factsOf(p.source_id)]);
+  const [related, porg, facts, compare] = await Promise.all([
+    getRelated(p), findPublicOrg(p.org_name), factsOf(p.source_id), getProgramCompare(p).catch(() => null),
+  ]);
   const where = p.sigungu || p.sido || "전국";
   const age = ageLabel(p);
 
@@ -249,6 +253,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
       )}
 
       <ProgramFacts p={p} f={facts} />
+      <ProgramCompare p={p} data={compare} />
 
       <h2 className="mt-11 border-b-2 border-line2 pb-2 text-sm font-bold">
         {p.title} 신청 조건 한눈에
@@ -375,14 +380,7 @@ export default async function ProgramPage({ params }: { params: { id: string } }
         );
       })()}
 
-      <h2 className="mt-9 border-b-2 border-line2 pb-2 text-sm font-bold">{p.title} 신청 전에 확인할 것</h2>
-      <ol className="mt-4 grid gap-2.5">
-        {programBeforeApply(p).map((t, i) => (
-          <li key={t} className="flex gap-3 text-sm leading-relaxed text-ink2">
-            <span className="num shrink-0 font-extrabold text-brand">{i + 1}</span>{t}
-          </li>
-        ))}
-      </ol>
+      {/* "신청 전에 확인할 것" 목록은 사업과 상관없이 모든 쪽에 같은 네 줄이라 뺐다(2026-11-17). */}
 
       {p.detail_url && (
         <ApplyLink

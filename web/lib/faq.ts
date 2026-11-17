@@ -213,48 +213,31 @@ export function programChecks(p: Detail) {
   return out.slice(0, 6);
 }
 
-/** 신청 전에 챙길 것. 원문에 없더라도 늘 맞는 말만. */
-export function programBeforeApply(p: Detail) {
-  const items = [
-    "공고 원문의 소득·재산 기준을 확인합니다. 화면에 담기지 않은 요건이 남아 있을 수 있습니다.",
-    "신분증, 주민등록등본, 통장 사본은 대부분의 사업에서 공통으로 요구합니다.",
-  ];
-  if (p.kind === "business") items.push("사업자등록증과 최근 재무 자료, 4대보험 가입자 명부를 준비합니다.");
-  else items.push("같은 성격의 다른 지원과 중복 수급이 제한될 수 있으니 이미 받는 것이 있으면 문의처에 먼저 확인합니다.");
-  if (!p.is_always_on && p.apply_end) items.push("접수 마감일 전에 서류를 갖춰야 합니다. 마감 당일은 창구가 붐빕니다.");
-  return items;
-}
-
-/** 자주 묻는 질문. 답은 전부 필드에서 나온다. */
+/**
+ * 자주 묻는 질문. 답은 전부 필드에서 나온다.
+ * 2026-11-17 그 사업의 값이 있을 때만 문답을 낸다. 전에는 값이 없으면 "화면에 추려진 소득 기준은 없습니다…",
+ * "관할 주민센터 방문 또는 복지로 온라인 신청이 일반적입니다…" 같은 채움 답이 수천 쪽에 글자 그대로 실렸다.
+ */
 export function programFaq(p: Detail): QA[] {
   const where = p.sigungu || p.sido || "전국";
   const w = who(p);
   const out: QA[] = [];
-  out.push({
+  const target = clip(p.target_text, w.length ? 120 : 160);
+  if (w.length || target) out.push({
     q: `${josa(p.title, "은는")} 누가 신청할 수 있나요?`,
-    a: w.length
-      ? `${where}에 거주하는 ${josa(w.join(", "), "이가")} 대상입니다. ${clip(p.target_text, 120) || "세부 자격은 공고 원문에서 확인하세요."}`
-      : clip(p.target_text, 160) || `${where} 거주자 가운데 공고에 적힌 조건을 갖춘 분입니다. 원문에서 세부 자격을 확인하세요.`,
+    a: w.length ? `${where}에 거주하는 ${josa(w.join(", "), "이가")} 대상입니다. ${target}`.trim() : target,
   });
-  out.push({
+  if (p.income_pct) out.push({
     q: "소득 기준이 있나요?",
-    a: p.income_pct
-      ? `네. 가구 소득이 기준 중위소득 ${p.income_pct}% 이하여야 합니다.${incomeExample(p.income_pct)} 다만 실제 심사는 연봉이 아니라 재산까지 환산해 더한 소득인정액으로 하므로, 경계선이라면 주민센터나 복지로에서 확인하세요.`
-      : "화면에 추려진 소득 기준은 없습니다. 다만 원문에 재산·소득 요건이 있을 수 있으니 신청 전에 확인하세요.",
+    a: `네. 가구 소득이 기준 중위소득 ${p.income_pct}% 이하여야 합니다.${incomeExample(p.income_pct)} 다만 실제 심사는 연봉이 아니라 재산까지 환산해 더한 소득인정액으로 하므로, 경계선이라면 주민센터나 복지로에서 확인하세요.`,
   });
   out.push({
     q: "언제까지 신청해야 하나요?",
     // period() 가 마침표까지 붙여 돌려준다. 여기서 또 붙이면 "남았습니다.." 가 된다.
     a: `${period(p)} 현재 상태는 '${STATUS_LABEL[applyStatus(p)]}'입니다.`,
   });
-  out.push({
-    q: "어디서 어떻게 신청하나요?",
-    a: clip(p.apply_method, 160) || (p.kind === "business"
-      ? (p.source === "sbiz24"
-          ? "소상공인24(sbiz24.kr) 원문에서 접수처를 확인해 신청합니다. 공단 공고는 소상공인24 로그인 후 온라인으로 신청하는 경우가 많습니다."
-          : "기업마당 공고 원문의 접수처(주관 기관 누리집 또는 이메일)로 신청합니다.")
-      : `관할 주민센터(행정복지센터) 방문 또는 복지로 온라인 신청이 일반적입니다. 원문에서 접수처를 확인하세요.`),
-  });
+  const how = clip(p.apply_method, 160);
+  if (how) out.push({ q: "어디서 어떻게 신청하나요?", a: how });
   // "다른 지원금과 같이 받을 수 있나요?" 문답은 모든 사업 쪽에 글자 그대로 같은 답이라 뺐다(2026-11-16).
   if (p.contact) out.push({ q: "문의는 어디로 하나요?", a: `${p.dept_name || p.org_name || "담당 기관"} ${p.contact}` });
   return out;
