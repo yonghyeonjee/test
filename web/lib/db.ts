@@ -316,6 +316,12 @@ export function programTextLength(p: Pick<Detail, "summary" | "target_text" | "c
 }
 /** 복지로 지역 사업 중 이 길이 미만은 색인하지 않는다(2026-10-26). 4,111건의 중앙값이 253자, 400자 미만이 3,100여 건. */
 export const PROGRAM_TEXT_MIN = 400;
+/**
+ * 글자 수 규칙에 걸려도 색인을 유지하는 사업(2026-11-17). 서치 콘솔에서 구글 노출이 실제로 있던 쪽이다 —
+ * WLF00006158(165자)은 순위 5~7위로 노출되다가 11/16 다시 읽히며 우리 noindex 때문에 색인에서 빠졌다.
+ * 구글이 이미 받아들인 쪽을 우리 규칙으로 빼지 않는다. 접수가 끝나면 다른 사업처럼 색인에서 빠진다.
+ */
+const KEEP_INDEXED = new Set(["WLF00006158"]);
 
 /**
  * 사업 상세 쪽을 검색엔진에 색인시킬지. 쪽은 그대로 보이게 두고 색인만 끈다(noindex,follow).
@@ -328,6 +334,7 @@ export const PROGRAM_TEXT_MIN = 400;
  */
 export function programIndexable(p: Detail): boolean {
   if (applyStatus(p) === "closed") return false;
+  if (KEEP_INDEXED.has(p.source_id)) return true;
   if (p.source === "bokjiro_local" && programTextLength(p) < PROGRAM_TEXT_MIN) return false;
   if (isTagCriteria(p)) return false;
   return true;

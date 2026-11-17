@@ -57,6 +57,7 @@ export function licenseIntro(l: License) {
   return `${josa(l.name, "은는")} ${l.field}${l.subField ? ` 가운데 ${l.subField}` : ""} 분야의 ${kind}${ELIG[s] ? ` ${s} 등급` : ""}입니다. ${seriesRole(s)}`;
 }
 
+/** 2026-11-17 종목 상세에서는 쓰지 않는다(종목과 상관없이 같은 답이라 뺐다). */
 export function licenseFaq(l: License): QA[] {
   const s = l.series;
   return [

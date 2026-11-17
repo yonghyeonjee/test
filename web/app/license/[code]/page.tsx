@@ -4,8 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import AdSlot from "@/components/AdSlot";
-import Faq from "@/components/Faq";
-import GuideBanner from "@/components/GuideBanner";
 import JsonLd from "@/components/JsonLd";
 import MidAd from "@/components/MidAd";
 import PageBanner from "@/components/PageBanner";
@@ -14,7 +12,7 @@ import ExamInsight from "@/components/ExamInsight";
 import ExamRoundsFor from "@/components/ExamRoundsFor";
 import LicenseJobs from "@/components/LicenseJobs";
 import { getLicenseJobs } from "@/lib/licenseJobs";
-import { licenseFaq, licenseIntro, seriesEligibility } from "@/lib/licenseText";
+import { licenseIntro, seriesEligibility } from "@/lib/licenseText";
 import { difficulty, getExamSite, upcomingEvents } from "@/lib/examInsight";
 import { getExamRounds, gradeOfSeries, upcomingForSeries } from "@/lib/qnetExam";
 import { getLicenses, licenseApplicants, licenseIndexable, type License } from "@/lib/qnet";
@@ -175,38 +173,14 @@ export default async function LicensePage({ params }: { params: { code: string }
 
       <MidAd name="detail_mid" context="job" seed={l.code} className="mt-10" />
 
-      <section className="mt-12">
-        <h2 className="sec-title text-[1.0625rem] font-extrabold">준비 순서</h2>
-        <ol className="mt-4 grid gap-6 sm:grid-cols-3">
-          {[
-            ["01", "응시 자격 확인", "위 기준에 해당하는지 보고, 애매하면 큐넷의 응시자격 자가진단을 돌려 봅니다."],
-            ["02", "훈련과정 고르기", "국민내일배움카드로 등록된 과정을 고르면 훈련비 대부분을 지원받습니다. 실기가 있는 종목은 실습이 있는 과정을 택하세요."],
-            ["03", "일정에 맞춰 접수", "큐넷에서 회차별 접수일을 확인합니다. 접수는 며칠만 받고 자리가 빨리 찹니다."],
-          ].map(([n, h, b]) => (
-            <li key={n} className="border-t-2 border-ink pt-4">
-              <span className="numeral">{n}</span>
-              <b className="mt-2 block text-[15px] font-bold">{h}</b>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted">{b}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="mt-12">
-        <h2 className="sec-title text-[1.0625rem] font-extrabold">비용을 줄여 주는 제도</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {[
-            ["/blog/vocational-training-card", "국민내일배움카드", "훈련비 대부분과 훈련장려금. 실업자·재직자 모두."],
-            ["/?emp=구직중&via=license", "청년 자격증 응시료 지원", "지자체별 응시료 환급·합격 장려금. 사는 곳으로 조회."],
-            ["/blog/national-employment-support", "국민취업지원제도", "훈련 중 구직촉진수당. 취업활동계획에 훈련을 넣으면 됩니다."],
-          ].map(([href, h, b]) => (
-            <Link key={href} href={href} className="card card-link block p-5">
-              <b className="block text-[15px]">{h}</b>
-              <span className="mt-1.5 block text-[13.5px] leading-relaxed text-muted">{b}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* "준비 순서" 세 칸과 "비용을 줄여 주는 제도" 카드, 자동 문답은 종목과 상관없이 600여 쪽에 글자 그대로 같아서
+          뺐다(2026-11-17). 제도 안내는 고리 한 줄로만 남긴다. */}
+      <p className="mt-10 text-[13.5px] leading-relaxed text-muted">
+        학원비·응시료를 줄여 주는 제도:{" "}
+        <Link href="/blog/vocational-training-card" className="underline underline-offset-4 hover:text-brand">국민내일배움카드</Link>{" · "}
+        <Link href="/blog/national-employment-support" className="underline underline-offset-4 hover:text-brand">국민취업지원제도</Link>{" · "}
+        <Link href="/?emp=구직중&via=license" rel="nofollow" className="underline underline-offset-4 hover:text-brand">지자체 응시료 지원 조회</Link>
+      </p>
 
       <div className="mt-8 flex flex-wrap gap-2">
         <a href={`https://www.q-net.or.kr/crf005.do?id=crf00505&jmCd=${encodeURIComponent(l.code)}`} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
@@ -214,8 +188,6 @@ export default async function LicensePage({ params }: { params: { code: string }
         </a>
         <Link href={`/jobs/q/${encodeURIComponent(l.field)}`} className="btn btn-ghost">이 분야 공공기관 채용</Link>
       </div>
-
-      <Faq items={licenseFaq(l)} schema={false} />
 
       {same.length > 0 && (
         <section className="mt-14">
@@ -232,7 +204,6 @@ export default async function LicensePage({ params }: { params: { code: string }
 
       <AdSlot name="detail_bottom" tall />
 
-      <GuideBanner title="취업·이직을 준비하신다면 이것도" />
       <RelatedLinks items={licenseRelated()} />
       {/* 바깥 자료 홍보(PromoBanner)는 이 종목과 관계없는 묶음이라 상세 쪽에서 뺐다(2026-11-16). */}
     </div>

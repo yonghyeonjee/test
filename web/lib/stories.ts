@@ -47,7 +47,8 @@ const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated
 // case: 사람이 쓴 사례 글(2026-10-20 전세대출 연재부터). 자동 글이 아니라 색인한다.
 const INDEX_KINDS = new Set(["org", "role", "license", "case"]);
 export function storyIndexable(s: Pick<Story, "kind" | "slug">): boolean {
-  return INDEX_KINDS.has(s.kind) && !s.slug.startsWith("top10-");
+  // 2026-11-17 "jobs-top10-roles-2026-10" 처럼 앞에 다른 말이 붙은 순위 글이 걸러지지 않고 색인 대상에 남아 있었다.
+  return INDEX_KINDS.has(s.kind) && !/(^|-)top10-/.test(s.slug);
 }
 
 export async function getStories(limit = 100): Promise<Story[]> {
