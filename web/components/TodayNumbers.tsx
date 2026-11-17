@@ -24,8 +24,9 @@ export default function TodayNumbers({ tiles, note, className = "" }: { tiles: T
   return (
     <section className={className} aria-label="오늘의 숫자">
       <dl className={`grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line ${cols}`}>
-        {shown.map((t) => (
-          <Link key={t.k} href={t.href} className="group block min-w-0 bg-surface px-4 py-3.5 transition-colors hover:bg-surface2">
+        {shown.map((t, i) => (
+          // 휴대폰은 두 줄씩이라 칸이 홀수면 마지막 자리가 빈다. 마지막 칸을 두 칸 너비로 늘려 메운다.
+          <Link key={t.k} href={t.href} className={`group block min-w-0 bg-surface px-4 py-3.5 transition-colors hover:bg-surface2 ${shown.length % 2 === 1 && i === shown.length - 1 ? "max-sm:col-span-2" : ""}`}>
             <dt className="truncate text-[12.5px] text-muted">{t.k}</dt>
             <dd className="num mt-0.5 text-[24px] font-black leading-tight tracking-[-.03em] text-ink group-hover:text-brand">
               {t.n.toLocaleString("ko-KR")}<span className="ml-0.5 text-[13px] font-semibold text-muted">{t.unit ?? "건"}</span>
