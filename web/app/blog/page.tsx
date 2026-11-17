@@ -16,12 +16,8 @@ import { brandKeys, withOg } from "@/lib/seo";
 const DESC =
   "정부 지원금의 종류와 신청 방법, 대상 확인하는 법을 정리했습니다. 청년 지원 정책과 중소기업·창업 지원사업 안내도 함께 보실 수 있습니다.";
 
-export const metadata: Metadata = withOg({
-  title: "정부 지원금 안내 — 종류, 신청 방법, 대상 확인",
-  description: DESC,
-  keywords: [...brandKeys("안내 글", "지원금 안내", "블로그"), "정부 지원금 종류", "지원금 신청 방법"],
-  alternates: { canonical: "/blog" },
-});
+// 제목·설명에 글 수와 마지막 갱신일(2026-11-18). 고정 문장이라 다른 지원금 안내 쪽과 갈리지 않았다.
+// 글 수 = 아래 목록에 실제로 뜨는 수(POSTS + FEATURED + 청년미래적금 글).
 
 // 날짜가 걸린 글의 꼬리표·제목은 오늘 날짜로 정한다(빌드 때 굳지 않게 한 시간마다 다시 그린다).
 export const revalidate = 3600;
@@ -54,6 +50,19 @@ const FEATURED: Article[] = [
     mins: 3, art: <PostArt name="study" />,
   },
 ];
+
+const N_POSTS = POSTS.length + FEATURED.length + 1;
+const LAST = [...POSTS.map((p) => p.updated), "2026-10-16"].sort().at(-1)!;
+const lastText = `${Number(LAST.slice(5, 7))}월 ${Number(LAST.slice(8, 10))}일`;
+
+export const metadata: Metadata = withOg({
+  title: `정부 지원금 안내 ${N_POSTS}편 — 종류, 신청 방법, 대상 확인`,
+  description:
+    `처음 찾아보는 분을 위한 지원금 안내 ${N_POSTS}편(마지막 갱신 ${lastText}). ` +
+    "정부 지원금 종류와 신청 방법, 대상 확인하는 법, 청년 정책과 중소기업·창업 지원사업을 정리했습니다.",
+  keywords: [...brandKeys("안내 글", "지원금 안내", "블로그"), "정부 지원금 종류", "지원금 신청 방법"],
+  alternates: { canonical: "/blog" },
+});
 
 export default function BlogIndex() {
   const { pinned, ...ys } = youthSavings();
