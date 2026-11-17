@@ -376,6 +376,8 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
       : [{ k: "접수 중 채용 공고", n: jobOpen, tag: "공공기관", tone: "bg-cat-blueSoft text-cat-blue", href: "/jobs" }]),
     { k: `최근 ${settings.newDays}일 새 지원사업`, n: fresh.length, tag: "지원금", tone: "bg-cat-greenSoft text-cat-green", href: "/policies" },
     { k: `${settings.closingDays}일 안 마감 지원사업`, n: closingCount, tag: "마감 임박", tone: "bg-accentSoft text-accent", href: "/calendar" },
+    // 새 지원사업이 0건인 날 넷째 칸이 비지 않게 하는 예비 칸(2026-11-17). 앞의 넷이 다 있으면 그려지지 않는다.
+    { k: "접수 중 기업·창업 지원사업", n: coverage.business, tag: "기업·창업", tone: "bg-cat-violetSoft text-cat-violet", href: "/business" },
   ];
   const ways: Way[] = [
     { href: "/#find", label: "내 조건으로 지원금 찾기", sub: "사는 곳 → 나이 → 상태, 네 번 누르면 끝", icon: "find", tone: "bg-brand text-white", first: true },
