@@ -1,5 +1,7 @@
 import { getCoverage } from "@/lib/db";
+import { KINDS, WHO, countOf, housingCounts } from "@/lib/housing";
 import { getAlioCounts, getJobOverview, getJobRegions } from "@/lib/pubJobs";
+import { getExamRounds, mergeUpcoming, upcoming } from "@/lib/qnetExam";
 
 /**
  * 생성형 검색(ChatGPT·Perplexity 등)이 읽는 안내 파일. 2026-11-03 public/llms.txt 에서 옮겼다.
@@ -31,7 +33,7 @@ const REST = `## 허브
 - [지도로 찾기](https://jiwon.knowhow-it.com/map): 사는 곳 주변의 지원사업·기관
 - [일정](https://jiwon.knowhow-it.com/calendar): 접수 시작·마감 일정
 - [읽을거리](https://jiwon.knowhow-it.com/story): 기관·직무·자격증 분석 글
-- [안내 글](https://jiwon.knowhow-it.com/blog): 청년미래적립계좌, 소득 기준, 나라일터 이용법 등
+- [안내 글](https://jiwon.knowhow-it.com/blog): 청년미래적금, 소득 기준, 나라일터 이용법 등
 
 ## 지역별 지원사업
 - [서울특별시](https://jiwon.knowhow-it.com/area/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C)
@@ -48,11 +50,13 @@ const REST = `## 허브
 const n = (v: number) => v.toLocaleString("ko-KR");
 
 export async function GET() {
-  const [ov, alio, cov, regions] = await Promise.all([
+  const [ov, alio, cov, regions, hc, rounds] = await Promise.all([
     getJobOverview().catch(() => null),
     getAlioCounts().catch(() => null),
     getCoverage().catch(() => null),
     getJobRegions().catch(() => [] as { sido: string; n: number }[]),
+    housingCounts().catch(() => []),
+    getExamRounds().catch(() => []),
   ]);
   const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
   const lines: string[] = [];
@@ -63,6 +67,19 @@ export async function GET() {
   if (ov?.lastYear) lines.push(`- 최근 1년 나라일터 채용 공고: ${n(ov.lastYear)}건${ov.medDays ? `, 접수 기간 중앙값 ${ov.medDays}일` : ""}`);
   if (cov && cov.welfare > 0) lines.push(`- 복지·청년 지원사업: ${n(cov.welfare)}건 → https://jiwon.knowhow-it.com/policies`);
   if (cov && cov.business > 0) lines.push(`- 기업·소상공인 지원사업: ${n(cov.business)}건 → https://jiwon.knowhow-it.com/business`);
+  // 2026-11-19 주거·자격시험 숫자. /housing·/license 제목·설명과 같은 값이다.
+  // 주거는 칸(대상×종류)마다 센다 — 한 사업이 여러 칸에 들 수 있어 더하지 않는다.
+  const hcell = (["youth", "newlywed"] as const).map((w) => {
+    const k = (["jeonse", "wolse", "buy"] as const).map((kind) => ({ kind, v: countOf(hc, kind, w) })).sort((a, b) => b.v - a.v)[0];
+    return k && k.v > 0 ? `${WHO[w].label} ${KINDS[k.kind].label} ${n(k.v)}건` : null;
+  }).filter((x): x is string => x !== null);
+  if (hcell.length) lines.push(`- 접수 중인 주거 지원(대상·종류별): ${hcell.join(" · ")} → https://jiwon.knowhow-it.com/housing`);
+  const next = mergeUpcoming(upcoming(rounds))[0];
+  if (next) {
+    const md = (d: string) => `${Number(d.slice(5, 7))}월 ${Number(d.slice(8, 10))}일`;
+    const when = next.state === "open" ? `접수 중, ${md(next.stage.to)} 마감` : `${md(next.stage.from)}~${md(next.stage.to)}`;
+    lines.push(`- 가장 가까운 국가기술자격 원서접수: ${next.round.grade} ${next.stage.label}(${when}) → https://jiwon.knowhow-it.com/license/schedule`);
+  }
   const today = lines.length ? `## 오늘의 숫자 (${day} 기준, 매일 바뀜)\n${lines.join("\n")}\n\n` : "";
   // 2026-11-04 시·도별 접수 중 채용 수와 지역 채용 쪽. 구글이 아직 모르는 /jobs/region/<시·도> 로 가는 길이기도 하다.
   const reg = regions.filter((r) => r.n > 0).sort((a, b) => b.n - a.n);
