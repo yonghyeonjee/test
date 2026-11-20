@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { IllusEmpty } from "@/components/Illus";
 
@@ -9,6 +10,14 @@ const WAYS: { href: string; label: string; note: string }[] = [
   { href: "/license", label: "자격증 시험 일정", note: "접수·시험·발표일" },
   { href: "/housing", label: "주거 지원", note: "전세·월세·구입 대출" },
 ];
+
+// 2026-11-20 없는 주소(예: /area)가 첫 화면 제목·설명을 그대로 내고, robots 가 noindex(Next 기본)와
+// index,follow(layout 기본) 두 줄로 나갔다. 404 상태라 색인되지는 않지만 신호가 엇갈리지 않게 한 줄로 둔다.
+export const metadata: Metadata = {
+  title: "찾을 수 없는 페이지",
+  description: "공고나 사업이 끝나 내려갔거나 주소가 바뀐 페이지입니다.",
+  robots: { index: false, follow: true },
+};
 
 export default function NotFound() {
   return (
