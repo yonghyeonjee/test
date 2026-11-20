@@ -34,6 +34,9 @@ SERIES = {
     # 우리 심리 사이트(jeepedia) 소개 시리즈 — 그 사이트 링크는 '한 도메인 몰림' 검사에서 빼고, 대신 글당 상한을 둔다
     "psy": {"dir": "psy_series", "name": "지피디아 심리테스트 시리즈", "category": "psychology", "kind": "psy",
             "home": "jeepedia.com", "home_max": 12},
+    # 취준생 어려움 시리즈 — Flow 로 그린 삽화(images)를 쓰고, 지피디아 자가진단·jyhopes 노래를 잇는다
+    "job": {"dir": "job_series", "name": "취준생 마음·지원 시리즈", "category": "policy", "kind": "job",
+            "home": "jeepedia.com", "home_max": 4},
 }
 CUR = "ai"
 DATA = Path(__file__).parent / "data" / SERIES[CUR]["dir"]
@@ -289,14 +292,15 @@ def check(post: dict) -> list[str]:
     if len(h2) < 4:
         errs.append("h2 4개 이상")
     keys = {b["key"] for b in body if b["type"] == "image"}
-    have = {c["key"] for c in post.get("charts", [])} | {s["key"] for s in post.get("shots", [])}
+    have = ({c["key"] for c in post.get("charts", [])} | {s["key"] for s in post.get("shots", [])}
+            | {i["key"] for i in post.get("images", [])})     # images: 미리 그려 둔 그림(Flow 삽화 등)
     if keys - have:
         errs.append(f"그림 정의 없음: {sorted(keys - have)}")
     if len(post.get("shots", [])) < 2:
         errs.append("공식 사이트 화면 2장 이상")
-    if not any(c["kind"] == "hero" for c in post.get("charts", [])):
+    if not any(c["kind"] == "hero" for c in post.get("charts", [])) and not any(i["key"] == "hero" for i in post.get("images", [])):
         errs.append("머리 그림(hero) 필요")
-    for c in post.get("charts", []) + post.get("shots", []):
+    for c in post.get("charts", []) + post.get("shots", []) + post.get("images", []):
         if not c.get("alt") or not re.match(r"^[a-z0-9\-]+\.png$", c.get("file", "")):
             errs.append(f"{c.get('key')}: alt 와 영문 파일 이름(.png) 필요")
     hosts = [re.sub(r"^www\.", "", u.split("/")[2]) for u in LINK.findall(text)]
