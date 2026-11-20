@@ -1,0 +1,442 @@
+{
+ "slug": "psy-self-check",
+ "slogan": "무료-심리-자가진단-PHQ9-GAD7-번아웃-ADHD",
+ "title": "무료 심리 자가진단 8종 | 우울 PHQ-9·불안 GAD-7·번아웃·ADHD 표준 척도 정리",
+ "summary": "무료 심리 자가진단 8종을 정리했습니다. 우울 PHQ-9, 불안 GAD-7, 성인 ADHD(WHO ASRS), 번아웃 OLBI, 자존감 RSES, 스트레스·불면·다크 트라이어드까지 병원과 연구가 쓰는 척도로 1~3분이면 끝나고, 응답은 내 기기에만 저장됩니다. 점수 구간 읽는 법과 도움받을 곳도 함께 담았습니다.",
+ "keywords": [
+  "무료 심리 자가진단",
+  "우울증 자가진단 PHQ-9",
+  "불안 자가진단 GAD-7",
+  "번아웃 자가진단",
+  "성인 ADHD 자가진단",
+  "자존감 테스트",
+  "스트레스 자가진단",
+  "심리테스트",
+  "지피디아",
+  "정신건강"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "**무료 심리 자가진단**은 '요즘 내가 좀 이상한데' 싶을 때 감으로 넘기지 않고 숫자로 확인해 보는 첫걸음입니다. 지피디아의 자가진단 8종은 병원과 연구에서 쓰는 **공개 척도**(PHQ-9, GAD-7, WHO ASRS 등)를 한국어로 옮기거나 그 구조를 따라 만든 검사로, 1~3분이면 끝납니다."
+  },
+  {
+   "type": "p",
+   "text": "응답과 점수는 **내 기기에만 저장되고 서버로 보내지 않습니다.** 어떤 검사가 무엇을 재는지, 점수를 어떻게 읽어야 하는지, 결과가 걱정될 때 어디에 연락하면 되는지 순서대로 정리했습니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "목차",
+   "id": "toc"
+  },
+  {
+   "type": "list",
+   "items": [
+    "자가진단 8종 한눈에 보기",
+    "우울 PHQ-9 · 불안 GAD-7",
+    "번아웃 OLBI · 스트레스 · 불면",
+    "성인 ADHD · 자존감 · 다크 트라이어드",
+    "점수보다 중요한 것 — 도움받을 곳",
+    "자주 묻는 질문",
+    "지피디아 심리테스트 시리즈"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "자가진단 8종 한눈에 보기",
+   "id": "list"
+  },
+  {
+   "type": "p",
+   "text": "8가지 검사 모두 [지피디아 자가진단 모음](https://jeepedia.com/psychology-test/#s-check)에서 바로 할 수 있습니다. 원 척도가 무료로 공개된 것은 그대로 옮겼고, 저작권이 있는 척도는 같은 구조를 참고해 자체 문항으로 만들었다고 검사마다 밝혀 두었습니다."
+  },
+  {
+   "type": "image",
+   "key": "scales"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**우울 PHQ-9** — 9문항 · 1분 · Kroenke·Spitzer·Williams(2001)",
+    "**불안 GAD-7** — 7문항 · 1분 · Spitzer 외(2006)",
+    "**성인 ADHD** — WHO ASRS v1.1 파트 A 6문항 · 1분 · Kessler 외(2005)",
+    "**번아웃** — OLBI 16문항 · 2분 · Demerouti 외(2003)",
+    "**자존감** — 로젠버그 자존감 척도(RSES) 10문항 · 1분 · Rosenberg(1965)",
+    "**스트레스** — 지각된 스트레스 척도(PSS-10) 구조 참고 10문항 · 1분",
+    "**불면** — 아테네 불면 척도(AIS) 구조 참고 8문항 · 1분",
+    "**다크 트라이어드** — SD3 3요인 구조 참고 27문항 · 3분"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "국내 공식 정신건강 정보는 [국가정신건강정보포털](https://www.mentalhealth.go.kr)에서, 정신건강 검사와 진료 기관 정보는 [국립정신건강센터](https://www.ncmh.go.kr)에서 볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "우울 PHQ-9 · 불안 GAD-7",
+   "id": "phq"
+  },
+  {
+   "type": "p",
+   "text": "두 검사는 같은 연구진이 1차 진료 현장에서 빠르게 걸러 내려고 만든 짝꿍 척도입니다. 원 척도는 [PHQ Screeners](https://www.phqscreeners.com)에 별도 허가 없이 쓸 수 있게 공개되어 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "cutoff"
+  },
+  {
+   "type": "h3",
+   "text": "[우울 자가진단 PHQ-9](https://jeepedia.com/psychology-test/phq-9/)"
+  },
+  {
+   "type": "p",
+   "text": "지난 2주 동안 정신과 진단 기준(DSM)의 주요우울장애 9가지 증상이 얼마나 자주 있었는지 묻습니다. 왜 2주일까요? 주요우울장애 진단 기준이 '2주 이상 거의 매일'이기 때문입니다. 점수는 **0~4점 최소, 5~9점 경도, 10~14점 중등도, 15~19점 중등도-중증, 20점 이상 중증**으로 읽고, 10점 이상이면 전문가 상담을 권하는 지점입니다."
+  },
+  {
+   "type": "h3",
+   "text": "[불안 자가진단 GAD-7](https://jeepedia.com/psychology-test/gad-7/)"
+  },
+  {
+   "type": "p",
+   "text": "'걱정 많은 성격'과 '걱정이 나를 굴리는 상태'를 가르는 7문항입니다. 차이는 걱정의 양이 아니라 **조절할 수 있느냐와 얼마나 오래가느냐**에 있습니다. 0~21점을 **0~4 최소, 5~9 경도, 10~14 중등도, 15~21 중증**으로 나눕니다."
+  },
+  {
+   "type": "p",
+   "text": "우울과 불안의 의학 정보는 미국 국립정신건강연구소의 [우울증](https://www.nimh.nih.gov/health/topics/depression)·[불안장애](https://www.nimh.nih.gov/health/topics/anxiety-disorders) 안내가 정리가 잘 되어 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "phqshot"
+  },
+  {
+   "type": "h2",
+   "text": "번아웃 OLBI · 스트레스 · 불면",
+   "id": "burnout"
+  },
+  {
+   "type": "p",
+   "text": "셋 다 '지친다'는 느낌을 다르게 잽니다. 번아웃은 일과, 스트레스는 통제감과, 불면은 잠과 묶여 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "burnoutshot"
+  },
+  {
+   "type": "h3",
+   "text": "[번아웃 자가진단 OLBI](https://jeepedia.com/psychology-test/burnout/)"
+  },
+  {
+   "type": "p",
+   "text": "번아웃은 2019년 [세계보건기구(WHO)가 '직업적 현상'으로 분류](https://www.who.int/news/item/28-05-2019-burn-out-an-occupational-phenomenon-international-classification-of-diseases)한 상태입니다. OLBI는 **소진(에너지 고갈)과 이탈(일에 대한 거리감)** 두 축으로 나눠 잽니다. 소진만 높은 사람은 쉬면 좋아지지만, 이탈이 높은 사람은 쉬어도 그대로라 처방이 다릅니다. 공식 절단점이 없어 연구 기준(소진 평균 2.25, 이탈 2.1 이상)을 참고해 4구간으로 보여 줍니다."
+  },
+  {
+   "type": "h3",
+   "text": "[스트레스 자가진단](https://jeepedia.com/psychology-test/stress-pss/) · [불면증 자가진단](https://jeepedia.com/psychology-test/insomnia-ais/)"
+  },
+  {
+   "type": "p",
+   "text": "스트레스 검사는 '일이 얼마나 많은가'가 아니라 **'내 손을 벗어났다고 느끼는가'**를 지난 한 달 기준으로 묻습니다(0~40점). 불면 검사는 국제 진단 기준이 보는 8가지 영역을 확인합니다. 불면증은 하루 못 잔 것이 아니라 **한 달 넘게, 주 3회 이상** 이어지고 낮 생활까지 번진 상태입니다. 잠 습관은 [미국 질병통제예방센터(CDC) 수면 안내](https://www.cdc.gov/sleep/)도 참고할 만합니다."
+  },
+  {
+   "type": "h2",
+   "text": "성인 ADHD · 자존감 · 다크 트라이어드",
+   "id": "more"
+  },
+  {
+   "type": "image",
+   "key": "trio"
+  },
+  {
+   "type": "h3",
+   "text": "[성인 ADHD 자가진단](https://jeepedia.com/psychology-test/adult-adhd/)"
+  },
+  {
+   "type": "p",
+   "text": "WHO 세계정신건강조사를 위해 만든 ASRS의 파트 A 6문항입니다. 총점을 더하지 않고 문항마다 기준을 넘었는지 세며, **6개 중 4개 이상이면 양성 선별**입니다. 양성 선별은 진단이 아니라 전문가 평가를 권하는 신호입니다. 성인 ADHD 진단은 12세 이전 시작 여부, 둘 이상의 환경에서 나타나는지 등을 함께 봅니다."
+  },
+  {
+   "type": "h3",
+   "text": "[자존감 테스트](https://jeepedia.com/psychology-test/self-esteem/)"
+  },
+  {
+   "type": "p",
+   "text": "자존감은 '남보다 낫다'는 느낌이 아니라 **'못난 날에도 나를 괜찮게 여길 수 있는가'**입니다. 60년 동안 자존감 연구의 표준으로 쓰인 10문항으로 0~30점을 매기고, 15~25점을 일반적인 범위로 봅니다."
+  },
+  {
+   "type": "h3",
+   "text": "[사이코패스 테스트(다크 트라이어드)](https://jeepedia.com/psychology-test/dark-triad/)"
+  },
+  {
+   "type": "p",
+   "text": "마키아벨리즘·나르시시즘·사이코패시 세 축으로 내 '어두운 면'의 모양을 봅니다. 일반인의 성격 특성을 재는 자기이해 도구일 뿐 사이코패스 진단이 아니며, 채용이나 평가에 쓰면 안 된다고 검사 안내에 적혀 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "성격과 자존감에 관한 일반 정보는 [국가정신건강정보포털](https://www.mentalhealth.go.kr)의 정신건강 정보 메뉴에서도 찾아볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "점수보다 중요한 것 — 도움받을 곳",
+   "id": "help"
+  },
+  {
+   "type": "p",
+   "text": "모든 자가진단은 **선별 도구이지 진단이 아닙니다.** 점수가 낮아도 힘들면 도움을 받아도 되고, 점수가 높아도 갑상선 문제나 수면 부족, 약 부작용 같은 다른 원인일 수 있습니다. 검사 결과가 걱정되거나 지금 힘들다면 아래 번호로 바로 연락하세요. 모두 무료입니다."
+  },
+  {
+   "type": "image",
+   "key": "help"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**자살예방상담전화** 109 (24시간)",
+    "**정신건강위기상담전화** 1577-0199 (24시간)",
+    "**청소년 상담전화** 1388 (24세 이하)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "가까운 정신건강복지센터는 [국가정신건강정보포털](https://www.mentalhealth.go.kr), 온라인 마음 건강 자료는 정신건강 통합 플랫폼 [블루터치](https://www.blutouch.net)에서 찾을 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "자주 묻는 질문",
+   "id": "faq"
+  },
+  {
+   "type": "h3",
+   "text": "결과가 서버에 남나요?"
+  },
+  {
+   "type": "p",
+   "text": "남지 않습니다. 지피디아 자가진단은 응답과 점수를 이 기기에만 저장하고 서버로 보내지 않는다고 검사마다 밝혀 두었습니다."
+  },
+  {
+   "type": "h3",
+   "text": "인터넷 검사 결과를 병원에 가져가도 되나요?"
+  },
+  {
+   "type": "p",
+   "text": "됩니다. PHQ-9·GAD-7은 진료실에서도 쓰는 척도라 점수와 응답을 보여 주면 상담이 빨라집니다. 다만 최종 판단은 전문가 면담으로 합니다."
+  },
+  {
+   "type": "h3",
+   "text": "얼마나 자주 해 보면 좋나요?"
+  },
+  {
+   "type": "p",
+   "text": "PHQ-9·GAD-7은 '지난 2주', 스트레스 검사는 '지난 한 달'을 묻습니다. 그 기간 간격으로 다시 해 보면 변화를 볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "지피디아 심리테스트 시리즈",
+   "id": "series"
+  },
+  {
+   "type": "p",
+   "text": "심리학 논문과 공개 척도로 만든 무료 심리테스트 사이트 [지피디아 오늘의 심리](https://jeepedia.com/psychology-test/)의 테스트를 갈래별로 5편에 나눠 소개합니다. 이 글은 1편입니다."
+  },
+  {
+   "type": "series"
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[지피디아, 무료 심리테스트 모음](https://jeepedia.com/psychology-test/)",
+    "[PHQ Screeners — PHQ-9·GAD-7 원 척도](https://www.phqscreeners.com)",
+    "[WHO, Burn-out an occupational phenomenon (2019)](https://www.who.int/news/item/28-05-2019-burn-out-an-occupational-phenomenon-international-classification-of-diseases)",
+    "[국가정신건강정보포털](https://www.mentalhealth.go.kr)",
+    "[국립정신건강센터](https://www.ncmh.go.kr)",
+    "[NIMH, Depression](https://www.nimh.nih.gov/health/topics/depression)",
+    "[NIMH, Anxiety Disorders](https://www.nimh.nih.gov/health/topics/anxiety-disorders)",
+    "[CDC, Sleep](https://www.cdc.gov/sleep/)",
+    "[블루터치](https://www.blutouch.net)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "hero",
+   "kind": "hero",
+   "file": "free-psychological-self-check-8.png",
+   "title": "무료 심리 자가진단 8종",
+   "sub": "PHQ-9 · GAD-7 · 번아웃 · ADHD · 자존감 · 스트레스 · 불면",
+   "kicker": "지피디아 심리테스트 시리즈 1편",
+   "caption": "무료 심리 자가진단 8종 정리",
+   "alt": "무료 심리 자가진단 PHQ-9 GAD-7 번아웃 ADHD 표지"
+  },
+  {
+   "key": "scales",
+   "kind": "matrix",
+   "file": "self-check-scales-overview.png",
+   "title": "자가진단 8종과 원 척도",
+   "sub": "응답은 기기에만 저장 · 진단이 아닌 선별 도구",
+   "rows": [
+    "우울",
+    "불안",
+    "성인 ADHD",
+    "번아웃",
+    "자존감",
+    "스트레스",
+    "불면",
+    "다크 트라이어드"
+   ],
+   "cols": [
+    "척도",
+    "문항 · 시간"
+   ],
+   "cells": [
+    [
+     "PHQ-9",
+     "9문항 · 1분"
+    ],
+    [
+     "GAD-7",
+     "7문항 · 1분"
+    ],
+    [
+     "WHO ASRS 파트 A",
+     "6문항 · 1분"
+    ],
+    [
+     "OLBI",
+     "16문항 · 2분"
+    ],
+    [
+     "RSES",
+     "10문항 · 1분"
+    ],
+    [
+     "PSS-10 구조",
+     "10문항 · 1분"
+    ],
+    [
+     "AIS 구조",
+     "8문항 · 1분"
+    ],
+    [
+     "SD3 구조",
+     "27문항 · 3분"
+    ]
+   ],
+   "source": "출처: 지피디아 오늘의 심리 검사 안내",
+   "caption": "자가진단 8종의 척도와 문항 수",
+   "alt": "심리 자가진단 8종 척도 문항 수 표"
+  },
+  {
+   "key": "cutoff",
+   "kind": "matrix",
+   "file": "phq9-gad7-score-ranges.png",
+   "title": "PHQ-9 · GAD-7 점수 읽는 법",
+   "sub": "10점 이상이면 전문가 상담을 권하는 지점",
+   "rows": [
+    "최소",
+    "경도",
+    "중등도",
+    "중등도-중증",
+    "중증"
+   ],
+   "cols": [
+    "PHQ-9(0~27)",
+    "GAD-7(0~21)"
+   ],
+   "cells": [
+    [
+     "0~4점",
+     "0~4점"
+    ],
+    [
+     "5~9점",
+     "5~9점"
+    ],
+    [
+     "10~14점",
+     "10~14점"
+    ],
+    [
+     "15~19점",
+     "—"
+    ],
+    [
+     "20~27점",
+     "15~21점"
+    ]
+   ],
+   "source": "출처: Kroenke 외(2001), Spitzer 외(2006), 지피디아 검사 안내",
+   "caption": "PHQ-9와 GAD-7 점수 구간",
+   "alt": "PHQ-9 GAD-7 점수 구간 해석 표"
+  },
+  {
+   "key": "trio",
+   "kind": "card",
+   "file": "adhd-self-esteem-dark-triad.png",
+   "title": "ADHD · 자존감 · 다크 트라이어드",
+   "lines": [
+    "ADHD: 6문항 중 4개 이상이면 양성 선별",
+    "자존감: 0~30점, 15~25점이 일반적 범위",
+    "다크 트라이어드: 3축(M·N·P)의 모양",
+    "모두 진단이 아닌 자기이해·선별 도구"
+   ],
+   "source": "지피디아 검사 안내 정리",
+   "caption": "성인 ADHD·자존감·다크 트라이어드 읽는 법",
+   "alt": "성인 ADHD 자가진단 자존감 다크 트라이어드 해석"
+  },
+  {
+   "key": "help",
+   "kind": "card",
+   "file": "mental-health-crisis-hotlines.png",
+   "title": "지금 힘들다면",
+   "lines": [
+    "자살예방상담전화 109 (24시간)",
+    "정신건강위기상담전화 1577-0199 (24시간)",
+    "청소년 상담전화 1388",
+    "가까운 정신건강복지센터: 국가정신건강정보포털"
+   ],
+   "source": "보건복지부·지피디아 안내 정리",
+   "caption": "정신건강 위기 상담 전화",
+   "alt": "자살예방상담전화 109 정신건강위기상담 1577-0199"
+  }
+ ],
+ "shots": [
+  {
+   "key": "phqshot",
+   "url": "https://jeepedia.com/psychology-test/phq-9/",
+   "file": "jeepedia-phq9-depression-test.png",
+   "caption": "지피디아 우울 자가진단 PHQ-9 화면 (jeepedia.com)",
+   "alt": "지피디아 우울증 자가진단 PHQ-9 9문항 화면",
+   "name": "우울 자가진단 PHQ-9",
+   "fallback": {
+    "title": "우울 자가진단 PHQ-9",
+    "lines": [
+     "9문항 · 1분 · 결과 5구간",
+     "응답은 기기에만 저장"
+    ]
+   }
+  },
+  {
+   "key": "burnoutshot",
+   "url": "https://jeepedia.com/psychology-test/burnout/",
+   "file": "jeepedia-olbi-burnout-test.png",
+   "caption": "지피디아 번아웃 자가진단 OLBI 화면 (jeepedia.com)",
+   "alt": "지피디아 번아웃 자가진단 OLBI 16문항 화면",
+   "name": "번아웃 자가진단 OLBI",
+   "fallback": {
+    "title": "번아웃 자가진단 OLBI",
+    "lines": [
+     "16문항 · 2분",
+     "소진 · 이탈 두 축"
+    ]
+   }
+  }
+ ]
+}

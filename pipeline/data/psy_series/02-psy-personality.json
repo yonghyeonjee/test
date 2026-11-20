@@ -1,0 +1,331 @@
+{
+ "slug": "psy-personality",
+ "slogan": "무료-성격검사-16유형-빅파이브-애착유형",
+ "title": "MBTI형 16유형·빅파이브·애착유형 테스트 | 무료 성격검사 3종 차이와 궁합표",
+ "summary": "무료 성격검사 3종의 차이를 정리했습니다. MBTI형 16유형 테스트(IPIP 공개 문항 20개), 학계에서 가장 검증된 빅파이브(Mini-IPIP 20문항), 연애에서 드러나는 성인 애착유형(18문항)이 각각 무엇을 재는지, 언제 어떤 검사를 고르면 좋은지, 256개 조합 MBTI 궁합표 읽는 법까지 담았습니다.",
+ "keywords": [
+  "무료 성격검사",
+  "MBTI 무료 테스트",
+  "16가지 성격유형",
+  "빅파이브 성격 테스트",
+  "애착유형 테스트",
+  "MBTI 궁합표",
+  "IPIP",
+  "성격 5요인",
+  "심리테스트",
+  "지피디아"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "**무료 성격검사**를 찾으면 대부분 MBTI형 16유형 테스트가 먼저 나옵니다. 그런데 심리학 연구에서 더 많이 쓰는 것은 **빅파이브(성격 5요인)**이고, 연애에서 반복되는 패턴은 **애착유형**이 더 잘 설명합니다. 세 검사는 재는 것도, 결과를 보여 주는 방식도 다릅니다."
+  },
+  {
+   "type": "p",
+   "text": "지피디아의 기본 성격 검사 3종은 모두 3분, 20문항 안팎이고 **공개 척도나 자체 문항**으로 만들어 무료로 할 수 있습니다. 각각의 특징과 고르는 법, 그리고 많이 찾는 MBTI 궁합표를 정리했습니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "목차",
+   "id": "toc"
+  },
+  {
+   "type": "list",
+   "items": [
+    "성격검사 3종 한눈에 비교",
+    "16가지 성향 테스트(MBTI형)",
+    "빅파이브 성격 테스트",
+    "성인 애착유형 테스트",
+    "MBTI 궁합표 16×16 읽는 법",
+    "자주 묻는 질문",
+    "지피디아 심리테스트 시리즈"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "성격검사 3종 한눈에 비교",
+   "id": "compare"
+  },
+  {
+   "type": "p",
+   "text": "유형으로 나누느냐, 연속선 위의 위치로 보느냐가 가장 큰 차이입니다. 세 검사 모두 [지피디아 성향검사](https://jeepedia.com/psychology-test/#s-basic)에서 할 수 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "compare"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**16가지 성향** — 4축 × 5문항 = 20문항 · 결과 16종 · 유형으로 나눔",
+    "**빅파이브** — Mini-IPIP 20문항 · 결과 10종 · 5요인 점수로 봄",
+    "**애착유형** — 자체 문항 18개(불안 9 + 회피 9) · 결과 4종 · 관계 패턴"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "성격 연구 전반은 [미국심리학회(APA) 성격 주제 안내](https://www.apa.org/topics/personality)에서, 이 검사들이 쓰는 공개 문항은 [IPIP(국제 성격 문항 풀)](https://ipip.ori.org)에서 볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "16가지 성향 테스트(MBTI형)",
+   "id": "sixteen"
+  },
+  {
+   "type": "image",
+   "key": "sixteenshot"
+  },
+  {
+   "type": "p",
+   "text": "[16가지 성향 테스트](https://jeepedia.com/psychology-test/sixteen-types/)는 MBTI처럼 네 글자 유형을 알려 주지만 **MBTI® 문항과 상표를 쓰지 않습니다.** 대신 퍼블릭 도메인 성격 척도 [IPIP](https://ipip.ori.org)의 공개 문항으로 4축을 재고, 축마다 5문항씩 20문항입니다."
+  },
+  {
+   "type": "p",
+   "text": "검사 안내에는 학계의 비판도 함께 적혀 있습니다. McCrae와 Costa(1989)는 MBTI 4축이 성격 5요인과 상당 부분 겹친다(r=.44~.74)는 것을 보였고, Pittenger(1993)는 5주 뒤 다시 검사하면 응답자의 약 절반이 최소 한 축에서 다른 유형으로 나온다고 지적했습니다. 그래서 네 글자는 **재미와 자기이해용**으로 쓰는 것이 좋습니다."
+  },
+  {
+   "type": "h2",
+   "text": "빅파이브 성격 테스트",
+   "id": "bigfive"
+  },
+  {
+   "type": "image",
+   "key": "bigfiveshot"
+  },
+  {
+   "type": "p",
+   "text": "[빅파이브 성격 테스트](https://jeepedia.com/psychology-test/big-five/)는 **개방성·성실성·외향성·친화성·정서안정성** 다섯 요인을 잽니다. Donnellan 등(2006)이 IPIP 50문항에서 요인당 4문항을 추린 [Mini-IPIP 20문항](https://doi.org/10.1037/1040-3590.18.2.192)을 한국어로 옮겼습니다."
+  },
+  {
+   "type": "p",
+   "text": "빅파이브는 사람을 유형으로 자르지 않고 '외향성이 얼마나 높은가'처럼 연속선 위의 위치로 봅니다. 메타분석에서는 다섯 요인 가운데 성실성이 여러 직업에서 직무 성과를 가장 꾸준히 예측하는 요인으로 확인되었습니다([Barrick & Mount, 1991](https://doi.org/10.1111/j.1744-6570.1991.tb00688.x)). 직장에서의 성격이 궁금하면 [직장인 성격 유형 테스트](https://jeepedia.com/psychology-test/big-five-personality-workplace-job-satisfaction/)도 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "성인 애착유형 테스트",
+   "id": "attach"
+  },
+  {
+   "type": "image",
+   "key": "attach"
+  },
+  {
+   "type": "p",
+   "text": "[연애 애착유형 테스트](https://jeepedia.com/psychology-test/attachment/)는 '연인이 답장을 늦게 할 때 내 마음이 어느 쪽으로 움직이는가'를 봅니다. Bowlby의 유아 애착이론을 성인 연애로 넓힌 Hazan과 Shaver(1987)의 조사에서는 성인의 약 **56%가 안정형, 25%가 회피형, 19%가 불안형**이었습니다([원 논문](https://doi.org/10.1037/0022-3514.52.3.511))."
+  },
+  {
+   "type": "p",
+   "text": "이 검사는 불안과 회피 두 차원을 각각 9문항으로 재서 4유형을 판별합니다. 결과는 진단이 아니라 관계에서 반복되는 패턴을 알아보는 도구이고, 관계 어려움이 오래가면 전문가와 상담하라고 안내합니다. 상담 기관은 [국가정신건강정보포털](https://www.mentalhealth.go.kr)에서 찾을 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "MBTI 궁합표 16×16 읽는 법",
+   "id": "compat"
+  },
+  {
+   "type": "image",
+   "key": "compat"
+  },
+  {
+   "type": "p",
+   "text": "[MBTI 궁합표](https://jeepedia.com/psychology-test/sixteen-types/compat/)는 16유형끼리 256개 조합을 **잘 맞음(4~5)·보통(2~3)·노력 필요(0~1)** 3단계로 보여 줍니다. 점수 규칙은 공개되어 있습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**정보 처리(S/N)가 같으면** +2 — 세상을 보는 방식이 같다",
+    "**판단 기준(T/F)이 같으면** +1",
+    "**에너지(E/I)가 다르면** +1 — 리듬이 서로 보완된다",
+    "**생활 양식(J/P)이 다르면** +1"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "그래서 '세상을 보는 방식은 같고 리듬은 보완되는' 조합이 높게 나옵니다. 궁합은 성격 연구로 검증된 예측이 아니라 대화의 출발점으로 쓰는 재미 요소라는 점을 기억하세요. 내 유형을 모르면 [16가지 성향 테스트](https://jeepedia.com/psychology-test/sixteen-types/)부터 하면 됩니다. 성격과 관계 만족에 관한 연구 정리는 [APA](https://www.apa.org/topics/personality)에서도 찾을 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "자주 묻는 질문",
+   "id": "faq"
+  },
+  {
+   "type": "h3",
+   "text": "MBTI와 결과가 다르게 나와요."
+  },
+  {
+   "type": "p",
+   "text": "문항이 다르고, 경계에 있는 축은 검사할 때마다 바뀌기 쉽습니다. 한 글자가 바뀌었다면 그 축에서 양쪽 성향이 비슷하다는 뜻으로 읽으면 됩니다."
+  },
+  {
+   "type": "h3",
+   "text": "취업 인성검사 준비에 도움이 되나요?"
+  },
+  {
+   "type": "p",
+   "text": "기업 인성검사는 대부분 빅파이브와 비슷한 요인을 봅니다. 빅파이브 결과로 내 강점과 약점을 미리 알아 두면 자기소개서와 면접 답변을 정리하는 데 도움이 됩니다. 다만 결과를 꾸며 답하는 것은 권하지 않습니다."
+  },
+  {
+   "type": "h3",
+   "text": "애착유형은 바뀌나요?"
+  },
+  {
+   "type": "p",
+   "text": "애착은 고정된 성격이라기보다 관계 경험에 따라 움직이는 패턴입니다. 안정적인 관계 경험이 쌓이면 불안이나 회피가 줄어들 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "지피디아 심리테스트 시리즈",
+   "id": "series"
+  },
+  {
+   "type": "p",
+   "text": "심리학 논문과 공개 척도로 만든 무료 심리테스트 사이트 [지피디아 오늘의 심리](https://jeepedia.com/psychology-test/)의 테스트를 갈래별로 5편에 나눠 소개합니다. 이 글은 2편입니다."
+  },
+  {
+   "type": "series"
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[지피디아, 16가지 성향 테스트](https://jeepedia.com/psychology-test/sixteen-types/)",
+    "[IPIP — International Personality Item Pool](https://ipip.ori.org)",
+    "Donnellan 외(2006), The Mini-IPIP Scales, Psychological Assessment 18(2)",
+    "Hazan & Shaver(1987), Romantic love conceptualized as an attachment process, JPSP 52(3)",
+    "Barrick & Mount(1991), The Big Five personality dimensions and job performance, Personnel Psychology 44(1)",
+    "[APA, Personality](https://www.apa.org/topics/personality)",
+    "[국가정신건강정보포털](https://www.mentalhealth.go.kr)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "hero",
+   "kind": "hero",
+   "file": "free-personality-test-16types-bigfive-attachment.png",
+   "title": "무료 성격검사 3종 비교",
+   "sub": "16유형 · 빅파이브 · 애착유형 · MBTI 궁합표",
+   "kicker": "지피디아 심리테스트 시리즈 2편",
+   "caption": "무료 성격검사 3종 비교",
+   "alt": "무료 성격검사 MBTI 16유형 빅파이브 애착유형 표지"
+  },
+  {
+   "key": "compare",
+   "kind": "matrix",
+   "file": "personality-test-comparison.png",
+   "title": "성격검사 3종 비교",
+   "sub": "모두 3분 · 무료 · 오락과 자기이해 목적",
+   "rows": [
+    "16가지 성향",
+    "빅파이브",
+    "애착유형"
+   ],
+   "cols": [
+    "문항",
+    "결과",
+    "보는 방식"
+   ],
+   "cells": [
+    [
+     "IPIP 20문항",
+     "16종",
+     "유형"
+    ],
+    [
+     "Mini-IPIP 20문항",
+     "10종",
+     "5요인 점수"
+    ],
+    [
+     "자체 18문항",
+     "4종",
+     "불안·회피 2차원"
+    ]
+   ],
+   "source": "출처: 지피디아 기본 성격 검사 안내",
+   "caption": "16유형·빅파이브·애착유형 검사 비교",
+   "alt": "MBTI형 16유형 빅파이브 애착유형 검사 비교 표"
+  },
+  {
+   "key": "attach",
+   "kind": "hbar",
+   "file": "adult-attachment-style-distribution.png",
+   "title": "성인 애착유형 비율",
+   "sub": "Hazan & Shaver(1987) 조사",
+   "labels": [
+    "안정형",
+    "회피형",
+    "불안형"
+   ],
+   "values": [
+    56,
+    25,
+    19
+   ],
+   "fmt": "{}%",
+   "highlight": [
+    0
+   ],
+   "left": 0.14,
+   "source": "출처: Hazan & Shaver(1987), 지피디아 검사 안내",
+   "caption": "성인 애착유형 비율",
+   "alt": "성인 애착유형 안정형 회피형 불안형 비율 차트"
+  },
+  {
+   "key": "compat",
+   "kind": "card",
+   "file": "mbti-compatibility-chart-rules.png",
+   "title": "MBTI 궁합표 점수 규칙",
+   "lines": [
+    "S/N 같음 +2",
+    "T/F 같음 +1",
+    "E/I 다름 +1",
+    "J/P 다름 +1",
+    "4~5 잘 맞음 · 2~3 보통 · 0~1 노력 필요"
+   ],
+   "source": "지피디아 MBTI 궁합표 16×16 정리",
+   "caption": "MBTI 궁합표 256개 조합 점수 규칙",
+   "alt": "MBTI 궁합표 16x16 점수 규칙"
+  }
+ ],
+ "shots": [
+  {
+   "key": "sixteenshot",
+   "url": "https://jeepedia.com/psychology-test/sixteen-types/",
+   "file": "jeepedia-16-types-personality-test.png",
+   "caption": "지피디아 16가지 성향 테스트 화면 (jeepedia.com)",
+   "alt": "지피디아 무료 16가지 성격유형 테스트 화면",
+   "name": "16가지 성향 테스트",
+   "fallback": {
+    "title": "16가지 성향 테스트",
+    "lines": [
+     "IPIP 공개 문항 20개",
+     "결과 16종 · 3분"
+    ]
+   }
+  },
+  {
+   "key": "bigfiveshot",
+   "url": "https://jeepedia.com/psychology-test/big-five/",
+   "file": "jeepedia-big-five-personality-test.png",
+   "caption": "지피디아 빅파이브 성격 테스트 화면 (jeepedia.com)",
+   "alt": "지피디아 빅파이브 성격 5요인 테스트 화면",
+   "name": "빅파이브 성격 테스트",
+   "fallback": {
+    "title": "빅파이브 성격 테스트",
+    "lines": [
+     "Mini-IPIP 20문항",
+     "결과 10종 · 3분"
+    ]
+   }
+  }
+ ]
+}

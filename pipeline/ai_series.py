@@ -25,9 +25,25 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-DATA = Path(__file__).parent / "data" / "ai_series"
+# 시리즈마다 글 폴더·이름·티스토리 카테고리. 글 slug 는 시리즈를 통틀어 겹치지 않는다(load 가 폴더를 찾아 시리즈를 정한다).
+SERIES = {
+    "ai": {"dir": "ai_series", "name": "AI 활용 시리즈", "category": "IT", "kind": "ai"},
+    "senior": {"dir": "senior_series", "name": "어르신 복지 시리즈", "category": "policy", "kind": "senior"},
+    # 시리즈가 아닌 단독 생활 정보 글(series: false — 시리즈 목록 블록 없음)
+    "guide": {"dir": "guide_posts", "name": "생활 금융 정보", "category": "policy", "kind": "guide", "jiwon_max": 2},   # jiwon 원문을 각색할 때 출처 링크 두 번까지
+    # 우리 심리 사이트(jeepedia) 소개 시리즈 — 그 사이트 링크는 '한 도메인 몰림' 검사에서 빼고, 대신 글당 상한을 둔다
+    "psy": {"dir": "psy_series", "name": "지피디아 심리테스트 시리즈", "category": "psychology", "kind": "psy",
+            "home": "jeepedia.com", "home_max": 12},
+}
+CUR = "ai"
+DATA = Path(__file__).parent / "data" / SERIES[CUR]["dir"]
 OUT = "shots"
-SERIES_NAME = "AI 활용 시리즈"
+SERIES_NAME = SERIES[CUR]["name"]
+
+
+def use(series: str) -> None:
+    global CUR, DATA, SERIES_NAME
+    CUR, DATA, SERIES_NAME = series, Path(__file__).parent / "data" / SERIES[series]["dir"], SERIES[series]["name"]
 BLOG = "abcfact.tistory.com"
 
 DISMISS_JS = """() => {
@@ -49,10 +65,15 @@ DISMISS_JS = """() => {
 
 
 def load(slug: str) -> dict:
-    p = next((x for x in sorted(DATA.glob("*.json")) if x.stem.split("-", 1)[-1] == slug or x.stem == slug), None)
-    if p is None:
-        raise SystemExit(f"{slug}: pipeline/data/ai_series 에 없다")
-    return json.loads(p.read_text(encoding="utf-8"))
+    """글 JSON. 지금 시리즈 폴더에 없으면 다른 시리즈 폴더를 찾아 그 시리즈로 바꾼다."""
+    for name in [CUR] + [k for k in SERIES if k != CUR]:
+        d = Path(__file__).parent / "data" / SERIES[name]["dir"]
+        p = next((x for x in sorted(d.glob("*.json")) if x.stem.split("-", 1)[-1] == slug or x.stem == slug), None)
+        if p is not None:
+            if name != CUR:
+                use(name)
+            return json.loads(p.read_text(encoding="utf-8"))
+    raise SystemExit(f"{slug}: pipeline/data 의 시리즈 폴더({', '.join(v['dir'] for v in SERIES.values())})에 없다")
 
 
 def plan() -> list[dict]:
@@ -96,6 +117,17 @@ def draw(spec: dict, path: str) -> None:
     plt, W, H, DPI = _fig()
     import numpy as np
     k = spec["kind"]
+    if k == "hero" and spec.get("center", True):    # 글 목록 썸네일(가운데를 세로로 잘라 쓴다)에 맞춘 가운데 정렬 머리 그림
+        fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI)
+        fig.patch.set_facecolor(spec.get("bg", BLUE_DARK))
+        fig.text(0.5, 0.83, spec.get("kicker", SERIES_NAME), fontsize=14, color=BLUE_LIGHT, weight="bold", ha="center")
+        lines = textwrap.wrap(spec["title"], spec.get("wrap", 9))[:4]
+        size = 30 if len(lines) <= 3 else 26
+        y0 = 0.50 + (len(lines) - 1) * 0.075
+        for i, ln in enumerate(lines):
+            fig.text(0.5, y0 - i * 0.15, ln, fontsize=size, color="white", weight="bold", ha="center", va="center")
+        fig.text(0.5, 0.12, spec.get("sub", ""), fontsize=12, color="#dbe8fb", ha="center")
+        fig.savefig(path, facecolor=fig.get_facecolor()); plt.close(fig); return
     if k == "hero":
         fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI)
         fig.patch.set_facecolor(BLUE_DARK)
@@ -268,12 +300,18 @@ def check(post: dict) -> list[str]:
         if not c.get("alt") or not re.match(r"^[a-z0-9\-]+\.png$", c.get("file", "")):
             errs.append(f"{c.get('key')}: alt 와 영문 파일 이름(.png) 필요")
     hosts = [re.sub(r"^www\.", "", u.split("/")[2]) for u in LINK.findall(text)]
+    home = SERIES[CUR].get("home")
+    if home:                                           # 시리즈가 소개하는 사이트: 몰림 검사에서 빼고 상한만 본다
+        if hosts.count(home) > SERIES[CUR]["home_max"]:
+            errs.append(f"{home} 링크 {hosts.count(home)}개(최대 {SERIES[CUR]['home_max']})")
+        hosts = [h for h in hosts if h != home]
     from collections import Counter
     cnt = Counter(hosts)
     if cnt and cnt.most_common(1)[0][1] > max(3, len(hosts) // 3):
         errs.append(f"바깥 링크가 한 도메인에 몰림: {cnt.most_common(3)}")
-    if cnt.get("jiwon.knowhow-it.com", 0) > 1:
-        errs.append("jiwon 링크는 1개 이하")
+    jmax = SERIES[CUR].get("jiwon_max", 1)
+    if cnt.get("jiwon.knowhow-it.com", 0) > jmax:
+        errs.append(f"jiwon 링크는 {jmax}개 이하")
     if len(set(hosts)) < 4:
         errs.append(f"바깥 링크 도메인 4곳 이상(지금 {len(set(hosts))})")
     if post.get("series", True) and not any(b["type"] == "series" for b in body):
@@ -327,7 +365,8 @@ def build(slug: str, shots: bool = True) -> dict:
     with open(f"{OUT}/manifest.json", "w", encoding="utf-8") as f:
         json.dump(man, f, ensure_ascii=False, indent=1)
     out = {k: post[k] for k in ("slug", "slogan", "title", "summary", "keywords", "body")}
-    out.update({"kind": "ai", "category": "IT", "standalone": True, "series": series_index()})
+    out.update({"kind": SERIES[CUR]["kind"], "category": SERIES[CUR]["category"], "standalone": True,
+                "series": series_index(), "series_name": SERIES_NAME})
     return out
 
 
@@ -339,7 +378,9 @@ def main() -> int:
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--no-shots", action="store_true")
     ap.add_argument("--out", default="out/post.json")
+    ap.add_argument("--series", choices=sorted(SERIES), default="ai", help="--pick·--check 에 쓸 시리즈(--slug 는 알아서 찾는다)")
     a = ap.parse_args()
+    use(a.series)
     if a.pick:
         d = a.date or (dt.datetime.utcnow() + dt.timedelta(hours=9)).date().isoformat()
         hit = next((e for e in plan() if e["date"] == d), None)
