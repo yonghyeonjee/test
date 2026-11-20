@@ -30,7 +30,7 @@ on:
 jobs:
   report:
     runs-on: ubuntu-latest
-    timeout-minutes: 40  # sample 은 URL 검사 한 건에 7초 남짓. 7묶음×20쪽이면 17분
+    timeout-minutes: 70  # sample 은 URL 검사 한 건에 7초 남짓(7묶음×20쪽 17분). 11/20 서치 콘솔이 느려 한 건 70초까지 걸려 40분에 끊겼다
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
