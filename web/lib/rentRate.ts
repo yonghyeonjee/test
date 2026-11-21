@@ -39,6 +39,14 @@ export type RateBoard = {
   from: string | null;
   to: string | null;
   banks: BankRate[];
+  /**
+   * 보증비율·기준금리·가산금리가 한 줄이라도 들어 있나.
+   *
+   * 공사는 2026년 가을부터 자기 사이트(전세대출금리 안내)에도 은행별 적용금리만
+   * 올리고, 이 API 도 interest1~3 을 0 으로 채워 보낸다. 그때는 빈 칸 세 개를
+   * 표에 세워 두지 않는다(화면 폭만 먹고 적용금리가 밀려 안 보인다).
+   */
+  breakdown: boolean;
 };
 
 const num = (v: unknown): number | null => {
@@ -68,7 +76,8 @@ export async function getRentRates(): Promise<RateBoard> {
     { numOfRows: 100, pageNo: 1, dataType: "JSON" },
     21600,
   );
-  if (!res.ok) return { ok: false, reason: res.reason, from: null, to: null, banks: [] };
+  if (!res.ok)
+    return { ok: false, reason: res.reason, from: null, to: null, banks: [], breakdown: false };
 
   const banks: BankRate[] = [];
   let from: string | null = null;
@@ -83,7 +92,9 @@ export async function getRentRates(): Promise<RateBoard> {
     const tier = (i: string): RateTier => ({
       ratio: rate(r[`interest1_${i}`]),
       base: rate(r[`interest2_${i}`]),
-      extra: num(r[`interest3_${i}`]),
+      // 가산금리도 기준금리 없이 0 만 오면 값이 없는 것이다. 0.00% 로 찍히면
+      // 가산금리가 정말 0 인 줄 안다.
+      extra: rate(r[`interest2_${i}`]) === null ? null : num(r[`interest3_${i}`]),
       rate: rate(r[`interest4_${i}`]),
     });
     // 적용금리가 없는 조건은 화면에 줄만 차지한다.
@@ -107,6 +118,9 @@ export async function getRentRates(): Promise<RateBoard> {
     from,
     to,
     banks,
+    breakdown: banks.some((b) =>
+      b.tiers.some((t) => t.ratio !== null || t.base !== null || t.extra !== null),
+    ),
   };
 }
 
