@@ -8,7 +8,10 @@ import { getExamRounds, mergeUpcoming, upcoming } from "@/lib/qnetExam";
  * 고정 글은 그대로 두고, 그 아래 "오늘의 숫자"(접수 중 채용·기관 수·지원사업 수)를 매시간 새로 넣는다.
  * 인용하는 쪽이 날짜와 함께 숫자를 옮길 수 있게. 숫자를 못 읽으면 그 줄만 뺀다.
  */
-export const revalidate = 3600;
+// 2026-11-23 매시간 다시 만드는 ISR(revalidate=3600)이 11/20 뒤로 다시 만들지 못하고 STALE 만 냈다
+// ("오늘의 숫자 (11-20 기준)" 이 11/23 에도). 요청마다 새로 만들고 CloudFront 가 한 시간 들고 있게 한다
+// (원본에 오는 요청은 거점마다 시간당 한 번 남짓).
+export const dynamic = "force-dynamic";
 
 const HEAD = `# K나라지원 (jiwon.knowhow-it.com)
 
@@ -87,6 +90,6 @@ export async function GET() {
     ? `## 시·도별 접수 중 공공기관 채용 (${day} 기준)\n${reg.map((r) => `- [${r.sido}](https://jiwon.knowhow-it.com/jobs/region/${encodeURIComponent(r.sido)}): ${n(r.n)}건`).join("\n")}\n- 근무지·기관 이름·공고 제목에 든 시·도로 센다. 한 공고가 여러 시·도에 들어갈 수 있어 합은 전체 공고 수보다 크다.\n\n`
     : "";
   return new Response(`${HEAD}\n${today}${byRegion}${REST}\n`, {
-    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600" },
+    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400" },
   });
 }
