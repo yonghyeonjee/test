@@ -40,7 +40,7 @@ export default function KeywordBar({ suggest, tab }: { suggest: string[]; tab: "
       </p>
       <form
         onSubmit={(e) => { e.preventDefault(); apply(q); }}
-        className="flex items-center gap-2 rounded-card border-2 border-line bg-white px-3 py-2 transition-colors focus-within:border-brand"
+        className="flex items-center gap-2 rounded-card border-2 border-line bg-surface px-3 py-2 transition-colors focus-within:border-brand"
       >
         <input
           value={q}

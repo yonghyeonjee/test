@@ -106,7 +106,7 @@ export default function TopSearch({ index }: { index: Idx }) {
 
       {show && (
         <div id="top-suggest" role="listbox"
-             className="absolute right-0 top-[calc(100%+6px)] z-40 w-full min-w-[16rem] overflow-hidden rounded-[14px] border border-line bg-white shadow-lift">
+             className="absolute right-0 top-[calc(100%+6px)] z-40 w-full min-w-[16rem] overflow-hidden rounded-[14px] border border-line bg-surface shadow-lift">
           {rows.map((r, i) => (
             <button key={r.key} type="button" role="option" aria-selected={i === cur}
                     onMouseEnter={() => setCur(i)} onMouseDown={(e) => e.preventDefault()} onClick={r.act}

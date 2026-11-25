@@ -74,7 +74,7 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
               { n: all.jobs.length, label: "우수일자리" },
               { n: nations.length, label: "국가" },
             ].map((b) => (
-              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+              <div key={b.label} className="rounded-[14px] bg-surface/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
                 <b className="num block text-[1.35rem] font-extrabold text-ink">{b.n.toLocaleString()}</b>
                 <span className="mt-0.5 block text-[12px] text-muted">{b.label}</span>
               </div>

@@ -217,7 +217,7 @@ export default function BlogPanel() {
               </div>
             )}
             {view !== "write" && (
-              <div className="rounded-ctl border border-line bg-white p-4 lg:max-h-[34rem] lg:overflow-y-auto" aria-label="미리보기">
+              <div className="rounded-ctl border border-line bg-surface p-4 lg:max-h-[34rem] lg:overflow-y-auto" aria-label="미리보기">
                 <p className="text-xs font-bold text-muted">미리보기</p>
                 <h1 className="article-title mt-2 text-[1.5rem] leading-[1.3]">{form.title || "제목"}</h1>
                 {blocks.length ? <StoryBody blocks={blocks} /> : <p className="mt-4 text-sm text-muted">본문을 쓰면 여기에 실제 글 모양으로 보입니다.</p>}

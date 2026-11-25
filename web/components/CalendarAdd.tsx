@@ -92,7 +92,7 @@ export default function CalendarAdd({
         <svg viewBox="0 0 20 20" className="ml-1 h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 8l5 5 5-5" /></svg>
       </button>
       {open && (
-        <div role="menu" className="absolute left-0 top-[calc(100%+6px)] z-30 w-[19rem] max-w-[calc(100vw-2.5rem)] overflow-hidden rounded-card border border-line bg-white shadow-lift">
+        <div role="menu" className="absolute left-0 top-[calc(100%+6px)] z-30 w-[19rem] max-w-[calc(100vw-2.5rem)] overflow-hidden rounded-card border border-line bg-surface shadow-lift">
           <ul className="max-h-72 divide-y divide-line overflow-y-auto">
             {events.map((e) => (
               <li key={`${e.start}-${e.title}`} className="flex items-center gap-2 px-3 py-2 text-[13px]">

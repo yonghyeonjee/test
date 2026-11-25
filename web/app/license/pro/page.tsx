@@ -70,7 +70,7 @@ export default async function ProLicensePage() {
               { n: board.all.length, label: "시행 종목" },
               { n: board.series.length, label: "자격 수" },
             ].map((b) => (
-              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+              <div key={b.label} className="rounded-[14px] bg-surface/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
                 <b className="num block text-[1.35rem] font-extrabold text-ink">
                   {b.n.toLocaleString()}
                 </b>

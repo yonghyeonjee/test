@@ -140,7 +140,7 @@ export function SiteFooter() {
   ];
   const quick: [string, string][] = [["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"], ["통합 검색", "/search"], ["정책지도", "/map"], ["무료 서비스", "/free"]];
   return (
-    <footer className="site-footer mt-20 border-t border-line bg-white text-[13px] text-muted">
+    <footer className="site-footer mt-20 border-t border-line bg-surface text-[13px] text-muted">
       <div className={`${WRAP} pb-8 pt-9 sm:pt-12`}>
         <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
@@ -190,7 +190,7 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
   return (
     <div role="dialog" aria-modal="true" aria-label="전체 메뉴"
          className="fixed inset-0 z-50 overflow-y-auto bg-ground sm:hidden">
-      <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-white px-5">
+      <div className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-surface px-5">
         <b className="text-[17px] font-extrabold">전체 메뉴</b>
         <button type="button" onClick={onClose} aria-label="닫기"
                 className="-mr-2 flex h-10 w-10 items-center justify-center rounded-full text-ink2 hover:bg-ground">
@@ -199,7 +199,7 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
       </div>
       <div className="space-y-3 px-4 py-4 pb-24">
         <Link href="/search" onClick={onClose}
-              className="flex items-center gap-2 rounded-pill border-2 border-[#D7DBE2] bg-white px-4 py-3 text-[15px] text-faint">
+              className="flex items-center gap-2 rounded-pill border-2 border-[#D7DBE2] bg-surface px-4 py-3 text-[15px] text-faint">
           <PortalIcon name="search" className="h-5 w-5 text-muted" strokeWidth={2.2} />
           무엇이든 찾아보세요
         </Link>
@@ -211,15 +211,15 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
           </Link>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <Link href="/saved" onClick={onClose} className="flex items-center gap-2 rounded-card bg-white px-4 py-3 text-[14.5px] font-bold">
+          <Link href="/saved" onClick={onClose} className="flex items-center gap-2 rounded-card bg-surface px-4 py-3 text-[14.5px] font-bold">
             <PortalIcon name="bookmark" className="h-5 w-5 text-brand" /> 저장한 공고
           </Link>
-          <Link href="/account" onClick={onClose} className="flex items-center gap-2 rounded-card bg-white px-4 py-3 text-[14.5px] font-bold">
+          <Link href="/account" onClick={onClose} className="flex items-center gap-2 rounded-card bg-surface px-4 py-3 text-[14.5px] font-bold">
             <PortalIcon name="user" className="h-5 w-5 text-brand" /> 내 계정
           </Link>
         </div>
         {NAV.map((n) => (
-          <section key={n.href} className="rounded-card bg-white px-4 py-3">
+          <section key={n.href} className="rounded-card bg-surface px-4 py-3">
             <Link href={n.href} onClick={onClose} className="flex items-center justify-between py-1 text-[15.5px] font-extrabold">
               {n.label}
               <PortalIcon name="chevron" className="h-4 w-4 text-faint" />
@@ -235,7 +235,7 @@ function MenuSheet({ onClose }: { onClose: () => void }) {
             )}
           </section>
         ))}
-        <div className="flex items-center justify-between rounded-card bg-white px-4 py-3 text-[14px]">
+        <div className="flex items-center justify-between rounded-card bg-surface px-4 py-3 text-[14px]">
           <span className="font-semibold">글자 크기</span>
           <BigText />
         </div>

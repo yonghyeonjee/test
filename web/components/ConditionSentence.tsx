@@ -52,7 +52,7 @@ function Blank({
         <span
           className={`absolute left-0 top-[calc(100%+6px)] z-20 block
                       max-h-72 overflow-y-auto rounded-card border border-line
-                      bg-white py-1 shadow-lift ${wide ? "w-72" : "w-44"}`}
+                      bg-surface py-1 shadow-lift ${wide ? "w-72" : "w-44"}`}
           role="listbox"
         >
           {value && (

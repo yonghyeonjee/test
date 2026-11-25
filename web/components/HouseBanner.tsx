@@ -94,7 +94,7 @@ export default function HouseBanner({
         <span className="mt-1 block text-[13px] leading-snug" style={{ color: look.soft }}>{l.desc}</span>
       </div>
       <span className="hidden shrink-0 rounded-pill bg-white/15 px-4 py-2 text-[13px] font-bold
-                       transition-colors group-hover:bg-white group-hover:text-ink sm:inline-flex">
+                       transition-colors group-hover:bg-surface group-hover:text-ink sm:inline-flex">
         {look.cta} →
       </span>
     </a>

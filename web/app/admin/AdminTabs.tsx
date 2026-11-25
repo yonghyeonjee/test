@@ -21,7 +21,7 @@ export default function AdminTabs({ tabs, initial }: { tabs: [string, string][];
   }, [cur, tabs]);
   return (
     <nav aria-label="관리자 메뉴" role="tablist"
-         className="sticky top-0 z-20 -mx-5 mb-2 flex gap-1 overflow-x-auto border-b border-line bg-white/95 px-5 py-2 text-[13px] backdrop-blur sm:mx-0 sm:rounded-card sm:border sm:px-3">
+         className="sticky top-0 z-20 -mx-5 mb-2 flex gap-1 overflow-x-auto border-b border-line bg-surface/95 px-5 py-2 text-[13px] backdrop-blur sm:mx-0 sm:rounded-card sm:border sm:px-3">
       {tabs.map(([id, t]) => (
         <button key={id} type="button" role="tab" aria-selected={cur === id}
                 onClick={() => { setCur(id); history.replaceState(null, "", id); window.scrollTo({ top: 0 }); }}

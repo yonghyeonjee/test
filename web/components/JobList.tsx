@@ -266,7 +266,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           ))}
           {/* 연관어 끄기: 그 말이 들어간 공고만. 낱말을 따옴표로 감싼 주소로 간다(lib/jobFilter). */}
           <Link scroll={false} href={jobPathWith(route, { q: exactQuery(route.q), page: 1 })}
-                className="ml-1 rounded-pill border border-line2 bg-white px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
+                className="ml-1 rounded-pill border border-line2 bg-surface px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
             연관어 빼고 ‘{unquoteQuery(route.q)}’만 보기
           </Link>
         </p>
@@ -275,7 +275,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
         <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
           <span>‘{unquoteQuery(route.q)}’가 들어간 공고만 보고 있습니다(연관어 끔).</span>
           <Link scroll={false} href={jobPathWith(route, { q: unquoteQuery(route.q), page: 1 })}
-                className="rounded-pill border border-line2 bg-white px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
+                className="rounded-pill border border-line2 bg-surface px-2.5 py-1 font-semibold text-ink2 hover:border-brand hover:text-brand">
             연관어도 함께 찾기
           </Link>
         </p>
@@ -306,7 +306,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
           <Link scroll={false} href={pick({ open: !route.open }).href} rel="nofollow" role="switch" aria-checked={Boolean(route.open)}
                 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink2">
             <span className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${route.open ? "bg-brand" : "bg-line2"}`} aria-hidden>
-              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${route.open ? "left-[18px]" : "left-0.5"}`} />
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow transition-all ${route.open ? "left-[18px]" : "left-0.5"}`} />
             </span>
             접수 중만 보기 <span className="num text-[12.5px] font-normal text-muted">{openN.toLocaleString()}</span>
           </Link>
@@ -334,7 +334,7 @@ export default function JobList({ board, route }: { board: JobBoard; route: JobR
               const dd = dday(j, today);
               return (
                 <li key={j.id}>
-                  <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="flex items-center gap-2 rounded-lg px-1 py-1.5 text-[13.5px] hover:bg-white/70">
+                  <Link href={`/jobs/${encodeURIComponent(j.id)}`} className="flex items-center gap-2 rounded-lg px-1 py-1.5 text-[13.5px] hover:bg-surface/70">
                     {dd && <span className={`num badge shrink-0 ${dd.cls}`}>{dd.t}</span>}
                     <span className="min-w-0 flex-1 truncate font-semibold text-ink2">{j.title}</span>
                   </Link>

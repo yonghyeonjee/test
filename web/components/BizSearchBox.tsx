@@ -29,7 +29,7 @@ export default function BizSearchBox({ autoFocus }: { autoFocus?: boolean }) {
   return (
     <div>
       <div
-        className={`flex items-center gap-2 rounded-card border-2 bg-white px-4
+        className={`flex items-center gap-2 rounded-card border-2 bg-surface px-4
                     py-3 transition-colors ${
                       ready ? "border-brand shadow-card" : "border-line"
                     }`}
@@ -88,7 +88,7 @@ export default function BizSearchBox({ autoFocus }: { autoFocus?: boolean }) {
                 key={s}
                 type="button"
                 onClick={() => setQ(s)}
-                className="rounded-pill bg-white px-2.5 py-1 text-xs text-muted
+                className="rounded-pill bg-surface px-2.5 py-1 text-xs text-muted
                            ring-1 ring-line transition-colors hover:text-brand
                            hover:ring-brand"
               >

@@ -196,9 +196,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: SP 
                   )}
                   {n && (
                     <span className="mt-auto flex gap-0.5" aria-hidden>
-                      {n.p > 0 && <i className={`block h-1.5 w-1.5 rounded-full ${on ? "bg-white" : "bg-brand"}`} />}
-                      {n.job > 0 && <i className={`block h-1.5 w-1.5 rounded-full ${on ? "bg-white/70" : "bg-cat-blue"}`} />}
-                      {n.exam > 0 && <i className={`block h-1.5 w-1.5 rounded-full ${on ? "bg-white/50" : "bg-cat-orange"}`} />}
+                      {n.p > 0 && <i className={`block h-1.5 w-1.5 rounded-full ${on ? "bg-surface" : "bg-brand"}`} />}
+                      {n.job > 0 && <i className={`block h-1.5 w-1.5 rounded-full ${on ? "bg-surface/70" : "bg-cat-blue"}`} />}
+                      {n.exam > 0 && <i className={`block h-1.5 w-1.5 rounded-full ${on ? "bg-surface/50" : "bg-cat-orange"}`} />}
                     </span>
                   )}
                 </Link>

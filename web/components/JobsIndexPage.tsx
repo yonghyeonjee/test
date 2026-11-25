@@ -106,7 +106,7 @@ export default async function JobsIndexPage({ prefix = [], seg = [] }: { prefix?
               { n: overview ? overview.total + (alio?.total ?? 0) : board.jobs.length, label: "모아 둔 공고" },
               { n: orgs, label: "채용 기관" },
             ].map((b) => (
-              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+              <div key={b.label} className="rounded-[14px] bg-surface/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
                 <b className="num block text-[1.35rem] font-extrabold text-ink">
                   {b.n.toLocaleString()}
                 </b>

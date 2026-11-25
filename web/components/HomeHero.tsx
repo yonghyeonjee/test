@@ -53,7 +53,7 @@ export default function HomeHero({
       </div>
       <div className={`relative mx-auto max-w-[64rem] px-5 ${wide ? "lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center lg:gap-10" : ""}`}>
         <div className={`hero-copy text-center ${wide ? "lg:text-left" : ""}`}>
-          <p className="hidden items-center gap-2 rounded-pill border border-brand/15 sm:inline-flex bg-white/80 px-3.5 py-1.5
+          <p className="hidden items-center gap-2 rounded-pill border border-brand/15 sm:inline-flex bg-surface/80 px-3.5 py-1.5
                         text-[12px] font-bold tracking-[.02em] text-brand shadow-card backdrop-blur">
             <span className="live-dot" aria-hidden />{eyebrow}
           </p>
@@ -114,7 +114,7 @@ export default function HomeHero({
             {[0, 1].map((k) => (
               <ul key={k} className="marquee-set" aria-hidden={k === 1 || undefined}>
                 {[...sources, ...sources].map((s, j) => (
-                  <li key={j} className="flex items-center gap-1.5 rounded-pill border border-line bg-white/70 px-4 py-1.5 text-[13px] font-semibold text-muted">
+                  <li key={j} className="flex items-center gap-1.5 rounded-pill border border-line bg-surface/70 px-4 py-1.5 text-[13px] font-semibold text-muted">
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand2" />{s}
                   </li>
                 ))}
