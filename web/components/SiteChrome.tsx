@@ -68,11 +68,13 @@ export function SiteHeader({ index = {} }: { index?: Record<string, { sido: stri
               {!hasOwnSearch(path) && <TopSearch index={index} />}
               {/* 저장한 공고·사업. 공고 쪽 "저장"을 누른 사람이 다시 찾는 입구 — 머리말에 늘 보인다. */}
               <Link href="/saved" aria-label="저장한 공고·사업" aria-current={path === "/saved" ? "page" : undefined}
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-ground sm:h-10 sm:w-10 ${
+                    className={`hidden h-11 w-11 shrink-0 items-center justify-center rounded-full hover:bg-ground sm:flex sm:h-10 sm:w-10 ${
                       path === "/saved" ? "text-brand" : "text-ink2"}`}>
                 <PortalIcon name="bookmark" className="h-6 w-6 sm:h-[22px] sm:w-[22px]" strokeWidth={2} />
               </Link>
               <div className="hidden sm:block"><BigText /></div>
+              {/* 2026-11-26 휴대폰 머리말에도 글자 크기(누를 때마다 3단계). 자리가 좁아 책갈피는 전체 메뉴로 보냈다. */}
+              <div className="sm:hidden"><BigText variant="cycle" /></div>
               {/* 휴대폰: 전체 메뉴. 글자 크기 단추는 그 안에 있다. 아래 탭 막대는 광고 띠에 가려 치웠다(2026-10-13). */}
               <button type="button" onClick={() => setSheet(true)} aria-expanded={sheet} aria-label="전체 메뉴"
                       className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-ink2 hover:bg-ground sm:hidden">

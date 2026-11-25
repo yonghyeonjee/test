@@ -99,21 +99,39 @@
   html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 
   /*
-   * 큰 화면 보기. rem 만 키우면 text-[11px] 처럼 px 로 박힌 글자가 그대로
-   * 남아 오히려 더 안 보인다. zoom 은 여백·아이콘까지 같이 키우고, 이 사이트는
-   * 고정 너비 없이 max-width 로만 잡혀 있어 가로 스크롤도 생기지 않는다.
+   * 화면 크기(2026-11-26). 50대 이상이 많이 와서 기본을 예전보다 20% 키웠고, 그 위로 두 단계(크게·아주 크게)가 있다.
+   * 글자만 키우면 text-[11px] 처럼 px 로 박힌 글자가 그대로 남고 칸이 넘친다. body 를 zoom 하면 여백·아이콘·단추까지
+   * 같은 비율로 커져 화면이 흐트러지지 않는다(브라우저의 확대와 같다). 이 사이트는 고정 너비 없이 max-width 로만 잡혀 있다.
+   *   휴대폰·좁은 PC: 1.2 → 1.3 → 1.4      넓은 PC(1280px~, 원래 1.08 이었다): 1.3 → 1.42 → 1.54
+   * --zoom 은 같은 값의 사본이다 — 화면 폭(vw)으로 잡는 것(.bleed)과 되돌려야 하는 것(광고·지도)이 읽는다.
    */
-  /* PC 에서는 살짝 크게. 넓은 화면에서 글자가 잘게 보인다는 말이 맞았다. */
-  @media (min-width: 1280px) { body { zoom: 1.08; } }
+  html { --zoom: 1.2; }
+  html[data-fs="2"] { --zoom: 1.3; }
+  html[data-fs="3"] { --zoom: 1.4; }
+  body { zoom: 1.2; }
+  html[data-fs="2"] body { zoom: 1.3; }
+  html[data-fs="3"] body { zoom: 1.4; }
+  @media (min-width: 1280px) {
+    html { --zoom: 1.3; }
+    html[data-fs="2"] { --zoom: 1.42; }
+    html[data-fs="3"] { --zoom: 1.54; }
+    body { zoom: 1.3; }
+    html[data-fs="2"] body { zoom: 1.42; }
+    html[data-fs="3"] body { zoom: 1.54; }
+  }
   /*
-   * "글자 크게"는 PC 에서만 zoom 으로. 휴대폰에서 body 를 zoom 하면 화면 폭이 288px 로 줄어드는데,
-   * 애드센스는 화면 px 로 폭을 재서 광고를 400px 로 그려 넣고 320px 고정 광고도 그대로라
-   * 쪽이 옆으로 넘쳐 왼쪽이 잘렸다(2026-10-13 휴대폰 화면). 휴대폰에서는 rem 만 키운다.
+   * 되돌리는 것들. zoom 은 안쪽으로 곱해지므로 1/zoom 을 주면 그 상자만 원래 크기가 된다.
+   *  - 애드센스: 화면 px 로 폭을 재서 그린다. 키워진 채로 두면 휴대폰에서 쪽이 옆으로 넘쳤다(2026-10-13).
+   *  - 지도(Leaflet): 손가락·마우스 자리를 화면 px 로 계산한다. 키워진 채로 두면 누른 자리와 어긋난다.
+   *  - 휴대폰 머리말: 2·3단계에서도 1단계 크기로 둔다(로고 + 단추 셋이 한 줄에 들어가야 한다).
    */
-  @media (min-width: 1024px) { html.big body { zoom: 1.25; } }
-  @media (max-width: 1023.98px) { html.big { font-size: 18px; } html.big body { font-size: 18px; } }
+  ins.adsbygoogle, .leaflet-container { zoom: calc(1 / var(--zoom)); }
+  @media (max-width: 639.98px) {
+    html[data-fs="2"] [data-site-header] { zoom: calc(1.2 / 1.3); }
+    html[data-fs="3"] [data-site-header] { zoom: calc(1.2 / 1.4); }
+  }
   @supports not (zoom: 1) {
-    html.big { font-size: 20px; }
+    html { font-size: 18px; } html[data-fs="2"] { font-size: 19.5px; } html[data-fs="3"] { font-size: 21px; }
   }
   /*
    * 무엇이 넘쳐도 쪽이 옆으로 밀리지는 않게. html 에만 걸면 안드로이드 크롬은 넘친 만큼 손가락으로 옆으로 밀렸다
@@ -427,7 +445,7 @@ main .ad-slot:not(.ad-tall):not(.ad-band) .ad-html { line-height: 0; }
  * 들어가려면 화면이 880px 은 되어야 한다. 그보다 낮으면 감춘다.
  */
 .side-rail { display: none; }
-@media (min-width: 1536px) and (min-height: 880px) {
+@media (min-width: 1800px) and (min-height: 880px) {
   .side-rail {
     display: block;
     position: fixed;
@@ -614,7 +632,7 @@ body { background:
   rgb(var(--c-ground)); background-attachment: fixed; }
 
 /* 기둥 폭 안에서 화면 폭 전체로 번지는 띠. body 의 overflow-x: clip 이 넘친 만큼을 자른다. */
-.bleed { margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
+.bleed { margin-left: calc(50% - 50vw / var(--zoom, 1)); margin-right: calc(50% - 50vw / var(--zoom, 1)); }
 
 /* 밝은 하늘빛 첫 화면 띠(2026-11-25 2차). 복지·보조금 포털의 색감: 맑은 파랑 + 민트·노랑 점. */
 .hero-sky { background: linear-gradient(180deg, #E4EFFF 0%, #EEF5FF 45%, #F5F8FD 100%); }

@@ -159,8 +159,10 @@ export function SpotlightFx() {
       const t = (e.target as Element | null)?.closest?.<HTMLElement>(".spot");
       if (!t) return;
       const r = t.getBoundingClientRect();
-      t.style.setProperty("--mx", `${e.clientX - r.left}px`);
-      t.style.setProperty("--my", `${e.clientY - r.top}px`);
+      // body 가 zoom 되어 있다 — 화면 px 를 상자 안 px 로 바꾼다(상자의 그려진 폭 ÷ 제 폭).
+      const k = t.offsetWidth ? r.width / t.offsetWidth : 1;
+      t.style.setProperty("--mx", `${(e.clientX - r.left) / k}px`);
+      t.style.setProperty("--my", `${(e.clientY - r.top) / k}px`);
     };
     document.addEventListener("pointermove", on, { passive: true });
     return () => document.removeEventListener("pointermove", on);
