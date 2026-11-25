@@ -80,7 +80,7 @@ export function Box({ title, sub, more, moreLabel = "더보기", className = "",
   return (
     <section className={`card p-4 ${className}`}>
       <div className="mb-2 flex items-baseline justify-between gap-2">
-        <h2 className="text-[15px] font-extrabold tracking-[-.02em]">{title}</h2>
+        <h2 className="text-[17px] font-extrabold tracking-[-.02em] sm:text-[15.5px]">{title}</h2>
         {sub && <span className="min-w-0 flex-1 truncate text-[12px] text-faint">{sub}</span>}
         {more && (
           <Link href={more} className="-my-1.5 shrink-0 py-1.5 text-[12.5px] font-semibold text-muted hover:text-ink">
@@ -126,7 +126,7 @@ const KIND: Record<Slide["kind"], { label: string; cls: string }> = {
 /** 남은 날 배지. 사흘 안은 빨강, 이레 안은 주황. */
 export function DueBadge({ days }: { days: number }) {
   const cls = days <= 3 ? "bg-alertSoft text-alert" : days <= 7 ? "bg-accentSoft text-accent" : "bg-ground text-muted";
-  return <span className={`num shrink-0 rounded-pill px-2 py-0.5 text-[12px] font-bold ${cls}`}>{dueLabel(days)}</span>;
+  return <span className={`num shrink-0 rounded-pill px-2.5 py-1 text-[13px] font-extrabold ${cls}`}>{dueLabel(days)}</span>;
 }
 
 /** 놓치기 쉬운 마감 모음(지원금·시험·채용·기업). 휴대폰은 위쪽 돌림 띠가 같은 것을 보여 준다. */
@@ -206,13 +206,13 @@ export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean 
   ].filter((x): x is { t: string; c: string } => !!x).slice(0, 4);
   return (
     <li>
-      <Link href={`/p/${encodeURIComponent(p.source_id)}`} className="group flex items-center gap-3 py-2.5">
+      <Link href={`/p/${encodeURIComponent(p.source_id)}`} className="row-press group flex items-center gap-3 py-3">
         <span className="min-w-0 flex-1">
-          <b className="block truncate text-[14.5px] font-semibold text-ink group-hover:text-brand">{p.title}</b>
-          <span className="mt-0.5 block truncate text-[12.5px] text-muted">{[p.org_name, place].filter(Boolean).join(" · ")}</span>
+          <b className="block truncate text-[16.5px] font-bold tracking-[-.02em] text-ink group-hover:text-brand sm:text-[15.5px]">{p.title}</b>
+          <span className="mt-0.5 block truncate text-[13.5px] text-muted sm:text-[13px]">{[p.org_name, place].filter(Boolean).join(" · ")}</span>
           {tags.length > 0 && (
             <span className="mt-1.5 flex flex-wrap gap-1">
-              {tags.map((x) => <span key={x.t} className={`rounded-[6px] px-1.5 py-px text-[11.5px] font-bold ${x.c}`}>{x.t}</span>)}
+              {tags.map((x) => <span key={x.t} className={`rounded-[6px] px-1.5 py-0.5 text-[12.5px] font-bold ${x.c}`}>{x.t}</span>)}
             </span>
           )}
         </span>

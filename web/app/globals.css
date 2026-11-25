@@ -5,7 +5,7 @@
 /* 2026-11-26 색 변수. tailwind 의 색 이름(ground·ink·brand…)이 모두 여기를 읽는다. 기기 설정이 어두운 화면이면 아래 값으로 바뀐다. */
 :root {
   color-scheme: light dark;
-  --c-ground: 245 246 248;
+  --c-ground: 236 239 245;
   --c-surface: 255 255 255;
   --c-surface2: 249 250 251;
   --c-line: 229 232 236;
@@ -841,4 +841,55 @@ body { background:
   .leaflet-container { filter: brightness(.82) contrast(1.05); }
   input, select, textarea { color-scheme: dark; }
   ::placeholder { color: rgb(var(--c-faint)); }
+}
+
+/* ───────────────────────── 2026-11-26 4차: 덜 밝게 · 휴대폰 손맛 · 사용법 ─────────────────────────
+ * "너무 밝다" → 쪽 바탕을 한 단계 낮추고(#ECEFF5), 첫 화면 띠를 파란 띠 + 흰 글자로. 어두운 화면도 같은 띠(조금 더 깊게).
+ */
+.hero-sky { background: linear-gradient(155deg, #2F6BF2 0%, #2157DB 52%, #1A45B5 100%); border-radius: 0 0 28px 28px; }
+.hero-sky::after { display: none; }
+.hero-sky h1 em { background: linear-gradient(100deg, #FFE08A 0%, #B8F5D8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-blob-a { background: radial-gradient(circle, rgba(122,190,255,.55), rgba(122,190,255,0) 70%); }
+.hero-blob-b { background: radial-gradient(circle, rgba(99,230,190,.30), rgba(99,230,190,0) 70%); }
+.hero-blob-c { background: radial-gradient(circle, rgba(20,40,140,.55), rgba(20,40,140,0) 70%); }
+.hero-dots { background-image: radial-gradient(rgba(255,255,255,.22) 1.2px, transparent 1.2px); }
+.hero-search form { box-shadow: 0 20px 44px -20px rgba(8,20,80,.7), 0 0 0 6px rgba(255,255,255,.14); border-color: transparent; }
+.live-dot { background: #7CF0C8; box-shadow: 0 0 0 0 rgba(124,240,200,.6); }
+@media (prefers-color-scheme: dark) {
+  .hero-sky { background: linear-gradient(155deg, #1E3F9E 0%, #172F7A 52%, #111F52 100%); }
+  .hero-sky h1 em { background: linear-gradient(100deg, #FFE08A 0%, #B8F5D8 100%); -webkit-background-clip: text; background-clip: text; }
+  .hero-search form { box-shadow: 0 20px 44px -20px rgba(0,0,0,.8), 0 0 0 6px rgba(255,255,255,.08); }
+}
+
+/* 휴대폰: 옆으로 넘기는 띠는 한 칸씩 멈추고 막대는 숨긴다. */
+.snap-row { scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-padding-left: 1.25rem; }
+.snap-row::-webkit-scrollbar { display: none; }
+@media (min-width: 640px) { .snap-row { scroll-snap-type: none; } }
+
+/* 누르는 맛: 손가락이 닿으면 살짝 들어간다. */
+.way:active, .card-link:active, .tile:active, .pick:active { transform: scale(.97); }
+.row-press { border-radius: 10px; transition: background-color .15s, transform .15s; }
+.row-press:active { background: rgb(var(--c-ground)); transform: scale(.985); }
+a, button { -webkit-tap-highlight-color: transparent; }
+
+/* 휴대폰: 내려가는 동안 머리말이 숨는다(TouchFx 가 tuck 을 붙인다). */
+@media (max-width: 639.98px) {
+  [data-site-header] { transition: transform .28s cubic-bezier(.2,.7,.2,1), box-shadow .2s; }
+  [data-site-header].tuck { transform: translateY(-100%); }
+}
+
+/* 사용법 판 */
+.tour-back { background: rgba(10,16,32,.55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: tourFade .25s ease both; }
+.tour-sheet { animation: tourUp .38s cubic-bezier(.2,.8,.2,1) both; touch-action: pan-y; padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+.tour-step { animation: riseIn .35s cubic-bezier(.2,.7,.2,1) both; }
+.tour-ic { display: inline-flex; padding: 10px; border-radius: 24px; background: rgb(var(--c-brandSoft)); animation: bob 3.500s ease-in-out infinite alternate; }
+.tour-ic:nth-child(2) { animation-delay: -1.200s; } .tour-ic:nth-child(3) { animation-delay: -2.400s; }
+.tour-caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -2px; background: rgb(var(--c-brand)); animation: caret 1s steps(1) infinite; }
+@keyframes tourFade { from { opacity: 0; } }
+@keyframes tourUp { from { transform: translateY(40px); opacity: 0; } }
+@keyframes caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .tour-back, .tour-sheet, .tour-step, .tour-ic, .tour-caret { animation: none; }
+  [data-site-header].tuck { transform: none; }
+  .way:active, .card-link:active, .tile:active, .pick:active, .row-press:active { transform: none; }
 }

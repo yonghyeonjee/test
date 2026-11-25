@@ -23,11 +23,12 @@ export type Way = {
 export default function Ways({ items, className = "" }: { items: Way[]; className?: string }) {
   return (
     <Reveal className={`rv-group ${className}`}>
-    <nav aria-label="갈래" className="stagger grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+    {/* 2026-11-26 휴대폰에서는 옆으로 넘기는 띠(한 칸씩 딱딱 멈춘다). 다섯 칸이 두 줄 반을 먹던 것이 한 줄이 된다. */}
+    <nav aria-label="갈래" className="snap-row stagger -mx-5 flex gap-2.5 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-5 sm:overflow-visible sm:px-0 sm:pb-0">
       {items.map((w) => (
         <Link key={w.href} href={w.href}
-              className={`spot way group relative flex min-w-0 flex-col gap-1.5 overflow-hidden rounded-card border p-3.5 sm:p-4
-                          ${w.first ? "col-span-2 border-brand/40 bg-gradient-to-br from-brandSoft to-surface sm:col-span-1" : "border-line bg-surface"}`}>
+              className={`spot way group relative flex w-[46%] min-w-0 shrink-0 snap-start flex-col gap-1.5 overflow-hidden rounded-card border p-4 sm:w-auto sm:shrink
+                          ${w.first ? "border-brand/40 bg-gradient-to-br from-brandSoft to-surface" : "border-line bg-surface"}`}>
           {/* 2026-11-25 색이 들어간 두 톤 아이콘. 그림이 없는 이름은 예전 선 아이콘으로. */}
           {DUO_NAMES.includes(w.icon) ? (
             <span className="way-ic flex h-12 w-12 items-center justify-center"><DuoIcon name={w.icon} className="h-12 w-12" /></span>
@@ -36,8 +37,8 @@ export default function Ways({ items, className = "" }: { items: Way[]; classNam
               <PortalIcon name={w.icon} className="h-5 w-5" strokeWidth={2.2} />
             </span>
           )}
-          <b className="text-[15px] font-extrabold leading-snug tracking-[-.02em] text-ink">{w.label}</b>
-          <span className="text-[12.5px] leading-snug text-muted">{w.sub}</span>
+          <b className="text-[16.5px] font-extrabold leading-snug tracking-[-.025em] text-ink break-keep sm:text-[15.5px]">{w.label}</b>
+          <span className="text-[13px] leading-snug text-muted">{w.sub}</span>
           <span aria-hidden className="way-arrow">→</span>
         </Link>
       ))}
