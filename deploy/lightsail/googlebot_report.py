@@ -54,6 +54,7 @@ def main():
     by_day = collections.defaultdict(collections.Counter)
     bad = collections.Counter()          # (코드, 이유, 경로 앞머리)
     bad_ip = collections.defaultdict(collections.Counter)
+    all_ip = collections.Counter()        # 구글 이름표 요청 전체의 IP
     ua_kind = collections.Counter()
     first = last = None
     for line in lines(folder):
@@ -74,6 +75,7 @@ def main():
         uri = req.get("uri") or ""
         path = uri.split("?")[0]
         status[code] += 1
+        all_ip[req.get("client_ip") or req.get("remote_ip") or "?"] += 1
         by_day[ts.astimezone(kst).strftime("%m-%d")][code] += 1
         m = GOOGLE.search(ua)
         ua_kind[m.group(0) if m else "?"] += 1
@@ -108,6 +110,19 @@ def main():
                     host = "(역방향 이름 없음)"
                 real = host.endswith((".googlebot.com", ".google.com", ".googleusercontent.com"))
                 print(f"      {ip} → {host} {'(구글 맞음)' if real else '(구글 아님 — 이름표를 꾸민 봇)'}")
+    # 2026-11-25 이름표를 꾸민 봇이 섞였는지: 요청 많은 IP 를 역방향 DNS 로 가른다(구글은 googlebot.com·google.com).
+    print(f"-- 구글 이름표 요청의 IP {len(all_ip)}개. 상위 15개 역방향 DNS")
+    real_n = fake_n = 0
+    for ip, n in all_ip.most_common(15):
+        try:
+            host = socket.gethostbyaddr(ip)[0]
+        except OSError:
+            host = "(역방향 이름 없음)"
+        real = host.endswith((".googlebot.com", ".google.com", ".googleusercontent.com"))
+        real_n += n if real else 0
+        fake_n += 0 if real else n
+        print(f"  {n:6d}  {ip:<40s} {host}  {'구글' if real else '꾸민 봇'}")
+    print(f"  상위 15개 IP 합: 구글 {real_n} · 꾸민 봇 {fake_n}")
 
 
 if __name__ == "__main__":
