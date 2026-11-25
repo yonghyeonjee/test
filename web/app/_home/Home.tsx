@@ -440,7 +440,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
             <SectionHead title="우리 동네 지원금"
                          sub={`시·도를 고르면 시·군·구 사업까지 함께 나옵니다. 전국 ${areaTotal.toLocaleString("ko-KR")}건.`} more="/policies" />
             {/* 휴대폰은 짧은 이름(서울·경기…)으로 네 칸. 긴 이름이 세 줄로 꺾였다. */}
-            <div className="grid grid-cols-4 gap-x-1 gap-y-0.5 sm:grid-cols-6 sm:gap-x-3">
+            <div className="fs-3col grid grid-cols-4 gap-x-1 gap-y-0.5 sm:grid-cols-6 sm:gap-x-3">
               {areas.map((a) => (
                 <Link key={a.sido} href={`/area/${encodeURIComponent(a.sido)}`} title={a.sido}
                       className="flex items-baseline justify-between gap-1 rounded-[8px] px-2 py-2 text-[14px]

@@ -208,7 +208,8 @@ export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean 
     <li>
       <Link href={`/p/${encodeURIComponent(p.source_id)}`} className="row-press group flex items-center gap-3 py-3">
         <span className="min-w-0 flex-1">
-          <b className="block truncate text-[16.5px] font-bold tracking-[-.02em] text-ink group-hover:text-brand sm:text-[15.5px]">{p.title}</b>
+          {/* 휴대폰은 두 줄까지 — 글자를 키우면 한 줄로는 제목이 "청년근로자 지역…"에서 잘렸다. */}
+          <b className="line-clamp-2 text-[16.5px] font-bold leading-snug tracking-[-.02em] text-ink break-keep group-hover:text-brand sm:line-clamp-1 sm:text-[15.5px]">{p.title}</b>
           <span className="mt-0.5 block truncate text-[13.5px] text-muted sm:text-[13px]">{[p.org_name, place].filter(Boolean).join(" · ")}</span>
           {tags.length > 0 && (
             <span className="mt-1.5 flex flex-wrap gap-1">

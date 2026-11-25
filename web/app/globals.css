@@ -911,3 +911,8 @@ a, button { -webkit-tap-highlight-color: transparent; }
   [data-site-header].tuck { transform: none; }
   .way:active, .card-link:active, .tile:active, .pick:active, .row-press:active { transform: none; }
 }
+
+/* 글자 2·3단계의 휴대폰: 네 칸짜리 촘촘한 격자는 세 칸으로(칸 안의 이름과 숫자가 겹쳤다). */
+@media (max-width: 639.98px) {
+  html[data-fs="2"] .fs-3col, html[data-fs="3"] .fs-3col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
