@@ -25,7 +25,7 @@ const clean = (s: string) => s.replace(/\s+/g, "").toLowerCase();
  */
 export default function PortalSearch({
   index = {}, initial = "", size = "lg", autoFocus = false, hot = HOT_WELFARE, placeholder, placeholderNarrow,
-  scope = "all", center = false,
+  scope = "all", center = false, tone = "light",
 }: {
   index?: Idx; initial?: string;
   /** xl: 첫 화면 한가운데(네이버 첫 화면 검색창 크기). lg: 검색 화면. md: 작은 자리. */
@@ -39,6 +39,8 @@ export default function PortalSearch({
   placeholderNarrow?: string;
   /** business 면 사업자 검색(/business/search)으로 간다. 기업 첫 화면이 쓴다. */
   scope?: "all" | "business";
+  /** dark: 짙은 첫 화면 띠 위(2026-11-25). 많이 찾는 말을 반투명 유리 알약으로. */
+  tone?: "light" | "dark";
 }) {
   const base = scope === "business" ? "/business/search" : "/search";
   const router = useRouter();
@@ -183,13 +185,15 @@ export default function PortalSearch({
         // 휴대폰에서는 한 줄로 두고 옆으로 밀어 본다(열 개 모두). 넓은 화면은 한 줄에 드는 여덟 개까지.
         <div className={`mt-3 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
                          sm:flex-wrap sm:overflow-visible ${center ? "sm:justify-center" : ""} -mx-5 px-5 sm:mx-0 sm:px-0`}>
-          <span className="shrink-0 text-[12.5px] font-bold text-ink2" title="지난 7일 동안 많이 찾은 말. 매일 새로 셉니다.">
+          <span className={`shrink-0 text-[12.5px] font-bold ${tone === "dark" ? "text-white/75" : "text-ink2"}`} title="지난 7일 동안 많이 찾은 말. 매일 새로 셉니다.">
             많이 찾는 말
           </span>
           {hot.map((h, i) => (
             <Link key={h} href={`${base}?q=${encodeURIComponent(h)}`}
-                  className={`shrink-0 rounded-pill bg-white px-3 py-1.5 text-[13px] font-medium text-ink2 ring-1 ring-inset ring-line
-                              transition-colors hover:text-brand hover:ring-brand/40 ${i >= 8 ? "sm:hidden" : ""}`}>
+                  className={`shrink-0 rounded-pill px-3 py-1.5 text-[13px] font-medium ring-1 ring-inset transition-colors ${
+                              tone === "dark"
+                                ? "bg-white/[.07] text-white/90 ring-white/15 backdrop-blur hover:bg-white/15 hover:text-white"
+                                : "bg-white text-ink2 ring-line hover:text-brand hover:ring-brand/40"} ${i >= 8 ? "sm:hidden" : ""}`}>
               {h}
             </Link>
           ))}

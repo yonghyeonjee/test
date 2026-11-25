@@ -122,3 +122,78 @@ export function HotkeyFocus() {
   }, []);
   return null;
 }
+
+/**
+ * 맨 위 가는 띠가 읽은 만큼 찬다(2026-11-25). 쪽 전체에 하나. 움직임 줄이기 설정이면 그리지 않는다.
+ * 스크롤마다 React 를 다시 그리지 않고 transform 만 바꾼다.
+ */
+export function ScrollProgress() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || reduced()) return;
+    let raf = 0;
+    const on = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        el.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
+      });
+    };
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => { window.removeEventListener("scroll", on); window.removeEventListener("resize", on); cancelAnimationFrame(raf); };
+  }, []);
+  return <div ref={ref} aria-hidden className="scroll-progress" />;
+}
+
+/**
+ * 카드 위 빛(2026-11-25). `.spot` 이 붙은 상자 위에서 마우스를 움직이면 그 자리에 옅은 빛이 따라온다.
+ * 카드마다 구독하지 않고 문서에 하나만 건다. 터치 기기·움직임 줄이기 설정에서는 아무 일도 하지 않는다.
+ */
+export function SpotlightFx() {
+  useEffect(() => {
+    if (reduced() || !window.matchMedia?.("(hover: hover)").matches) return;
+    const on = (e: PointerEvent) => {
+      const t = (e.target as Element | null)?.closest?.<HTMLElement>(".spot");
+      if (!t) return;
+      const r = t.getBoundingClientRect();
+      t.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      t.style.setProperty("--my", `${e.clientY - r.top}px`);
+    };
+    document.addEventListener("pointermove", on, { passive: true });
+    return () => document.removeEventListener("pointermove", on);
+  }, []);
+  return null;
+}
+
+/**
+ * 세 걸음 이야기(2026-11-25). 내려가면 세로 선이 차오르고, 화면 가운데를 지난 걸음이 하나씩 켜진다.
+ * 내용은 서버에서 다 그려져 있다 — 여기서는 `data-on` 과 선 길이(--p)만 바꾼다.
+ */
+export function StepStory({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const steps = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
+    if (reduced()) { steps.forEach((s) => s.setAttribute("data-on", "")); el.style.setProperty("--p", "1"); return; }
+    let raf = 0;
+    const on = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const mid = window.innerHeight * 0.62;
+        const p = Math.max(0, Math.min(1, (mid - r.top) / Math.max(1, r.height)));
+        el.style.setProperty("--p", p.toFixed(3));
+        steps.forEach((s) => s.toggleAttribute("data-on", s.getBoundingClientRect().top < mid));
+      });
+    };
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => { window.removeEventListener("scroll", on); window.removeEventListener("resize", on); cancelAnimationFrame(raf); };
+  }, []);
+  return <div ref={ref} className={`step-story ${className}`}>{children}</div>;
+}

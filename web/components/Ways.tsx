@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PortalIcon from "./PortalIcon";
+import { Reveal } from "./Motion";
 
 export type Way = {
   href: string;
@@ -20,18 +21,21 @@ export type Way = {
  */
 export default function Ways({ items, className = "" }: { items: Way[]; className?: string }) {
   return (
-    <nav aria-label="갈래" className={`grid grid-cols-2 gap-2.5 sm:grid-cols-5 ${className}`}>
+    <Reveal className={`rv-group ${className}`}>
+    <nav aria-label="갈래" className="stagger grid grid-cols-2 gap-2.5 sm:grid-cols-5">
       {items.map((w) => (
         <Link key={w.href} href={w.href}
-              className={`group flex min-w-0 flex-col gap-1.5 rounded-card border p-3.5 transition-[transform,border-color] duration-150 hover:-translate-y-0.5
-                          ${w.first ? "col-span-2 border-brand bg-brandSoft sm:col-span-1" : "border-line bg-surface hover:border-line2"}`}>
-          <span className={`flex h-9 w-9 items-center justify-center rounded-[10px] ${w.tone}`}>
+              className={`spot way group relative flex min-w-0 flex-col gap-1.5 overflow-hidden rounded-card border p-3.5 sm:p-4
+                          ${w.first ? "col-span-2 border-brand/40 bg-gradient-to-br from-brandSoft to-white sm:col-span-1" : "border-line bg-surface"}`}>
+          <span className={`flex h-10 w-10 items-center justify-center rounded-[12px] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${w.tone}`}>
             <PortalIcon name={w.icon} className="h-5 w-5" strokeWidth={2.2} />
           </span>
           <b className="text-[15px] font-extrabold leading-snug tracking-[-.02em] text-ink">{w.label}</b>
           <span className="text-[12.5px] leading-snug text-muted">{w.sub}</span>
+          <span aria-hidden className="way-arrow">→</span>
         </Link>
       ))}
     </nav>
+    </Reveal>
   );
 }
