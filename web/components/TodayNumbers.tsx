@@ -29,12 +29,12 @@ export default function TodayNumbers({ tiles, note, className = "" }: { tiles: T
       <dl className={`stagger grid grid-cols-2 gap-px overflow-hidden rounded-[20px] border border-white/60 bg-line shadow-float ${cols}`}>
         {shown.map((t, i) => (
           // 휴대폰은 두 줄씩이라 칸이 홀수면 마지막 자리가 빈다. 마지막 칸을 두 칸 너비로 늘려 메운다.
-          <Link key={t.k} href={t.href} className={`spot group relative block min-w-0 bg-surface px-4 py-4 transition-colors hover:bg-surface2 sm:px-5 ${shown.length % 2 === 1 && i === shown.length - 1 ? "max-sm:col-span-2" : ""}`}>
+          <Link key={t.k} href={t.href} className={`spot group relative block min-w-0 bg-surface px-4 py-2.5 transition-colors hover:bg-surface2 sm:px-5 sm:py-4 ${shown.length % 2 === 1 && i === shown.length - 1 ? "max-sm:col-span-2" : ""}`}>
             <dt className="truncate text-[12.5px] text-muted">{t.k}</dt>
-            <dd className="num mt-0.5 text-[24px] font-black leading-tight tracking-[-.03em] text-ink group-hover:text-brand">
+            <dd className="num mt-0.5 text-[21px] font-black leading-tight sm:text-[24px] tracking-[-.03em] text-ink group-hover:text-brand">
               <CountUp value={t.n} /><span className="ml-0.5 text-[13px] font-semibold text-muted">{t.unit ?? "건"}</span>
             </dd>
-            <dd className="mt-1.5"><span className={`inline-block rounded-pill px-2 py-px text-[12px] font-bold ${t.tone}`}>{t.tag}</span></dd>
+            <dd className="mt-1.5 max-sm:hidden"><span className={`inline-block rounded-pill px-2 py-px text-[12px] font-bold ${t.tone}`}>{t.tag}</span></dd>
           </Link>
         ))}
       </dl>

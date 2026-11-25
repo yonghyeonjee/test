@@ -630,3 +630,70 @@ body { background:
 }
 .way-ic { transition: transform .35s cubic-bezier(.2,.7,.2,1); }
 .way:hover .way-ic { transform: translateY(-3px) rotate(-6deg) scale(1.1); }
+
+/* ───────────────────────── 2026-11-25 3차: 사이트 전체 입히기 ─────────────────────────
+ * "메인 말고 전체적인 디자인을" — 쪽마다 고치지 않고 함께 쓰는 조각(머리 띠·카드·단추·알약·꼬리말)에 입힌다.
+ * 움직임은 덧칠뿐이다(글자는 서버가 그린다). 움직임 줄이기 설정이면 아래가 모두 꺼진다.
+ */
+
+/* 자료 화면 머리 띠(PageBanner): 갈래 색 빛 번짐 두 겹 + 점무늬 + 위쪽 색 선. 그림은 천천히 떠 있다. */
+.banner-soft {
+  background:
+    radial-gradient(560px 280px at 100% 0%, var(--tone-soft), transparent 70%),
+    radial-gradient(360px 220px at 0% 110%, var(--tone-soft), transparent 72%),
+    #fff;
+  border-color: color-mix(in srgb, var(--tone) 16%, #E5E8EC);
+  box-shadow: 0 22px 44px -34px color-mix(in srgb, var(--tone) 70%, transparent);
+}
+.banner-soft > * { position: relative; }
+.banner-soft::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(color-mix(in srgb, var(--tone) 22%, transparent) 1.2px, transparent 1.2px); background-size: 20px 20px;
+  -webkit-mask-image: linear-gradient(100deg, transparent 45%, #000 100%); mask-image: linear-gradient(100deg, transparent 45%, #000 100%); }
+.banner-soft::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, var(--tone), color-mix(in srgb, var(--tone) 35%, #fff) 60%, transparent); }
+.banner-soft .eyebrow { display: inline-block; padding: 3px 10px; border-radius: 999px; background: color-mix(in srgb, var(--tone-soft) 80%, #fff);
+  border: 1px solid color-mix(in srgb, var(--tone) 18%, transparent); }
+.banner-soft h1 { background: linear-gradient(100deg, #191F28 55%, var(--tone)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* 카드에 마우스를 올리면 살짝 뜬다. */
+.card-link, .tile { transition: transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s, border-color .22s; }
+.card-link:hover, .tile:hover { transform: translateY(-3px); }
+
+/* 주 단추: 파랑 그라데이션 + 지나가는 빛. */
+.btn-primary { position: relative; overflow: hidden; background-image: linear-gradient(135deg, #2F6BF2, #1D4FD8);
+  box-shadow: 0 10px 22px -12px rgba(37,99,235,.7); transition: transform .18s, box-shadow .18s, background-color .18s; }
+.btn-primary::after { content: ""; position: absolute; inset: 0; transform: translateX(-120%); pointer-events: none;
+  background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(37,99,235,.8); }
+.btn-primary:hover::after { transform: translateX(120%); transition: transform .7s ease; }
+.btn-primary:active { transform: translateY(0) scale(.98); }
+.chip { transition: transform .16s, border-color .16s, color .16s, background-color .16s; }
+.chip:hover { transform: translateY(-1px); }
+.chip:active { transform: scale(.96); }
+
+/* 꼬리말: 옅은 하늘빛에서 흰색으로, 위에 색 선 한 줄. */
+.site-footer { background: linear-gradient(180deg, #F7FAFF, #fff 120px); position: relative; }
+.site-footer::before { content: ""; position: absolute; left: 0; right: 0; top: -1px; height: 3px;
+  background: linear-gradient(90deg, #2563EB, #1C7ED6 45%, #0C9F6E 80%, #FFD166); opacity: .85; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 머리 띠가 열릴 때 글이 차례로 떠오르고, 그림은 떠 있다. */
+  .banner-soft .eyebrow, .banner-soft h1, .banner-soft h1 + p { animation: riseIn .6s cubic-bezier(.2,.7,.2,1) both; }
+  .banner-soft h1 { animation-delay: 70ms; }
+  .banner-soft h1 + p { animation-delay: 140ms; }
+  .banner-soft .banner-art { animation: bob 6s ease-in-out infinite alternate; }
+
+  /* 스크롤: 본문의 카드·칸이 화면에 들어올 때 떠오른다. CSS 만으로(스크립트 없음) — 지원하지 않는 브라우저에서는 그냥 보인다. */
+  @supports (animation-timeline: view()) {
+    main .card, main .tile {
+      animation: riseIn linear both; animation-timeline: view(); animation-range: entry 0% entry 26%;
+    }
+    /* 첫 화면에서 이미 따로 움직이는 것과, 안에 떠 있는 상자(자동 완성 등)가 있는 것은 뺀다. */
+    main .reveal .card, main .card.no-rise, main .card .card { animation: none; }
+  }
+}
+@keyframes riseIn { from { opacity: 0; transform: translateY(20px) scale(.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .card-link:hover, .tile:hover, .btn-primary:hover, .chip:hover { transform: none; }
+  .btn-primary::after { display: none; }
+}

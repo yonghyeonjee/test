@@ -412,7 +412,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
         ]}
         picks={closing}
       />
-      <TodayNumbers tiles={todayTiles} className="-mt-14 sm:-mt-16" note={briefDay ? `${briefDay} 브리핑 기준` : undefined} />
+      <TodayNumbers tiles={todayTiles} className="-mt-12 sm:-mt-16" note={briefDay ? `${briefDay} 브리핑 기준` : undefined} />
       <Ways items={ways} className="mt-5 sm:mt-6" />
       <PortalColumns
         main={<>
