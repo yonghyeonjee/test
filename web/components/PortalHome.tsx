@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import PortalSearch from "./PortalSearch";
 import PortalIcon from "./PortalIcon";
 import { SHORTCUTS } from "@/lib/nav";
-import { applyStatus, daysLeft } from "@/lib/consts";
+import { ageLabel, applyStatus, daysLeft } from "@/lib/consts";
 import { dueLabel, type Slide } from "@/lib/hotShared";
 import type { Program } from "@/lib/db";
 
@@ -185,17 +185,36 @@ export function AboutBox({ total, closing, className = "" }: { total: number; cl
   );
 }
 
-/** 공고 한 줄: 제목 · 기관/지역 · 남은 날. 포털의 촘촘한 목록. */
+/**
+ * 공고 한 줄: 제목 · 기관/지역 · 라벨 · 남은 날.
+ * 2026-11-26 "라벨을 더, 우선 남은 기간"이라는 말에: 마감일이 있으면 며칠이 남았든 D-○ 를 적는다(전에는 30일 안만 적고
+ * 나머지는 "접수 중"뿐이라 '마감 임박' 목록인데 언제 끝나는지 알 수 없었다). 그 밑에 지원 형태·나이·소득 기준·마감일을 작은 라벨로.
+ */
 export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean }) {
   const st = applyStatus(p);
   const left = daysLeft(p);
   const place = p.sigungu || p.sido || "전국";
+  const age = ageLabel(p);
+  const end = p.apply_end && !p.is_always_on ? `${Number(p.apply_end.slice(5, 7))}.${Number(p.apply_end.slice(8, 10))} 마감` : null;
+  const kind = p.support_type && p.support_type.length <= 10 ? p.support_type : null;
+  const tags = [
+    fresh ? { t: "새로", c: "bg-cat-greenSoft text-cat-green" } : null,
+    kind ? { t: kind, c: "bg-brandSoft text-brand" } : null,
+    age ? { t: age, c: "bg-cat-violetSoft text-cat-violet" } : null,
+    p.income_pct ? { t: `중위소득 ${p.income_pct}% 이하`, c: "bg-cat-amberSoft text-cat-amber" } : null,
+    end && st !== "closed" && st !== "upcoming" ? { t: end, c: "bg-ground text-muted" } : null,
+  ].filter((x): x is { t: string; c: string } => !!x).slice(0, 4);
   return (
     <li>
       <Link href={`/p/${encodeURIComponent(p.source_id)}`} className="group flex items-center gap-3 py-2.5">
         <span className="min-w-0 flex-1">
           <b className="block truncate text-[14.5px] font-semibold text-ink group-hover:text-brand">{p.title}</b>
           <span className="mt-0.5 block truncate text-[12.5px] text-muted">{[p.org_name, place].filter(Boolean).join(" · ")}</span>
+          {tags.length > 0 && (
+            <span className="mt-1.5 flex flex-wrap gap-1">
+              {tags.map((x) => <span key={x.t} className={`rounded-[6px] px-1.5 py-px text-[11.5px] font-bold ${x.c}`}>{x.t}</span>)}
+            </span>
+          )}
         </span>
         {st === "always" ? (
           <span className="shrink-0 rounded-pill bg-cat-blueSoft px-2 py-0.5 text-[12px] font-bold text-cat-blue">상시</span>
@@ -203,10 +222,8 @@ export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean 
           <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-muted">예정</span>
         ) : st === "closed" ? (
           <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-faint">마감</span>
-        ) : left !== null && left <= 30 ? (
+        ) : left !== null && left >= 0 ? (
           <DueBadge days={left} />
-        ) : fresh ? (
-          <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2 py-0.5 text-[12px] font-bold text-cat-green">새로</span>
         ) : (
           <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2 py-0.5 text-[12px] font-bold text-cat-green">접수 중</span>
         )}

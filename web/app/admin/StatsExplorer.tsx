@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DIM_LABEL, DIMS, FIRST_DAY, PRESETS, SRC_LABEL, UNIT_LABEL, UNITS, defaultUnit,
   type Dim, type Src, type StatRow, type Unit,
@@ -103,6 +103,7 @@ export default function StatsExplorer({ initial, initialError, range: outer }: P
     return () => ctl.abort();
   }, [src, range, unit, dim]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const scroller = useRef<HTMLDivElement>(null);
   // 그래프 자료: 구간 × 값.
   const keys = useMemo(() => bucketKeys(unit, range), [unit, range]);
   const { buckets, totals, total, series } = useMemo(() => {
@@ -118,7 +119,10 @@ export default function StatsExplorer({ initial, initialError, range: outer }: P
   const color = (k: string) => FIXED[k] ?? PALETTE[series.indexOf(k) % PALETTE.length];
   const max = Math.max(1, ...buckets.map((b) => b.total));
   const days = Math.max(1, Math.round((range.to - range.from) / 86400_000));
-  const labelEvery = Math.max(1, Math.ceil(buckets.length / 12));
+  const dense = buckets.length > 90;
+  // 옆으로 미는 그래프는 눈금 글자를 더 자주(약 60px 마다) 적는다.
+  const labelEvery = Math.max(1, dense ? Math.ceil(60 / 4) * 2 : Math.ceil(buckets.length / 12));
+  useEffect(() => { const el = scroller.current; if (el) el.scrollLeft = el.scrollWidth; }, [buckets.length, rows]);
   const unitDisabled = (u: Unit) => u === "hour" && range.to - range.from > 31 * 86400_000;
 
   const Seg = <T extends string>({ value, items, onPick }: { value: T; items: { v: T; t: string; off?: boolean }[]; onPick: (v: T) => void }) => (
@@ -168,8 +172,11 @@ export default function StatsExplorer({ initial, initialError, range: outer }: P
       )}
 
       {/* 쌓은 막대. 구간마다 값별로 쌓고, 올리면 숫자를 보인다. */}
-      <div className="mt-3">
-        <div className="flex h-40 items-end gap-[2px]">
+      {/* 2026-11-26 구간이 많으면(1년을 일 단위로 = 330칸) 휴대폰 폭에서 막대 폭이 0 이 되어 그래프가 비어 보였다.
+          막대마다 최소 폭을 주고 옆으로 민다. 처음에는 가장 최근(오른쪽 끝)이 보인다. */}
+      <div className="mt-3 overflow-x-auto pt-8" ref={scroller}>
+       <div style={{ minWidth: buckets.length * (dense ? 4 : 7) }}>
+        <div className={`flex h-40 items-end ${dense ? "gap-px" : "gap-[2px]"}`}>
           {buckets.map((b) => (
             <div key={b.key} className="group relative flex h-full min-w-0 flex-1 flex-col justify-end">
               {series.filter((k) => b.by.has(k)).map((k) => (
@@ -183,11 +190,12 @@ export default function StatsExplorer({ initial, initialError, range: outer }: P
             </div>
           ))}
         </div>
-        <div className="mt-1 flex gap-[2px] text-[10px] text-faint">
+        <div className={`mt-1 flex text-[10px] text-faint ${dense ? "gap-px" : "gap-[2px]"}`}>
           {buckets.map((b, i) => (
-            <span key={b.key} className="min-w-0 flex-1 truncate text-center">{i % labelEvery === 0 || i === buckets.length - 1 ? labelOf(unit, b.key) : ""}</span>
+            <span key={b.key} className="min-w-0 flex-1 overflow-visible whitespace-nowrap text-center">{i % labelEvery === 0 || i === buckets.length - 1 ? labelOf(unit, b.key) : ""}</span>
           ))}
         </div>
+       </div>
       </div>
 
       {/* 값별 건수와 비율. */}
