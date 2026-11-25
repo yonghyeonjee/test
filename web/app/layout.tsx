@@ -133,8 +133,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(localStorage.getItem('jw.big')==='1')" +
-              "document.documentElement.classList.add('big')}catch(e){}",
+              // 글자 크기 3단계(jw.fs). 예전에 '크게'를 켜 둔 사람(jw.big=1)은 2단계로.
+              "try{var d=document.documentElement,f=localStorage.getItem('jw.fs');" +
+              "if(f!=='1'&&f!=='2'&&f!=='3')f=localStorage.getItem('jw.big')==='1'?'2':'1';" +
+              "d.setAttribute('data-fs',f);if(f!=='1')d.classList.add('big')}catch(e){}",
           }}
         />
       </head>

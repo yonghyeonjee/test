@@ -60,7 +60,7 @@ export default function HomeHero({
                         text-[12.5px] font-bold tracking-[.02em] text-white/90 backdrop-blur">
             <span className="live-dot" aria-hidden />{eyebrow}
           </p>
-          <h1 className={`mx-auto max-w-[26ch] text-[1.58rem] sm:mt-4 font-black leading-[1.26] tracking-[-.04em] break-keep text-white
+          <h1 className={`mx-auto max-w-[26ch] text-[1.38rem] sm:mt-4 font-black leading-[1.26] tracking-[-.04em] break-keep text-white
                           sm:text-[2.3rem] [text-wrap:balance] ${wide ? "lg:mx-0 lg:max-w-none lg:text-[2.05rem]" : ""}`}>
             {h1}
           </h1>
