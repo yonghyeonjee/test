@@ -209,22 +209,42 @@
 	respond @scrape `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="robots" content="noindex"><title>K나라지원</title><script>document.cookie="jw_h=1; path=/; max-age=2592000; SameSite=Lax";location.replace(location.href)</script><noscript><p>이 쪽을 보려면 자바스크립트를 켜 주세요. <a href="/">K나라지원 첫 화면으로</a></p></noscript></html>` 403
 }
 
+(proxy_base) {
+	# 앱의 속도 제한(web/lib/rateLimit.ts)이 읽는 손님 주소. X-Forwarded-For 맨 앞은 손님이 써 넣을 수 있어
+	# 앞단을 거치면 속일 수 있다. Caddy 가 정한 client_ip 로 덮어쓴다.
+	header_up X-Real-IP {client_ip}
+	# 앱은 늘 공개 주소로 들어온 것으로 안다. CloudFront 는 origin.… 이름으로 오는데, 그대로 넘기면
+	# 미들웨어의 308(web/middleware.ts redirect308)이 손님을 origin.… 으로 보낸다.
+	header_up Host jiwon.knowhow-it.com
+	header_up X-Forwarded-Host jiwon.knowhow-it.com
+	transport http {
+		dial_timeout 3s
+		# /api/cron/* 는 한 번에 최대 60초(maxDuration) 일한다. 40초로 두었을 때 큐넷 수집이 40초 만에 끊겨
+		# 점검 화면이 돌아갔다(2026-10-06). Node 가 60초에 스스로 끊으니 그보다 길게.
+		response_header_timeout 90s
+	}
+}
+
 (app) {
 	import guard
 	encode zstd gzip
-	reverse_proxy 127.0.0.1:3000 {
-		# 앱의 속도 제한(web/lib/rateLimit.ts)이 읽는 손님 주소. X-Forwarded-For 맨 앞은 손님이 써 넣을 수 있어
-		# 앞단을 거치면 속일 수 있다. Caddy 가 정한 client_ip 로 덮어쓴다.
-		header_up X-Real-IP {client_ip}
-		# 앱은 늘 공개 주소로 들어온 것으로 안다. CloudFront 는 origin.… 이름으로 오는데, 그대로 넘기면
-		# 미들웨어의 308(web/middleware.ts redirect308)이 손님을 origin.… 으로 보낸다.
-		header_up Host jiwon.knowhow-it.com
-		header_up X-Forwarded-Host jiwon.knowhow-it.com
-		transport http {
-			dial_timeout 3s
-			# /api/cron/* 는 한 번에 최대 60초(maxDuration) 일한다. 40초로 두었을 때 큐넷 수집이 40초 만에 끊겨
-			# 점검 화면이 돌아갔다(2026-10-06). Node 가 60초에 스스로 끊으니 그보다 길게.
-			response_header_timeout 90s
+	# 2026-11-24 쪽 요청에서 Next 가 5xx(일시적 DB 실패 등)를 내면 점검 화면 503 + Retry-After 로 바꾼다.
+	# 200 짜리 오류 화면이 색인되거나(10/6~10/10) noindex 로 굳는 일(11/13)을 막는다 — 구글은 503 을
+	# "잠깐 쉬는 중"으로 읽는다. 없는 쪽은 Next 가 404 를 그대로 낸다. API·정적 파일은 원래 응답을 그대로 넘긴다
+	# (크론·방문 집계가 오류 내용을 읽어야 한다).
+	@page not path /api/* /_next/*
+	handle @page {
+		reverse_proxy 127.0.0.1:3000 {
+			import proxy_base
+			@up5xx status 5xx
+			handle_response @up5xx {
+				error 503
+			}
+		}
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3000 {
+			import proxy_base
 		}
 	}
 	handle_errors {
