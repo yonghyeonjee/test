@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CountUp, Reveal } from "./Motion";
 
 export type TodayTile = {
   /** 작은 이름("오늘 새 채용 공고"). */
@@ -22,19 +23,22 @@ export default function TodayNumbers({ tiles, note, className = "" }: { tiles: T
   if (shown.length < 2) return null;
   const cols = shown.length === 2 ? "sm:grid-cols-2" : shown.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-4";
   return (
-    <section className={className} aria-label="오늘의 숫자">
-      <dl className={`grid grid-cols-2 gap-px overflow-hidden rounded-card border border-line bg-line ${cols}`}>
+    <section className={`relative z-10 ${className}`} aria-label="오늘의 숫자">
+      {/* 2026-11-25 짙은 첫 화면 띠 끝에 반쯤 걸쳐 올라온다(그림자로 떠 보이게). 칸이 차례로 떠오르고 숫자가 굴러 올라간다. */}
+      <Reveal className="rv-group">
+      <dl className={`stagger grid grid-cols-2 gap-px overflow-hidden rounded-[20px] border border-white/60 bg-line shadow-float ${cols}`}>
         {shown.map((t, i) => (
           // 휴대폰은 두 줄씩이라 칸이 홀수면 마지막 자리가 빈다. 마지막 칸을 두 칸 너비로 늘려 메운다.
-          <Link key={t.k} href={t.href} className={`group block min-w-0 bg-surface px-4 py-3.5 transition-colors hover:bg-surface2 ${shown.length % 2 === 1 && i === shown.length - 1 ? "max-sm:col-span-2" : ""}`}>
+          <Link key={t.k} href={t.href} className={`spot group relative block min-w-0 bg-surface px-4 py-4 transition-colors hover:bg-surface2 sm:px-5 ${shown.length % 2 === 1 && i === shown.length - 1 ? "max-sm:col-span-2" : ""}`}>
             <dt className="truncate text-[12.5px] text-muted">{t.k}</dt>
             <dd className="num mt-0.5 text-[24px] font-black leading-tight tracking-[-.03em] text-ink group-hover:text-brand">
-              {t.n.toLocaleString("ko-KR")}<span className="ml-0.5 text-[13px] font-semibold text-muted">{t.unit ?? "건"}</span>
+              <CountUp value={t.n} /><span className="ml-0.5 text-[13px] font-semibold text-muted">{t.unit ?? "건"}</span>
             </dd>
             <dd className="mt-1.5"><span className={`inline-block rounded-pill px-2 py-px text-[12px] font-bold ${t.tone}`}>{t.tag}</span></dd>
           </Link>
         ))}
       </dl>
+      </Reveal>
       {note && <p className="mt-1.5 text-right text-[12px] text-faint">{note}</p>}
     </section>
   );

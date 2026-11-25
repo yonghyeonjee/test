@@ -74,6 +74,8 @@ export default {
       boxShadow: {
         card: "0 1px 2px rgba(17,24,39,.04)",
         lift: "0 10px 30px -12px rgba(17,24,39,.18)",
+        // 2026-11-25 짙은 첫 화면 띠 위로 떠오르는 카드.
+        float: "0 24px 60px -24px rgba(16,20,60,.45), 0 2px 6px rgba(16,20,60,.06)",
       },
     },
   },

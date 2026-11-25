@@ -253,7 +253,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
         {ld && homeLd("/business", BIZ_TITLE, BIZ_DESC, closing, fresh)}
         {/* 첫 화면(/)과 같은 틀(2026-11-02): 약속 한 문장 → 입력 하나 → 신뢰 줄. */}
         <HomeHero
-          index={bundle.sggIndex} hot={hotTerms.business} scope="business"
+          index={bundle.sggIndex} hot={hotTerms.business} scope="business" sources={[]}
           h1={<>지역과 사업체 형태만 고르면,<br className="hidden sm:block" /> 지금 신청할 수 있는 <em className="not-italic text-brand">기업·소상공인 지원사업</em>이 남습니다</>}
           sub="중앙부처·지자체·공공기관의 자금·기술·인력·수출·판로 공고를 매일 모아 지역·업종·업력으로 걸러 드립니다."
           trust={[
@@ -408,11 +408,10 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
         trust={[
           <>공공데이터 <b className="num text-ink2">{total.toLocaleString("ko-KR")}</b>건{jobOpen > 0 && <> · 채용 <b className="num text-ink2">{jobOpen.toLocaleString("ko-KR")}</b>건 접수 중</>}</>,
           <>매일 새벽 갱신{briefDay && <> · <b className="text-ink2">{briefDay}</b> 브리핑</>}</>,
-          <>출처 복지로 · 기업마당 · 나라일터 · 알리오 · 큐넷</>,
           <>모든 공고에 원문 링크</>,
         ]}
       />
-      <TodayNumbers tiles={todayTiles} className="mt-5 sm:mt-7" note={briefDay ? `${briefDay} 브리핑 기준` : undefined} />
+      <TodayNumbers tiles={todayTiles} className="-mt-14 sm:-mt-16" note={briefDay ? `${briefDay} 브리핑 기준` : undefined} />
       <Ways items={ways} className="mt-5 sm:mt-6" />
       <PortalColumns
         main={<>
