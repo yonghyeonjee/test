@@ -1,3 +1,4 @@
+import AdminTabs from "./AdminTabs";
 import { createClient } from "@supabase/supabase-js";
 import { configured, isLoggedIn } from "@/lib/auth";
 import LoginForm from "./LoginForm";
@@ -108,13 +109,8 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
 
   return (
     <div>
-      {/* 바로가기. 한 쪽에 전부 있어 휴대폰에서는 한참 내려야 한다. 위에 붙여 둔다. */}
-      <nav aria-label="관리자 바로가기"
-           className="sticky top-0 z-20 -mx-5 mb-2 flex gap-1 overflow-x-auto border-b border-line bg-white/95 px-5 py-2 text-[13px] backdrop-blur sm:mx-0 sm:rounded-card sm:border sm:px-3">
-        {JUMPS.map(([h, t]) => (
-          <a key={h} href={h} className="shrink-0 rounded-pill px-3 py-1 font-semibold text-ink2 hover:bg-brandSoft hover:text-brand">{t}</a>
-        ))}
-      </nav>
+      {/* 탭(2026-11-26). 고른 구역 하나만 보인다. 처음은 통계. */}
+      <AdminTabs tabs={JUMPS} initial="#a-visit" />
       <div className="flex items-baseline justify-between">
         <h1 className="text-xl font-extrabold">관리자</h1>
         <form action={async () => { "use server";
