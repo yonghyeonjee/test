@@ -35,6 +35,9 @@ jobs:
           # 같은 날 폴더별 du·find 는 CPU 가 바닥난 서버에서 10분을 넘겨 뺐다(디스크 사용량은 df 로 본다).
           $S 'sudo pkill -f "[g]rep -lF 이 채용" ; sudo pkill -f "[g]rep -lF .status" ; sudo pkill -f "^[d]u -sh? /srv/jiwon" ; sudo pkill -f "^[f]ind /srv/jiwon" ; true' || true
           $S "sudo timeout 60 python3 /tmp/lang_report.py ${{ inputs.minutes }}; rm -f /tmp/lang_report.py" || true
+          # 2026-11-24 구글 크롤러 응답 코드를 경로·이유별로(지난 7일, 회전된 기록 포함). 403 '그 밖' 은 역방향 DNS 로 진짜 구글인지 본다.
+          scp -o ConnectTimeout=20 -o StrictHostKeyChecking=no -i $HOME/.ssh/id deploy/lightsail/googlebot_report.py ubuntu@$HOST:/tmp/googlebot_report.py || true
+          $S "sudo timeout 120 python3 -I /tmp/googlebot_report.py 7; rm -f /tmp/googlebot_report.py" || true
           $S 'set +e
             echo "== 시각·가동 시간·부하"; date -u; uptime
             echo; echo "== 메모리(MB)"; free -m
