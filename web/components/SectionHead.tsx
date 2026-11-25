@@ -17,8 +17,8 @@ export default function SectionHead({
   return (
     <div className="mb-3 flex items-end justify-between gap-3">
       <div className="min-w-0">
-        <Tag className="sec-title text-[1.0625rem] font-extrabold tracking-[-.01em]">{title}</Tag>
-        {sub && <p className="mt-1 text-[13px] leading-snug text-muted">{sub}</p>}
+        <Tag className="sec-title text-[1.1875rem] font-extrabold sm:text-[1.125rem] tracking-[-.01em]">{title}</Tag>
+        {sub && <p className="mt-1 text-[13.5px] leading-snug text-muted">{sub}</p>}
       </div>
       {more && (
         <Link href={more}

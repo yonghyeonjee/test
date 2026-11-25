@@ -20,14 +20,14 @@ export default function FeedPanels({ panels, id }: {
       {shown.map((p) => (
         <section key={p.key} className="card feed-panel min-w-0 px-4 pb-2 pt-3 sm:px-5" aria-labelledby={`feed-${p.key}`}>
           <div className="flex items-end justify-between gap-3 border-b border-line">
-            <h2 id={`feed-${p.key}`} className="feed-title -mb-px border-b-[3px] border-brand pb-2 text-[16px] font-extrabold tracking-[-.02em] text-ink">
+            <h2 id={`feed-${p.key}`} className="feed-title -mb-px border-b-[3px] border-brand pb-2 text-[19px] font-extrabold sm:text-[17px] tracking-[-.02em] text-ink">
               {p.label}
             </h2>
             {p.more && (
-              <Link href={p.more} className="shrink-0 pb-2 text-[12.5px] font-semibold text-muted hover:text-ink">더보기 ›</Link>
+              <Link href={p.more} className="shrink-0 pb-2 text-[13.5px] font-semibold text-muted hover:text-ink">더보기 ›</Link>
             )}
           </div>
-          {p.sub && <p className="mt-2 text-[12.5px] text-faint">{p.sub}</p>}
+          {p.sub && <p className="mt-2 text-[13px] text-faint">{p.sub}</p>}
           {p.content}
         </section>
       ))}

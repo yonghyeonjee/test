@@ -197,3 +197,36 @@ export function StepStory({ children, className = "" }: { children: React.ReactN
   }, []);
   return <div ref={ref} className={`step-story ${className}`}>{children}</div>;
 }
+
+/**
+ * 휴대폰 손맛(2026-11-26). 쪽 전체에 하나.
+ *  - 내려가는 동안 머리말이 위로 숨고, 조금이라도 올리면 다시 나온다(좁은 화면만 — CSS 가 가른다). 본문이 넓어진다.
+ *  - 주요 단추·카드를 누를 때 짧은 진동(지원하는 안드로이드만). 움직임 줄이기 설정이면 하지 않는다.
+ */
+export function TouchFx() {
+  useEffect(() => {
+    const h = document.querySelector<HTMLElement>("[data-site-header]");
+    let last = window.scrollY, raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        if (h) {
+          if (y > 160 && y > last + 6) h.classList.add("tuck");
+          else if (y < last - 6 || y <= 160) h.classList.remove("tuck");
+        }
+        last = y;
+      });
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.pointerType !== "touch" || reduced()) return;
+      if ((e.target as Element | null)?.closest?.(".way, .btn-primary, .pick, [data-haptic]")) {
+        try { navigator.vibrate?.(8); } catch { /* 막아 둔 브라우저 */ }
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("pointerdown", onDown, { passive: true });
+    return () => { window.removeEventListener("scroll", onScroll); document.removeEventListener("pointerdown", onDown); cancelAnimationFrame(raf); };
+  }, []);
+  return null;
+}

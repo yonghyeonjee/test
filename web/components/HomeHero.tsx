@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import PortalSearch from "./PortalSearch";
 import DuoIcon from "./DuoIcon";
+import { TutorialButton } from "./Tutorial";
 import { daysLeft } from "@/lib/consts";
 import { dueLabel } from "@/lib/hotShared";
 import type { Program } from "@/lib/db";
@@ -20,6 +21,8 @@ const SOURCES = ["복지로", "기업마당", "나라일터", "잡알리오", "�
  * 카드는 저마다 다른 빠르기로 스크롤을 따라 흘러간다(CSS animation-timeline, 지원 브라우저만).
  * 2026-11-25(3차) 휴대폰에서 띠가 한 화면을 다 먹는다는 말에: 휴대폰은 제목 → 검색창 → 많이 찾는 말만 남기고
  * 알약·설명·신뢰 줄·출처 띠를 접었다(넓은 화면은 그대로). 숫자 카드와 갈래가 첫 화면에 들어온다.
+ * 2026-11-26(4차) "너무 밝다"는 말에 하늘빛 바탕을 파란 띠 + 흰 글자로(복지 포털 앱의 머리 띠처럼). 어두운 화면에서도 같은 띠다.
+ * 처음 온 사람을 위한 "30초 사용법" 단추를 달았다(Tutorial 을 연다).
  * 글자는 모두 서버에서 그린다. 아래 "오늘의 숫자" 카드가 띠 끝에 걸쳐 올라온다(Home.tsx 의 -mt).
  */
 export default function HomeHero({
@@ -43,7 +46,7 @@ export default function HomeHero({
   const cards = picks.slice(0, 3);
   const wide = cards.length === 3;
   return (
-    <section className="hero-sky bleed relative isolate overflow-hidden pb-16 pt-5 sm:pb-24 sm:pt-12">
+    <section className="hero-sky bleed relative isolate overflow-hidden pb-[4.5rem] pt-6 sm:pb-24 sm:pt-12">
       {/* 배경: 빛 번짐 셋 + 점무늬. 글자 뒤 장식이라 화면 읽기 프로그램에는 숨긴다. */}
       <div aria-hidden className="hero-bg">
         <span className="hero-blob hero-blob-a" />
@@ -53,28 +56,29 @@ export default function HomeHero({
       </div>
       <div className={`relative mx-auto max-w-[64rem] px-5 ${wide ? "lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center lg:gap-10" : ""}`}>
         <div className={`hero-copy text-center ${wide ? "lg:text-left" : ""}`}>
-          <p className="hidden items-center gap-2 rounded-pill border border-brand/15 sm:inline-flex bg-surface/80 px-3.5 py-1.5
-                        text-[12px] font-bold tracking-[.02em] text-brand shadow-card backdrop-blur">
+          <p className="hidden items-center gap-2 rounded-pill border border-white/20 sm:inline-flex bg-white/10 px-3.5 py-1.5
+                        text-[12.5px] font-bold tracking-[.02em] text-white/90 backdrop-blur">
             <span className="live-dot" aria-hidden />{eyebrow}
           </p>
-          <h1 className={`mx-auto max-w-[26ch] text-[1.4rem] sm:mt-4 font-black leading-[1.28] tracking-[-.035em] break-keep text-ink
+          <h1 className={`mx-auto max-w-[26ch] text-[1.58rem] sm:mt-4 font-black leading-[1.26] tracking-[-.04em] break-keep text-white
                           sm:text-[2.3rem] [text-wrap:balance] ${wide ? "lg:mx-0 lg:max-w-none lg:text-[2.05rem]" : ""}`}>
             {h1}
           </h1>
-          <p className={`mx-auto mt-3.5 hidden max-w-[38em] sm:block break-keep text-[14px] leading-relaxed text-muted sm:text-[15.5px] ${wide ? "lg:mx-0" : ""}`}>{sub}</p>
+          <p className={`mx-auto mt-3.5 hidden max-w-[38em] sm:block break-keep text-[14px] leading-relaxed text-white/80 sm:text-[16px] ${wide ? "lg:mx-0" : ""}`}>{sub}</p>
           <div className={`mx-auto mt-4 max-w-[46rem] sm:mt-7 ${wide ? "hero-search-left lg:mx-0" : ""}`}>
             <div className="hero-search">
-              <PortalSearch index={index} hot={hot} scope={scope} size="xl" center autoFocus
+              <PortalSearch index={index} hot={hot} scope={scope} size="xl" center autoFocus tone="dark"
                             placeholder={placeholder} placeholderNarrow={placeholderNarrow} />
             </div>
           </div>
+          <TutorialButton className={wide ? "lg:justify-start" : ""} />
           {trust.length > 0 && (
-            <ul className={`mx-auto mt-5 hidden max-w-[48rem] sm:flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[12.5px] text-muted sm:mt-6
+            <ul className={`mx-auto mt-5 hidden max-w-[48rem] sm:flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[13px] text-white/75 [&_b]:!text-white sm:mt-6
                             ${wide ? "lg:mx-0 lg:justify-start" : ""}`}
                 aria-label="자료에 대해">
               {trust.map((t, i) => (
                 <li key={i} className="flex items-center gap-4">
-                  {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-line2" />}
+                  {i > 0 && <span aria-hidden className="h-1 w-1 rounded-full bg-white/40" />}
                   <span>{t}</span>
                 </li>
               ))}
@@ -114,8 +118,8 @@ export default function HomeHero({
             {[0, 1].map((k) => (
               <ul key={k} className="marquee-set" aria-hidden={k === 1 || undefined}>
                 {[...sources, ...sources].map((s, j) => (
-                  <li key={j} className="flex items-center gap-1.5 rounded-pill border border-line bg-surface/70 px-4 py-1.5 text-[13px] font-semibold text-muted">
-                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand2" />{s}
+                  <li key={j} className="flex items-center gap-1.5 rounded-pill border border-white/15 bg-white/10 px-4 py-1.5 text-[13px] font-semibold text-white/80">
+                    <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white/60" />{s}
                   </li>
                 ))}
               </ul>

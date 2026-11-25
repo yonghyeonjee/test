@@ -5,7 +5,8 @@ import SideRailAd from "@/components/SideRailAd";
 import { SiteFooter, SiteHeader } from "@/components/SiteChrome";
 import { WRAP } from "@/lib/nav";
 import VisitTracker from "@/components/VisitTracker";
-import { HotkeyFocus, ScrollProgress, SpotlightFx } from "@/components/Motion";
+import { HotkeyFocus, ScrollProgress, SpotlightFx, TouchFx } from "@/components/Motion";
+import Tutorial from "@/components/Tutorial";
 import FloatingMenu from "@/components/FloatingMenu";
 import Toaster from "@/components/Toast";
 import { unstable_cache } from "next/cache";
@@ -166,6 +167,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <HotkeyFocus />
         <ScrollProgress />
         <SpotlightFx />
+        <TouchFx />
+        <Tutorial />
         <SideRailAd />
       </body>
     </html>
