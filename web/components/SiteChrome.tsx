@@ -140,7 +140,7 @@ export function SiteFooter() {
   ];
   const quick: [string, string][] = [["서비스 소개", "/about"], ["개인정보 처리방침", "/privacy"], ["통합 검색", "/search"], ["정책지도", "/map"], ["무료 서비스", "/free"]];
   return (
-    <footer className="mt-20 border-t border-line bg-white text-[13px] text-muted">
+    <footer className="site-footer mt-20 border-t border-line bg-white text-[13px] text-muted">
       <div className={`${WRAP} pb-8 pt-9 sm:pt-12`}>
         <div className="grid gap-8 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
