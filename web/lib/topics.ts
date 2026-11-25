@@ -21,7 +21,7 @@ export type Topic = {
 
 export const TOPICS: Topic[] = [
   {
-    slug: "housing", key: "주거", name: "주거", long: "주거지원·월세·전세", color: "#5A4BE0", soft: "#ECEAFF",
+    slug: "housing", key: "주거", name: "주거", long: "주거지원·월세·전세", color: "#2563EB", soft: "#ECEAFF",
     keywords: ["주거지원", "청년월세지원", "전세대출 이자지원", "주거급여"],
     intro: [
       "집에 들어가는 돈을 덜어 주는 사업입니다. 월세를 일정 기간 보조하는 것, 전세 보증금 대출 이자를 대신 내주는 것, 저소득 가구에 주거급여를 주는 것, 시세보다 싼 임대주택을 공급하는 것이 여기 속합니다.",

@@ -47,7 +47,7 @@ export async function GET(req: Request) {
       <div style={{
         width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between",
         padding: "70px 80px", color: "#fff",
-        background: "linear-gradient(150deg,#062418 0%,#3B2FB5 55%,#5A4BE0 100%)",
+        background: "linear-gradient(150deg,#062418 0%,#3B2FB5 55%,#2563EB 100%)",
       }}>
         <div style={{ display: "flex", alignItems: "center", fontSize: 28 }}>
           <span style={{ letterSpacing: 6, color: "#C4B5FD", fontFamily: regular ? "KR" : undefined }}>K나라지원</span>

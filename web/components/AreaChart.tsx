@@ -86,7 +86,7 @@ export default function AreaChart({
                 {b.label}
               </text>
 
-              <path d={barPath(w, y)} fill="#5A4BE0" />
+              <path d={barPath(w, y)} fill="#2563EB" />
 
               <text
                 x={X0 + w + 7}

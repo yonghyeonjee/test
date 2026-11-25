@@ -3,7 +3,7 @@ import TopStripAd from "./TopStripAd";
 
 /** 갈래 색(진한·옅은). tailwind 의 cat.* 와 같은 값. */
 const TONES = {
-  brand: ["#5A4BE0", "#EEEBFF"],
+  brand: ["#2563EB", "#EAF2FF"],
   green: ["#0C9F6E", "#E6FCF5"],
   red: ["#E03131", "#FFF0F0"],
   violet: ["#7048E8", "#F3F0FF"],
