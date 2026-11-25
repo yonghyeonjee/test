@@ -203,7 +203,7 @@ export default async function Policies() {
       >
         <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {band.map((b) => (
-            <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+            <div key={b.label} className="rounded-[14px] bg-surface/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
               <b className="num block text-[1.35rem] font-extrabold text-ink">
                 {b.n.toLocaleString()}
               </b>
@@ -216,7 +216,7 @@ export default async function Policies() {
       <Digest fresh={fresh} closing={closing} />
 
       <section className="mt-8">
-        <form action="/" method="get" className="flex items-center gap-2 rounded-card border-2 border-line bg-white px-4 py-3 focus-within:border-brand">
+        <form action="/" method="get" className="flex items-center gap-2 rounded-card border-2 border-line bg-surface px-4 py-3 focus-within:border-brand">
           <input
             name="q"
             placeholder="찾는 말로 바로 찾기 — 예) 신혼부부 전세, 학자금, 출산"

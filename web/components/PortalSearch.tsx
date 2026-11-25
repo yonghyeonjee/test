@@ -115,7 +115,7 @@ export default function PortalSearch({
     <div ref={box} className="relative">
       {/* 알약 모양 검색창. 테두리는 회색, 초점이 가면 브랜드 색 — 보라 테두리가 늘 켜져 있으면 화면이 들떴다. 단추가 유일한 색. */}
       <form role="search" onSubmit={(e) => { e.preventDefault(); go(q); }}
-            className={`flex items-center gap-1.5 rounded-pill border-2 bg-white pr-1.5 transition-shadow
+            className={`flex items-center gap-1.5 rounded-pill border-2 bg-surface pr-1.5 transition-shadow
                         ${show ? "border-brand shadow-lift" : "border-[#D7DBE2] shadow-card hover:border-[#B9C0CA] focus-within:border-brand focus-within:shadow-lift"}
                         ${xl ? "pl-5 sm:pl-7" : lg ? "pl-5" : "pl-4"}`}>
         {/* 휴대폰용 짧은 안내 글은 JS 로 바꾸지 않고 CSS 로 보인다(2026-10-21). 전에는 hydration 뒤 narrow 상태로
@@ -159,7 +159,7 @@ export default function PortalSearch({
 
       {show && (
         <div id="portal-suggest" role="listbox"
-             className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[18px] border border-line bg-white text-left shadow-lift">
+             className="absolute inset-x-0 top-[calc(100%+6px)] z-30 overflow-hidden rounded-[18px] border border-line bg-surface text-left shadow-lift">
           {rows.map((r, i) => (
             <button key={r.key} type="button" role="option" aria-selected={i === cur}
                     onMouseEnter={() => setCur(i)} onClick={r.act}
@@ -192,8 +192,8 @@ export default function PortalSearch({
             <Link key={h} href={`${base}?q=${encodeURIComponent(h)}`}
                   className={`shrink-0 rounded-pill px-3 py-1.5 text-[13px] font-medium ring-1 ring-inset transition-colors ${
                               tone === "dark"
-                                ? "bg-white/[.07] text-white/90 ring-white/15 backdrop-blur hover:bg-white/15 hover:text-white"
-                                : "bg-white text-ink2 ring-line hover:text-brand hover:ring-brand/40"} ${i >= 8 ? "sm:hidden" : ""}`}>
+                                ? "bg-surface/[.07] text-white/90 ring-white/15 backdrop-blur hover:bg-white/15 hover:text-white"
+                                : "bg-surface text-ink2 ring-line hover:text-brand hover:ring-brand/40"} ${i >= 8 ? "sm:hidden" : ""}`}>
               {h}
             </Link>
           ))}

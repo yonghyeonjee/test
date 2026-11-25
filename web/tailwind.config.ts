@@ -17,49 +17,50 @@ export default {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // 2026-11-26 색은 모두 CSS 변수(app/globals.css 의 :root)다 — 기기가 어두운 화면이면 변수만 바뀐다.
       colors: {
-        ground:   "#F5F6F8",
-        surface:  "#FFFFFF",
-        surface2: "#F9FAFB",
-        line:     "#E5E8EC",
-        line2:    "#D1D6DC",
-        ink:      "#191F28",
-        ink2:     "#333D4B",
-        muted:    "#5B6573",
+        ground: "rgb(var(--c-ground) / <alpha-value>)",
+        surface: "rgb(var(--c-surface) / <alpha-value>)",
+        surface2: "rgb(var(--c-surface2) / <alpha-value>)",
+        line: "rgb(var(--c-line) / <alpha-value>)",
+        line2: "rgb(var(--c-line2) / <alpha-value>)",
+        ink: "rgb(var(--c-ink) / <alpha-value>)",
+        ink2: "rgb(var(--c-ink2) / <alpha-value>)",
+        muted: "rgb(var(--c-muted) / <alpha-value>)",
         // 2026-11-15: #7A8494(흰 바탕 대비 3.9:1)는 작은 글씨 기준(4.5:1)에 못 미쳤다. 날짜·출처 같은 보조 글씨가 흐려
         // 읽기 힘들다는 말에 한 단계 진하게(약 4.9:1). 브랜드 색은 그대로 둔다 — 대비 5.6:1 로 이미 넉넉하고,
         // 정부 표준 파랑으로 바꾸면 공식 사이트로 오해받는다.
-        faint:    "#687385",
+        faint: "rgb(var(--c-faint) / <alpha-value>)",
         /** 짙은 바탕이 꼭 필요할 때(관리자 로그인 등). 남색에 가까운 먹색. */
-        deep:     "#1B2033",
-        deep2:    "#2A3150",
-        clay:     "#C4410C",
-        claySoft: "#FFF1E8",
+        deep: "rgb(var(--c-deep) / <alpha-value>)",
+        deep2: "rgb(var(--c-deep2) / <alpha-value>)",
+        clay: "rgb(var(--c-clay) / <alpha-value>)",
+        claySoft: "rgb(var(--c-claySoft) / <alpha-value>)",
 
-        brand:     "#2563EB",
-        brand2:    "#5B8DF7",
-        brandDeep: "#1D4FD8",
-        brandSoft: "#EAF2FF",
+        brand: "rgb(var(--c-brand) / <alpha-value>)",
+        brand2: "rgb(var(--c-brand2) / <alpha-value>)",
+        brandDeep: "rgb(var(--c-brandDeep) / <alpha-value>)",
+        brandSoft: "rgb(var(--c-brandSoft) / <alpha-value>)",
 
-        accent:     "#C4410C",  // 마감
-        accentSoft: "#FFF1E8",
-        alert:      "#C92A2A",
-        alertSoft:  "#FFF0F0",
-        gold:       "#8A6A12",
-        goldSoft:   "#FBF3DC",
+        accent: "rgb(var(--c-accent) / <alpha-value>)",  // 마감
+        accentSoft: "rgb(var(--c-accentSoft) / <alpha-value>)",
+        alert: "rgb(var(--c-alert) / <alpha-value>)",
+        alertSoft: "rgb(var(--c-alertSoft) / <alpha-value>)",
+        gold: "rgb(var(--c-gold) / <alpha-value>)",
+        goldSoft: "rgb(var(--c-goldSoft) / <alpha-value>)",
 
         /** 갈래 색. 글자로 쓸 때는 진한 쪽(DEFAULT), 바탕은 soft. */
         cat: {
-          green: "#0C9F6E",  greenSoft: "#E6FCF5",
-          red: "#E03131",    redSoft: "#FFF0F0",
-          violet: "#7048E8", violetSoft: "#F3F0FF",
-          blue: "#1C7ED6",   blueSoft: "#E7F5FF",
-          orange: "#E8590C", orangeSoft: "#FFF4E6",
-          amber: "#E67700",  amberSoft: "#FFF9DB",
-          lime: "#5C940D",   limeSoft: "#F4FCE3",
-          cyan: "#0C8599",   cyanSoft: "#E3FAFC",
-          indigo: "#3B5BDB", indigoSoft: "#EDF2FF",
-          pink: "#C2255C",   pinkSoft: "#FFF0F6",
+          green: "rgb(var(--c-cat-green) / <alpha-value>)",  greenSoft: "rgb(var(--c-cat-greenSoft) / <alpha-value>)",
+          red: "rgb(var(--c-cat-red) / <alpha-value>)",    redSoft: "rgb(var(--c-cat-redSoft) / <alpha-value>)",
+          violet: "rgb(var(--c-cat-violet) / <alpha-value>)", violetSoft: "rgb(var(--c-cat-violetSoft) / <alpha-value>)",
+          blue: "rgb(var(--c-cat-blue) / <alpha-value>)",   blueSoft: "rgb(var(--c-cat-blueSoft) / <alpha-value>)",
+          orange: "rgb(var(--c-cat-orange) / <alpha-value>)", orangeSoft: "rgb(var(--c-cat-orangeSoft) / <alpha-value>)",
+          amber: "rgb(var(--c-cat-amber) / <alpha-value>)",  amberSoft: "rgb(var(--c-cat-amberSoft) / <alpha-value>)",
+          lime: "rgb(var(--c-cat-lime) / <alpha-value>)",   limeSoft: "rgb(var(--c-cat-limeSoft) / <alpha-value>)",
+          cyan: "rgb(var(--c-cat-cyan) / <alpha-value>)",   cyanSoft: "rgb(var(--c-cat-cyanSoft) / <alpha-value>)",
+          indigo: "rgb(var(--c-cat-indigo) / <alpha-value>)", indigoSoft: "rgb(var(--c-cat-indigoSoft) / <alpha-value>)",
+          pink: "rgb(var(--c-cat-pink) / <alpha-value>)",   pinkSoft: "rgb(var(--c-cat-pinkSoft) / <alpha-value>)",
         },
       },
       fontFamily: {

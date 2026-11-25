@@ -182,7 +182,7 @@ export default function HotBanner({ slides, className = "mt-6" }: { slides: Slid
                 <span className="relative min-w-0 flex-1">
                   <span className="flex items-center gap-1.5 text-[12px] font-semibold text-white/85 sm:text-[12.5px]">
                     <span className={`num rounded-pill px-2 py-px text-[12px] font-extrabold ${
-                      s.kind === "brief" ? "bg-white text-ink" : s.days <= 1 ? "bg-white text-alert" : "bg-white/20 text-white"}`}>
+                      s.kind === "brief" ? "bg-surface text-ink" : s.days <= 1 ? "bg-surface text-alert" : "bg-white/20 text-white"}`}>
                       {s.kind === "brief" ? "오늘" : dueLabel(s.days)}
                     </span>
                     {KIND_LABEL[s.kind]}

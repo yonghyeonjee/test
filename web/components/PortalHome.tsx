@@ -46,7 +46,7 @@ export function PortalTop({
 export function PortalShortcuts({ findHref = "/#find" }: { findHref?: string }) {
   return (
     <nav aria-label="바로가기"
-         className="mx-auto mt-4 grid max-w-[46rem] grid-cols-5 gap-y-3 rounded-card bg-white px-1 py-3.5 ring-1 ring-inset ring-line
+         className="mx-auto mt-4 grid max-w-[46rem] grid-cols-5 gap-y-3 rounded-card bg-surface px-1 py-3.5 ring-1 ring-inset ring-line
                     sm:mt-7 sm:grid-cols-10 sm:bg-transparent sm:px-0 sm:py-0 sm:ring-0">
       {SHORTCUTS.map((s) => (
         <Link key={s.label} href={s.href === "/#find" ? findHref : s.href}

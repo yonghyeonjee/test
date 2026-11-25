@@ -77,7 +77,7 @@ export default function MiniMap({
         )}
         <Link href={more} aria-label={`${label} 주변 지도 크게 보기`} className="absolute inset-0 z-[1000]"
               onClick={() => track("map_open", { where: "mini" })}>
-          <span className="absolute bottom-2 right-2 rounded-full bg-white/95 px-2.5 py-1 text-[12px] font-semibold text-ink2 shadow-sm">
+          <span className="absolute bottom-2 right-2 rounded-full bg-surface/95 px-2.5 py-1 text-[12px] font-semibold text-ink2 shadow-sm">
             지도 크게 보기
           </span>
         </Link>

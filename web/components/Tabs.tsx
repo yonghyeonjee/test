@@ -32,7 +32,7 @@ export default function Tabs({
             href={it.href}
             aria-current={on ? "page" : undefined}
             className={`flex-1 rounded-[11px] py-2.5 text-center text-[14.5px] transition-colors ${
-              on ? "bg-white font-extrabold text-ink shadow-[0_1px_3px_rgba(17,24,39,.12)]" : "font-semibold text-muted hover:text-ink"
+              on ? "bg-surface font-extrabold text-ink shadow-[0_1px_3px_rgba(17,24,39,.12)]" : "font-semibold text-muted hover:text-ink"
             }`}
           >
             {it.label}

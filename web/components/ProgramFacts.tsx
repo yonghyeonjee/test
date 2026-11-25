@@ -39,7 +39,7 @@ export default function ProgramFacts({ p, f }: { p: Detail; f: Facts | null }) {
       <p className="mt-2 text-[14px] leading-[1.8] text-ink2">{sentence}.</p>
       <ul className="mt-3 grid gap-2 sm:grid-cols-3">
         {items.map((it) => (
-          <li key={it.label} className="rounded-[12px] bg-white/80 px-3 py-2.5 ring-1 ring-inset ring-line">
+          <li key={it.label} className="rounded-[12px] bg-surface/80 px-3 py-2.5 ring-1 ring-inset ring-line">
             <b className="num block text-[1.2rem] font-extrabold text-ink">{it.n.toLocaleString()}</b>
             <Link href={it.href} rel={it.rel} prefetch={false} className="text-[12.5px] leading-snug text-muted hover:text-brand">{it.label}</Link>
           </li>

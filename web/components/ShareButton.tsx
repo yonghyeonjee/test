@@ -184,7 +184,7 @@ export default function ShareButton({
       {open && createPortal(
         <div ref={panel} role="menu" aria-label="공유하거나 저장하기"
              style={pos ? { top: pos.top, left: pos.left, width: pos.width } : { top: 0, left: 0, visibility: "hidden" }}
-             className="fixed z-[1200] rounded-card border border-line bg-white p-2 shadow-lift">
+             className="fixed z-[1200] rounded-card border border-line bg-surface p-2 shadow-lift">
           <div className="grid grid-cols-3">
             <button type="button" role="menuitem" onClick={kakao} className={item}>
               <span className={`${ic} bg-[#FEE500] text-[#191919]`}>

@@ -28,7 +28,7 @@ export default function StorySummary({ summary, blocks, className = "" }: { summ
       {toc.length > 0 && (
         <p className="mt-3 flex flex-wrap gap-1.5">
           {toc.map((t) => (
-            <Link key={t.id} href={`#${t.id}`} className="rounded-pill bg-white px-3 py-1 text-[12.5px] font-semibold text-ink2 ring-1 ring-inset ring-line hover:text-brand">
+            <Link key={t.id} href={`#${t.id}`} className="rounded-pill bg-surface px-3 py-1 text-[12.5px] font-semibold text-ink2 ring-1 ring-inset ring-line hover:text-brand">
               {t.label}
             </Link>
           ))}

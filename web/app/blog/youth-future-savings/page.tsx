@@ -149,7 +149,7 @@ export default function YouthFutureSavingsPage() {
       <header className="mt-4 sm:mt-6">
         {/* 2026-10-17 신청이 끝난 뒤에도 "신청합니다"가 남아 있었다. 날짜 단계마다 지금 할 일을 먼저 적는다. */}
         {ph !== "apply" && (
-          <p className="mb-4 rounded-card border border-line bg-white px-4 py-3 text-[14.5px] font-semibold leading-relaxed text-ink">
+          <p className="mb-4 rounded-card border border-line bg-surface px-4 py-3 text-[14.5px] font-semibold leading-relaxed text-ink">
             {ph === "wait" && <>2차 신청은 10월 16일에 마감됐습니다. 신청한 분은 <span className="text-brand">11월 16일부터 27일 사이</span>에 은행에서 계좌를 열어야 합니다.</>}
             {ph === "open" && <>지금은 계좌 개설 기간입니다. 신청한 분은 <span className="text-brand">11월 27일까지</span> 계좌를 열어야 신청이 유효합니다.</>}
             {ph === "done" && <>청년미래적금 2차 모집은 끝났습니다. 아래 조건과 금액 계산은 다음 모집 때 참고하세요.</>}

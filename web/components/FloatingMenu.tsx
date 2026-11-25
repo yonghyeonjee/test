@@ -92,7 +92,7 @@ export default function FloatingMenu() {
         onClick={() => setOpen((o) => !o)}
         className={`pointer-events-auto flex items-center justify-center rounded-pill border shadow-lift
                     transition-all duration-200
-                    ${open ? "rotate-45 border-deep bg-deep text-white" : "border-line bg-white text-brand hover:border-line2"}`}
+                    ${open ? "rotate-45 border-deep bg-deep text-white" : "border-line bg-surface text-brand hover:border-line2"}`}
         style={{ width: 48, height: 48 }}
       >
         <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.2"

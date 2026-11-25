@@ -102,7 +102,7 @@ export default async function LicensePage({ searchParams }: { searchParams: SP }
               { n: pro.all.length, label: "국가전문자격" },
               { n: fields, label: "직무 분야" },
             ].map((b) => (
-              <div key={b.label} className="rounded-[14px] bg-white/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
+              <div key={b.label} className="rounded-[14px] bg-surface/85 px-3 py-3 text-center ring-1 ring-inset ring-line">
                 <b className="num block text-[1.35rem] font-extrabold text-ink">
                   {b.n.toLocaleString()}
                 </b>

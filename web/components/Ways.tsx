@@ -27,7 +27,7 @@ export default function Ways({ items, className = "" }: { items: Way[]; classNam
       {items.map((w) => (
         <Link key={w.href} href={w.href}
               className={`spot way group relative flex min-w-0 flex-col gap-1.5 overflow-hidden rounded-card border p-3.5 sm:p-4
-                          ${w.first ? "col-span-2 border-brand/40 bg-gradient-to-br from-brandSoft to-white sm:col-span-1" : "border-line bg-surface"}`}>
+                          ${w.first ? "col-span-2 border-brand/40 bg-gradient-to-br from-brandSoft to-surface sm:col-span-1" : "border-line bg-surface"}`}>
           {/* 2026-11-25 색이 들어간 두 톤 아이콘. 그림이 없는 이름은 예전 선 아이콘으로. */}
           {DUO_NAMES.includes(w.icon) ? (
             <span className="way-ic flex h-12 w-12 items-center justify-center"><DuoIcon name={w.icon} className="h-12 w-12" /></span>

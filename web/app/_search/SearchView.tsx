@@ -280,7 +280,7 @@ export default function SearchView({
 
               {/* 휴대폰: 연관 검색어를 결과 위에 한 줄로. 넓은 화면은 오른쪽 기둥에. */}
               {r.related.length > 0 && (
-                <div className="mt-4 rounded-card border border-line bg-white px-4 py-3 lg:hidden">
+                <div className="mt-4 rounded-card border border-line bg-surface px-4 py-3 lg:hidden">
                   <Related terms={r.related} base={base} />
                 </div>
               )}
