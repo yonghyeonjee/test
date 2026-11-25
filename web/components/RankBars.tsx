@@ -28,7 +28,7 @@ export default function RankBars({ bars, max = 100, unit = "%" }: {
               <text x={LABEL - 8} y={y + H / 2 + 4.5} textAnchor="end" fontSize="12.5"
                     fill="#2E2B4F" fontFamily="inherit">{b.label}</text>
               <rect x={LABEL} y={y + 5} width={plotW} height={H - 10} fill="#F7F7FB" rx="4" />
-              <path d={path} fill="#5A4BE0" />
+              <path d={path} fill="#2563EB" />
               <text x={LABEL + w + 6} y={y + H / 2 + 4.5} fontSize="12" fill="#6B6885"
                     fontFamily="inherit" className="num">{b.value}{unit}</text>
             </g>

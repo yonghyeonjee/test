@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PortalIcon from "./PortalIcon";
+import DuoIcon, { DUO_NAMES } from "./DuoIcon";
 import { Reveal } from "./Motion";
 
 export type Way = {
@@ -27,9 +28,14 @@ export default function Ways({ items, className = "" }: { items: Way[]; classNam
         <Link key={w.href} href={w.href}
               className={`spot way group relative flex min-w-0 flex-col gap-1.5 overflow-hidden rounded-card border p-3.5 sm:p-4
                           ${w.first ? "col-span-2 border-brand/40 bg-gradient-to-br from-brandSoft to-white sm:col-span-1" : "border-line bg-surface"}`}>
-          <span className={`flex h-10 w-10 items-center justify-center rounded-[12px] transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110 ${w.tone}`}>
-            <PortalIcon name={w.icon} className="h-5 w-5" strokeWidth={2.2} />
-          </span>
+          {/* 2026-11-25 색이 들어간 두 톤 아이콘. 그림이 없는 이름은 예전 선 아이콘으로. */}
+          {DUO_NAMES.includes(w.icon) ? (
+            <span className="way-ic flex h-12 w-12 items-center justify-center"><DuoIcon name={w.icon} className="h-12 w-12" /></span>
+          ) : (
+            <span className={`flex h-10 w-10 items-center justify-center rounded-[12px] ${w.tone}`}>
+              <PortalIcon name={w.icon} className="h-5 w-5" strokeWidth={2.2} />
+            </span>
+          )}
           <b className="text-[15px] font-extrabold leading-snug tracking-[-.02em] text-ink">{w.label}</b>
           <span className="text-[12.5px] leading-snug text-muted">{w.sub}</span>
           <span aria-hidden className="way-arrow">→</span>

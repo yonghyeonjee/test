@@ -4,12 +4,12 @@
  * 사진은 출처·용량 문제가 있어 전부 SVG 로 그린다(public/img 에 사진을 넣으면
  * Photo 가 그쪽을 먼저 쓴다). 그림마다 같은 규칙으로 그려 한 사이트처럼 보이게:
  *  - 뒤에 옅은 보라 덩어리(#ECEAFF) 하나, 그 위에 흰 면 + 2.2px 보라 선
- *  - 보조 면은 #7B6CF6 / #C4B5FD, 강조 점은 금색(#F0C98A) 하나만
+ *  - 보조 면은 #5B8DF7 / #C4B5FD, 강조 점은 금색(#F0C98A) 하나만
  *  - viewBox 200×140, 장식이라 aria-hidden
  */
 
 type P = { className?: string };
-const B = "#5A4BE0", B2 = "#7B6CF6", SOFT = "#ECEAFF", PALE = "#C4B5FD", GOLD = "#F0C98A", INK = "#1E1B4B";
+const B = "#2563EB", B2 = "#5B8DF7", SOFT = "#ECEAFF", PALE = "#C4B5FD", GOLD = "#F0C98A", INK = "#1E1B4B";
 const S = { fill: "none", stroke: B, strokeWidth: 2.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
 function Frame({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -279,7 +279,7 @@ export function BrandMark({ className = "h-7 w-7" }: P) {
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
       <defs>
         <linearGradient id="bm" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#5A4BE0" /><stop offset="1" stopColor="#7B6CF6" />
+          <stop offset="0" stopColor="#2563EB" /><stop offset="1" stopColor="#5B8DF7" />
         </linearGradient>
       </defs>
       <rect width="32" height="32" rx="9" fill="url(#bm)" />

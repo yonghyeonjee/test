@@ -31,7 +31,7 @@ export default function ContactForm({ device, initial }: {
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="이메일" type="email" className="field" />
       </div>
       <label className="mt-3 flex items-start gap-2 text-[12.5px] leading-relaxed">
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#5A4BE0]" />
+        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-[#2563EB]" />
         <span className="text-muted">
           지원사업 안내를 받기 위해 이름·휴대폰 뒤 8자리·이메일을 수집·이용하는 데 동의합니다.
           언제든 끌 수 있고, 끄면 연락처도 지웁니다.

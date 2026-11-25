@@ -410,6 +410,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
           <>매일 새벽 갱신{briefDay && <> · <b className="text-ink2">{briefDay}</b> 브리핑</>}</>,
           <>모든 공고에 원문 링크</>,
         ]}
+        picks={closing}
       />
       <TodayNumbers tiles={todayTiles} className="-mt-14 sm:-mt-16" note={briefDay ? `${briefDay} 브리핑 기준` : undefined} />
       <Ways items={ways} className="mt-5 sm:mt-6" />

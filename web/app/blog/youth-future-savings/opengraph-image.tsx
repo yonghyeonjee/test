@@ -13,7 +13,7 @@ export default function OG() {
         style={{
           width: "100%", height: "100%", display: "flex",
           flexDirection: "column", justifyContent: "center", padding: 80,
-          background: "linear-gradient(150deg,#062418 0%,#3B2FB5 55%,#5A4BE0 100%)",
+          background: "linear-gradient(150deg,#062418 0%,#3B2FB5 55%,#2563EB 100%)",
           color: "#fff",
         }}
       >
