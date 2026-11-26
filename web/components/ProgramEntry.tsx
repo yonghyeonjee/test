@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ageLabel, applyStatus, daysLeft, STATUS_LABEL } from "@/lib/consts";
+import { ageLabel, applyStatus, daysLeft, deadlineCaveat, STATUS_LABEL } from "@/lib/consts";
 import type { Program } from "@/lib/db";
 
 /** 나이 조건을 5~95 축 위의 막대로. 내 나이 위치에 표식. */
@@ -45,8 +45,11 @@ export function Badges({ p }: { p: Program & { first_seen_at?: string } }) {
       {STATUS_LABEL[status]}
     </span>,
   ];
+  // 마감일을 그대로 믿기 어려운 공고는 그 사실을 먼저 알린다(2026-11-26). 사업 기간으로 보이면 D-○ 는 적지 않는다.
+  const caveat = deadlineCaveat(p);
+  if (caveat) out.push(<span key="c" className="badge badge-due" title={caveat.note}>{caveat.label}</span>);
   // 진행 중이면서 2주 안에 끝나는 것만 남은 날짜를 덧붙인다.
-  if (status === "ongoing" && left !== null && left >= 0 && left <= 14)
+  if (caveat?.kind !== "period" && status === "ongoing" && left !== null && left >= 0 && left <= 14)
     out.push(
       <span key="d" className="badge badge-due num">
         {left === 0 ? "오늘 마감" : `D-${left}`}

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import PortalSearch from "./PortalSearch";
 import PortalIcon from "./PortalIcon";
 import { SHORTCUTS } from "@/lib/nav";
-import { ageLabel, applyStatus, daysLeft } from "@/lib/consts";
+import { ageLabel, applyStatus, daysLeft, deadlineCaveat } from "@/lib/consts";
 import { dueLabel, type Slide } from "@/lib/hotShared";
 import type { Program } from "@/lib/db";
 
@@ -197,7 +197,10 @@ export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean 
   const age = ageLabel(p);
   const end = p.apply_end && !p.is_always_on ? `${Number(p.apply_end.slice(5, 7))}.${Number(p.apply_end.slice(8, 10))} 마감` : null;
   const kind = p.support_type && p.support_type.length <= 10 ? p.support_type : null;
+  // 마감일을 그대로 믿기 어려운 공고(사업 기간일 수 있음·선착순·예산 소진). 라벨로 알리고, 사업 기간으로 보이면 D-○ 로 재촉하지 않는다.
+  const caveat = deadlineCaveat(p);
   const tags = [
+    caveat ? { t: caveat.label, c: "bg-accentSoft text-accent" } : null,
     fresh ? { t: "새로", c: "bg-cat-greenSoft text-cat-green" } : null,
     kind ? { t: kind, c: "bg-brandSoft text-brand" } : null,
     age ? { t: age, c: "bg-cat-violetSoft text-cat-violet" } : null,
@@ -223,6 +226,8 @@ export function ProgramLine({ p, fresh = false }: { p: Program; fresh?: boolean 
           <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-muted">예정</span>
         ) : st === "closed" ? (
           <span className="shrink-0 rounded-pill bg-ground px-2 py-0.5 text-[12px] font-bold text-faint">마감</span>
+        ) : caveat?.kind === "period" ? (
+          <span className="shrink-0 rounded-pill bg-cat-greenSoft px-2.5 py-1 text-[13px] font-extrabold text-cat-green">접수 중</span>
         ) : left !== null && left >= 0 ? (
           <DueBadge days={left} />
         ) : (

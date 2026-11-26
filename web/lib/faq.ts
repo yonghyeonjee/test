@@ -1,3 +1,4 @@
+import { deadlineCaveat } from "./consts";
 import { ageLabel, applyStatus, daysLeft, STATUS_LABEL, type Area, type Detail } from "./db";
 import { hasStructure } from "./govText";
 import { manwon, standardFor, tableYear } from "./medianIncome";
@@ -131,8 +132,12 @@ function period(p: Detail) {
   if (st === "upcoming" && p.apply_start)
     return `${korDate(p.apply_start)}부터 접수를 시작해 ${end}에 마감합니다.`;
   if (left === 0) return `오늘이 마감일입니다. ${end}까지 접수합니다.`;
-  if (left !== null && left > 0) return `${end}까지 접수합니다. 오늘 기준 ${left}일 남았습니다.`;
-  return `${end}까지 접수합니다.`;
+  // 마감일이 사업 기간일 수 있는 공고는 "○일 남았습니다"로 못박지 않는다(2026-11-26, lib/consts deadlineCaveat).
+  const c = deadlineCaveat(p, [p.target_text, p.criteria_text, p.benefit_text, p.apply_method].join(" "));
+  if (c?.kind === "period") return `공고에 적힌 기간은 ${end}까지입니다. 다만 모집 인원이 차거나 예산이 소진되면 먼저 마감될 수 있으니 접수 일정을 원문에서 확인하세요.`;
+  const tail = c ? ` 다만 ${c.label === "선착순" ? "선착순이라 인원이 차면" : "예산이 소진되면"} 먼저 마감됩니다.` : "";
+  if (left !== null && left > 0) return `${end}까지 접수합니다. 오늘 기준 ${left}일 남았습니다.${tail}`;
+  return `${end}까지 접수합니다.${tail}`;
 }
 
 /**
