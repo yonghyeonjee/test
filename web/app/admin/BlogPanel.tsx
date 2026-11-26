@@ -12,6 +12,7 @@ import { deleteBlogPost, getBlogPost, listBlogPosts, saveBlogPost, type BlogList
  */
 const KINDS: [string, string][] = [
   ["case", "실제 사례(사람이 쓴 글 · 검색에 내놓음)"],
+  ["guide", "제도 안내(공식 발표를 확인해 쓰는 글 · 검색에 내놓음)"],
   ["org", "기관별 채용"], ["role", "직무별 채용"], ["license", "자격증 시험"],
   ["topic", "지원 주제(noindex)"], ["region", "지역 현황(noindex)"], ["sigungu", "시·군·구 현황(noindex)"], ["daily", "주간 채용 브리핑(noindex)"],
 ];

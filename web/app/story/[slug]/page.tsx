@@ -16,7 +16,7 @@ import TopStripAd from "@/components/TopStripAd";
 import { blogIndexRelated } from "@/lib/related";
 import { ORG_ID, pageGraph } from "@/lib/schema";
 import { SITE_URL, withOg, OG_IMAGE } from "@/lib/seo";
-import { getStories, getStoryStrict, KIND_LABEL, storyIndexable } from "@/lib/stories";
+import { getSeries, getStories, getStoryStrict, KIND_LABEL, plainKeywords, seriesName, storyIndexable } from "@/lib/stories";
 import type { Block } from "@/lib/stories";
 
 /**
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: P): Promise<Metadata> {
   return withOg({
     title: s.title,
     description: s.summary,
-    keywords: s.keywords,
+    keywords: plainKeywords(s),
     alternates: { canonical: path },
     // 이 경로의 글은 전부 파이프라인이 자료로 써 내는 글(blog_posts)이다. 다른 쪽과 겹치는 갈래(브리핑·주제·지역·
     // 순위 연재)는 색인하지 않는다(lib/stories storyIndexable, 2026-10-17). 쪽은 그대로 열리고 링크는 따라간다.
@@ -73,21 +73,36 @@ export default async function StoryPage({ params }: P) {
       "@type": "BlogPosting", "@id": `${SITE_URL}${path}#post`, headline: s.title, description: s.summary,
       image: [coverOf(s.body) ? `${SITE_URL}${coverOf(s.body)}` : OG_IMAGE],
       datePublished: s.published_at, dateModified: s.updated_at, inLanguage: "ko-KR",
-      keywords: s.keywords.join(", "), author: { "@id": ORG_ID }, publisher: { "@id": ORG_ID }, url: `${SITE_URL}${path}`,
+      keywords: plainKeywords(s).join(", "), author: { "@id": ORG_ID }, publisher: { "@id": ORG_ID }, url: `${SITE_URL}${path}`,
     },
   });
 
   // 차례와 첫 문단은 요약 상자가 보여 준다. 첫 사진은 머리 그림으로 올린다. 본문에서는 뺀다.
   const firstP = s.body.findIndex((b) => b.type === "p");
   const cover = s.body.find((b): b is Extract<Block, { type: "img" }> => b.type === "img");
-  const body = s.body.filter((b, i) => b.type !== "toc" && i !== firstP && b !== cover);
+  // 핵심 정리 상자가 있는 글(제도 안내)은 요약 상자가 머리글을 쓰지 않으니 본문에 그대로 둔다.
+  const keepLead = s.body.some((b) => b.type === "summary");
+  const body = s.body.filter((b, i) => b.type !== "toc" && (keepLead || i !== firstP) && b !== cover);
 
   const mins = readMinutes(blocksText(s.body));
+
+  // 연재(2026-11-26): 같은 이름의 글을 주소 순으로 묶어 차례와 이전·다음 글을 보인다.
+  const series = seriesName(s);
+  const parts = series ? await getSeries(series) : [];
+  const at = parts.findIndex((x) => x.slug === s.slug);
+  const prev = at > 0 ? parts[at - 1] : null, next = at >= 0 && at < parts.length - 1 ? parts[at + 1] : null;
+  // 자주 묻는 질문은 구조화 자료로도 낸다.
+  const faqs = s.body.flatMap((b) => (b.type === "faq" ? b.items : []));
+  const faqLd = faqs.length ? {
+    "@context": "https://schema.org", "@type": "FAQPage",
+    mainEntity: faqs.map((x) => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a.replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") } })),
+  } : null;
 
   return (
     <article className="mx-auto max-w-[44rem] py-4">
       <SerifFont />
       <JsonLd data={ld} />
+      {faqLd && <JsonLd data={faqLd} />}
       <nav aria-label="위치" className="text-[13px] text-muted">
         <Link href="/story" className="inline-block py-1 hover:text-brand">블로그</Link>{" · "}
         <span className="text-ink2">{KIND_LABEL[s.kind] ?? "글"}</span>
@@ -96,7 +111,7 @@ export default async function StoryPage({ params }: P) {
       <header className="mt-4 sm:mt-6">
         <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">{s.title}</h1>
         <p className="num mt-4 text-[13px] text-faint">
-          <span className="font-semibold text-brand">K나라지원</span> · {s.updated_at.slice(0, 10).replaceAll("-", ".")} · 읽는 데 {mins}분 · {s.kind === "case" ? "실제 사례를 정리한 글입니다" : "모아 둔 자료에서 센 숫자로 씁니다"}
+          <span className="font-semibold text-brand">K나라지원</span> · {s.updated_at.slice(0, 10).replaceAll("-", ".")} · 읽는 데 {mins}분 · {s.kind === "case" ? "실제 사례를 정리한 글입니다" : s.kind === "guide" ? "공식 발표를 확인해 정리한 글입니다" : "모아 둔 자료에서 센 숫자로 씁니다"}
         </p>
       </header>
       {/* 사진이 있는 글은 본문 첫 사진이 머리 그림을 대신한다(본문에서는 그 사진을 뺀다). */}
@@ -115,6 +130,30 @@ export default async function StoryPage({ params }: P) {
       <StoryBody blocks={body.slice(0, Math.ceil(body.length / 2))} />
       <MidAd name="post_mid" context={s.kind === "topic" || s.kind === "region" ? "general" : "job"} seed={s.slug} className="mt-10" />
       <StoryBody blocks={body.slice(Math.ceil(body.length / 2))} />
+
+      {/* 연재 차례. 지금 글은 굵게, 나머지는 고리. 아래에 이전·다음 글. */}
+      {series && parts.length > 1 && (
+        <section aria-label="연재 차례" className="mt-12 rounded-card border border-line bg-surface p-5">
+          <p className="eyebrow">연재</p>
+          <h2 className="mt-1 text-[1.125rem] font-extrabold tracking-[-.02em]">{series} <span className="num ml-1 text-[13px] font-semibold text-muted">{at + 1} / {parts.length}편</span></h2>
+          <ol className="mt-3 space-y-1">
+            {parts.map((x, i) => (
+              <li key={x.slug} className="flex gap-2.5 text-[15px] leading-snug">
+                <span className={`num mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[12px] font-extrabold ${x.slug === s.slug ? "bg-brand text-white" : "bg-ground text-muted"}`}>{i + 1}</span>
+                {x.slug === s.slug
+                  ? <b className="py-0.5 text-ink">{x.subject || x.title}</b>
+                  : <Link href={`/story/${encodeURIComponent(x.slug)}`} className="py-0.5 text-ink2 hover:text-brand">{x.subject || x.title}</Link>}
+              </li>
+            ))}
+          </ol>
+          {(prev || next) && (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {prev ? <Link href={`/story/${encodeURIComponent(prev.slug)}`} className="card-link rounded-btn border border-line px-4 py-3 text-[14px]"><span className="block text-[12px] text-muted">‹ 이전 글</span><b className="line-clamp-1">{prev.subject || prev.title}</b></Link> : <span />}
+              {next && <Link href={`/story/${encodeURIComponent(next.slug)}`} className="card-link rounded-btn border border-line px-4 py-3 text-right text-[14px]"><span className="block text-[12px] text-muted">다음 글 ›</span><b className="line-clamp-1">{next.subject || next.title}</b></Link>}
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="mt-10 flex flex-wrap gap-3">
         <Link href="/story" className="btn btn-primary px-5 py-3">블로그의 다른 글</Link>

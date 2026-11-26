@@ -100,6 +100,43 @@ export default function StoryBody({ blocks }: { blocks: Block[] }) {
               </ul>
             );
           }
+          case "summary":
+            // 글머리 핵심 정리. 체크 표시 목록 — 바쁜 사람은 여기만 읽고 간다.
+            return (
+              <section key={i} aria-label={b.title ?? "핵심 정리"} className="mt-6 rounded-card border border-brand/20 bg-brandSoft/50 px-5 py-4">
+                <p className="text-[15px] font-extrabold tracking-[-.02em] text-ink">{b.title ?? "핵심 정리"}</p>
+                <ul className="mt-2.5 space-y-2 text-[15.5px] leading-[1.7] text-ink2">
+                  {b.items.map((t, j) => (
+                    <li key={j} className="flex gap-2.5">
+                      <svg viewBox="0 0 20 20" className="mt-[5px] h-[18px] w-[18px] shrink-0 text-brand" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 10.500l4 4 8-9" /></svg>
+                      <span><Inline text={t} /></span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          case "steps":
+            return (
+              <ol key={i} className="mt-5 space-y-3">
+                {b.items.map((t, j) => (
+                  <li key={j} className="flex gap-3 rounded-card border border-line bg-surface px-4 py-3.5 text-[15.5px] leading-[1.75] text-ink2">
+                    <span className="num mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-[13px] font-extrabold text-white">{j + 1}</span>
+                    <span className="min-w-0"><Inline text={t} /></span>
+                  </li>
+                ))}
+              </ol>
+            );
+          case "faq":
+            return (
+              <dl key={i} className="mt-4 divide-y divide-line rounded-card border border-line bg-surface">
+                {b.items.map((x, j) => (
+                  <div key={j} className="px-4 py-4">
+                    <dt className="flex gap-2 text-[16px] font-bold leading-snug text-ink"><span className="text-brand" aria-hidden>Q.</span><span>{x.q}</span></dt>
+                    <dd className="mt-2 text-[15.5px] leading-[1.8] text-ink2"><Inline text={x.a} /></dd>
+                  </div>
+                ))}
+              </dl>
+            );
           default:
             return null;
         }

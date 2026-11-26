@@ -240,13 +240,13 @@ export type BlogInput = {
   isNew: boolean;
 };
 
-const BLOG_KINDS = ["case", "topic", "org", "role", "region", "license", "sigungu", "daily"];
+const BLOG_KINDS = ["case", "guide", "topic", "org", "role", "region", "license", "sigungu", "daily"];
 const BLOG_LIST_COLS = "slug,kind,title,published_at,updated_at";
 
 export async function listBlogPosts(onlyHuman = true): Promise<{ error: string | null; rows: BlogListRow[] }> {
   if (!isLoggedIn()) return { error: "로그인이 필요합니다.", rows: [] };
   let q = admin().from("blog_posts").select(BLOG_LIST_COLS).order("published_at", { ascending: false }).order("updated_at", { ascending: false }).limit(200);
-  if (onlyHuman) q = q.eq("kind", "case");
+  if (onlyHuman) q = q.in("kind", ["case", "guide"]);
   const { data, error } = await q;
   return { error: error ? error.message : null, rows: (data ?? []) as BlogListRow[] };
 }
