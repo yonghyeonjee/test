@@ -14,6 +14,9 @@ import type { Block } from "./stories";
  *   ![설명](/img/…)      → img  (바로 아랫줄 *출처* 는 캡션)
  *   :::links … :::       → links (안에 "- [글자](주소)" 줄)
  *   :::bars 단위 … :::   → bars  (안에 "- 이름: 숫자" 줄)
+ *   :::summary 제목 … :::→ summary (글머리 핵심 정리 상자. 안에 "- 한 줄" 들)
+ *   :::steps … :::       → steps   (번호 붙은 단계. 안에 "- 한 단계" 들)
+ *   :::faq … :::         → faq     (안에 "Q. 질문" 줄과 그 아래 "A. 답" 줄)
  * 목차(toc)는 적지 않는다. 소제목이 셋 이상이면 저장할 때 첫 소제목 앞에 자동으로 넣는다.
  */
 
@@ -49,6 +52,15 @@ export function blocksToMd(blocks: Block[]): string {
         break;
       case "img":
         out.push(`![${b.alt}](${b.src})${b.caption ? `\n*${b.caption}*` : ""}`);
+        break;
+      case "summary":
+        out.push([`:::summary${b.title ? ` ${b.title}` : ""}`, ...b.items.map((t) => `- ${t.replace(/\n/g, " ")}`), ":::"].join("\n"));
+        break;
+      case "steps":
+        out.push([":::steps", ...b.items.map((t) => `- ${t.replace(/\n/g, " ")}`), ":::"].join("\n"));
+        break;
+      case "faq":
+        out.push([":::faq", ...b.items.flatMap((x) => [`Q. ${x.q.replace(/\n/g, " ")}`, `A. ${x.a.replace(/\n/g, " ")}`]), ":::"].join("\n"));
         break;
     }
   }
@@ -87,6 +99,29 @@ export function mdToBlocks(md: string): Block[] {
     if (sm) { blocks.push({ type: "p", text: `**${sm[1].trim().replace(/\*\*/g, "")}**` }); i++; continue; }
 
     // :::links / :::bars
+    // :::summary / :::steps / :::faq — 제도 안내 글의 틀(2026-11-26).
+    const gm = l.match(/^:::(summary|steps|faq)\s*(.*)$/);
+    if (gm) {
+      const inner: string[] = [];
+      i++;
+      while (i < lines.length && lines[i].trim() !== ":::") { if (lines[i].trim()) inner.push(lines[i].trim()); i++; }
+      i++; // 닫는 :::
+      if (gm[1] === "faq") {
+        const items: { q: string; a: string }[] = [];
+        for (const x of inner) {
+          const q = x.match(/^Q[.:)]\s*(.+)$/i), a = x.match(/^A[.:)]\s*(.+)$/i);
+          if (q) items.push({ q: q[1].trim(), a: "" });
+          else if (items.length) items[items.length - 1].a += (items[items.length - 1].a ? " " : "") + (a ? a[1] : x).trim();
+        }
+        const ok = items.filter((x) => x.q && x.a);
+        if (ok.length) blocks.push({ type: "faq", items: ok });
+      } else {
+        const items = inner.map((x) => x.replace(/^[-*]\s+/, "").replace(/^\d+[.)]\s+/, "").trim()).filter(Boolean);
+        if (items.length) blocks.push(gm[1] === "summary" ? { type: "summary", items, ...(gm[2].trim() ? { title: gm[2].trim() } : {}) } : { type: "steps", items });
+      }
+      continue;
+    }
+
     const fm = l.match(/^:::(links|bars)\s*(.*)$/);
     if (fm) {
       const inner: string[] = [];

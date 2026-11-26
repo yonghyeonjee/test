@@ -15,6 +15,12 @@ export type Block =
   | { type: "bars"; items: { label: string; n: number }[]; unit?: string }
   | { type: "links"; items: { href: string; label: string }[] }
   | { type: "note"; text: string }
+  /** 글머리 핵심 정리 상자(체크 목록). 제도 안내 글(guide)이 쓴다. */
+  | { type: "summary"; title?: string; items: string[] }
+  /** 번호 붙은 단계(신청 순서 등). */
+  | { type: "steps"; items: string[] }
+  /** 자주 묻는 질문. 쪽에 FAQPage 구조화 자료로도 나간다. */
+  | { type: "faq"; items: { q: string; a: string }[] }
   /** 사진. src 는 /img/story/… 같은 사이트 안 경로. 출처는 web/public/img/story/credits.json 에 두고 caption 에 적는다. */
   | { type: "img"; src: string; alt: string; caption?: string };
 
@@ -32,7 +38,7 @@ export type Story = {
 
 export const KIND_LABEL: Record<string, string> = {
   topic: "지원 주제", org: "기관별 채용", role: "직무별 채용", region: "지역 현황",
-  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "주간 채용 브리핑", case: "실제 사례",
+  license: "자격증 시험", sigungu: "시·군·구 현황", daily: "주간 채용 브리핑", case: "실제 사례", guide: "제도 안내",
 };
 
 const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated_at";
@@ -45,7 +51,33 @@ const COLS = "slug,kind,subject,title,summary,keywords,body,published_at,updated
  * 쪽은 그대로 열리고 링크는 따라간다(noindex,follow).
  */
 // case: 사람이 쓴 사례 글(2026-10-20 전세대출 연재부터). 자동 글이 아니라 색인한다.
-const INDEX_KINDS = new Set(["org", "role", "license", "case"]);
+// guide: 공식 발표를 확인해 사람이 쓰는 제도 안내 연재(2026-11-26 「2027년 달라지는 지원금」부터). 색인한다.
+const INDEX_KINDS = new Set(["org", "role", "license", "case", "guide"]);
+
+/**
+ * 연재(2026-11-26). 글의 keywords 에 "연재:이름" 을 넣으면 같은 이름의 글이 한 묶음이 된다. 차례는 주소(slug) 순 —
+ * "2027-01-…", "2027-02-…" 처럼 번호를 넣어 쓴다. 열을 새로 만들지 않으려고 keywords 를 빌렸다(편집기에서 그대로 적는다).
+ * 이 꼬리표는 화면·메타 키워드에는 내보내지 않는다(plainKeywords).
+ */
+const SERIES = "연재:";
+export function seriesName(s: Pick<Story, "keywords">): string | null {
+  const k = (s.keywords ?? []).find((x) => x.startsWith(SERIES));
+  return k ? k.slice(SERIES.length).trim() || null : null;
+}
+export function plainKeywords(s: Pick<Story, "keywords">): string[] {
+  return (s.keywords ?? []).filter((x) => !x.startsWith(SERIES));
+}
+/** 같은 연재의 글(발행된 것만, 주소 순). 못 읽으면 빈 목록 — 글 쪽을 망치지 않는다. */
+export async function getSeries(name: string): Promise<Pick<Story, "slug" | "title" | "subject" | "published_at">[]> {
+  if (!dbConfigured) return [];
+  try {
+    const { data } = await db.from("blog_public").select("slug,title,subject,published_at")
+      .contains("keywords", [SERIES + name]).order("slug", { ascending: true }).limit(60);
+    return (data ?? []) as Pick<Story, "slug" | "title" | "subject" | "published_at">[];
+  } catch {
+    return [];
+  }
+}
 export function storyIndexable(s: Pick<Story, "kind" | "slug">): boolean {
   // 2026-11-17 "jobs-top10-roles-2026-10" 처럼 앞에 다른 말이 붙은 순위 글이 걸러지지 않고 색인 대상에 남아 있었다.
   return INDEX_KINDS.has(s.kind) && !/(^|-)top10-/.test(s.slug);

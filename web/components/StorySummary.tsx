@@ -9,7 +9,9 @@ import type { Block } from "@/lib/stories";
 export default function StorySummary({ summary, blocks, className = "" }: { summary: string; blocks: Block[]; className?: string }) {
   const lead = blocks.find((b): b is Extract<Block, { type: "p" }> => b.type === "p")?.text ?? "";
   // "…입니다. " 단위로 쪼갠다. 괄호 안 마침표는 드물어 단순히 간다. 셋까지.
-  const points = lead.split(/(?<=[다요]\.)\s+/).map((t) => t.trim()).filter(Boolean).slice(0, 3);
+  // 본문에 핵심 정리 상자(summary)가 따로 있는 글은 머리글을 쪼개 보이지 않는다 — 같은 말이 두 번 나온다(2026-11-26).
+  const hasBox = blocks.some((b) => b.type === "summary");
+  const points = hasBox ? [] : lead.split(/(?<=[다요]\.)\s+/).map((t) => t.trim()).filter(Boolean).slice(0, 3);
   const toc = blocks.find((b): b is Extract<Block, { type: "toc" }> => b.type === "toc")?.items ?? [];
   return (
     <section aria-label="요약" className={`rounded-card border-l-[3px] border-brand bg-brandSoft/40 px-5 py-4 ${className}`}>

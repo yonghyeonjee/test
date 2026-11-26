@@ -14,7 +14,8 @@ export function blocksText(blocks: Block[]): string {
   return blocks.map((b) => {
     switch (b.type) {
       case "p": case "note": case "h2": return b.text;
-      case "list": return b.items.join(" ");
+      case "list": case "summary": case "steps": return b.items.join(" ");
+      case "faq": return b.items.map((x) => `${x.q} ${x.a}`).join(" ");
       case "links": return b.items.map((l) => l.label).join(" ");
       case "table": return b.rows.flat().join(" ");
       case "bars": return b.items.map((x) => x.label).join(" ");
