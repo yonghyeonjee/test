@@ -125,8 +125,20 @@ export function parseQuery(
   // 2) 시군구 먼저. "광주시"(경기)와 "광주"(광역시)가 겹치므로
   //    구체적인 쪽을 먼저 본다.
   const keys = Array.from(sggIndex.keys()).sort((a, b) => b.length - a.length);
+  // 낱말 한가운데서 맞은 것은 지역이 아니다(2026-11-26). "서울 32세 무주택"의 '무주택'을 무주군으로 읽어 서울이 사라졌다.
+  // 낱말이 그 이름으로 시작하고 뒤에 조사·행정 단위만 붙었거나("시흥", "시흥시", "시흥에서"),
+  // 앞에 시·도 이름만 붙은 꼴("경기수원")일 때만 지역으로 본다.
+  const toks = text.split(/\s+/);
+  const TAIL = /^(?:시|군|구|시청|군청|구청|청|에|에서|에는|의|은|는|이|가|도|쪽|지역|사는|거주|주민)?$/;
+  const HEAD = new RegExp("^(?:" + SIDO_WORDS.map(([re]) => re.source).join("|") + ")(?:특별자치도|특별자치시|광역시|특별시|도|시)?$");
+  const asPlace = (k: string) => toks.some((t) => {
+    const i = t.indexOf(k);
+    if (i < 0) return false;
+    const head = t.slice(0, i), tail = t.slice(i + k.length);
+    return (head === "" || HEAD.test(head)) && TAIL.test(tail);
+  });
   for (const k of keys) {
-    if (k.length >= 2 && text.includes(k)) {
+    if (k.length >= 2 && asPlace(k)) {
       const hit = sggIndex.get(k)!;
       out.sigungu = hit.full;
       out.sido = hit.sido;
