@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import GovText from "@/components/GovText";
+import { sameGovText } from "@/lib/govText";
 import JsonLd from "@/components/JsonLd";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
@@ -329,11 +330,17 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
       <Section title="지원대상" body={p.target_text} />
       {/* 기업마당의 선정기준 칸은 쉼표로 이은 꼬리표뿐이라 읽을 거리가 아니다(2026-10-17). 그때는 그리지 않는다. */}
-      {p.criteria_text !== p.target_text && !isTagCriteria(p) && (
+      {/* 2026-11-26 원문이 세 칸에 같은 글을 넣어 온 사업은 한 번만 보인다(띄어쓰기만 다른 것도 같은 글로 본다).
+          같은 문단이 세 번 서 있으면 읽는 사람에게도 검색엔진에도 채워 넣은 글로 보인다. */}
+      {!sameGovText(p.criteria_text, p.target_text) && !isTagCriteria(p) && (
         <Section title="선정기준" body={p.criteria_text} />
       )}
-      <Section title="지원내용" body={p.benefit_text} />
-      <Section title="신청방법" body={p.apply_method} />
+      {!sameGovText(p.benefit_text, p.target_text) && !sameGovText(p.benefit_text, p.criteria_text) && (
+        <Section title="지원내용" body={p.benefit_text} />
+      )}
+      {!sameGovText(p.apply_method, p.target_text) && !sameGovText(p.apply_method, p.benefit_text) && (
+        <Section title="신청방법" body={p.apply_method} />
+      )}
 
       {(() => {
         const files = (p.attach ?? []).filter((a) => a.kind === "file");

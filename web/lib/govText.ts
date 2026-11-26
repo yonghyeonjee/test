@@ -40,6 +40,8 @@ const CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 function splitNumbered(src: string) {
   let out = "";
   let depth = 0;
+  // 방금 끊은 "N." 번호. 다음에 N+1 이 오면 뒤에 숫자가 붙어 있어도 목록 번호로 본다(2026-11-26).
+  let lastDot = 0;
 
   for (let i = 0; i < src.length; i++) {
     const c = src[i];
@@ -70,9 +72,17 @@ function splitNumbered(src: string) {
       //  - 여기까지 써 놓은 것이 "숫자." 로 끝나도 날짜다: "2025. 1. " 다음의
       //    마지막 "1. 부터" 가 그렇다. 뒤만 봐서는 목록과 구별되지 않는다.
       const dated = /\d\.$/.test(out.replace(/\s+$/, ""));
-      const dot = dated ? null : src.slice(i).match(/^(\d{1,2})\.\s+(?=[^\d\s])/);
+      let dot = dated ? null : src.slice(i).match(/^(\d{1,2})\.\s+(?=[^\d\s])/);
+      // "…근속한 경우3. 4대보험 가입자4. 최저임금…" — 3번 항목이 숫자("4대보험")로 시작하면 위 규칙은 날짜로 보고
+      // 끊지 않아, 화면에 1·2·4 만 서고 3번이 2번 꼬리에 붙었다. 바로 앞에서 끊은 번호의 다음 번호이고,
+      // 뒤가 "숫자." 꼴(날짜)이 아니면 목록 번호다.
+      if (!dot && !dated && lastDot > 0) {
+        const seq = src.slice(i).match(/^(\d{1,2})\.\s+(?=\d)(?!\d{1,4}\s*[.년월일])/);
+        if (seq && Number(seq[1]) === lastDot + 1) dot = seq;
+      }
       if (dot) {
         out += `\n${dot[1]}. `;
+        lastDot = Number(dot[1]);
         i += dot[0].length - 1;
         continue;
       }
@@ -155,6 +165,16 @@ export function parseGovText(src: string | null | undefined): Block[] {
 
     return asField(line) ?? { kind: "text", text: line };
   });
+}
+
+/**
+ * 두 칸의 글이 같은가(띄어쓰기·문장부호 차이는 무시). 복지로 원문은 지원대상·선정기준·지원내용 칸에 같은 글을
+ * 그대로 넣어 오는 일이 있고, "180% 이하" / "180%이하"처럼 띄어쓰기만 다른 경우도 있다.
+ */
+export function sameGovText(a: string | null | undefined, b: string | null | undefined): boolean {
+  const n = (v: string | null | undefined) => (v ?? "").replace(/[\s.,·:;()\-]/g, "");
+  const x = n(a), y = n(b);
+  return x.length > 0 && x === y;
 }
 
 /** 쪼갤 만한 구조가 있나. 없으면 원문을 그대로 두는 편이 낫다. */

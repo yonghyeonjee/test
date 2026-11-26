@@ -312,7 +312,17 @@ export function isTagCriteria(p: Pick<Detail, "source" | "criteria_text">): bool
 
 /** 쪽에 실리는 우리 글의 길이 — 요약·대상·선정기준·혜택·신청방법을 합친 글자 수. */
 export function programTextLength(p: Pick<Detail, "summary" | "target_text" | "criteria_text" | "benefit_text" | "apply_method">): number {
-  return [p.summary, p.target_text, p.criteria_text, p.benefit_text, p.apply_method].map((v) => (v ?? "").trim()).join("").length;
+  // 같은 글이 여러 칸에 들어온 것은 한 번만 센다(2026-11-26) — 화면도 한 번만 보인다(app/p/[id]). 띄어쓰기 차이는 무시.
+  const seen = new Set<string>();
+  let n = 0;
+  for (const v of [p.summary, p.target_text, p.criteria_text, p.benefit_text, p.apply_method]) {
+    const t = (v ?? "").trim();
+    const key = t.replace(/[\s.,·:;()\-]/g, "");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    n += t.length;
+  }
+  return n;
 }
 /** 복지로 지역 사업 중 이 길이 미만은 색인하지 않는다(2026-10-26). 4,111건의 중앙값이 253자, 400자 미만이 3,100여 건. */
 export const PROGRAM_TEXT_MIN = 400;
