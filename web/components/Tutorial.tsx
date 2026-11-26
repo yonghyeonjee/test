@@ -13,16 +13,17 @@ import DuoIcon from "./DuoIcon";
 const KEY = "jw.tour";
 const EVT = "jw:tutorial";
 
-type Step = { icon: string[]; title: string; body: string; demo?: React.ReactNode };
+type Step = { icon: string[]; title: string; body: string; demo?: React.ReactNode; /** 예시를 누르면 닫고 진짜 검색창으로 간다. */ try?: boolean };
 
 const STEPS: Step[] = [
   {
     icon: ["find"],
     title: "한 줄로 적으면 알아듣습니다",
     body: "검색창에 사는 곳과 나이를 그냥 적어 보세요. 지역·나이를 조건으로 읽어 맞는 것만 보여 드립니다.",
+    try: true,
     demo: (
-      <span className="flex items-center justify-between rounded-pill border-2 border-brand/40 bg-surface px-4 py-2.5 text-[15px] text-ink">
-        <span>서울 32세 무주택<span className="tour-caret" aria-hidden /></span>
+      <span className="flex items-center justify-between rounded-pill border-2 border-dashed border-brand/40 bg-surface px-4 py-2.5 text-[15px] text-ink">
+        <span><span className="mr-2 rounded-[6px] bg-brandSoft px-1.5 py-0.5 text-[12px] font-bold text-brand">예시</span>서울 32세 무주택<span className="tour-caret" aria-hidden /></span>
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-white" aria-hidden>
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="9" cy="9" r="5.500" /><path d="M13.500 13.500L17 17" strokeLinecap="round" /></svg>
         </span>
@@ -83,6 +84,12 @@ export default function Tutorial() {
   const [i, setI] = useState(0);
   const drag = useRef<{ x: number; id: number } | null>(null);
 
+  // 열려 있는 동안 뒤 화면의 움직임(빛 번짐·흐르는 띠)을 멈춘다 — 저사양·절전 상태의 휴대폰에서 판이 굳어 단추가 안 먹었다.
+  useEffect(() => {
+    document.documentElement.classList.toggle("tour-open", open);
+    return () => document.documentElement.classList.remove("tour-open");
+  }, [open]);
+
   const close = useCallback(() => {
     setOpen(false);
     try { localStorage.setItem(KEY, "1"); } catch { /* 저장을 막아 둔 브라우저 — 다음에 또 뜰 뿐이다 */ }
@@ -117,7 +124,8 @@ export default function Tutorial() {
     <div className="tour-back fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="사용법"
          onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div className="tour-sheet w-full max-w-[26rem] rounded-t-[28px] bg-surface px-6 pb-6 pt-3 shadow-float sm:rounded-[28px]"
-           onPointerDown={(e) => { drag.current = { x: e.clientX, id: e.pointerId }; }}
+           onPointerDown={(e) => { drag.current = (e.target as Element).closest("button") ? null : { x: e.clientX, id: e.pointerId }; }}
+           onPointerCancel={() => { drag.current = null; }}
            onPointerUp={(e) => {
              const d = drag.current; drag.current = null;
              if (!d) return;
@@ -137,14 +145,21 @@ export default function Tutorial() {
           </div>
           <h2 className="mt-4 text-[1.4rem] font-black leading-snug tracking-[-.03em] text-ink break-keep">{s.title}</h2>
           <p className="mx-auto mt-2 max-w-[21rem] text-[15.5px] leading-relaxed text-muted break-keep">{s.body}</p>
-          {s.demo && <div className="mt-4">{s.demo}</div>}
+          {s.demo && (s.try ? (
+            // 예시 검색창은 진짜 입력칸이 아니다. 누르면 판을 닫고 진짜 검색창에 커서를 둔다(키보드가 열린다).
+            <button type="button" className="mt-4 block w-full text-left" aria-label="닫고 검색창에 직접 적어 보기"
+                    onClick={() => { close(); const el = document.querySelector<HTMLInputElement>("main input[type='search'], main input[name='q']"); el?.focus(); }}>
+              {s.demo}
+              <span className="mt-2 block text-center text-[13px] font-bold text-brand">눌러서 직접 적어 보기 ›</span>
+            </button>
+          ) : <div className="mt-4">{s.demo}</div>)}
         </div>
         <div className="mt-6 flex justify-center gap-1.5" aria-hidden>
           {STEPS.map((_, k) => <span key={k} className={`h-2 rounded-full transition-all duration-300 ${k === i ? "w-6 bg-brand" : "w-2 bg-line2"}`} />)}
         </div>
         <div className="mt-5 flex gap-2">
           {i > 0 && <button type="button" onClick={() => setI(i - 1)} className="btn btn-ghost flex-none px-5">이전</button>}
-          <button type="button" autoFocus onClick={() => (last ? close() : setI(i + 1))} className="btn btn-primary flex-1 text-[16px]">
+          <button type="button" onClick={() => (last ? close() : setI(i + 1))} className="btn btn-primary flex-1 text-[16px]">
             {last ? "시작하기" : "다음"}
           </button>
         </div>
