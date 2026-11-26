@@ -295,7 +295,12 @@ export async function unifiedSearch(raw: string): Promise<SearchResult> {
   const idx = dbConfigured ? await getSigunguIndex().catch(() => new Map()) : new Map();
   const parsed = parseQuery(q, idx);
   const bits = describe(parsed);
-  const words = parsed.keywords.length ? parsed.keywords : tokenize(q);
+  // "시흥 35세"처럼 전부 조건(지역·나이·상태·가구)으로 읽힌 줄은 낱말이 없다(2026-11-26). 전에는 그때 줄 전체를 다시
+  // 낱말로 쪼개 "시흥"·"35세"가 글에 든 사업을 찾았고 — 조건으로는 맞는 사업이 있는데도 — 0건이 나왔다.
+  // 사용법이 "사는 곳과 나이를 적어 보라"고 안내하는 바로 그 입력이다. 조건만으로 찾는다.
+  const condOnly = parsed.keywords.length === 0
+    && Boolean(parsed.sido || parsed.age || parsed.employment || parsed.household.length);
+  const words = parsed.keywords.length ? parsed.keywords : condOnly ? [] : tokenize(q);
   // term 은 따옴표를 그대로 둔다 — 복지·기업(DB 함수)과 채용 목록이 그것을 보고 연관어를 끈다.
   const term = words.join(" ");
   const plain = words.map(unquote);
