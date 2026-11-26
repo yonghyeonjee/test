@@ -148,7 +148,7 @@ export default function Tutorial() {
           {s.demo && (s.try ? (
             // 예시 검색창은 진짜 입력칸이 아니다. 누르면 판을 닫고 진짜 검색창에 커서를 둔다(키보드가 열린다).
             <button type="button" className="mt-4 block w-full text-left" aria-label="닫고 검색창에 직접 적어 보기"
-                    onClick={() => { close(); const el = document.querySelector<HTMLInputElement>("main input[type='search'], main input[name='q']"); el?.focus(); }}>
+                    onClick={() => { close(); const el = document.querySelector<HTMLInputElement>(".hero-search input"); el?.focus(); }}>
               {s.demo}
               <span className="mt-2 block text-center text-[13px] font-bold text-brand">눌러서 직접 적어 보기 ›</span>
             </button>
