@@ -6,9 +6,7 @@ import DuoIcon from "./DuoIcon";
 /**
  * 처음 온 사람을 위한 30초 사용법(2026-11-26). 아래에서 올라오는 판에 네 장 — 옆으로 넘기거나 "다음"을 누른다.
  *
- *  - 첫 화면(/)에 처음 왔을 때 한 번만 저절로 뜬다(이 기기에 jw.tour=1 을 남긴다). 그 뒤로는 "사용법" 단추로만 연다.
- *  - 검색 로봇·성능 측정기에는 띄우지 않는다. 내용은 화면 위에 덮이는 안내라 색인될 글이 아니다.
- *  - 쪽이 다 그려진 뒤(1.6초) 띄운다 — 첫 그리기(LCP)를 건드리지 않는다.
+ *  - 저절로 뜨지 않는다(2026-11-26). 첫 화면 띠의 "사용법" 단추를 눌렀을 때만 연다.
  */
 const KEY = "jw.tour";
 const EVT = "jw:tutorial";
@@ -98,12 +96,10 @@ export default function Tutorial() {
   useEffect(() => {
     const show = () => { setI(0); setOpen(true); };
     window.addEventListener(EVT, show);
-    let t = 0;
-    try {
-      const bot = /bot|crawl|spider|google|lighthouse|pagespeed|headless|preview|yeti|bing|daum/i.test(navigator.userAgent);
-      if (!bot && window.location.pathname === "/" && !localStorage.getItem(KEY)) t = window.setTimeout(show, 1600);
-    } catch { /* 저장을 못 읽으면 저절로 띄우지 않는다 */ }
-    return () => { window.removeEventListener(EVT, show); window.clearTimeout(t); };
+    // 2026-11-26 저절로 띄우지 않는다. 처음 온 사람에게 판이 화면을 덮으니 오히려 헷갈린다는 말이 있었고,
+    // 검색에서 막 들어온 사람의 화면을 덮는 판은 구글이 '방해되는 전면 안내'로 보는 꼴이기도 하다.
+    // 첫 화면 띠의 "30초 사용법" 단추를 눌렀을 때만 연다.
+    return () => { window.removeEventListener(EVT, show); };
   }, []);
 
   useEffect(() => {
