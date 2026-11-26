@@ -30,7 +30,8 @@ export function StatusBadge(d: Dates) {
   return <span className={`badge ${BADGE[status]}`}>{STATUS_LABEL[status]}</span>;
 }
 
-export function StatusNotice(d: Dates & { startLabel: string }) {
+/** quiet: 마감일이 사업 기간일 수 있는 공고(lib/consts deadlineCaveat) — "마감까지 ○일"로 재촉하지 않는다. */
+export function StatusNotice(d: Dates & { startLabel: string; quiet?: boolean }) {
   const { status, left } = useLive(d);
   if (status === "closed") {
     return (
@@ -47,7 +48,7 @@ export function StatusNotice(d: Dates & { startLabel: string }) {
       </p>
     );
   }
-  if (status === "ongoing" && left !== null && left >= 0 && left <= 30) {
+  if (!d.quiet && status === "ongoing" && left !== null && left >= 0 && left <= 30) {
     return (
       <p className="num mt-5 inline-block border-l-[3px] border-accent pl-3 text-sm font-bold text-accent">
         {left === 0 ? "오늘 접수 마감" : `접수 마감까지 ${left}일`}

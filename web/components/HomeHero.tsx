@@ -3,7 +3,7 @@ import Link from "next/link";
 import PortalSearch from "./PortalSearch";
 import DuoIcon from "./DuoIcon";
 import { TutorialButton } from "./Tutorial";
-import { daysLeft } from "@/lib/consts";
+import { daysLeft, deadlineCaveat } from "@/lib/consts";
 import { dueLabel } from "@/lib/hotShared";
 import type { Program } from "@/lib/db";
 
@@ -98,7 +98,9 @@ export default function HomeHero({
                 <Link key={p.id} href={`/p/${encodeURIComponent(p.source_id)}`} className={`pick pick-${i + 1}`}>
                   <span className="flex items-center justify-between gap-2">
                     <span className="rounded-pill bg-brandSoft px-2 py-0.5 text-[11.5px] font-bold text-brand">{p.sigungu || p.sido || "전국"}</span>
-                    {left !== null && left >= 0 && (
+                    {deadlineCaveat(p) ? (
+                      <span className="rounded-pill bg-accentSoft px-2 py-0.5 text-[11.5px] font-bold text-accent">{deadlineCaveat(p)!.label}</span>
+                    ) : left !== null && left >= 0 && (
                       <span className={`num rounded-pill px-2 py-0.5 text-[11.5px] font-bold ${left <= 3 ? "bg-alertSoft text-alert" : "bg-accentSoft text-accent"}`}>{dueLabel(left)}</span>
                     )}
                   </span>

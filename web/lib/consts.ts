@@ -74,3 +74,39 @@ export function ageLabel(p: Pick<Program, "age_min" | "age_max">) {
   if (p.age_max !== null) return `만 ${p.age_max}세 이하`;
   return null;
 }
+
+/**
+ * 마감일을 그대로 믿기 어려운 공고(2026-11-26).
+ *
+ * 구미시 청년일자리 근속장려금(WLF00006067)은 우리 화면에 "12.31 마감 · D-35"로 서 있었는데 실제 모집은 6월 1~12일,
+ * 200명이었다. 복지로·기업마당이 주는 날짜가 접수 기간이 아니라 사업 기간인 경우다. 세어 보니 마감일이 있는 접수 중
+ * 복지로 지역 사업 111건이 전부 기간 180일 이상이고 96건이 12월 31일에 끝난다(기업마당 지원사업도 399건 중 81건).
+ * 어느 것이 정말 연말까지 받는지는 원문을 봐야 안다 — 그래서 날짜를 지우지 않고 "먼저 끝날 수 있다"고 적는다.
+ *
+ *  - limited: 글에 선착순·예산 소진·조기 마감이 적혀 있다. 적힌 대로 알린다.
+ *  - period : 마감일이 12월 31일이거나 접수 기간이 180일 이상이다. 사업 기간일 가능성이 높다 — "D-○"로 재촉하지 않는다.
+ * text 에는 요약·대상·지원내용 같은 글을 넘긴다(목록은 요약만, 상세는 전부).
+ */
+export type DeadlineCaveat = { kind: "limited" | "period"; label: string; note: string };
+
+export function deadlineCaveat(
+  p: Pick<Program, "apply_start" | "apply_end" | "is_always_on" | "title" | "summary">,
+  text = "",
+): DeadlineCaveat | null {
+  if (p.is_always_on || !p.apply_end) return null;
+  if (applyStatus(p) === "closed") return null;
+  const t = `${p.title ?? ""} ${p.summary ?? ""} ${text}`;
+  if (/선착순/.test(t))
+    return { kind: "limited", label: "선착순", note: "선착순으로 받는 사업입니다. 인원이 차면 마감일 전에 끝납니다." };
+  if (/예산\s*(?:이\s*)?소진|소진\s*시|조기\s*(?:마감|종료)/.test(t))
+    return { kind: "limited", label: "예산 소진 시 마감", note: "예산이 소진되면 마감일 전에 끝나는 사업입니다." };
+  const span = p.apply_start
+    ? (Date.parse(p.apply_end + "T00:00:00Z") - Date.parse(p.apply_start + "T00:00:00Z")) / 86_400_000
+    : 0;
+  if (p.apply_end.endsWith("-12-31") || span >= 180)
+    return {
+      kind: "period", label: "조기 마감 가능",
+      note: "적힌 마감일은 접수 기간이 아니라 사업 기간일 수 있습니다. 모집 인원이 차거나 예산이 소진되면 먼저 끝납니다(선착순·조기 종료). 실제 접수 일정은 원문이나 담당 부서에서 확인하세요.",
+    };
+  return null;
+}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import GovText from "@/components/GovText";
 import { sameGovText } from "@/lib/govText";
+import { deadlineCaveat } from "@/lib/consts";
 import JsonLd from "@/components/JsonLd";
 import ApplyLink from "@/components/ApplyLink";
 import ProgramEntry from "@/components/ProgramEntry";
@@ -233,7 +234,18 @@ export default async function ProgramPage({ params }: { params: { id: string } }
 
       {/* 접수 상태는 보는 날 기준으로 다시 센다(components/LiveStatus). 쪽은 사흘에 한 번만 새로 그린다. */}
       <StatusNotice apply_start={p.apply_start} apply_end={p.apply_end} is_always_on={p.is_always_on}
-                    startLabel={p.apply_start ? korDate(p.apply_start) : ""} />
+                    startLabel={p.apply_start ? korDate(p.apply_start) : ""}
+                    quiet={deadlineCaveat(p, [p.target_text, p.criteria_text, p.benefit_text, p.apply_method].join(" "))?.kind === "period"} />
+      {/* 2026-11-26 마감일을 그대로 믿기 어려운 공고(사업 기간일 수 있음·선착순·예산 소진)는 여기서 분명히 알린다. */}
+      {(() => {
+        const c = deadlineCaveat(p, [p.target_text, p.criteria_text, p.benefit_text, p.apply_method].join(" "));
+        return c ? (
+          <p className="mt-3 rounded-card border border-accent/30 bg-accentSoft px-4 py-3 text-[14px] leading-relaxed text-ink2">
+            <b className="mr-1.5 rounded-pill bg-accent px-2 py-0.5 text-[12.5px] font-extrabold text-white">{c.label}</b>
+            {c.note}
+          </p>
+        ) : null;
+      })()}
 
       {programChecks(p).length > 0 && (
         <section className="mt-9 rounded-card border border-line bg-surface2 p-5">

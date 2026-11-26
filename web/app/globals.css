@@ -916,3 +916,14 @@ a, button { -webkit-tap-highlight-color: transparent; }
 @media (max-width: 639.98px) {
   html[data-fs="2"] .fs-3col, html[data-fs="3"] .fs-3col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* 2026-11-26 사용법 판이 휴대폰에서 굳어 단추가 안 먹는다는 제보. 흐린 유리(backdrop-filter)를 걷고, 판이 열린 동안
+ * 뒤 화면의 움직임을 모두 멈춘다. 휴대폰에서는 첫 화면 띠의 빛 번짐도 움직이지 않게(흐림 + 움직임이 가장 무겁다). */
+.tour-back { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(10,16,32,.72); }
+.tour-sheet { touch-action: manipulation; }
+html.tour-open main *, html.tour-open [data-site-header] * { animation-play-state: paused !important; }
+html.tour-open .hero-blob { display: none; }
+@media (max-width: 639.98px) {
+  .hero-blob { animation: none; filter: blur(40px); will-change: auto; }
+  .tour-ic { animation: none; }
+}
