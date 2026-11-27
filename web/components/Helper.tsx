@@ -120,9 +120,11 @@ export default function Helper() {
     return (
       <button type="button" onClick={() => setOpen(true)} aria-label="도우미에게 물어보기"
               title="도우미에게 물어보기"
-              className="fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-pill bg-brand text-white shadow-lift transition-transform hover:-translate-y-0.5 sm:bottom-5 sm:right-[5.25rem]">
-        {/* 2026-11-28 글자("물어보기")를 빼고 아이콘만. 이름은 aria-label·title 로 남긴다. */}
-        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              className="fixed bottom-4 right-4 z-40 flex h-10 w-10 items-center justify-center rounded-pill bg-brand/90 text-white shadow-lift transition-transform hover:-translate-y-0.5 hover:bg-brand sm:bottom-6 sm:right-[4.25rem]">
+        {/* 2026-11-28 글자("물어보기")를 빼고 아이콘만. 이름은 aria-label·title 로 남긴다.
+            같은 날 "자리를 너무 차지한다"는 말에 48→40px, 휴대폰은 본문 위(바닥에서 80px)가 아니라 맨 구석으로 내렸다.
+            넓은 화면은 바로가기 메뉴 단추(48px, right-5) 왼쪽에 가운데를 맞춰 둔다. */}
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z" /><path d="M9 11h.01M12 11h.01M15 11h.01" />
         </svg>
       </button>
