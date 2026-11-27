@@ -119,11 +119,12 @@ export default function Helper() {
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)} aria-label="도우미에게 물어보기"
-              className="fixed bottom-20 right-5 z-40 flex h-12 items-center gap-2 rounded-pill bg-brand pl-3.5 pr-4 text-[14px] font-bold text-white shadow-lift transition-transform hover:-translate-y-0.5 sm:bottom-5 sm:right-[5.25rem]">
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              title="도우미에게 물어보기"
+              className="fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-pill bg-brand text-white shadow-lift transition-transform hover:-translate-y-0.5 sm:bottom-5 sm:right-[5.25rem]">
+        {/* 2026-11-28 글자("물어보기")를 빼고 아이콘만. 이름은 aria-label·title 로 남긴다. */}
+        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z" /><path d="M9 11h.01M12 11h.01M15 11h.01" />
         </svg>
-        물어보기
       </button>
     );
   }
