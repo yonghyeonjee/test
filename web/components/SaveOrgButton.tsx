@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addOrg, hasOrg, markOrgSeen, ORGS_EVENT, removeOrg } from "@/lib/savedOrgs";
+import { addOrg, hasOrg, markOrgSeen, ORGS_EVENT, removeOrg, syncOrgs } from "@/lib/savedOrgs";
 import { track } from "./Gtm";
 import { toast } from "./Toast";
 
@@ -21,7 +21,8 @@ export default function SaveOrgButton({ org, label, seen = false, className = ""
     window.addEventListener(ORGS_EVENT, sync);
     return () => window.removeEventListener(ORGS_EVENT, sync);
   }, [org]);
-  useEffect(() => { if (seen) markOrgSeen(org); }, [seen, org]);
+  // 서버 목록을 먼저 맞춘 뒤에 본 것으로 적는다(다른 기기에서 저장한 기관이면 그제야 이 브라우저에 생긴다).
+  useEffect(() => { void syncOrgs().then(() => { if (seen) markOrgSeen(org); }); }, [seen, org]);
 
   const toggle = () => {
     if (saved) {

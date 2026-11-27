@@ -15,7 +15,8 @@ export default function SavedItems({ variant = "list", kind, max, className = ""
   const [items, setItems] = useState<SavedItem[] | null>(null);
   useEffect(() => { void listItems().then(setItems); }, []);
   if (!items) return null;
-  const list = items.filter((s) => !kind || s.kind === kind).slice(0, max ?? items.length);
+  // 저장한 기관(kind org)은 여기 섞지 않는다 — SavedOrgs 가 새 공고 수와 함께 따로 그린다.
+  const list = items.filter((s) => s.kind !== "org" && (!kind || s.kind === kind)).slice(0, max ?? items.length);
 
   if (variant === "strip") {
     if (!list.length) return null;

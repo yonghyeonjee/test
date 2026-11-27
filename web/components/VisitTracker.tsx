@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { readVisit } from "@/lib/referrer";
 
 const ONCE_KEY = "jw.visit";
+const FLOW_KEY = "jw.flow";
 
 /**
  * 방문 한 번에 한 줄만 기록한다.
@@ -29,6 +31,8 @@ export default function VisitTracker() {
 
       const v = readVisit(document.referrer, location.href, location.hostname);
       if (!v) return; // 사이트 내부 이동
+      // 이 방문의 길과 첫 쪽을 탭에 적어 둔다. 다음 쪽으로 넘어갈 때 그 흐름을 한 줄씩 보낸다(아래).
+      try { sessionStorage.setItem(FLOW_KEY, JSON.stringify({ c: v.channel, l: v.landing, n: 1, p: location.pathname })); } catch { /* 없어도 된다 */ }
 
       // 응답을 기다리지 않는다. 기록이 화면을 늦추면 안 된다.
       void fetch("/api/visit", {
@@ -41,6 +45,27 @@ export default function VisitTracker() {
       // 유입 기록은 없어도 되는 것이다. 화면을 막지 않는다.
     }
   }, []);
+
+  // 방문 흐름(2026-11-27): 들어온 사람이 다음 쪽으로 넘어가는지. 같은 탭에서 둘째~다섯째 쪽만, 쪽마다 한 줄.
+  // 길(채널)·내린 쪽·몇 번째·본 쪽만 보낸다 — 사람이나 기기를 가리키는 값은 없다. 첫 줄(유입)을 보낸 방문만 잇는다.
+  const pathname = usePathname();
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(FLOW_KEY);
+      if (!raw) return;
+      const f = JSON.parse(raw) as { c: string; l: string; n: number; p: string };
+      const here = location.pathname;
+      if (!f || f.p === here || f.n >= 5) return;
+      f.n += 1; f.p = here;
+      sessionStorage.setItem(FLOW_KEY, JSON.stringify(f));
+      void fetch("/api/visit/step", {
+        method: "POST", keepalive: true, headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel: f.c, landing: f.l, step: f.n, path: here }),
+      }).then(() => {}, () => {});
+    } catch {
+      // 흐름 기록은 없어도 되는 것이다.
+    }
+  }, [pathname]);
 
   return null;
 }

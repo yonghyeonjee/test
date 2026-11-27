@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 /**
  * 저장한 공고·사업. 표 saved_item 을 service_role 로 바로 다룬다(함수 없음, sql/011).
  *   GET            목록(최신순 100건)
- *   POST {action}  add(kind, id, title, sub, end) · remove(kind, id)
+ *   POST {action}  add(kind, id, title, sub, end) · remove(kind, id) · seen(kind=org, id)
  * 기기 열쇠는 로그인 쿠키 또는 X-Device-Key 머리글(lib/session deviceFromRequest).
  */
 const MAX = 100;
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   if (!key) return bad("기기 열쇠가 없습니다.");
   if (!allow(`saved:${ipOf(req)}`, 60)) return bad("잠시 뒤 다시 시도해주세요.", 429);
   const { data, error } = await svcDb().from("saved_item")
-    .select("kind,item_id,title,sub,end_date,created_at").eq("device_key", key)
+    .select("kind,item_id,title,sub,end_date,created_at,seen_at").eq("device_key", key)
     .order("created_at", { ascending: false }).limit(MAX);
   if (error) return bad("불러오지 못했습니다.", 502);
   return NextResponse.json(data ?? [], { headers: { "Cache-Control": "no-store" } });
@@ -37,10 +37,20 @@ export async function POST(req: Request) {
   if (!allow(`saved:${ipOf(req)}`, 60)) return bad("잠시 뒤 다시 시도해주세요.", 429);
   let body: { action?: string; kind?: string; id?: string; title?: string; sub?: unknown; end?: unknown };
   try { body = await req.json(); } catch { return bad("본문이 비었습니다."); }
-  const kind = body.kind === "job" ? "job" : body.kind === "p" ? "p" : null;
-  const id = typeof body.id === "string" && ID.test(body.id) ? body.id : null;
+  const kind = body.kind === "job" ? "job" : body.kind === "p" ? "p" : body.kind === "org" ? "org" : null;
+  // 기관(org)은 번호가 아니라 이름이 열쇠다(2026-11-27, sql/020). 이름에는 띄어쓰기가 있다.
+  const idOk = typeof body.id === "string" && (kind === "org" ? TEXT.test(body.id) && body.id.trim().length <= 120 && body.id === body.id.trim() : ID.test(body.id));
+  const id = idOk ? (body.id as string) : null;
   if (!kind || !id) return bad("공고 번호가 올바르지 않습니다.");
   const db = svcDb();
+
+  // 저장한 기관의 공고 목록을 봤다 — "새 공고" 표시의 기준 시각을 지금으로.
+  if (body.action === "seen") {
+    if (kind !== "org") return bad("모르는 요청입니다.");
+    const { error } = await db.from("saved_item").update({ seen_at: new Date().toISOString() })
+      .eq("device_key", key).eq("kind", "org").eq("item_id", id);
+    return error ? bad("적지 못했습니다.", 502) : NextResponse.json({ ok: true });
+  }
 
   if (body.action === "add") {
     const title = typeof body.title === "string" && TEXT.test(body.title.trim()) ? body.title.trim() : null;
@@ -55,8 +65,11 @@ export async function POST(req: Request) {
       const ids = (old ?? []).map((r) => r.id as number);
       if (ids.length) await db.from("saved_item").delete().in("id", ids);
     }
+    // 기관은 저장한 때부터 센다. seen 을 같이 받으면(브라우저에만 있던 목록을 올릴 때) 그 시각을 쓴다.
+    const seenIn = typeof (body as { seen?: unknown }).seen === "string" ? Date.parse((body as { seen: string }).seen) : NaN;
+    const seen_at = kind === "org" ? new Date(Number.isFinite(seenIn) ? Math.min(seenIn, Date.now()) : Date.now()).toISOString() : null;
     const { error } = await db.from("saved_item")
-      .upsert({ device_key: key, kind, item_id: id, title, sub, end_date: end }, { onConflict: "device_key,kind,item_id" });
+      .upsert({ device_key: key, kind, item_id: id, title, sub, end_date: end, seen_at }, { onConflict: "device_key,kind,item_id" });
     return error ? bad("저장하지 못했습니다.", 502) : NextResponse.json({ ok: true });
   }
   if (body.action === "remove") {
