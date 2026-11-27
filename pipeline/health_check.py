@@ -119,7 +119,8 @@ def check_data(sb):
     add("채용 · 해외취업", OK if openw else WARN, f"접수 중 {openw}건" if openw else "접수 중인 공고 0건(원본에 새 공고가 없음 — 화면은 지난 공고만 보이고 검색 제외)")
 
     # 블로그: 월·목에 한 편씩. 닷새 넘게 새 글이 없으면 주의.
-    row = sb.table("blog_posts").select("published_at").order("published_at", desc=True).limit(1).execute().data
+    # 발행일이 앞날인 글(예약·초안)은 빼고 본다. 그런 글이 하나 있으면 늘 "방금 나갔다"로 읽혔다.
+    row = sb.table("blog_posts").select("published_at").lte("published_at", today).order("published_at", desc=True).limit(1).execute().data
     t = parse(row[0]["published_at"]) if row else None
     if t and NOW - t < timedelta(days=5):
         add("블로그 · 새 글", OK, f"마지막 글 {t.strftime('%m.%d')}")
