@@ -37,4 +37,9 @@ jobs:
           SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           GITHUB_TOKEN:         ${{ github.token }}
+          # 알림 메일(없으면 보내지 않는다). 받는 주소는 HEALTH_MAIL_TO, 보내는 길은 사이트 알림 메일과 같은 비밀값.
+          HEALTH_MAIL_TO:       ${{ secrets.HEALTH_MAIL_TO }}
+          MAIL_FROM:            ${{ secrets.MAIL_FROM }}
+          BREVO_API_KEY:        ${{ secrets.BREVO_API_KEY }}
+          RESEND_API_KEY:       ${{ secrets.RESEND_API_KEY }}
         run: python -u pipeline/health_check.py ${{ inputs.dry && '--dry' || '' }}

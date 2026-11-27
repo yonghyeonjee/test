@@ -160,6 +160,39 @@ def check_actions():
         add("자동 작업", OK, "최근 26시간에 실패한 예약 실행 없음")
 
 
+def send_mail(subject: str, text: str) -> str:
+    """
+    점검 알림 메일. 받는 주소는 HEALTH_MAIL_TO(GitHub Secret)에서 읽는다 — 없으면 보내지 않는다.
+    보내는 길은 사이트의 알림 메일과 같다(web/lib/mail.ts): Brevo(BREVO_API_KEY + MAIL_FROM), 없으면 Resend(RESEND_API_KEY).
+    돌려주는 값은 기록에 남길 한 줄(주소는 적지 않는다).
+    """
+    to = os.environ.get("HEALTH_MAIL_TO", "").strip()
+    if not to:
+        return "받는 주소(HEALTH_MAIL_TO)가 없어 보내지 않음"
+    frm = os.environ.get("MAIL_FROM", "").strip()
+    html = "<pre style=\"font:14px/1.6 sans-serif;white-space:pre-wrap\">" + (
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")) + "</pre>"
+    try:
+        if os.environ.get("BREVO_API_KEY") and frm:
+            name, email = "K나라지원", frm
+            if "<" in frm and frm.rstrip().endswith(">"):
+                name, email = frm.split("<", 1)[0].strip().strip('"') or name, frm.split("<", 1)[1].rstrip("> ").strip()
+            r = requests.post("https://api.brevo.com/v3/smtp/email", timeout=20,
+                              headers={"api-key": os.environ["BREVO_API_KEY"], "accept": "application/json"},
+                              json={"sender": {"name": name, "email": email}, "to": [{"email": to}],
+                                    "subject": subject, "htmlContent": html, "textContent": text})
+            return "메일 보냄(Brevo)" if r.ok else f"메일 실패(Brevo {r.status_code})"
+        if os.environ.get("RESEND_API_KEY"):
+            r = requests.post("https://api.resend.com/emails", timeout=20,
+                              headers={"authorization": f"Bearer {os.environ['RESEND_API_KEY']}"},
+                              json={"from": frm or "K나라지원 <onboarding@resend.dev>", "to": [to],
+                                    "subject": subject, "html": html, "text": text})
+            return "메일 보냄(Resend)" if r.ok else f"메일 실패(Resend {r.status_code})"
+    except requests.RequestException as e:
+        return f"메일 실패({type(e).__name__})"
+    return "메일 설정(BREVO_API_KEY+MAIL_FROM 또는 RESEND_API_KEY)이 없어 보내지 않음"
+
+
 def main():
     dry = "--dry" in sys.argv
     check_site()
@@ -190,6 +223,21 @@ def main():
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
             f.write(text)
+
+    # 알림 메일: 실패가 있으면 매번, 실패가 없어졌으면(지난 점검은 실패였는데 이번은 아니면) 한 번.
+    was_bad = False
+    if sb:
+        try:
+            prev = sb.table("site_settings").select("value").eq("key", "health_report").limit(1).execute().data
+            was_bad = bool(prev and (prev[0].get("value") or {}).get("fails"))
+        except Exception:  # noqa: BLE001
+            pass
+    if not dry and (fails or was_bad):
+        lines = [f"{MARK[i['level']]} · {i['name']} — {i['detail']}" for i in fails + warns]
+        body = (f"K나라지원 운영 상태 점검 {when} (KST)\n{head}\n\n" + ("\n".join(lines) if lines else "모든 항목이 정상으로 돌아왔습니다.")
+                + f"\n\n자세히: {SITE}/admin")
+        subject = f"[K나라지원 점검] 실패 {len(fails)}개: {', '.join(i['name'] for i in fails)[:80]}" if fails else "[K나라지원 점검] 정상으로 돌아왔습니다"
+        print(send_mail(subject, body))
 
     if sb and not dry:
         try:
