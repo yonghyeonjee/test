@@ -120,7 +120,10 @@ export default function HomeHero({
             {[0, 1].map((k) => (
               <ul key={k} className="marquee-set" aria-hidden={k === 1 || undefined}>
                 {[...sources, ...sources].map((s, j) => (
-                  <li key={j} className="flex items-center gap-1.5 rounded-pill border border-white/15 bg-white/10 px-4 py-1.5 text-[13px] font-semibold text-white/80">
+                  // shrink-0 + nowrap: 움직임 줄이기 설정에서는 띠가 화면 폭에 갇혀 알약이 눌리고 글자가 한 자씩 세로로 꺾였다(2026-11-27).
+                  // 그 설정에서는 되풀이한 뒤쪽 절반(data-dup)을 숨기고 여러 줄로 놓는다(globals.css).
+                  <li key={j} data-dup={j >= sources.length || undefined}
+                      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border border-white/15 bg-white/10 px-4 py-1.5 text-[13px] font-semibold text-white/80">
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-white/60" />{s}
                   </li>
                 ))}
