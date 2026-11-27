@@ -10,6 +10,7 @@ import GuideBanner from "@/components/GuideBanner";
 import JobList from "@/components/JobList";
 import JsonLd from "@/components/JsonLd";
 import PageBanner from "@/components/PageBanner";
+import SaveOrgButton from "@/components/SaveOrgButton";
 import PromoBanner from "@/components/PromoBanner";
 import RelatedLinks from "@/components/RelatedLinks";
 import { YearBars } from "@/components/TrendBars";
@@ -152,6 +153,8 @@ export default async function JobsByOrg({ params }: P) {
             {firstReg && lastReg && ` · ${dot(firstReg)}~${dot(lastReg)}`}
           </p>
         )}
+        {/* 기관 이름으로 찾아온 사람이 다음 공고를 놓치지 않게(2026-11-27). 이 화면에 들어오면 "새 공고" 표시는 지워진다. */}
+        <SaveOrgButton org={org} seen className="mt-4" />
       </PageBanner>
 
       <JsonLd

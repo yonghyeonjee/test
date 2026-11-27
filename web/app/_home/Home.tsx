@@ -30,6 +30,7 @@ import AdSlot from "@/components/AdSlot";
 import PromoBanner from "@/components/PromoBanner";
 import SaveBar from "@/components/SaveBar";
 import SavedItems from "@/components/SavedItems";
+import SavedOrgs from "@/components/SavedOrgs";
 import SavedList from "@/components/SavedList";
 import { AboutBox, DeadlineList, HotRank, MapCard, PortalColumns, ProgramLine } from "@/components/PortalHome";
 import HomeHero from "@/components/HomeHero";
@@ -432,6 +433,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
             <LastConditions />
           </div>
           <SavedItems variant="strip" max={8} />
+          <SavedOrgs variant="strip" />
           <RecentStrip />
           <div className="cv"><FeedPanels panels={[
             { key: "closing", label: "마감 임박",

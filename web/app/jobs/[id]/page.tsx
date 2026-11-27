@@ -7,6 +7,7 @@ import MidAd from "@/components/MidAd";
 import RelatedLinks from "@/components/RelatedLinks";
 import RecentTracker from "@/components/RecentTracker";
 import SaveItemButton from "@/components/SaveItemButton";
+import SaveOrgButton from "@/components/SaveOrgButton";
 import ShareButton from "@/components/ShareButton";
 import OrgMark from "@/components/OrgMark";
 import Glyph, { fileGlyph } from "@/components/Glyph";
@@ -305,6 +306,8 @@ export default async function JobDetail({ params }: P) {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <SaveItemButton kind="job" id={job.id} title={job.title} sub={orgShort(job.org) || job.region || null} endDate={job.end} />
             <ShareButton title={job.title} text={`${orgShort(job.org) || ""} ${job.title}`.trim()} />
+            {/* 이 공고 하나만 보고 나가는 사람(ChatGPT·검색 유입)이 같은 기관의 다음 공고를 챙기게. */}
+            {job.org && <SaveOrgButton org={job.org} />}
           </div>
         </div>
       </header>
