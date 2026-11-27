@@ -159,6 +159,45 @@ SUPABASE_SERVICE_KEY  Supabase service_role 키`}
         )}
       </div>
 
+      {/* 운영 상태 점검(2026-11-27). 매일 한 번 도는 health-check 작업이 site_settings.health_report 에 적은 것.
+          사이트 응답·수집·발행·실패한 예약 작업. 실패나 주의가 있으면 그 항목만 펼친다. */}
+      {(() => {
+        const hr = st.get("health_report") as
+          | { at?: string; fails?: number; warns?: number; items?: { name: string; level: "ok" | "warn" | "fail"; detail: string }[] }
+          | undefined;
+        const its = hr?.items ?? [];
+        const bad = its.filter((i) => i.level !== "ok");
+        const at = hr?.at ? new Date(hr.at) : null;
+        const stale = !at || Date.now() - at.getTime() > 50 * 3_600_000;   // 이틀 넘게 점검이 안 돌았다
+        const red = stale || (hr?.fails ?? 0) > 0;
+        return (
+          <div className={`mt-3 rounded-card border p-4 ${red ? "border-red-300 bg-red-50" : bad.length ? "border-amber-300 bg-amber-50" : "border-line bg-ground/40"}`}>
+            <div className="flex items-baseline justify-between gap-3">
+              <b className="text-sm">운영 상태 점검</b>
+              <span className="num text-xs text-muted">
+                {at ? `${at.toLocaleString("ko-KR", { timeZone: "Asia/Seoul", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })} 점검 · ${its.length}개 항목` : "아직 점검 기록이 없습니다"}
+              </span>
+            </div>
+            {!at ? (
+              <p className="mt-1.5 text-[13px] text-muted">GitHub Actions 의 health-check 작업이 한 번 돌면 여기 보입니다(매일 낮 12시 무렵).</p>
+            ) : stale ? (
+              <p className="mt-2 text-[13px] font-semibold text-red-700">이틀 넘게 점검이 돌지 않았습니다. GitHub Actions 의 health-check 작업을 확인하세요.</p>
+            ) : bad.length === 0 ? (
+              <p className="mt-1.5 text-[13px] text-muted">사이트 응답·수집·발행·예약 작업이 모두 정상입니다.</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {bad.map((i) => (
+                  <li key={i.name} className={`text-[13px] ${i.level === "fail" ? "text-red-700" : "text-amber-800"}`}>
+                    <b>{i.level === "fail" ? "실패" : "주의"} · {i.name}</b>
+                    <span className="ml-1.5 opacity-80">{i.detail}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })()}
+
       {/* 블로그 글 작성·수정·삭제(2026-11-15). */}
       <div id="a-blog" className="scroll-mt-14"><BlogPanel /></div>
 

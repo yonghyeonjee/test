@@ -1,0 +1,40 @@
+name: health-check
+
+# 운영 상태 점검(2026-11-27). 사이트가 열리는지, 수집·발행이 돌았는지, 실패한 예약 작업이 있는지 매일 한 번 본다.
+# 결과는 site_settings.health_report 에 적혀 관리자 화면 맨 위에 보이고, 실패가 있으면 이 작업이 빨갛게 끝난다
+# (GitHub 이 실패 알림을 보낸다). 무엇을 보는지는 pipeline/health_check.py 머리 주석.
+# 손으로: Run workflow. dry 를 켜면 DB 에 적지 않는다.
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: "DB 에 적지 않고 결과만 본다"
+        default: false
+        type: boolean
+  schedule:
+    - cron: "0 3 * * *"    # UTC 03:00 = KST 12:00 — 새벽 수집(03:00)과 아침 작업(09:00~11:30)이 끝난 뒤
+
+concurrency:
+  group: health-check
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: 점검
+        env:
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          GITHUB_TOKEN:         ${{ github.token }}
+        run: python -u pipeline/health_check.py ${{ inputs.dry && '--dry' || '' }}
