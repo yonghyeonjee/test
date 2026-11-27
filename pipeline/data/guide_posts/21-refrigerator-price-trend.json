@@ -1,0 +1,232 @@
+{
+ "slug": "refrigerator-price-trend",
+ "slogan": "냉장고-가격-추이-구매-적기-에너지효율",
+ "title": "냉장고 가격 추이와 구매 적기 | 소비자물가지수·신제품 출시·에너지효율로 따져 보기",
+ "series": false,
+ "summary": "냉장고 가격 추이를 국가데이터처 소비자물가지수(2020=100)로 보면 2025년 냉장고 지수는 100.9로 2020년과 거의 같고 2015년(107.0)보다 낮습니다. 다만 2025년 11월엔 한 달 새 9.5% 내렸다가 12월에 되돌아왔습니다. 월별 흐름과 신제품 출시, 에너지효율 라벨로 살 때를 고르는 법을 정리했습니다.",
+ "keywords": [
+  "냉장고 가격 추이",
+  "냉장고 구매 적기",
+  "냉장고 물가",
+  "김치냉장고 가격",
+  "에너지소비효율등급",
+  "냉장고 전기요금",
+  "소비자물가지수",
+  "고효율 가전 지원"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "냉장고는 한 번 사면 10년 가까이 쓰는 물건이라 '언제 사야 덜 손해일까'를 오래 고민하게 됩니다. 물가가 다 오른다는데 냉장고도 그럴까요? **냉장고 가격 추이**를 정부 통계로 확인하고, 구매 시기를 고를 때 볼 것들을 정리했습니다."
+  },
+  {
+   "type": "p",
+   "text": "지수는 국가데이터처 KOSIS '품목별 소비자물가지수(2020=100)'의 2026년 10월분(2026년 11월 3일 갱신)까지를 썼습니다. 2020년 값을 100으로 놓은 숫자입니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "냉장고 물가, 15년 동안 어떻게 움직였나",
+   "id": "trend"
+  },
+  {
+   "type": "p",
+   "text": "냉장고 지수는 2010년 90.9에서 2015년 107.0까지 올랐다가 그 뒤 내려와 2020년 100, 2022년 103.9, 2024년 98.5, 2025년 100.9입니다. **2015년보다 5.7% 낮고 2020년과 거의 같은 수준**입니다. 같은 기간(2015→2025년) 전체 소비자물가가 22.9% 오른 것과 비교하면 냉장고는 사실상 제자리였습니다."
+  },
+  {
+   "type": "image",
+   "key": "annual"
+  },
+  {
+   "type": "p",
+   "text": "김치냉장고는 따로 봐야 합니다. 2025년 103.4였던 지수가 2026년 9월 116.5, 10월 114.5로 뛰어 1년 전 같은 달(103.0)보다 11.2% 높습니다. 일반 냉장고 10월 지수(100.89)가 1년 전(103.27)보다 2.3% 낮은 것과 반대입니다. 원자료: [KOSIS 품목별 소비자물가지수](https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112)"
+  },
+  {
+   "type": "h2",
+   "text": "월별로 보면 — 해마다 싼 달이 달랐다",
+   "id": "monthly"
+  },
+  {
+   "type": "p",
+   "text": "'냉장고는 ○월이 싸다'는 말이 맞는지 해마다 지수가 가장 낮았던 달을 찾아봤습니다. 2023년은 11월(98.16), 2024년은 8월(95.96), 2025년은 11월(93.49), 2026년은 10월까지 중 2월(95.49)이었습니다. **해마다 달라서 특정 달을 정답으로 꼽기 어렵습니다.**"
+  },
+  {
+   "type": "image",
+   "key": "m2025"
+  },
+  {
+   "type": "p",
+   "text": "2025년 11월은 10월(103.27)보다 9.5% 내린 93.49였지만 12월에 100.15로 돌아왔습니다. 지수는 누구나 조건 없이 살 수 있는 할인은 반영하고 깜짝세일 같은 초단기 행사가는 빼고 만듭니다([국가데이터처 가격조사 안내](https://mods.go.kr/menu.es?mid=b70101030000)). 그러니 이런 움직임은 '그 달 시장 전반에 할인이 퍼졌던 때'로 읽는 편이 맞고, 내년에도 같은 달에 반복된다는 보장은 없습니다."
+  },
+  {
+   "type": "h2",
+   "text": "신제품 출시 전후, 무엇을 확인할까",
+   "id": "launch"
+  },
+  {
+   "type": "p",
+   "text": "제조사는 해마다 여러 차례 새 냉장고를 내놓습니다. 예를 들어 LG전자는 2026년 10월 26일 서랍형 냉동고를 단 얼음정수 냉장고 '스템'을 출시했다고 밝혔습니다([LG전자 뉴스룸](https://www.lge.co.kr/story/newsroom/236222)). 출시 소식은 제조사 공식 뉴스룸에서 날짜를 확인할 수 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "물가지수는 조사하던 상품이 새 모델로 바뀌면 **품질조정**으로 품질 차이를 걸러 내고 순수한 가격 변동만 반영합니다([국가데이터처 품질 조정 안내](https://mods.go.kr/menu.es?mid=b70103010000)). 그래서 지수만 보고 '신제품이 나오면 바로 싸진다'고 말하기는 어렵습니다. 대신 이렇게 따져 보세요."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**새 기능이 내게 필요한가** — 서랍형 냉동고, 얼음정수기처럼 새로 붙은 기능이 꼭 필요하지 않다면 기존 모델도 후보에 넣습니다.",
+    "**같은 모델명끼리 비교** — 용량·문 개수가 같아도 모델명이 다르면 다른 상품입니다.",
+    "**에너지효율등급과 월간소비전력량** — 같은 용량이라면 라벨 숫자로 1년 전기요금 차이를 어림합니다(아래)."
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "에너지효율 라벨로 1년 전기요금 따져 보기",
+   "id": "energy"
+  },
+  {
+   "type": "p",
+   "text": "냉장고에는 에너지소비효율등급 라벨이 붙고, 여기에 **월간소비전력량(kWh)**과 **연간에너지비용**이 적혀 있습니다. 삼성전자서비스 안내에 따르면 연간에너지비용은 월간소비전력량에 12를 곱하고 1kWh당 160원을 적용해 계산합니다. 예를 들어 월 42.8kWh 냉장고는 42.8×12=513.6kWh, ×160원=82,176원이라 라벨에는 82,000원으로 표시됩니다([삼성전자서비스, 라벨 보는 법](https://www.samsungsvc.co.kr/solution/21290))."
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "p",
+   "text": "**가정 예시**: 같은 용량인데 월 30kWh인 모델이 있다면 같은 방식으로 1년 57,600원이라, 위 모델보다 1년에 약 2만 5천 원, 10년이면 약 25만 원 적게 듭니다(단가가 그대로라는 가정). 실제 요금은 집 전체 사용량에 따른 누진 구간과 쓰는 습관에 따라 달라지니 '두 모델의 상대 비교'에만 쓰세요. 효율등급 기준은 [효율관리기자재 운용규정](https://www.law.go.kr/행정규칙/효율관리기자재운용규정)(기후에너지환경부 고시, 2026년 5월 27일 시행본)에 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "지원 제도와 지수 개편까지 확인",
+   "id": "support"
+  },
+  {
+   "type": "p",
+   "text": "한전 전기요금 복지할인 가구라면 2026년 취약계층 고효율 가전 구매 지원을 받을 수 있습니다. 장애인·차상위 등은 구매비의 30%, 5인 이상 대가족 등은 15%를 가구당 30만 원 한도로 돌려주며, 냉장고·세탁기·에어컨 등 11개 품목이 대상입니다([정책브리핑](https://www.korea.kr/news/policyNewsView.do?newsId=148959268)). 구매·신청 기간은 2026년 2월 9일~12월 31일로 안내됐습니다([괴산군 안내](https://goesan.go.kr/www/selectBbsNttView.do?bbsNo=190&integrDeptCode=&key=135&nttNo=128358&pageIndex=11&searchCnd=all&searchCtgry=&searchKrwd=))."
+  },
+  {
+   "type": "image",
+   "key": "kosis"
+  },
+  {
+   "type": "p",
+   "text": "구매가 10%를 돌려준 으뜸효율 환급사업은 2026년 1월 16일 신청 마감으로 끝났고, 품목 가운데 냉장고 환급금이 약 541억 원으로 가장 많았습니다([기후에너지환경부](https://mcee.go.kr/home/web/board/read.do?boardCategoryId=&boardId=1836180&boardMasterId=1&decorator=&maxIndexPages=10&maxPageItems=10&menuId=&orgCd=&pagerOffset=240&searchKey=&searchValue=)). 또 국가데이터처는 2025년 기준 개편 결과를 2026년 12월 18일 공표하고 12월 31일부터 새 기준 지수를 낼 예정이라, 그 뒤엔 이 글의 2020=100 숫자와 다르게 보일 수 있습니다([KDI 경제정보센터](https://eiec.kdi.re.kr/policy/materialView.do?num=283909)). 비교는 같은 기준끼리만 하세요."
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[국가데이터처 KOSIS, 품목별 소비자물가지수(품목성질별: 2020=100)](https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112) — 2026년 10월분, 2026.11.3 갱신",
+    "[국가데이터처, 가격조사](https://mods.go.kr/menu.es?mid=b70101030000) · [대표성 있는 상품선정 및 품질 조정](https://mods.go.kr/menu.es?mid=b70103010000)",
+    "[LG전자 뉴스룸, 얼음정수 냉장고 'LG 스템' 출시(2026.10.26)](https://www.lge.co.kr/story/newsroom/236222)",
+    "[삼성전자서비스, 에너지소비효율등급 라벨 연간에너지비용 계산](https://www.samsungsvc.co.kr/solution/21290)",
+    "[국가법령정보센터, 효율관리기자재 운용규정](https://www.law.go.kr/행정규칙/효율관리기자재운용규정)",
+    "[정책브리핑, 소상공인·취약계층 고효율 기기·가전 보조금 지원(2026.2)](https://www.korea.kr/news/policyNewsView.do?newsId=148959268)",
+    "[기후에너지환경부, 으뜸효율 가전제품 환급사업 종료(2026.1.20)](https://mcee.go.kr/home/web/board/read.do?boardCategoryId=&boardId=1836180&boardMasterId=1&decorator=&maxIndexPages=10&maxPageItems=10&menuId=&orgCd=&pagerOffset=240&searchKey=&searchValue=)",
+    "[KDI 경제정보센터, 2025년 기준 소비자물가지수 개편 실시](https://eiec.kdi.re.kr/policy/materialView.do?num=283909)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "annual",
+   "kind": "hbar",
+   "file": "refrigerator-cpi-annual-2010-2025.png",
+   "title": "냉장고 소비자물가지수 연도별 흐름(2020=100)",
+   "sub": "2026년 10월은 월 지수 · 총지수는 같은 기간 계속 올랐다",
+   "labels": ["2010년", "2015년", "2017년", "2019년", "2020년", "2021년", "2022년", "2023년", "2024년", "2025년", "2026년 10월"],
+   "values": [90.9, 106.96, 100.84, 99.31, 100.0, 101.06, 103.87, 100.15, 98.46, 100.9, 100.89],
+   "value_labels": ["90.9", "107.0", "100.8", "99.3", "100.0", "101.1", "103.9", "100.2", "98.5", "100.9", "100.9"],
+   "highlight": [9, 10],
+   "left": 0.2,
+   "fmt": "{}",
+   "source": "출처: 국가데이터처 KOSIS 품목별 소비자물가지수(2020=100), 2026.11.3 갱신",
+   "caption": "냉장고 소비자물가지수 2010~2026년 흐름",
+   "alt": "냉장고 소비자물가지수 연도별 추이 막대 차트"
+  },
+  {
+   "key": "m2025",
+   "kind": "hbar",
+   "file": "refrigerator-cpi-monthly-2025.png",
+   "title": "2025년 냉장고 지수, 달마다 얼마였나(2020=100)",
+   "sub": "11월에 한 달 새 9.5% 내렸다가 12월에 되돌아왔다",
+   "labels": ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"],
+   "values": [99.71, 99.67, 100.8, 100.64, 101.46, 102.87, 103.19, 103.47, 102.05, 103.27, 93.49, 100.15],
+   "value_labels": ["99.71", "99.67", "100.80", "100.64", "101.46", "102.87", "103.19", "103.47", "102.05", "103.27", "93.49", "100.15"],
+   "highlight": [10],
+   "left": 0.14,
+   "fmt": "{}",
+   "source": "출처: 국가데이터처 KOSIS 품목별 소비자물가지수(2020=100)",
+   "caption": "2025년 월별 냉장고 소비자물가지수",
+   "alt": "2025년 냉장고 가격 지수 월별 막대 차트 11월 하락"
+  }
+ ],
+ "shots": [
+  {
+   "key": "kosis",
+   "url": "https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112",
+   "file": "kosis-cpi-refrigerator-table.png",
+   "caption": "KOSIS 품목별 소비자물가지수(2020=100) 통계표 (kosis.kr)",
+   "alt": "국가데이터처 KOSIS 품목별 소비자물가지수 통계표와 개편 공지 화면",
+   "name": "KOSIS 품목별 소비자물가지수",
+   "fallback": {
+    "title": "품목별 소비자물가지수(2020=100)",
+    "lines": [
+     "냉장고 2025년 100.9 · 2026년 10월 100.89",
+     "김치냉장고 2026년 10월 114.51(전년 같은 달 +11.2%)",
+     "2025년 기준 개편: 2026.12.18 공표 예정"
+    ]
+   }
+  },
+  {
+   "key": "lgnews",
+   "url": "https://www.lge.co.kr/story/newsroom/236222",
+   "file": "lge-newsroom-stem-refrigerator-2026.png",
+   "caption": "LG전자 뉴스룸 냉장고 신제품 출시 안내 (lge.co.kr)",
+   "alt": "LG전자 뉴스룸 얼음정수 냉장고 스템 출시 기사 화면",
+   "name": "LG전자 뉴스룸",
+   "fallback": {
+    "title": "LG전자 뉴스룸 — 'LG 스템' 출시",
+    "lines": [
+     "2026년 10월 26일 출시 발표",
+     "서랍형 냉동고를 단 얼음정수 냉장고"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "refrigerator-price-trend-hero.png",
+   "caption": "",
+   "alt": "새 냉장고 앞에서 문을 열어 보며 고민하는 가족 삽화",
+   "prompt": "A small family standing in a bright kitchen, opening the door of a tall modern refrigerator and looking inside thoughtfully, warm morning light, soft flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "refrigerator-price-trend-f1.png",
+   "caption": "새 기능이 꼭 필요한지부터 따져 보세요",
+   "alt": "가전 매장에서 여러 냉장고를 둘러보는 부부 삽화",
+   "prompt": "A couple walking through an appliance showroom, comparing several refrigerators with different door styles, one pulling out a freezer drawer, clean modern interior, gentle illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "refrigerator-price-trend-f2.png",
+   "caption": "라벨의 월간소비전력량으로 1년 전기요금을 어림할 수 있습니다",
+   "alt": "냉장고 옆면의 라벨을 들여다보는 사람 삽화",
+   "prompt": "A person leaning closer to read a small colorful energy label sticker on the side of a refrigerator, holding a smartphone, calm home kitchen setting, soft illustration style, no readable text, no numbers, no logos."
+  }
+ ]
+}

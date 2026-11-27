@@ -1,0 +1,282 @@
+{
+ "slug": "appliance-subscription-card-discount",
+ "slogan": "가전-구독-제휴카드-할인-계산",
+ "title": "가전 구독 제휴카드 할인, 전월 실적까지 따지면 이득일까 | 계산 방법 정리",
+ "series": false,
+ "summary": "가전 구독 제휴카드 할인은 '월 최대 ○만 원'으로 알려지지만, 실제 이득은 전월 실적·실적 제외 항목·연회비·혜택 기간을 모두 넣어야 보입니다. 삼성전자·LG전자·카드사 공식 안내(2026년 11월 기준)를 예로 할인액을 직접 계산하는 방법을 정리했습니다. 특정 카드를 권하는 글이 아닙니다.",
+ "keywords": [
+  "가전 구독 제휴카드",
+  "가전 구독 카드 할인",
+  "제휴카드 전월 실적",
+  "카드 연회비",
+  "구독료 할인",
+  "삼성 구독 카드",
+  "LG 구독 카드"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "가전 구독 상담에서 거의 빠지지 않는 말이 '제휴카드 쓰시면 월 구독료가 확 내려가요'입니다. 한국소비자원도 제휴카드로 월 이용료를 줄일 수 있지만 실적 유지 같은 조건이 붙으니 필요한지 먼저 판단하라고 권합니다. 소비자원 피해 사례에는 현금가·할부가를 물었는데 **가전 구독 제휴카드** 할인 설명만 듣고 서명했다가, 3일 뒤에야 6년 약정임을 안 경우도 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글은 특정 카드를 권하지 않습니다. 삼성전자·LG전자·카드사 공식 안내(2026년 11월 기준)에 나온 조건을 예로, 할인이 실제로 얼마인지 계산하는 방법만 정리합니다. 카드 혜택과 프로모션은 달마다 바뀌니 신청 직전에 다시 확인하세요."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "할인액은 '전월 실적 구간'으로 정해진다",
+   "id": "tier"
+  },
+  {
+   "type": "p",
+   "text": "구독 제휴카드는 전월(1일~말일)에 그 카드로 쓴 금액에 따라 월 할인 한도가 달라집니다. 예를 들어 신한카드 상품 안내에 나온 'LG전자 The 구독케어 신한카드'의 결제일 할인 한도는 전월 30만 원 이상 1만 3천 원, 70만 원 이상 1만 6천 원, 130만 원 이상 2만 원입니다. 그런데 LG전자 구독 혜택 페이지는 같은 카드를 1만 7천 원·2만 7천 원·3만 원으로 안내합니다. 2026년 11월 프로모션과 포인트 적립을 더한 금액이기 때문입니다."
+  },
+  {
+   "type": "image",
+   "key": "tierchart"
+  },
+  {
+   "type": "p",
+   "text": "광고 속 최대 금액에는 기간 한정 프로모션, 포인트 적립, 가장 높은 실적 구간이 섞여 있을 수 있습니다. 계산은 **카드사 상품설명서의 기본 할인**으로 하고, 프로모션은 덤으로 보세요. 원문: [신한카드 상품 안내](https://www.shinhancard.com/pconts/html/card/apply/credit/1234346_2207.html) · [LG전자 구독 제휴카드 안내](https://www.lge.co.kr/care-solutions/rentalService-benefits?rental-scrvice=cards)"
+  },
+  {
+   "type": "h2",
+   "text": "실적에서 빠지는 돈부터 빼고 보기",
+   "id": "exclude"
+  },
+  {
+   "type": "p",
+   "text": "전월 실적에 안 들어가는 결제가 생각보다 많습니다. 위 신한카드 안내 기준으로 아래 결제는 실적에서 빠집니다. 다른 카드도 비슷한 항목을 뺍니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "무이자할부 이용 거래, 취소된 거래",
+    "세금·공과금, 4대보험, 아파트관리비, 도시가스·전기·수도요금, TV수신료",
+    "학교 납입금·대학 등록금",
+    "상품권·기프트카드·선불카드·선불전자지급수단 구매와 충전",
+    "현금서비스·카드론, 연회비·수수료·이자"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "관리비와 공과금을 카드로 내서 실적을 채우려던 계획이라면 다시 계산해야 합니다. 발급 직후에는 특례가 있기도 합니다. 신한카드는 처음 사용 등록한 달의 다음 달까지 30만 원 구간을 적용하고, 삼성카드 구독 혜택도 발급월+1개월까지는 실적이 30만 원 미만이어도 첫 구간 혜택을 줍니다. 그 뒤로는 매달 실적을 채워야 합니다. 삼성 제휴카드 조건: [삼성 AI 구독 가이드](https://www.samsung.com/sec/ai-subs/guide)"
+  },
+  {
+   "type": "image",
+   "key": "shinhanshot"
+  },
+  {
+   "type": "h2",
+   "text": "연회비와 혜택 기간도 계산에 넣기",
+   "id": "fee"
+  },
+  {
+   "type": "p",
+   "text": "LG전자 안내(2026년 11월) 기준 구독 제휴카드 연회비는 국내 전용 기준 1만 4천~2만 5천 원이고, 삼성 AI 구독 제휴카드도 2만~3만 원입니다. 6년 계약 동안 카드를 유지하면 연회비를 여섯 번 냅니다. 아래 조건도 함께 보세요."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**혜택 기간** — 같은 페이지 안에서도 72개월, 60개월, 36개월로 다릅니다. 6년 계약에 36개월 혜택 카드라면 뒤의 3년은 할인이 없습니다",
+    "**구간 조건** — 삼성카드 구독 혜택은 70만 원 이상 구간부터 월 구독요금 합계가 7만 원 이상이어야 적용됩니다",
+    "**할인 상한** — 결제금액이 할인 한도보다 적으면 결제금액만큼만 할인되고, 남은 한도는 다음 달로 넘어가지 않습니다",
+    "**포인트 결제** — LG전자는 구독료 전액을 멤버십 포인트로 내면 카드사 청구가 없어 제휴카드 할인이 적용되지 않는다고 안내합니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "근거: [LG전자 멤버십 포인트 구독료 결제 안내](https://www.lge.co.kr/story/user-guide/care-solutions-faq4)"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "h2",
+   "text": "직접 계산하기: 할인 합계 − 연회비 − 놓치는 혜택",
+   "id": "calc"
+  },
+  {
+   "type": "p",
+   "text": "아래는 계산 방법을 보여 주기 위한 **가정**입니다. 6년(72개월) 계약, 기본 할인 월 1만 3천 원(전월 30만 원 구간), 연회비 2만 2천 원인 카드를 예로 듭니다."
+  },
+  {
+   "type": "image",
+   "key": "calccard"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**매달 실적을 채운 경우** — 13,000원 × 72개월 = 936,000원 − 연회비 6년 132,000원 = **804,000원**",
+    "**12개월은 실적을 못 채운 경우** — 13,000원 × 60개월 = 780,000원 − 132,000원 = 648,000원",
+    "**혜택 기간이 36개월인 경우** — 13,000원 × 36개월 = 468,000원 − 연회비 3년 66,000원(3년 뒤 카드 해지 가정) = 402,000원"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "여기서 하나를 더 빼야 합니다. 원래 쓰던 카드의 할인·적립을 포기하는 값, 그리고 실적을 맞추려고 늘린 지출입니다. 원래 카드에서 매달 5천 원어치 적립을 받고 있었다면 6년 동안 36만 원을 놓칩니다. 이 모두를 빼고도 남는 금액이 충분히 크면 제휴카드가 이득입니다. 소비자원 당부: [한국소비자원 가전 구독 실태조사](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)"
+  },
+  {
+   "type": "h2",
+   "text": "이득인지 판단하는 체크리스트",
+   "id": "check"
+  },
+  {
+   "type": "list",
+   "items": [
+    "실적 제외 항목을 빼고도 매달 실적을 무리 없이 채울 수 있는가",
+    "그 할인액이 카드사 상품설명서의 기본 할인인가, 기간 한정 프로모션인가",
+    "혜택 기간이 구독 계약기간을 다 덮는가",
+    "연회비 × 보유 연수를 뺐는가",
+    "카드를 해지하거나 실적이 떨어져도 할인 전 구독료를 감당할 수 있는가"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "마지막이 가장 중요합니다. 카드 할인은 구독 계약이 아니라 카드 계약의 혜택이라, 카드 쪽 사정으로 할인이 사라져도 구독 계약과 위약금은 그대로입니다. 카드 할인은 카드사가 청구 금액에서 빼 주는 것이라 위약금은 구독 계약의 요금으로 계산되고, LG전자는 할인 전 기본요금을 기준으로 한다고 밝힙니다. 할인 전 월 구독료로도 감당할 수 있는지 보고 계약하세요. 소비자원 안내: [소비자시대 웹진, 가전 구독 주의사항](https://www.kca.go.kr/webzine/board/view?menuId=MENU00307&linkId=1016&div=kca_2605)"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "image",
+   "key": "lgecardshot"
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[신한카드, LG전자 The 구독케어 신한카드 상품 안내](https://www.shinhancard.com/pconts/html/card/apply/credit/1234346_2207.html)",
+    "[LG전자, 구독 제휴카드 혜택(2026년 11월)](https://www.lge.co.kr/care-solutions/rentalService-benefits?rental-scrvice=cards)",
+    "[삼성전자, 삼성 AI 구독 가이드(제휴카드 혜택)](https://www.samsung.com/sec/ai-subs/guide)",
+    "[한국소비자원, 가전 구독(렌탈) 서비스 실태조사(2026.4.8)](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "tierchart",
+   "kind": "hbar",
+   "file": "subscription-card-discount-base-vs-promo.png",
+   "title": "같은 카드, 두 가지 월 할인액",
+   "sub": "LG전자 The 구독케어 신한카드, 전월 이용금액 구간별",
+   "labels": [
+    "30만 원↑ 카드사 기본",
+    "30만 원↑ 11월 안내",
+    "70만 원↑ 카드사 기본",
+    "70만 원↑ 11월 안내",
+    "130만 원↑ 카드사 기본",
+    "130만 원↑ 11월 안내"
+   ],
+   "values": [
+    13000,
+    17000,
+    16000,
+    27000,
+    20000,
+    30000
+   ],
+   "value_labels": [
+    "1만 3천 원",
+    "1만 7천 원",
+    "1만 6천 원",
+    "2만 7천 원",
+    "2만 원",
+    "3만 원"
+   ],
+   "highlight": [
+    0,
+    2,
+    4
+   ],
+   "left": 0.3,
+   "fmt": "{}",
+   "source": "출처: 신한카드 상품 안내, LG전자 구독 제휴카드 안내(2026.11, 프로모션·포인트 포함)",
+   "caption": "계산은 카드사 기본 할인으로, 프로모션은 덤으로 봅니다",
+   "alt": "가전 구독 제휴카드 전월 실적 구간별 기본 할인과 프로모션 할인 비교 차트"
+  },
+  {
+   "key": "calccard",
+   "kind": "card",
+   "file": "subscription-card-discount-formula.png",
+   "title": "제휴카드 이득 계산식",
+   "lines": [
+    "이득 = 월 할인 × 실제로 받은 개월 수",
+    "빼기 ① 연회비 × 카드 보유 연수",
+    "빼기 ② 원래 카드에서 포기한 할인·적립",
+    "빼기 ③ 실적을 맞추려 늘린 지출",
+    "가정 예: 13,000원×72 - 22,000원×6 = 804,000원"
+   ],
+   "source": "계산 예시는 가정이며 특정 카드 조건이 아닙니다",
+   "caption": "광고 속 최대 할인이 아니라 이 식으로 계산합니다",
+   "alt": "가전 구독 제휴카드 할인 이득 계산식"
+  }
+ ],
+ "shots": [
+  {
+   "key": "shinhanshot",
+   "url": "https://www.shinhancard.com/pconts/html/card/apply/credit/1234346_2207.html",
+   "file": "shinhancard-lg-subscription-card.png",
+   "caption": "LG전자 The 구독케어 신한카드 상품 안내 (shinhancard.com)",
+   "alt": "신한카드 LG전자 구독케어 카드 상품 안내 화면",
+   "name": "신한카드 상품 안내",
+   "fallback": {
+    "title": "LG전자 The 구독케어 신한카드",
+    "lines": [
+     "전월 30만 원↑ 월 1만 3천 원 할인",
+     "70만 원↑ 1만 6천 원 · 130만 원↑ 2만 원",
+     "무이자할부·공과금·관리비 등은 실적 제외"
+    ]
+   }
+  },
+  {
+   "key": "lgecardshot",
+   "url": "https://www.lge.co.kr/care-solutions/rentalService-benefits?rental-scrvice=cards",
+   "file": "lge-subscription-card-benefits.png",
+   "caption": "LG전자 구독 제휴카드 혜택 안내 (lge.co.kr)",
+   "alt": "LG전자 가전 구독 제휴카드 혜택 안내 화면",
+   "name": "LG전자 구독 제휴카드",
+   "fallback": {
+    "title": "LG전자 구독 제휴카드(2026년 11월)",
+    "lines": [
+     "카드별 전월 실적 구간에 따라 월 할인",
+     "연회비 1만 4천~2만 5천 원(국내 전용)",
+     "혜택 기간 36~72개월로 카드마다 다름"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "appliance-subscription-card-discount-hero.png",
+   "caption": "",
+   "alt": "신용카드와 영수증을 앞에 두고 계산하는 사람 삽화",
+   "prompt": "A young adult at a tidy desk holding a credit card in one hand and a pen in the other, receipts and a small calculator spread out, a new air conditioner on the wall behind, thoughtful mood, flat illustration, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "appliance-subscription-card-discount-f1.png",
+   "caption": "혜택 기간과 연회비까지 넣어야 실제 이득이 보입니다",
+   "alt": "달력 위에 놓인 카드와 모래시계 삽화",
+   "prompt": "A large wall calendar with a credit card and an hourglass resting on a shelf beneath it, a person pointing at the calendar thoughtfully, soft pastel tones, flat illustration, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "appliance-subscription-card-discount-f2.png",
+   "caption": "할인이 없어져도 감당할 수 있는지 먼저 봅니다",
+   "alt": "저울 한쪽에 카드, 다른 쪽에 가전제품을 올려 두고 고민하는 사람 삽화",
+   "prompt": "A person looking at a balance scale with a credit card on one side and a small washing machine model on the other, calm deliberate mood, warm colors, flat illustration, no text, no numbers, no logos."
+  }
+ ]
+}

@@ -1,0 +1,236 @@
+{
+ "slug": "winter-heating-cost-saving",
+ "slogan": "겨울철-난방비-절약법-보일러-외출모드-적정온도",
+ "title": "겨울철 난방비 절약법 | 보일러 외출모드 정말 유리할까? 적정 실내온도와 난방 방식별 요령",
+ "series": false,
+ "summary": "겨울철 난방비 절약의 출발점은 적정 실내온도 18~20℃입니다. 보일러 외출모드는 언제 쓰는 게 좋은지, 개별난방과 지역난방은 무엇이 다른지를 한국에너지공단·한국지역난방공사 공식 자료로만 정리했습니다(2026년 12월 기준).",
+ "keywords": [
+  "난방비 절약",
+  "보일러 외출모드",
+  "겨울철 적정 실내온도",
+  "지역난방 절약",
+  "보일러 난방비",
+  "난방 분배기 밸브",
+  "뽁뽁이 단열",
+  "한국에너지공단",
+  "겨울 난방 요령"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "**난방비 절약** 방법을 찾다 보면 '보일러는 끄지 말고 외출모드로 두는 게 낫다', '아니다, 꺼야 아낀다'처럼 서로 다른 말이 나옵니다. 정답은 집의 단열 상태와 난방 방식, 비우는 시간에 따라 다릅니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글은 업체 광고나 근거 없는 '몇 % 절약' 대신 한국에너지공단의 「겨울철 난방설비 운전관리 매뉴얼」, 한국지역난방공사 안내, 정책브리핑 기사 등 공식 자료에 적힌 내용만 모았습니다(2026년 12월 확인)."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "적정 실내온도는 18~20℃, 1℃가 차이를 만든다",
+   "id": "temp"
+  },
+  {
+   "type": "p",
+   "text": "[한국지역난방공사 에너지 절약방법](https://www.kdhc.co.kr/kdhc/main/contents.do?menuNo=200279)은 겨울철 실내 난방 적정온도를 **18~20℃**로 안내합니다. 실내외 온도 차가 5℃ 이상 벌어지면 건강에도 좋지 않다고 덧붙입니다. 한국에너지공단 매뉴얼은 적정 실내온도 **20℃** 설정을 권합니다."
+  },
+  {
+   "type": "image",
+   "key": "kdhc"
+  },
+  {
+   "type": "p",
+   "text": "온도를 조금 낮추는 효과도 공식 자료에 나옵니다. 한국에너지공단 매뉴얼은 한국냉동공조인증센터 자료를 인용해 '실내 난방 온도를 1℃만 낮게 설정해도 에너지 소비량이 약 7% 절감된다'고 적었고, [정책브리핑 '나에게 맞는 난방비 절약 방법'(2024.12)](https://www.korea.kr/news/policyNewsView.do?newsId=148937437)도 가정에서 1℃를 낮추면 도시가스 사용량을 7% 아낄 수 있다고 안내합니다. 같은 기사는 적정 습도를 **40~60%**로 봅니다."
+  },
+  {
+   "type": "p",
+   "text": "18~20℃는 내복과 실내복을 함께 입은 상태를 전제로 한 온도입니다. 얇은 옷을 겹쳐 입고 실내 슬리퍼를 신으면 설정 온도를 올리지 않고도 덜 춥게 지낼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "보일러 외출모드, 정말 유리할까?",
+   "id": "away"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "공식 자료는 '외출모드가 무조건 이득'이라고 하지 않습니다. 조건이 붙습니다. [한국에너지공단 난방설비 운전관리 매뉴얼](https://min24.energy.or.kr/consult/file/%EA%B2%A8%EC%9A%B8%EC%B2%A0_%EB%82%9C%EB%B0%A9%EC%84%A4%EB%B9%84_%EC%9A%B4%EC%A0%84%EA%B4%80%EB%A6%AC_%EB%A7%A4%EB%89%B4%EC%96%BC.pdf)의 내용을 정리하면 이렇습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**단열이 좋은 집** — 외출할 때 보일러를 끄지 말고 '외출 모드'로 두거나 실내 온도를 약하게 설정해 유지하는 것이 효율적입니다. 다시 차갑게 식은 집을 데우는 데 에너지가 더 들기 때문입니다.",
+    "**지역난방 아파트** — 겨울에는 온도조절기 전원을 끄지 않는 것이 좋습니다. 잠깐 나갈 때는 현재보다 **2~3℃ 낮게**, 오래 비울 때는 '외출모드'로 설정합니다. 지역난방은 일정 온도를 유지하는 연속 난방 방식이기 때문입니다.",
+    "**2~3일 집을 비울 때** — 분배기 밸브와 가스·기름 중간밸브를 잠그지 말고 보일러 전원 플러그도 꽂아 둡니다. 동파 방지 기능은 전원이 빠지거나 연료 밸브가 잠겨 있으면 작동하지 않습니다.",
+    "**겨울 내내 오래 비울 때** — 제조사 서비스센터나 전문업체에 동파 예방과 물 빼기 방법을 물어봅니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "정리하면 외출모드는 '짧은 외출에 집을 완전히 식히지 않기 위한 기능'에 가깝습니다. 단열이 약해 금방 식는 집이라면 효과가 집마다 다를 수 있으니, 한 달 정도 방식을 바꿔 보고 고지서 사용량(㎥)을 비교해 보는 것이 가장 확실합니다."
+  },
+  {
+   "type": "h2",
+   "text": "난방 방식별 절약법 — 개별보일러·지역난방·중앙난방",
+   "id": "types"
+  },
+  {
+   "type": "image",
+   "key": "types"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**개별 보일러(가스·등유)** — 실내 온도가 아니라 온수 온도로 조절한다면 55℃ 이상으로 설정해야 적정 실내온도를 유지할 수 있습니다. 10평대처럼 작은 공간은 처음에 높게 돌린 뒤 따뜻해지면 낮추는 편이 효율적입니다. 보일러 내부는 연 2회, 배관은 3~4년에 한 번 정도 청소하라고 매뉴얼은 권합니다.",
+    "**지역난방** — 설정 온도는 0.5~1℃씩 조금씩 바꿉니다. 안 쓰는 방은 보통 싱크대 아래에 있는 난방 온수 분배기의 수동밸브로 줄입니다.",
+    "**공통** — 온도조절기를 잠가도 미세한 열은 계속 들어가므로, 쓰지 않는 방은 분배기 밸브를 잠그는 것이 좋습니다(한국지역난방공사).",
+    "**중앙난방 아파트** — 난방 운전은 관리사무소가 하므로, 세대에서는 분배기 밸브 조절과 창문 틈새 관리가 중심입니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "보일러를 바꿀 계획이라면 배기가스 열을 다시 쓰는 콘덴싱 보일러가 일반 보일러보다 열효율을 10% 이상 높였다고 매뉴얼은 설명합니다. 정책브리핑 [2023년 절약 꿀팁 기사](https://www.korea.kr/news/policyNewsView.do?newsId=148911714)도 가습기를 보일러와 함께 틀면 방이 빨리 데워진다고 소개합니다."
+  },
+  {
+   "type": "h2",
+   "text": "열이 새지 않게 — 창문·바닥·환기",
+   "id": "leak"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "p",
+   "text": "창문은 벽보다 단열이 약하고, 틈새로 들어오는 찬바람이 난방 부하를 키웁니다. 한국에너지공단 매뉴얼은 한국가스공사 난방비 절약 가이드를 인용해, 창문과 틈새를 잘 관리하면 난방열이 새지 않아 실내 온도를 2~3℃ 높이는 효과가 있다고 적었습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "창 표면에 에어캡(뽁뽁이)을 붙이고 두꺼운 커튼을 칩니다.",
+    "창문 틈에 문풍지를 붙입니다.",
+    "바닥에 러그나 매트를 깔아 발로 빠져나가는 열을 줄입니다.",
+    "환기는 창문을 활짝 열고 한 번에 5~10분 정도로 짧게 자주 합니다. 너무 오래 열어 두면 실내 온도가 떨어져 난방 부하가 커지고 결로가 생길 수 있습니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "[한국지역난방공사](https://www.kdhc.co.kr/kdhc/main/contents.do?menuNo=200279)도 외벽 단열 상태와 창문 틈새를 점검해 보강하라고 안내합니다. 결로가 심한 집은 곰팡이가 생기기 쉬우니 환기와 단열을 함께 챙기세요."
+  },
+  {
+   "type": "h2",
+   "text": "요금 자체를 줄이는 지원도 확인하기",
+   "id": "support"
+  },
+  {
+   "type": "image",
+   "key": "energyv"
+  },
+  {
+   "type": "p",
+   "text": "생활 습관만큼 중요한 것이 받을 수 있는 지원을 놓치지 않는 것입니다. 기초생활수급 가구 중 노인·영유아·장애인 등이 있는 집은 [에너지바우처](https://www.energyv.or.kr/)를 **2026년 12월 31일까지** 신청할 수 있습니다(2026년도 1인 29만 5,200원~4인 이상 70만 1,300원)."
+  },
+  {
+   "type": "p",
+   "text": "기초생활수급자·차상위계층·중증장애인·국가유공자·다자녀가구 등은 [도시가스 요금 감면](https://www.gov.kr/portal/service/serviceInfo/B55121000003)도 받을 수 있습니다. 겨울철(12~3월) 감면 한도는 자격에 따라 월 1만 8천 원에서 14만 8천 원입니다. 감면은 신청해야 적용되므로 대상이라면 도시가스사나 주민센터에 먼저 확인하세요."
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[한국에너지공단, 겨울철 난방설비 운전관리 매뉴얼(PDF)](https://min24.energy.or.kr/consult/file/%EA%B2%A8%EC%9A%B8%EC%B2%A0_%EB%82%9C%EB%B0%A9%EC%84%A4%EB%B9%84_%EC%9A%B4%EC%A0%84%EA%B4%80%EB%A6%AC_%EB%A7%A4%EB%89%B4%EC%96%BC.pdf)",
+    "[한국지역난방공사, 에너지 절약방법](https://www.kdhc.co.kr/kdhc/main/contents.do?menuNo=200279)",
+    "[정책브리핑, 나에게 맞는 난방비 절약 방법(2024.12.16)](https://www.korea.kr/news/policyNewsView.do?newsId=148937437)",
+    "[정책브리핑, 아꼈는데도 난방비 안 줄었다면 이렇게 해보세요(2023.2.15)](https://www.korea.kr/news/policyNewsView.do?newsId=148911714)",
+    "[에너지바우처 누리집](https://www.energyv.or.kr/)",
+    "[정부24, 사회적 배려대상자 도시가스요금 경감](https://www.gov.kr/portal/service/serviceInfo/B55121000003)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "types",
+   "kind": "card",
+   "file": "heating-type-saving-tips.png",
+   "title": "난방 방식별 절약 요령",
+   "lines": [
+    "공통: 실내 18~20℃, 습도 40~60%",
+    "개별보일러: 온수로 조절 시 55℃ 이상, 연 2회 점검",
+    "지역난방: 조절기 전원 유지, 0.5~1℃씩 조정",
+    "짧은 외출 2~3℃ 낮춤 · 긴 외출 외출모드",
+    "안 쓰는 방: 분배기 밸브 잠그기",
+    "2~3일 비울 때: 전원·중간밸브 그대로(동파 방지)"
+   ],
+   "source": "출처: 한국에너지공단 난방설비 운전관리 매뉴얼, 한국지역난방공사",
+   "caption": "개별난방·지역난방 방식별 난방비 절약 요령",
+   "alt": "개별보일러 지역난방 방식별 난방비 절약 요령 정리 카드"
+  }
+ ],
+ "shots": [
+  {
+   "key": "kdhc",
+   "url": "https://www.kdhc.co.kr/kdhc/main/contents.do?menuNo=200279",
+   "file": "kdhc-energy-saving-tips.png",
+   "caption": "한국지역난방공사 에너지 절약방법 안내 (kdhc.co.kr)",
+   "alt": "한국지역난방공사 지역난방 에너지 절약방법 안내 화면",
+   "name": "한국지역난방공사 에너지 절약방법",
+   "fallback": {
+    "title": "지역난방 에너지 절약방법",
+    "lines": [
+     "겨울철 실내 난방 18~20℃",
+     "외출 시 온도조절기 낮추기",
+     "안 쓰는 방은 분배기 밸브 잠그기"
+    ]
+   }
+  },
+  {
+   "key": "energyv",
+   "url": "https://www.energyv.or.kr/",
+   "file": "energyv-main-winter-2026.png",
+   "caption": "에너지바우처 누리집 첫 화면 (energyv.or.kr)",
+   "alt": "에너지바우처 누리집 첫 화면 신청 안내",
+   "name": "에너지바우처 누리집",
+   "fallback": {
+    "title": "에너지바우처",
+    "lines": [
+     "신청 2026.6.15 ~ 12.31",
+     "동절기 사용 ~ 2027.5.31",
+     "문의 1600-3190"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "winter-heating-cost-saving-hero.png",
+   "caption": "",
+   "alt": "눈 내리는 창밖을 보며 따뜻한 거실에서 니트를 입고 쉬는 사람 삽화",
+   "prompt": "A person wearing a thick knit sweater and wool socks relaxing on a sofa in a warm living room, snow falling outside a window with heavy curtains, a small humidifier releasing mist, cozy calm mood, soft flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "winter-heating-cost-saving-f1.png",
+   "caption": "잠깐 나갈 때는 온도만 조금 낮추고, 오래 비울 때는 외출모드",
+   "alt": "현관에서 외출하며 벽의 보일러 조절기를 누르는 사람 삽화",
+   "prompt": "A young adult in a winter coat at the front door of an apartment, pressing a button on a plain wall-mounted heating controller before leaving, scarf and bag ready, morning light, soft flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "winter-heating-cost-saving-f2.png",
+   "caption": "창문 틈새만 막아도 방이 덜 춥습니다",
+   "alt": "창문에 에어캡을 붙이고 두꺼운 커튼을 다는 두 사람 삽화",
+   "prompt": "Two people applying bubble wrap insulation to a window and hanging thick curtains, a rug on the wooden floor, frosty window outside, cheerful teamwork mood, soft flat illustration style, no text, no numbers, no logos."
+  }
+ ]
+}

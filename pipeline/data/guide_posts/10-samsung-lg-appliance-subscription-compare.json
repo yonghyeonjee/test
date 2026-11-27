@@ -1,0 +1,261 @@
+{
+ "slug": "samsung-lg-appliance-subscription-compare",
+ "slogan": "삼성-LG-가전-구독-비교-총비용",
+ "title": "삼성 LG 가전 구독 비교 | 구매보다 정말 저렴할까, 총비용·소유권으로 따져 보기",
+ "series": false,
+ "summary": "삼성 LG 가전 구독은 월 구독료만 보면 부담이 작아 보이지만, 비교는 총 구독료와 소비자판매가격으로 해야 합니다. 두 회사 공식 안내(2026년 11월 확인)로 계약기간·케어·위약금·소유권을 나란히 놓고, 한국소비자원이 권하는 방식으로 구매와 구독을 견주는 계산법을 정리했습니다.",
+ "keywords": [
+  "삼성 LG 가전 구독 비교",
+  "가전 구독 총비용",
+  "가전 구독 구매 비교",
+  "삼성 AI 구독",
+  "LG 가전 구독",
+  "가전 구독 소유권",
+  "가전 구독 위약금"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "냉장고 한 대에 월 몇만 원. **삼성 LG 가전 구독**을 알아보면 광고는 대부분 월 구독료로 시작합니다. 그런데 한국소비자원이 2026년 4월 발표한 실태조사에서 대형 가전 구독 경험자의 67.2%는 사업자가 '월 요금'만 강조하고 총비용을 분명히 비교해 주지 않는 것을 문제로 꼽았습니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글은 삼성전자 '삼성 AI 구독'과 LG전자 '가전 구독'의 공식 안내·약관(2026년 11월 확인)을 나란히 놓고, 구매보다 정말 저렴한지 스스로 계산하는 방법을 정리합니다. 어느 회사가 더 싸다는 결론은 내리지 않습니다. 같은 회사 안에서도 제품·계약기간·케어 종류·할인에 따라 결과가 달라지기 때문입니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "삼성과 LG, 구독 구조는 어떻게 다른가",
+   "id": "structure"
+  },
+  {
+   "type": "p",
+   "text": "두 회사 구독은 뼈대가 거의 같습니다. 계약기간 동안 매달 구독료를 내고, 그 안에 무상수리와 케어(방문 점검·세척·소모품)가 들어 있으며, 계약이 끝나면 제품이 내 것이 됩니다. 차이는 세부 조건에 있습니다."
+  },
+  {
+   "type": "table",
+   "head": [
+    "항목",
+    "삼성 AI 구독",
+    "LG전자 가전 구독"
+   ],
+   "rows": [
+    [
+     "계약기간",
+     "제품에 따라 2~6년",
+     "제품에 따라 3~6년"
+    ],
+    [
+     "케어 선택",
+     "무상수리 · 셀프케어 · 방문케어 라이트 · 방문케어 프리미엄",
+     "제품·요금제별 방문 케어와 소모품 교체"
+    ],
+    [
+     "무상수리",
+     "계약기간 동안(고객 과실·소모품 제외)",
+     "계약기간 전체(고객 과실 제외)"
+    ],
+    [
+     "중도해지 위약금",
+     "잔여 구독료의 30%(1년 이내) · 20%(2년 이내) · 10%(그 뒤)",
+     "잔여 의무사용기간 요금의 30% · 20% · 10%(같은 구간)"
+    ],
+    [
+     "그 밖의 해지 비용",
+     "등록비 10만 원(면제분), 회수비, 할인 환수",
+     "회수비, 사은품(12개월 이내 해지), 미납금"
+    ],
+    [
+     "소유권",
+     "계약 종료 후 고객",
+     "계약 종료 후 고객(3년 약정은 별도 조건)"
+    ]
+   ]
+  },
+  {
+   "type": "p",
+   "text": "위약금 구간은 같아 보여도 등록비가 있는지, 품목별 회수비가 얼마인지, 어떤 할인을 돌려줘야 하는지가 다릅니다. 근거: [삼성 AI 구독 가이드](https://www.samsung.com/sec/ai-subs/guide) · [LG전자 가전 구독 가이드](https://www.lge.co.kr/story/buying-guide/care-solutions-guide3)"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "h2",
+   "text": "월 구독료와 총비용, 무엇을 봐야 하나",
+   "id": "total"
+  },
+  {
+   "type": "p",
+   "text": "비교의 출발점은 **총 구독료 = 월 구독료 × 계약 개월 수 + 등록비·설치비 등**입니다. 삼성전자 안내에 실린 예시를 보면, 총 구독료 300만 원짜리 계약은 선납 없이 월 41,600원이고, 40%를 미리 내면 선납 할인 15만 원이 붙어 월 22,910원으로 내려갑니다. 월 금액이 반 가까이 줄어도 그만큼 목돈을 먼저 낸 것이니, 월 금액끼리 비교하면 안 됩니다."
+  },
+  {
+   "type": "image",
+   "key": "totalcalc"
+  },
+  {
+   "type": "p",
+   "text": "「중요한 표시·광고사항 고시」는 렌탈 업종에 소유권 이전까지 드는 모든 비용의 합계와 소비자판매가격을 표시하게 하지만, 그 의무 품목은 정수기·비데·안마의자 등으로 한정돼 있습니다. 소비자원 조사(2025년 10~12월) 때 LG전자는 대형 가전 14개 품목 중 8개에 총비용을 표시하지 않았고, 전 품목 표시를 개선하겠다고 회신했습니다. 페이지에 총액이 없으면 상담할 때 '계약기간 총 구독료와 소비자판매가격'을 숫자로 받아 두세요. 원문: [한국소비자원 보도자료](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)"
+  },
+  {
+   "type": "h2",
+   "text": "구매보다 저렴할까? 계산하는 순서",
+   "id": "buy"
+  },
+  {
+   "type": "p",
+   "text": "구독이 구매보다 싼지는 제품마다 다릅니다. 같은 모델을 놓고 아래 네 가지를 차례로 적어 보면 답이 나옵니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**① 총 구독료** — 할인·선납을 반영해 실제로 낼 총액",
+    "**② 일시불 가격** — 같은 모델의 소비자판매가격(무이자 할부 조건 포함)",
+    "**③ 케어 가치** — 구매했다면 따로 들었을 유상 수리·세척·필터 비용. 제조사 품질보증기간이 끝난 뒤가 핵심",
+    "**④ 묶이는 비용** — 중도해지 위약금, 이사 때 재설치비, 제휴카드 실적 조건"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "소비자원은 고가 대형 가전 구독이 일시불 구매보다 총비용과 중도해지 위약금이 더 높을 수 있다고 안내합니다. 반대로 같은 설문에서 구독을 고른 이유는 'A/S 비용·절차 관리 편리'(43.8%)와 '초기 목돈 부담'(41.4%)이 가장 많았습니다. ①에서 ②를 뺀 차액보다 ③의 가치와 목돈을 피하는 편리함이 크다고 느끼면 구독, 아니면 구매가 맞습니다. 소비자원 정리: [소비자시대 웹진, 가전 구독 불만과 피해사례](https://www.kca.go.kr/webzine/board/view?menuId=MENU00307&linkId=1016&div=kca_2605)"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "h2",
+   "text": "계약 끝나면 소유권은 누구에게",
+   "id": "owner"
+  },
+  {
+   "type": "p",
+   "text": "삼성 AI 구독 이용약관 제21조는 계약기간 중 소유권이 회사에 있고, 계약이 끝나고 미납금이 없으면 고객에게 넘어온다고 정합니다. 그 뒤에는 케어서비스 새로 가입, 새 구독, 직접 관리 중에서 고르면 됩니다. 제품은 사고 케어만 따로 붙이는 '구독케어'는 배송 때부터 고객 소유입니다. 근거: [삼성 AI 구독 이용약관](https://www.samsung.com/sec/aisc/terms/610/760)"
+  },
+  {
+   "type": "p",
+   "text": "LG전자도 계약 중에는 회사 소유, 계약기간이 끝나면 고객 소유입니다. 다만 3년 약정 상품은 소유권 이전 조건이 따로 있다고 안내하니 3년을 고를 땐 꼭 확인하세요. 만기 뒤에도 정기 방문 관리를 받고 싶다면 '케어십'을 별도로 신청해야 합니다."
+  },
+  {
+   "type": "image",
+   "key": "lgeshot"
+  },
+  {
+   "type": "h2",
+   "text": "계약 전 체크리스트",
+   "id": "check"
+  },
+  {
+   "type": "list",
+   "items": [
+    "총 구독료와 소비자판매가격을 숫자로 받았는가",
+    "케어 종류(방문·셀프·무상수리만)와 방문 주기는 무엇인가",
+    "해지 시점별 위약금, 등록비·회수비, 할인 환수 금액은 얼마인가",
+    "제휴카드 할인은 전월 실적 조건과 혜택 기간까지 확인했는가",
+    "부품 단종 등으로 수리가 안 될 때 교환·보상 기준이 약관에 있는가"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "마지막 항목은 소비자원 조사에서 차이가 난 부분입니다. 삼성전자는 부품 미보유 상황의 조치를 약관에 자세히 적었고, LG전자 등 나머지 3개사는 조항을 보완·신설하겠다고 회신했습니다(2026년 4월 발표). 계약 뒤 분쟁이 생기면 [1372소비자상담센터](https://www.ccn.go.kr)에 먼저 상담하세요. 위약금의 일반 기준은 [소비자분쟁해결기준](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136)에 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "samsungshot"
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[한국소비자원, 가전 구독 시 총 구독 비용·판매가격 등 중요정보 충분치 않아(2026.4.8)](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)",
+    "[삼성전자, 삼성 AI 구독 가이드](https://www.samsung.com/sec/ai-subs/guide)",
+    "[삼성전자, AI 구독 이용약관](https://www.samsung.com/sec/aisc/terms/610/760)",
+    "[LG전자, 가전 구독 가이드](https://www.lge.co.kr/story/buying-guide/care-solutions-guide3)",
+    "[국가법령정보센터, 소비자분쟁해결기준(공정거래위원회 고시 제2025-14호)](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136)",
+    "[1372소비자상담센터](https://www.ccn.go.kr)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "totalcalc",
+   "kind": "card",
+   "file": "samsung-lg-subscription-total-cost-example.png",
+   "title": "월 구독료 말고 총 구독료로",
+   "lines": [
+    "총 구독료 = 월 구독료 × 계약 개월 + 등록비·설치비",
+    "삼성 안내 예시: 총 구독료 300만 원",
+    "선납 없음 → 월 41,600원",
+    "40% 선납 → 월 22,910원(선납 할인 15만 원)",
+    "같은 모델의 소비자판매가격과 나란히 비교"
+   ],
+   "source": "출처: 삼성전자 삼성 AI 구독 가이드(2026년 11월 확인)",
+   "caption": "가전 구독은 월 금액이 아니라 총 구독료로 비교합니다",
+   "alt": "가전 구독 총 구독료 계산 예시 삼성 선납 월 구독료"
+  }
+ ],
+ "shots": [
+  {
+   "key": "lgeshot",
+   "url": "https://www.lge.co.kr/story/buying-guide/care-solutions-guide3",
+   "file": "lge-subscription-guide-compare.png",
+   "caption": "LG전자 가전 구독 가이드 (lge.co.kr)",
+   "alt": "LG전자 가전 구독 구매와 구독 비교 안내 화면",
+   "name": "LG전자 가전 구독 가이드",
+   "fallback": {
+    "title": "LG전자 가전 구독 가이드",
+    "lines": [
+     "계약기간 3~6년 선택",
+     "계약기간 전체 무상 A/S(고객 과실 제외)",
+     "계약 종료 후 소유권 고객에게"
+    ]
+   }
+  },
+  {
+   "key": "samsungshot",
+   "url": "https://www.samsung.com/sec/ai-subs/guide",
+   "file": "samsung-ai-subscription-guide-compare.png",
+   "caption": "삼성 AI 구독 가이드 (samsung.com)",
+   "alt": "삼성전자 삼성 AI 구독 가이드 화면",
+   "name": "삼성 AI 구독 가이드",
+   "fallback": {
+    "title": "삼성 AI 구독 가이드",
+    "lines": [
+     "계약기간 제품별 2~6년",
+     "케어: 무상수리 · 셀프케어 · 방문케어",
+     "중도해지 위약금 30% · 20% · 10%"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "samsung-lg-appliance-subscription-compare-hero.png",
+   "caption": "",
+   "alt": "새 냉장고와 세탁기 앞에서 계약서를 비교하는 부부 삽화",
+   "prompt": "A young couple standing in a bright modern apartment kitchen, comparing two printed contracts side by side in front of a new refrigerator and washing machine, calm and thoughtful mood, soft flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "samsung-lg-appliance-subscription-compare-f1.png",
+   "caption": "두 회사 구독은 뼈대가 같고 세부 조건이 다릅니다",
+   "alt": "같은 모양의 두 가전 상자를 저울에 올려 비교하는 삽화",
+   "prompt": "Two identical appliance boxes placed on a large balance scale in a clean living room, a person in casual clothes examining them closely with a magnifying glass, soft pastel colors, flat illustration, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "samsung-lg-appliance-subscription-compare-f2.png",
+   "caption": "구매와 구독, 내 상황에 맞는 쪽을 고르는 계산이 필요합니다",
+   "alt": "갈림길에서 한쪽은 쇼핑백, 다른 쪽은 공구 상자를 든 사람 삽화",
+   "prompt": "A person standing at a fork in a gentle path, one road leading to a shopping bag with a new appliance, the other to a friendly technician with a toolbox, warm afternoon light, flat illustration style, no text, no numbers, no logos."
+  }
+ ]
+}

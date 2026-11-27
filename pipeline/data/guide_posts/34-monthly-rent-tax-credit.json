@@ -1,0 +1,309 @@
+{
+ "slug": "monthly-rent-tax-credit",
+ "slogan": "월세-세액공제-조건-신청-방법-경정청구",
+ "title": "월세 세액공제 조건과 신청 방법 | 총급여 8천만 원 이하 최대 17%, 놓친 공제는 5년 안에 경정청구",
+ "series": false,
+ "summary": "월세 세액공제는 총급여 8천만 원 이하 무주택 세대주가 낸 월세의 15~17%를 세금에서 빼 주는 제도로, 한 해 월세 1,000만 원까지 공제됩니다. 국세청 안내(2026년 11월 확인)를 바탕으로 소득·주택 기준, 집주인 동의가 필요한지, 2026년 귀속부터 달라진 점, 지난해 놓친 공제를 경정청구로 되찾는 방법까지 정리했습니다.",
+ "keywords": [
+  "월세 세액공제",
+  "월세 세액공제 조건",
+  "연말정산 월세",
+  "월세 세액공제 집주인 동의",
+  "월세 경정청구",
+  "월세 현금영수증",
+  "무주택 세대주",
+  "연말정산 놓치기 쉬운 공제",
+  "홈택스 경정청구"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "월세로 사는 직장인이라면 연말정산에서 가장 먼저 챙겨야 할 항목이 **월세 세액공제**입니다. 총급여 8천만 원 이하 무주택 세대주라면 한 해 낸 월세의 15~17%를 세금에서 돌려받습니다. 월세 50만 원이면 1년에 100만 원이 넘는 돈입니다. 그런데 계약서 주소와 전입 주소가 다르거나, 집주인 눈치가 보여 서류를 내지 않아 놓치는 경우가 적지 않습니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글은 국세청 공식 안내(2026년 11월 확인)를 바탕으로 **2026년 귀속 연말정산(2027년 1~2월 진행)** 기준 조건과 신청 방법, 지난 몇 년 동안 놓친 공제를 되찾는 경정청구까지 정리했습니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "월세 세액공제 조건 — 소득·주택·세대주 기준",
+   "id": "cond"
+  },
+  {
+   "type": "p",
+   "text": "국세청 [월세액 세액공제 안내](https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=40613&cntntsId=239025) 기준 조건은 네 가지이며, 모두 맞아야 합니다."
+  },
+  {
+   "type": "image",
+   "key": "ntsshot"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**소득** — 총급여 8,000만 원 이하 근로자(종합소득금액 7,000만 원 초과자는 제외)",
+    "**무주택 세대** — 과세기간 끝(12월 31일) 기준 무주택 세대의 세대주. 세대주가 주택 관련 공제를 받지 않았다면 세대원도 받을 수 있습니다.",
+    "**주택** — 국민주택규모(전용 85㎡ 이하, 수도권 밖 도시지역이 아닌 읍·면은 100㎡ 이하) 또는 기준시가 4억 원 이하. 주거용 오피스텔과 고시원도 포함됩니다.",
+    "**계약·전입** — 본인 또는 기본공제대상자 명의로 계약하고, 계약서 주소지로 전입해 주민등록표 주소와 계약서 주소가 같아야 합니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "주택 기준은 면적과 기준시가 가운데 **하나만** 맞으면 됩니다. 85㎡가 넘는 집이라도 기준시가가 4억 원 이하면 대상입니다. 반대로 연말에 집이 한 채라도 있는 세대는 받을 수 없습니다. 공제의 법적 근거는 [조세특례제한법](https://www.law.go.kr/법령/조세특례제한법) 제95조의2(월세액에 대한 세액공제)입니다."
+  },
+  {
+   "type": "h2",
+   "text": "얼마나 돌려받나 — 공제율 17%와 15%",
+   "id": "amount"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**총급여 5,500만 원 이하**(종합소득금액 4,500만 원 이하) — 월세액의 17%",
+    "**총급여 5,500만 원 초과~8,000만 원 이하** — 월세액의 15%",
+    "**한도** — 월세액 연 1,000만 원까지(세대주와 배우자의 월세액 합산)"
+   ]
+  },
+  {
+   "type": "image",
+   "key": "amount"
+  },
+  {
+   "type": "p",
+   "text": "예를 들어 총급여 4,000만 원인 사람이 월 50만 원씩 12개월을 냈다면 600만 원 × 17% = **102만 원**이 공제됩니다(계산 예시는 가정). 한도인 1,000만 원을 채우면 17% 구간은 170만 원, 15% 구간은 150만 원입니다. 다만 세액공제는 내야 할 세금(결정세액)에서 빼는 방식이라, 낼 세금이 공제액보다 적으면 그만큼만 줄어듭니다."
+  },
+  {
+   "type": "p",
+   "text": "총급여가 8,000만 원을 넘거나 연말에 집이 있어 세액공제를 못 받는 사람도 길이 하나 있습니다. 국세청은 [연말정산 놓치기 쉬운 포인트(정책브리핑)](https://www.korea.kr/news/policyNewsView.do?newsId=148957247)에서 이런 경우 월세를 현금영수증으로 인정받아 신용카드 등 소득공제를 받을 수 있다고 안내했습니다."
+  },
+  {
+   "type": "h2",
+   "text": "집주인 동의가 필요할까?",
+   "id": "landlord"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "가장 많이 나오는 질문입니다. 국세청이 밝힌 월세액 세액공제 요건에는 **집주인 동의가 들어 있지 않습니다.** 필요한 것은 세입자가 스스로 준비하는 서류 세 가지입니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**주민등록표등본** — 계약서 주소와 같은 주소로 전입돼 있어야 합니다.",
+    "**임대차계약서 사본** — 본인 또는 기본공제대상자 명의",
+    "**월세 지급 증빙** — 계좌이체 영수증, 무통장입금증처럼 임대인에게 월세를 냈다는 것을 보여 주는 서류"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "그래서 월세는 현금으로 건네지 말고 계좌이체로 보내 기록을 남기는 것이 좋습니다. 연중에 [홈택스](https://www.hometax.go.kr)나 손택스에서 '주택임차료(월세) 현금영수증 발급 신청'을 해 두는 방법도 있습니다. 계약서와 월세 지출 내역을 첨부하면 되고, 이렇게 받은 월세 현금영수증은 세액공제와 겹치지 않도록 신용카드 사용액 화면에서는 빠집니다([국세상담센터 자주 묻는 Q&A](https://call.nts.go.kr/call/qna/selectHomeQnaInfo.do?mi=3555))."
+  },
+  {
+   "type": "h2",
+   "text": "2026년 귀속부터 달라진 점",
+   "id": "new"
+  },
+  {
+   "type": "p",
+   "text": "국세청이 2026년 10월 [연말정산 미리보기 안내(정책브리핑)](https://www.korea.kr/multi/visualNewsView.do?newsId=148974171)에서 밝힌 월세 공제 변화는 두 가지입니다."
+  },
+  {
+   "type": "image",
+   "key": "koreashot"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**맞벌이 부부 확대** — 세대주의 배우자도 총급여 8천만 원 이하 근로자이고 세대주와 다른 시·군·구에 살면 공제 대상이 됩니다(함께 사는 직계존비속 등도 무주택이어야 함).",
+    "**자녀 3명 이상 가구** — 기본공제대상 자녀 등이 3명 이상이면 주택 면적 기준이 100㎡로 넓어집니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "일 때문에 부부가 서로 다른 지역에 따로 집을 얻어 사는 경우라면 이번 연말정산에서 처음 대상이 될 수 있으니 조건을 맞춰 보세요."
+  },
+  {
+   "type": "h2",
+   "text": "과거에 놓친 공제 — 5년 안에 경정청구",
+   "id": "missed"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "p",
+   "text": "지난 몇 년 동안 월세 공제를 받지 않았다면 지금이라도 돌려받을 수 있습니다. 연말정산만 한 근로자는 연말정산 세액의 납부기한이 지난 뒤 **5년 이내**에 경정청구를 할 수 있습니다([국세법령정보시스템 질의회신](https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=200000000000006380)). 회사를 거치지 않고 본인이 홈택스에서 직접 신청합니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "홈택스 연말정산 메뉴(또는 검색창에 '경정청구서') → 대상 연도 고르고 '조회'",
+    "회사가 낸 지급명세서가 자동으로 채워지면 빠진 월세액 공제만 입력",
+    "예상 환급세액 확인 → 접수 → 등본·계약서·이체 내역 첨부"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "절차는 [정책브리핑 경정청구 안내](https://www.korea.kr/briefing/policyBriefingView.do?newsId=148829793)에 정리돼 있고, 경정청구가 어렵다면 5월 종합소득세 확정신고 때 추가 환급을 신청할 수도 있습니다. 국세청은 2026년부터 환급 안내를 3월·9월 두 번 보내며, 공제를 다 받지 못한 근로자도 안내 대상에 넣었습니다([국세청 환급 안내 보도자료](https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=&nttSn=1349690)). 다만 공제를 받으려는 해의 12월 31일에 무주택·주소 일치 같은 요건을 갖췄어야 하니, 그해 계약서와 등본 주소부터 맞춰 보세요."
+  },
+  {
+   "type": "h2",
+   "text": "신청 방법 — 연말정산 때 회사에 서류 내기",
+   "id": "apply"
+  },
+  {
+   "type": "image",
+   "key": "steps"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**1월 중순** — 홈택스 연말정산 간소화 서비스에서 월세 자료 확인. 공공임대주택이 아닌 일반 월세는 대부분 조회되지 않으니 직접 서류를 챙깁니다.",
+    "**회사 제출** — 등본·계약서·이체 내역을 모아 소득·세액공제신고서와 함께 회사에 냅니다.",
+    "**회사에 알리기 어렵다면** — 5월 종합소득세 신고나 경정청구로 본인이 직접 신청합니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "※ 이 글은 2026년 11월 국세청 안내 기준입니다. 세법 개정이나 개인 상황에 따라 달라질 수 있으니, 신청 전 [홈택스](https://www.hometax.go.kr)나 국세상담센터(126)에서 다시 확인하세요."
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[국세청, 월세액 세액공제](https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=40613&cntntsId=239025)",
+    "[정책브리핑, 연말정산 놓치지 말아야 할 포인트 ②(2025.12.29)](https://www.korea.kr/news/policyNewsView.do?newsId=148957247)",
+    "[정책브리핑, 13월의 월급 나는 얼마나 받을까(2026.10.23)](https://www.korea.kr/multi/visualNewsView.do?newsId=148974171)",
+    "[정책브리핑, 연말정산은 아직 끝나지 않았다(경정청구)](https://www.korea.kr/briefing/policyBriefingView.do?newsId=148829793)",
+    "[국세법령정보시스템, 연말정산 근로소득자 경정청구 기간 질의회신](https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=200000000000006380)",
+    "[국세청, 환급 안내 보도자료(2026.3)](https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?mi=&nttSn=1349690)",
+    "[국세상담센터, 자주 묻는 Q&A](https://call.nts.go.kr/call/qna/selectHomeQnaInfo.do?mi=3555)",
+    "[국가법령정보센터, 조세특례제한법](https://www.law.go.kr/법령/조세특례제한법)",
+    "[국세청 홈택스](https://www.hometax.go.kr)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "amount",
+   "kind": "hbar",
+   "file": "monthly-rent-tax-credit-amount.png",
+   "title": "월세 세액공제액 예시(만 원)",
+   "sub": "가정: 1년 12개월 납부, 결정세액이 충분한 경우 · 2026년 귀속 기준",
+   "labels": [
+    "월 40만 원 · 17%",
+    "월 50만 원 · 17%",
+    "월 70만 원 · 15%",
+    "월 70만 원 · 17%",
+    "연 1,000만 원(한도) · 15%",
+    "연 1,000만 원(한도) · 17%"
+   ],
+   "values": [
+    81.6,
+    102,
+    126,
+    142.8,
+    150,
+    170
+   ],
+   "value_labels": [
+    "81만 6천 원",
+    "102만 원",
+    "126만 원",
+    "142만 8천 원",
+    "150만 원",
+    "170만 원"
+   ],
+   "highlight": [
+    5
+   ],
+   "left": 0.3,
+   "fmt": "{}",
+   "source": "출처: 국세청 월세액 세액공제 안내(공제율 17%·15%, 한도 연 1,000만 원)로 계산한 가정 예시",
+   "caption": "월세와 공제율에 따른 한 해 세액공제액 예시(가정)",
+   "alt": "월세 금액별 월세 세액공제 환급액 예시 차트"
+  },
+  {
+   "key": "steps",
+   "kind": "card",
+   "file": "monthly-rent-tax-credit-steps.png",
+   "title": "월세 세액공제 받는 순서",
+   "lines": [
+    "① 계약서 주소로 전입, 월세는 계좌이체로",
+    "② 1월 중순 간소화 서비스 확인(일반 월세는 대부분 미조회)",
+    "③ 등본·계약서·이체 내역을 회사에 제출",
+    "④ 놓쳤다면 5월 종합소득세 신고나 5년 안 경정청구"
+   ],
+   "source": "국세청 월세액 세액공제 안내 정리(2026년 11월)",
+   "caption": "월세 세액공제 신청 순서",
+   "alt": "월세 세액공제 연말정산 신청 순서와 경정청구"
+  }
+ ],
+ "shots": [
+  {
+   "key": "ntsshot",
+   "url": "https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?mi=40613&cntntsId=239025",
+   "file": "nts-monthly-rent-tax-credit.png",
+   "caption": "국세청 월세액 세액공제 안내 (nts.go.kr)",
+   "alt": "국세청 월세액 세액공제 요건 안내 화면",
+   "name": "국세청 월세액 세액공제",
+   "fallback": {
+    "title": "월세액 세액공제(국세청)",
+    "lines": [
+     "총급여 8,000만 원 이하 무주택 세대주",
+     "국민주택규모 또는 기준시가 4억 원 이하",
+     "공제율 17%·15%, 월세 연 1,000만 원 한도"
+    ]
+   }
+  },
+  {
+   "key": "koreashot",
+   "url": "https://www.korea.kr/multi/visualNewsView.do?newsId=148974171",
+   "file": "korea-kr-year-end-preview-2026.png",
+   "caption": "정책브리핑 연말정산 미리보기 안내 (korea.kr)",
+   "alt": "2026년 귀속 연말정산 미리보기와 달라지는 공제 정책브리핑 화면",
+   "name": "정책브리핑 연말정산 미리보기",
+   "fallback": {
+    "title": "2026년 귀속 달라지는 공제",
+    "lines": [
+     "월세: 맞벌이 부부 요건 확대",
+     "월세: 자녀 3명 이상이면 면적 기준 100㎡"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "monthly-rent-tax-credit-hero.png",
+   "caption": "",
+   "alt": "작은 원룸에서 노트북으로 연말정산 서류를 정리하는 직장인 삽화",
+   "prompt": "A young office worker sitting cross-legged on the floor of a cozy small studio apartment at night, sorting papers next to a laptop, warm lamp light and a mug of tea, calm and hopeful mood, soft flat illustration."
+  },
+  {
+   "key": "f1",
+   "file": "monthly-rent-tax-credit-f1.png",
+   "caption": "공제에 필요한 서류는 세입자가 직접 챙길 수 있습니다",
+   "alt": "세입자가 계약서와 은행 이체 기록을 나란히 놓고 확인하는 삽화",
+   "prompt": "A tenant at a kitchen table calmly arranging a rental contract, a bank transfer receipt and a residence certificate side by side, a house key resting nearby, gentle daylight, soft flat illustration with no text."
+  },
+  {
+   "key": "f2",
+   "file": "monthly-rent-tax-credit-f2.png",
+   "caption": "지난 몇 년 치 공제도 늦지 않았습니다",
+   "alt": "지난 달력들을 넘겨 보며 돌아온 동전을 받는 사람 삽화",
+   "prompt": "A person flipping back through several old wall calendars while a small stream of golden coins returns into a piggy bank on the desk, relieved smile, warm pastel colors, soft flat illustration with no text."
+  }
+ ]
+}

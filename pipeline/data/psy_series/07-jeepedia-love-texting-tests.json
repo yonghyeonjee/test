@@ -1,0 +1,316 @@
+{
+ "slug": "jeepedia-love-texting-tests",
+ "no": 7,
+ "series": false,
+ "category": "psychology",
+ "slogan": "연애-심리테스트-연락-습관-호감-표현-속마음",
+ "title": "무료 연애 심리테스트 3종 | 연락 습관·호감 표현 스타일·그 사람 말의 진짜 뜻",
+ "summary": "연애 심리테스트 세 가지를 처음부터 끝까지 직접 풀어 봤습니다. 답장 스타일로 보는 연락 습관 테스트, 썸 탈 때 내가 보내는 신호를 보는 호감 표현 스타일 테스트, 상대 말투로 속마음을 짐작해 보는 '그 사람의 말, 진짜 뜻은?'의 진행 방식과 결과 유형, 참고한 연구, 애착 성향과의 관계, 결과를 연애에 쓰는 법까지 정리했습니다.",
+ "keywords": [
+  "연애 심리테스트",
+  "연락 습관 테스트",
+  "호감 표현 스타일",
+  "썸 테스트",
+  "카톡 답장 심리",
+  "애착 유형",
+  "지피디아 심리테스트",
+  "무료 심리테스트"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "답장이 늦으면 마음이 식은 걸까, 농담만 하는 저 사람은 진심일까. 연애에서 제일 많이 하는 고민은 결국 '연락'과 '말투'입니다. 지피디아(Jeepedia)에 이 고민을 다루는 **무료 연애 심리테스트 3종**이 올라와 하나씩 끝까지 풀어 봤습니다. 이 글의 문항 수·결과 유형·참고 문헌은 **2026년 11월 지피디아 각 테스트 페이지에 적힌 내용** 그대로입니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "세 테스트 한눈에: 몇 문항, 어떻게 고르나",
+   "id": "overview"
+  },
+  {
+   "type": "image",
+   "key": "overview"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**[연락 습관 심리테스트](https://jeepedia.com/psychology-test/rank-texting/)** — 그림 5장, 약 30초. 연락 상황에서 끌리는 반응 그림을 **끌리는 순서대로 5장 모두** 누르는 순위 방식",
+    "**[나의 호감 표현 스타일](https://jeepedia.com/psychology-test/pick-flirting-style-signals/)** — 8문항. 썸 상황마다 '끌리는 쪽'을 고르면 동물 이름이 붙은 10가지 유형 중 하나가 나옵니다",
+    "**[그 사람의 말, 진짜 뜻은?](https://jeepedia.com/psychology-test/pick-crush-text-decoder/)** — 그림 고르기 10문항, 약 3분. 썸 상대·연인의 말투를 떠올리며 고르면 상대가 4가지 유형 중 어디에 가까운지 보여 줍니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "세 테스트 모두 **재미와 자기이해를 위한 콘텐츠이며 심리검사나 진단이 아니라고** 페이지에 밝혀 두었습니다. 문항은 원 척도를 옮긴 것이 아니라 연구의 구조를 참고해 지피디아가 새로 쓴 자체 문항입니다. 연락 습관 테스트처럼 순위를 매기게 하는 방식은 '강제선택' 질문지라고 하는데, 그 측정 모형은 [Brown·Maydeu-Olivares(2011) 논문](https://doi.org/10.1177/0013164410375112)을 참고했다고 적혀 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "연락 습관 테스트: 답장 스타일 다섯 가지",
+   "id": "texting"
+  },
+  {
+   "type": "image",
+   "key": "texting"
+  },
+  {
+   "type": "p",
+   "text": "[연락 습관 심리테스트](https://jeepedia.com/psychology-test/rank-texting/)를 시작하면 연락 상황 그림 5장이 한 화면에 뜹니다. 가장 끌리는 그림부터 차례로 누르면 되고, 잘못 눌렀다면 마지막으로 고른 그림을 다시 눌러 취소할 수 있습니다. 그림마다 붙은 유형은 이렇습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**알림 보자마자 바로 답장** → 온도를 바로 맞추는 응답가(반응성·연결 확인 욕구)",
+    "**읽어 두고 나중에 답장** → 자기 속도를 지키는 사람(자율성·거리 조절)",
+    "**이모티콘·짤로 답하기** → 감정을 그림으로 건네는 사람(정서 표현·분위기 조율)",
+    "**바로 전화 걸기** → 목소리로 확인하는 사람(직접성·불확실성 해소)",
+    "**직접 만나서 말하기** → 얼굴 보고 풀어야 하는 사람(대면 친밀·깊이 지향)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "결과는 순위별로 읽습니다. **1순위는 '내 본모습'**, 2순위는 '가까운 사람만 아는 모습', 3순위는 '스스로 간과하는 것', 4순위는 '애써 억누르는 것', **5순위는 '가장 피하고 싶은 상황'**입니다. 페이지는 1순위와 5순위가 상대적으로 안정적인 선호이고, 2~4순위 해설은 참고용 제안이라고 구분합니다. 고른 순서는 서버로 보내지지 않고 같은 기기에서 마지막 결과를 다시 보기 위해 브라우저에만 저장됩니다."
+  },
+  {
+   "type": "h2",
+   "text": "호감 표현 스타일: 썸 탈 때 내가 보내는 신호",
+   "id": "flirting"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "'썸 상대와 카페에 마주 앉으면?' 같은 상황 8개에서 끌리는 쪽을 고릅니다. 결과는 내가 **가장 많이 고른 신호 두 가지의 조합**(예: 피지컬·진심)으로 정해집니다. 바탕은 호감 표현 방식을 전통·피지컬·진심·장난·정중 다섯 스타일로 정리한 연구로, 페이지는 성인 5,020명을 분석한 연구라고 소개합니다. 문항 구성은 [Hall 외(2010)의 Flirting Styles Inventory](https://www.tandfonline.com/doi/abs/10.1080/01463373.2010.524874) 구조를 참고했고, 원 척도의 '전통' 스타일 문항은 성별에 상관없이 읽히도록 고쳐 썼다고 밝힙니다."
+  },
+  {
+   "type": "p",
+   "text": "결과 10유형은 눈빛으로 고백하는 강아지, 에스코트 장인 펭귄, 다가갔다 물러서는 고슴도치, 밀당 고수 돌고래, 정성 편지 백조, 천천히 스며드는 코알라, 웃기다 진지한 앵무새, 신호 지키는 거북이, 서프라이즈 기획 너구리, 농담 뒤에 숨는 고양이입니다. 유형마다 **강점과 주의할 점**이 함께 나오는 게 쓸모 있습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**다가갔다 물러서는 고슴도치** — 부담을 줄까 봐 물러서는 타입. 물러설 때 이유를 말해 주면 오해가 줄어듭니다",
+    "**천천히 스며드는 코알라** — 배려하며 천천히 다가가지만 조심스러움이 무관심으로 보일 수 있습니다",
+    "**농담 뒤에 숨는 고양이** — 장난으로 슬쩍 떠보는 타입. 상대가 장난을 말 그대로 받아들이면 호감이 전해지지 않습니다"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "그 사람의 말, 진짜 뜻은? 말투로 보는 4유형",
+   "id": "decoder"
+  },
+  {
+   "type": "image",
+   "key": "decoder"
+  },
+  {
+   "type": "p",
+   "text": "이번에는 내가 아니라 **상대**를 떠올리며 답합니다. '그 사람의 평소 카톡 답장은?', '내가 힘든 일을 털어놓으면?', '서운한 일이 생겼을 때 그 사람은?', '내 부탁을 들어주기 어려울 때는?'처럼 말투가 드러나는 10가지 장면입니다. 결과는 성격 5요인 중 두 요인의 조합으로 설명됩니다."
+  },
+  {
+   "type": "table",
+   "head": [
+    "결과 유형",
+    "말투 특징",
+    "연결된 성격 요인"
+   ],
+   "rows": [
+    [
+     "리액션 부자 수달",
+     "답장이 빠르고 이모티콘·감탄사가 많음",
+     "외향성·친화성"
+    ],
+    [
+     "직진 해결사 비버",
+     "감정보다 결론과 계획을 먼저 말함",
+     "외향성·성실성"
+    ],
+    [
+     "속 깊은 감성 부엉이",
+     "말수는 적어도 한마디가 깊음",
+     "친화성·개방성"
+    ],
+    [
+     "요점 정리 여우",
+     "문장이 짧고 정확함",
+     "성실성·개방성"
+    ]
+   ]
+  },
+  {
+   "type": "p",
+   "text": "결과 화면의 '재미로 보는 번역표'는 '괜찮아', '알아서 해', '나중에 얘기하자', 'ㅋㅋ' 같은 말을 유형별로 풀이하고, '이렇게 답해 보세요'에서 이 유형에게 답하는 요령을 알려 줍니다. 말버릇에 성격이 묻어난다는 근거로는 [Pennebaker·King(1999)의 언어 스타일 연구](https://doi.org/10.1037/0022-3514.77.6.1296)와 블로거 글을 분석한 Yarkoni(2010), 요인 정의에는 Mini-IPIP(Donnellan 외, 2006)를 들었습니다. 다만 상대를 직접 검사한 게 아니라 **내 기억 속 말투**로 고른 결과이니, 번역표는 말 그대로 재미로만 보세요."
+  },
+  {
+   "type": "h2",
+   "text": "애착 성향과는 어떤 관계일까",
+   "id": "attachment"
+  },
+  {
+   "type": "image",
+   "key": "bonding"
+  },
+  {
+   "type": "p",
+   "text": "연락 습관 테스트의 해설은 성인 애착을 **불안과 회피 두 차원**으로 본 Brennan·Clark·Shaver(1998)의 틀을 참고합니다. 예를 들어 '바로 답장'에는 연결을 확인하고 싶은 마음이, '읽어 두고 나중에'에는 거리를 조절하려는 마음이 담겨 있다고 읽는 식입니다. [Morey 외(2013)](https://www.sciencedirect.com/science/article/pii/S074756321300085X)는 연인 사이의 연락 수단 사용을 애착 성향과 함께 조사해, 같은 연락 수단도 사람의 애착 성향에 따라 다른 의미를 가질 수 있다고 봤습니다."
+  },
+  {
+   "type": "p",
+   "text": "그렇다고 이 테스트가 애착 유형을 판정하는 것은 아닙니다. 페이지에도 **'애착 유형을 판정하는 검사가 아니다'**라고 적혀 있습니다. 내 애착 성향이 궁금하다면 안정·불안·회피를 따로 재는 [성인 애착유형 테스트](https://jeepedia.com/psychology-test/attachment/)를 함께 해 보는 편이 정확합니다. 참고로 친한 친구 사이의 대화를 비교한 [Sherman 외(2013) 연구](https://cyberpsychology.eu/article/view/4285)에서는 유대감이 대면 대화에서 가장 컸고, 영상 통화·음성 통화·메신저 순이었습니다. '얼굴 보고 풀어야 하는 사람'이 괜히 있는 게 아닙니다."
+  },
+  {
+   "type": "h2",
+   "text": "결과, 연애에 이렇게 써 보세요",
+   "id": "use"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**내 연락 습관은 미리 말해 두기** — '나는 읽어 두고 나중에 답하는 편이야' 한마디가 기다리는 사람의 불안을 줄입니다",
+    "**답장 속도를 마음의 크기로 읽지 않기** — 1순위가 다르면 같은 마음도 다른 속도로 나옵니다",
+    "**장난·농담형이라면 중요한 말은 직접** — 호감 표현 테스트가 짚듯 문자 속 장난은 다르게 읽히기 쉽습니다",
+    "**번역표보다 질문 한 번** — '괜찮아'의 뜻이 궁금하면 추측보다 '정말 괜찮은 거야?'가 빠릅니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "친밀감은 내가 마음을 털어놓고 상대가 그걸 잘 받아 줄 때 자란다는 [Laurenceau 외(1998)의 연구](https://doi.org/10.1037/0022-3514.74.5.1238)처럼, 결국 중요한 건 유형보다 **반응**입니다. 관계 문제로 마음이 오래 힘들다면 전국 어디서나 같은 번호인 정신건강위기상담전화 1577-0199([보건복지부 안내](https://www.mohw.go.kr/menu.es?mid=a10706040100))나 [국가정신건강정보포털 자가검진](https://www.mentalhealth.go.kr/portal/mdexmnDtl/mdexmnTypeList.do)을 이용해 보세요. 다른 테스트는 [지피디아 심리테스트 모음](https://jeepedia.com/psychology-test/)에 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "지피디아 테스트 페이지 3종(연락 습관·호감 표현 스타일·그 사람의 말 진짜 뜻은?), 2026년 11월 확인",
+    "Hall, Carter, Cody & Albright (2010). Development of the Flirting Styles Inventory. Communication Quarterly 58(4)",
+    "Morey 외 (2013). Computers in Human Behavior 29(4). DOI 10.1016/j.chb.2013.02.019",
+    "Sherman, Michikyan & Greenfield (2013). Cyberpsychology 7(2). DOI 10.5817/CP2013-2-3",
+    "Laurenceau, Barrett & Pietromonaco (1998). JPSP 74(5). DOI 10.1037/0022-3514.74.5.1238",
+    "Pennebaker & King (1999). JPSP 77(6). DOI 10.1037/0022-3514.77.6.1296",
+    "Brown & Maydeu-Olivares (2011). Educational and Psychological Measurement 71(3). DOI 10.1177/0013164410375112",
+    "보건복지부 정신건강복지센터·정신건강위기상담전화 안내"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "overview",
+   "kind": "hbar",
+   "file": "jeepedia-love-tests-overview.png",
+   "title": "연애 심리테스트 3종 문항 수",
+   "sub": "지피디아 각 테스트 페이지, 2026년 11월 기준",
+   "labels": [
+    "그 사람의 말, 진짜 뜻은?",
+    "나의 호감 표현 스타일",
+    "연락 습관 심리테스트"
+   ],
+   "values": [
+    10,
+    8,
+    5
+   ],
+   "value_labels": [
+    "10문항 · 4유형",
+    "8문항 · 10유형",
+    "그림 5장 · 약 30초"
+   ],
+   "highlight": [
+    2
+   ],
+   "left": 0.3,
+   "fmt": "{}",
+   "source": "출처: 지피디아(jeepedia.com) 각 테스트 소개",
+   "caption": "세 테스트의 문항 수와 결과 유형 수",
+   "alt": "지피디아 연애 심리테스트 3종 문항 수 비교 막대 차트"
+  }
+ ],
+ "shots": [
+  {
+   "key": "texting",
+   "url": "https://jeepedia.com/psychology-test/rank-texting/",
+   "file": "jeepedia-rank-texting-intro.png",
+   "caption": "연락 습관 심리테스트 소개 (jeepedia.com)",
+   "alt": "지피디아 연락 습관 심리테스트 소개 화면",
+   "name": "지피디아 연락 습관 심리테스트",
+   "fallback": {
+    "title": "연락 습관 심리테스트",
+    "lines": [
+     "그림 5장을 끌리는 순서대로 모두 누르기 · 약 30초",
+     "바로 답장 · 나중에 답장 · 이모티콘 · 전화 · 직접 만나기",
+     "1순위 '내 본모습' ~ 5순위 '가장 피하고 싶은 상황'",
+     "애착의 불안·회피 두 차원 연구를 참고(판정 아님)",
+     "고른 순서는 서버로 보내지 않고 브라우저에만 저장"
+    ]
+   }
+  },
+  {
+   "key": "decoder",
+   "url": "https://jeepedia.com/psychology-test/pick-crush-text-decoder/",
+   "file": "jeepedia-crush-text-decoder-intro.png",
+   "caption": "그 사람의 말, 진짜 뜻은? 테스트 소개 (jeepedia.com)",
+   "alt": "지피디아 그 사람의 말 진짜 뜻은 테스트 소개 화면",
+   "name": "지피디아 그 사람의 말 진짜 뜻은?",
+   "fallback": {
+    "title": "그 사람의 말, 진짜 뜻은?",
+    "lines": [
+     "썸 상대·연인의 말투 장면 10문항, 끌리는 쪽 고르기",
+     "리액션 부자 수달 · 직진 해결사 비버",
+     "속 깊은 감성 부엉이 · 요점 정리 여우",
+     "결과마다 '재미로 보는 번역표'와 답하는 요령",
+     "근거: 언어 단서와 성격 연구, Mini-IPIP 요인 정의"
+    ]
+   }
+  },
+  {
+   "key": "bonding",
+   "url": "https://cyberpsychology.eu/article/view/4285",
+   "file": "cyberpsychology-bonding-study.png",
+   "caption": "대화 방식별 유대감을 비교한 Sherman 외(2013) 논문 (cyberpsychology.eu)",
+   "alt": "Cyberpsychology 학술지의 대화 방식별 유대감 비교 논문 화면",
+   "name": "Cyberpsychology 논문",
+   "fallback": {
+    "title": "대화 방식과 유대감 연구",
+    "lines": [
+     "Sherman, Michikyan & Greenfield (2013)",
+     "친한 친구 사이 대화 네 가지 방식 비교",
+     "유대감: 대면 > 영상 통화 > 음성 통화 > 메신저",
+     "Cyberpsychology 7(2), DOI 10.5817/CP2013-2-3"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "jeepedia-love-texting-tests-hero.png",
+   "caption": "",
+   "alt": "밤에 침대에 앉아 휴대폰 메시지를 보며 설레는 표정을 짓는 젊은 사람 삽화",
+   "prompt": "A young person sitting cross-legged on a bed at night, softly lit by a phone screen, smiling shyly while waiting for a message reply, warm cozy bedroom with fairy lights, gentle pastel illustration style. No text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "jeepedia-love-texting-tests-f1.png",
+   "caption": "썸 탈 때 보내는 신호는 사람마다 다릅니다",
+   "alt": "카페 창가에 마주 앉아 웃으며 이야기하는 두 사람 삽화",
+   "prompt": "Two young adults sitting across from each other at a sunny cafe window table, one leaning in with a playful smile while the other laughs and looks away shyly, coffee cups between them, soft warm illustration. No text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "jeepedia-love-texting-tests-f2.png",
+   "caption": "유형보다 중요한 건 서로의 속도를 말해 주는 것",
+   "alt": "공원 벤치에서 나란히 앉아 서로의 휴대폰을 보여 주며 대화하는 연인 삽화",
+   "prompt": "A couple sitting side by side on a park bench in autumn, relaxed and talking openly, one gently showing the other something on a phone, falling leaves and golden afternoon light, calm warm illustration. No text, no numbers, no logos."
+  }
+ ]
+}

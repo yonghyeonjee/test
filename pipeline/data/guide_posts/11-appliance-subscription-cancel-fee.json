@@ -1,0 +1,256 @@
+{
+ "slug": "appliance-subscription-cancel-fee",
+ "slogan": "가전-구독-중도해지-위약금-계산",
+ "title": "가전 구독 중도해지 위약금 계산 방법 | 설치·철거비와 위약금 없이 해지되는 경우",
+ "series": false,
+ "summary": "가전 구독 중도해지 위약금은 '남은 구독료 × 해지 시점별 비율(30·20·10%)'에 등록비·회수비·할인 환수가 더해집니다. 소비자분쟁해결기준(잔여 임대료의 10%)과 삼성·LG 약관을 비교하고, 계산 예시와 위약금 없이 해지할 수 있는 경우를 2026년 11월 기준으로 정리했습니다.",
+ "keywords": [
+  "가전 구독 중도해지",
+  "가전 구독 위약금",
+  "위약금 계산",
+  "소비자분쟁해결기준",
+  "렌탈 위약금",
+  "가전 구독 회수비",
+  "가전 구독 해지"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "이사, 고장, 생각보다 무거운 월 부담. **가전 구독 중도해지**를 고민하는 이유는 다양하지만, 막상 해지 견적을 받으면 위약금 말고도 등록비·회수비·할인 환수가 붙어 놀라는 경우가 많습니다. 한국소비자원 설문(2026년 4월 발표)에서도 대형 가전 구독 경험자의 31.4%가 자기 계약의 위약금 수준을 정확히 모른다고 답했습니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글은 공정거래위원회 고시 「소비자분쟁해결기준」과 삼성전자·LG전자 공식 약관·안내(2026년 11월 확인)를 바탕으로, 해지 전에 위약금을 직접 계산해 보는 방법을 정리합니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "위약금 계산 공식: 고시와 약관이 다르다",
+   "id": "formula"
+  },
+  {
+   "type": "p",
+   "text": "「소비자분쟁해결기준」(공정거래위원회 고시 제2025-14호, 2025년 12월 18일 시행)의 장기 물품대여서비스업 항목은 소비자 사정으로 해지할 때 위약금을 이렇게 정합니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**의무사용기간이 1년 초과** — 잔여월 임대료의 10%",
+    "**의무사용기간이 1년 이하** — 잔여월 임대료의 30%와 임대료 총합의 10% 중 적은 금액",
+    "**잔여월 임대료** = 월 임대료 × (의무사용일수 − 실제사용일수) ÷ 30"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "그런데 한국소비자원이 대형 가전 구독 4개사를 조사해 보니 모두 이 기준과 다르게, 최소 10%에서 최대 30%까지 차등 부과하고 있었습니다. 삼성전자·LG전자는 해지 시점에 따라 1년 이내 30%, 1년 경과 후 2년 이내 20%, 2년 경과 후 10%입니다. 분쟁해결기준은 분쟁이 생겼을 때 합의·조정의 기준이 되는 고시이고, 실제 청구는 내가 동의한 약관대로 나오므로 둘을 함께 알아 두어야 합니다. 원문: [국가법령정보센터 소비자분쟁해결기준](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136)"
+  },
+  {
+   "type": "image",
+   "key": "lawshot"
+  },
+  {
+   "type": "h2",
+   "text": "계산 예시: 월 5만 원, 6년 계약",
+   "id": "example"
+  },
+  {
+   "type": "p",
+   "text": "아래는 이해를 돕기 위한 **가정**입니다. 할인 전 월 구독료 5만 원, 72개월 계약을 18개월 쓰고 해지하면 남은 54개월 구독료는 270만 원입니다. 1년이 지나고 2년 이내이므로 위약금은 20%인 **54만 원**입니다. 같은 경우를 분쟁해결기준(10%)으로 계산하면 27만 원입니다."
+  },
+  {
+   "type": "image",
+   "key": "example"
+  },
+  {
+   "type": "p",
+   "text": "위약금을 매기는 기준 금액도 확인하세요. 삼성 AI 구독 약관 제14조는 결합 할인을 받았다면 할인 전 구독료로 계산하고, LG전자도 할인 적용 전 기본요금을 기준으로 합니다. 제휴카드 할인으로 실제 낸 돈이 월 3만 원이어도 위약금은 할인 전 요금으로 계산될 수 있다는 뜻입니다. 근거: [삼성 AI 구독 이용약관](https://www.samsung.com/sec/aisc/terms/610/760)"
+  },
+  {
+   "type": "h2",
+   "text": "위약금 말고 더 붙는 돈: 설치·철거비와 환수",
+   "id": "extra"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**등록비** — 삼성은 제품당 10만 원을 계약기간을 채우는 조건으로 면제하고, 중도해지 때 받습니다",
+    "**회수비(철거비)** — 삼성 예시: 냉장고 105,000원, 세탁기 108,000원, 벽걸이 에어컨 164,000원 / LG 예시: 식기세척기 39,000원, 세탁기 68,000원, 에어컨 100,000원",
+    "**할인·사은품 환수** — 받은 할인 혜택과 사은품을 돌려줘야 합니다. LG는 계약 후 12개월 안에 해지하면 사은품 금액을 전액 청구합니다",
+    "**미납·연체금** — 남은 청구액이 있으면 함께 정산합니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "앞의 예시를 삼성 냉장고로 가정하면 위약금 54만 원 + 등록비 10만 원 + 회수비 10만 5천 원 = 74만 5천 원에 할인 환수가 더해집니다. 설치비도 따로 확인하세요. LG전자는 기본 설치비를 면제하지만 특수 타공처럼 추가 작업이 필요하면 비용이 생길 수 있고, 이사로 옮길 때는 철거·운송·재설치비가 붙을 수 있다고 안내합니다."
+  },
+  {
+   "type": "p",
+   "text": "분쟁해결기준도 철거비는 소비자가 내도록 하되 **청구 사실과 금액이 약관이나 계약서에 적혀 있고 고지된 경우에 한한다**고 정합니다. 장기 유지 조건으로 받은 할인은 남은 기간만큼 일할 계산해 돌려주도록 합니다. 삼성 약관은 해약금과 미납 구독료를 합쳐도 계약 전체 구독료를 넘을 수 없다고 정합니다. 품목별 회수비 표: [삼성 AI 구독 가이드](https://www.samsung.com/sec/ai-subs/guide) · [LG전자 가전 구독 가이드](https://www.lge.co.kr/story/buying-guide/care-solutions-guide3)"
+  },
+  {
+   "type": "image",
+   "key": "samsungshot"
+  },
+  {
+   "type": "h2",
+   "text": "위약금 없이 해지할 수 있는 경우",
+   "id": "free"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**청약철회 7일** — 삼성 약관 제5조: 배송(설치)일부터 7일 이내. 시스템에어컨 설치 등은 제외되고, 재활용이 안 되는 소모품 비용은 고객 부담",
+    "**광고·계약과 다르게 이행됐을 때** — 공급일부터 3개월, 그 사실을 안 날부터 30일 안에 철회(삼성 약관 제5조)",
+    "**회사 잘못으로 계약 유지가 어려울 때** — 이행을 요구했는데도 지키지 않으면 해약금 없이 해지(삼성 약관 제12조). 분쟁해결기준도 같은 취지",
+    "**서비스 지연이 되풀이될 때** — 분쟁해결기준: 지연 기간만큼 요금 감액, 두 번째부터는 위약금 없이 해지",
+    "**정기 관리가 안 되는 지역으로 이사** — 분쟁해결기준: 위약금 없이 해지. 해외 이주는 자료를 내면 위약금 50% 감면"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "이사·해외 이주 기준은 분쟁해결기준에 있는 내용이라 회사 약관에 같은 조항이 없을 수 있습니다. 그럴 땐 고시를 근거로 회사와 먼저 협의하고, 안 되면 [한국소비자원 피해구제](https://www.kca.go.kr/odr/link/pg/pr/osPgStpSobiGuidW.do)를 이용하세요."
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "h2",
+   "text": "해지할 때 이렇게 하세요",
+   "id": "howto"
+  },
+  {
+   "type": "list",
+   "items": [
+    "고객센터에 **해지 날짜 기준 예상 해약금**을 위약금·등록비·회수비·환수 항목별로 받아 둡니다",
+    "해지 의사는 내용증명이나 우편처럼 기록이 남는 방법으로 전달합니다(소비자원 권고)",
+    "계약서, 상담 내용, 결제 내역을 보관합니다",
+    "합의가 안 되면 1372소비자상담센터 상담 → 한국소비자원 피해구제 순서로 진행합니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "해지 날짜를 며칠 늦추면 위약금 구간(1년·2년)이 바뀌는지도 계산해 보세요. 18개월 차라면 6개월을 더 쓰면 비율이 20%에서 10%로 내려갑니다. 상담은 [1372소비자상담센터](https://www.ccn.go.kr)(국번 없이 1372), 실태조사 원문은 [한국소비자원 보도자료](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)에 있습니다."
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[국가법령정보센터, 소비자분쟁해결기준 별표 2 장기 물품대여서비스업(공정거래위원회 고시 제2025-14호)](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136)",
+    "[한국소비자원, 가전 구독(렌탈) 서비스 실태조사 보도자료(2026.4.8)](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)",
+    "[삼성전자, AI 구독 이용약관](https://www.samsung.com/sec/aisc/terms/610/760)",
+    "[삼성전자, 삼성 AI 구독 가이드](https://www.samsung.com/sec/ai-subs/guide)",
+    "[LG전자, 가전 구독 가이드](https://www.lge.co.kr/story/buying-guide/care-solutions-guide3)",
+    "[1372소비자상담센터](https://www.ccn.go.kr)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "example",
+   "kind": "hbar",
+   "file": "appliance-subscription-cancel-fee-example.png",
+   "title": "중도해지 위약금 계산 예시(가정)",
+   "sub": "할인 전 월 5만 원 · 72개월 계약, 등록비·회수비 제외",
+   "labels": [
+    "6개월 차 해지(30%)",
+    "18개월 차 해지(20%)",
+    "36개월 차 해지(10%)",
+    "참고: 분쟁기준 6개월 차(10%)",
+    "참고: 분쟁기준 18개월 차(10%)"
+   ],
+   "values": [
+    990000,
+    540000,
+    180000,
+    330000,
+    270000
+   ],
+   "value_labels": [
+    "99만 원",
+    "54만 원",
+    "18만 원",
+    "33만 원",
+    "27만 원"
+   ],
+   "highlight": [
+    0,
+    1,
+    2
+   ],
+   "left": 0.3,
+   "fmt": "{}",
+   "source": "계산: 삼성·LG 약관 위약금 비율, 소비자분쟁해결기준(고시 제2025-14호)",
+   "caption": "해지 시점에 따라 위약금이 크게 달라집니다(가정 계산)",
+   "alt": "가전 구독 중도해지 시점별 위약금 계산 예시 차트"
+  }
+ ],
+ "shots": [
+  {
+   "key": "lawshot",
+   "url": "https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136",
+   "file": "law-consumer-dispute-standard-cancel-fee.png",
+   "caption": "국가법령정보센터 소비자분쟁해결기준 (law.go.kr)",
+   "alt": "국가법령정보센터 소비자분쟁해결기준 고시 화면",
+   "name": "소비자분쟁해결기준",
+   "fallback": {
+    "title": "소비자분쟁해결기준(장기 물품대여)",
+    "lines": [
+     "의무사용기간 1년 초과: 잔여월 임대료의 10%",
+     "1년 이하: 잔여 30%와 총합 10% 중 적은 금액",
+     "철거비는 약관·계약서에 명시·고지된 경우만"
+    ]
+   }
+  },
+  {
+   "key": "samsungshot",
+   "url": "https://www.samsung.com/sec/ai-subs/guide",
+   "file": "samsung-ai-subscription-guide-cancel-fee.png",
+   "caption": "삼성 AI 구독 가이드 (samsung.com)",
+   "alt": "삼성 AI 구독 가이드 중도해지 안내 화면",
+   "name": "삼성 AI 구독 가이드",
+   "fallback": {
+    "title": "삼성 AI 구독 중도해지",
+    "lines": [
+     "위약금 30%(1년 이내) · 20% · 10%",
+     "등록비 제품당 10만 원(면제분)",
+     "회수비 예: 냉장고 105,000원"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "appliance-subscription-cancel-fee-hero.png",
+   "caption": "",
+   "alt": "계산기와 계약서를 앞에 두고 고민하는 사람 삽화",
+   "prompt": "A young adult sitting at a kitchen table with a calculator and a stack of contract papers, a washing machine in the background, slightly worried but focused expression, soft evening light, flat illustration, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "appliance-subscription-cancel-fee-f1.png",
+   "caption": "약관과 고시를 근거로 위약금 없이 해지할 수 있는 경우도 있습니다",
+   "alt": "이삿짐 상자 옆에서 상담원과 통화하는 사람 삽화",
+   "prompt": "A person surrounded by moving boxes talking calmly on the phone, a refrigerator wrapped for moving nearby, relieved and hopeful mood, pastel colors, flat illustration, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "appliance-subscription-cancel-fee-f2.png",
+   "caption": "해지 의사와 근거 서류는 기록이 남게 챙겨 둡니다",
+   "alt": "봉투에 서류를 넣어 우체통에 넣는 사람 삽화",
+   "prompt": "A person placing a sealed envelope with documents into a red mailbox on a quiet street, folder of papers under the arm, calm determined mood, flat illustration style, no text, no numbers, no logos."
+  }
+ ]
+}
