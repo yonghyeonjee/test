@@ -8,6 +8,7 @@ import VisitTracker from "@/components/VisitTracker";
 import { HotkeyFocus, ScrollProgress, SpotlightFx, TouchFx } from "@/components/Motion";
 import Tutorial from "@/components/Tutorial";
 import FloatingMenu from "@/components/FloatingMenu";
+import Helper from "@/components/Helper";
 import Toaster from "@/components/Toast";
 import { unstable_cache } from "next/cache";
 import { getSigunguIndex } from "@/lib/db";
@@ -165,6 +166,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </div>
         <SiteFooter />
         <FloatingMenu />
+        <Helper />
         <Toaster />
         <HotkeyFocus />
         <ScrollProgress />
