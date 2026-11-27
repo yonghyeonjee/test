@@ -159,7 +159,7 @@ def compose(post: dict) -> dict:
     disp = {id(it): (it.get("full_name") or it["name"]) if short.count(it["name"]) > 1 else it["name"] for it in items}   # 이름이 겹치면 정식 이름
     toc = [("now", "현황은?")] + [(f"r{i+1}", f"{i+1}위 {disp[id(it)]}") for i, it in enumerate(items)] \
         + [("compare", f"{what} TOP10 비교"), ("wrap", "정리"), ("sites", "함께 보면 좋은 사이트"), ("refs", "참고 문헌")]
-    blocks: list[dict] = []
+    blocks: list[dict] = [{"type": "image", "key": "hero"}]      # 머리 그림(대표 이미지로도 쓴다)
     for line in INTRO[entity]:
         blocks.append(b.P(line.format(source=source, brand=BRAND, what=what, date=b.kdate(today.isoformat()))))
     if entity == "keyword":

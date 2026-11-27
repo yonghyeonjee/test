@@ -1,0 +1,262 @@
+{
+ "slug": "public-enterprise-hiring-2027-ncs",
+ "slogan": "2027-공기업-채용-일정-확인법-NCS-준비-잡알리오",
+ "title": "2027 공기업 채용 일정 확인법과 NCS 준비 | 잡알리오 공고 보는 법, 상반기 채용 시기",
+ "series": false,
+ "summary": "2027 공기업 채용 일정은 한 번에 발표되지 않습니다. 기관마다 공고를 따로 내고, 그 공고는 잡알리오(job.alio.go.kr)에 모입니다. 2026년 12월 기준으로 확정된 2027년 공공기관 채용 계획은 아직 없고, 2021년과 2026년에는 1월 공공기관 채용정보박람회 때 그해 채용 계획이 나왔습니다. 공공기관 신규채용 실적과 새로 바뀐 NCS 직업공통능력 7개 영역까지 함께 정리했습니다.",
+ "keywords": [
+  "2027 공기업 채용 일정",
+  "공기업 채용",
+  "잡알리오",
+  "NCS 준비",
+  "직업공통능력",
+  "공공기관 채용정보박람회",
+  "공공기관 신규채용",
+  "공기업 상반기 채용",
+  "NCS 필기",
+  "블라인드 채용"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "\"공기업 상반기 공채, 언제 떠요?\" 취업 커뮤니티에 해마다 올라오는 질문입니다. 답부터 말하면, 2027년 공기업 채용 일정을 한꺼번에 알려 주는 공식 달력은 없습니다. 기관마다 자기 공고를 내고, 그 공고가 한곳에 모일 뿐입니다."
+  },
+  {
+   "type": "p",
+   "text": "그래서 이 글은 **'어디서 확인하나'**, **'확정된 것과 지난해 패턴을 어떻게 구분하나'**, **'NCS는 무엇부터 준비하나'** 세 가지를 공식 자료로 정리했습니다. 기준 시점은 2026년 12월입니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "공고는 어디서: 잡알리오가 기본",
+   "id": "where"
+  },
+  {
+   "type": "image",
+   "key": "alioshot"
+  },
+  {
+   "type": "p",
+   "text": "공공기관 채용 공고는 재정경제부가 운영하는 [잡알리오(공공기관 채용정보시스템)](https://job.alio.go.kr)에 모입니다. 공고를 기관유형, 근무지, 고용형태, 채용구분, 표준직무(NCS)로 걸러 볼 수 있고, 상세 공고에는 **공고문·입사지원서·직무기술서** 첨부 칸과 전형단계별 정보가 따로 있습니다. 목록은 오늘 기준 한 달 치 공고를 보여 주니 자주 들어가 보는 것이 좋습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**관심 기관 5~10곳을 정해** 잡알리오에서 지난 공고를 먼저 읽습니다. 전형 단계, 필기 과목, 가점 기준이 기관마다 다릅니다.",
+    "**기관 누리집 채용 게시판**도 함께 봅니다. 공고는 기관이 직접 올리는 것이 원본입니다.",
+    "**경영 정보**가 궁금하면 [알리오(공공기관 경영정보 공개시스템)](https://www.alio.go.kr)에서 기관별 인원·신규채용 공시를 볼 수 있습니다."
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "상반기 채용은 언제? 확정과 패턴을 나눠 보기",
+   "id": "when"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "먼저 **확정된 것**입니다. 2026년 11월 말 현재 2027년 공공기관 전체 채용 계획이나 2027년 채용정보박람회 일정은 발표되지 않았습니다. 박람회 누리집([publicjob.kr](https://www.publicjob.kr))에도 아직 2026년 행사 안내만 있습니다."
+  },
+  {
+   "type": "p",
+   "text": "다음은 **지난 패턴**입니다. 박람회는 최근 해마다 1월에 열렸습니다. 2021년에는 1월 18~22일 온라인 박람회와 함께 '2만 6천 명 이상 신규채용' 계획이 나왔고, 2025년에는 1월 14일 박람회 개최가 발표됐습니다. 2026년에는 1월 27~29일 서울 양재 aT센터에서 16회 박람회를 열며 그해 계획을 밝혔습니다. 2026년 계획은 **정규직 2만 8천 명, 청년인턴 2만 4천 명**(인턴은 전년보다 3천 명 증가)이었고, 148개 기관이 참여했습니다. 근거: [정책브리핑, 올해 공공기관 정규직 2만 8000명, 청년인턴 2만 4000명 채용(2026.1.27)](https://www.korea.kr/news/policyNewsView.do?newsId=148958627)"
+  },
+  {
+   "type": "p",
+   "text": "정리하면, 2027년에도 **1월 전후로 연간 계획이 나올 가능성**은 있지만 확정은 아닙니다. 그 전까지는 '작년 이맘때 공고가 났다'는 정보만 믿고 기다리기보다, 관심 기관의 지난 공고 시기를 직접 적어 두고 잡알리오 알림을 확인하는 편이 안전합니다."
+  },
+  {
+   "type": "h2",
+   "text": "공공기관은 실제로 얼마나 뽑았나",
+   "id": "numbers"
+  },
+  {
+   "type": "image",
+   "key": "recruit"
+  },
+  {
+   "type": "p",
+   "text": "알리오 공시 기준 공공기관 신규채용은 2023년 2만 499명, 2024년 2만 394명으로 줄었다가 **2025년 2만 7,434명**으로 크게 늘었습니다. 2025년은 공기업 8,444명, 준정부기관 6,932명, 기타공공기관 1만 2,058명이었고, 이 가운데 청년이 2만 4,041명이었습니다. 2026년은 3분기까지 1만 9,068명을 뽑았습니다. 통계 원문: [알리오 신규채용 현황](https://www.alio.go.kr/statistics/newRecruit.do)"
+  },
+  {
+   "type": "h2",
+   "text": "NCS 필기: 직업공통능력 7개 영역부터",
+   "id": "ncs"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "p",
+   "text": "공공기관 필기의 뼈대인 NCS의 '직업기초능력'이 2026년 4월 **'직업공통능력'**으로 이름을 바꾸고 다시 짜였습니다. 고용노동부에 따르면 기존 10개 영역·34개 하위능력이 **7개 영역·21개 하위능력**으로 바뀌었고, 인공지능(AI) 활용능력·디지털책임의식·산업안전보건의식이 새로 들어갔습니다. 근거: [고용노동부, AI 시대 '직업공통능력'으로 미래를 설계한다(2026.4.28)](https://www.moel.go.kr/news/enews/report/enewsView.do?news_seq=19314)"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**7개 영역** — 의사소통능력, 수리능력, 문제해결능력, 자기관리능력, 대인관계능력, 디지털능력, 직업윤리",
+    "**사라지거나 흩어진 영역** — 자원관리능력, 기술능력, 조직이해능력은 일부 항목이 빠지거나 다른 영역에 합쳐졌습니다.",
+    "**주의** — 2027년 각 기관 필기가 새 체계를 언제부터 반영할지는 기관 공고마다 다를 수 있습니다. 지원 기관의 공고와 출제 영역 안내를 꼭 확인하세요."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "연습은 NCS 누리집의 [직업기초능력 모의평가](https://www.ncs.go.kr/blind/bl16/jobEvalMain.do)로 시작할 수 있습니다. 영역별 정의와 하위능력은 [직업공통능력 개요](https://m.ncs.go.kr/unity/th03/TH0308.do)에 정리돼 있습니다. NCS는 필기평가에 대해 \"기관마다 요구하는 직무능력이 다르니 문제 유형을 파악하는 것이 중요하다\"고 안내합니다."
+  },
+  {
+   "type": "h2",
+   "text": "서류·면접은 직무기술서에서 출발",
+   "id": "jobdesc"
+  },
+  {
+   "type": "image",
+   "key": "ncsshot"
+  },
+  {
+   "type": "p",
+   "text": "NCS가 안내하는 지원 순서는 세 단계입니다. ① 채용공고에서 **직무기술서**를 확인하고, ② NCS 학습모듈에서 그 직무의 능력단위를 찾아보고, ③ 필요한 지식·기술·태도를 확인한 다음 지원서를 씁니다. 공정(블라인드) 채용에서는 출신지역·가족관계·학력·외모처럼 편견을 부를 수 있는 항목을 빼고 직무능력으로만 평가합니다. 원문: [NCS 채용전형 단계](https://www.ncs.go.kr/blind/bl02/RH-103-003-01.scdo)"
+  },
+  {
+   "type": "p",
+   "text": "그러니 자기소개서 문항도, 면접 질문도 결국 직무기술서의 '필요 역량'에서 나옵니다. 지원 기관을 정했다면 직무기술서의 능력 단어마다 내 경험 하나씩을 붙여 두는 것이 서류와 면접을 한 번에 준비하는 방법입니다."
+  },
+  {
+   "type": "h2",
+   "text": "자주 묻는 질문",
+   "id": "faq"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**Q. 공기업 채용 일정을 한 번에 볼 수 있는 달력이 있나요?** — 공식 통합 달력은 없습니다. 잡알리오 공고와 기관 누리집이 원본입니다.",
+    "**Q. 2027년 공공기관 채용 규모는?** — 2026년 11월 말 기준 미발표입니다. 2026년에는 1월 박람회에서 정규직 2만 8천 명 계획이 나왔습니다.",
+    "**Q. 예전 '직업기초능력' 교재로 공부해도 되나요?** — 의사소통·수리·문제해결 등 겹치는 영역이 많지만, 지원 기관 공고의 출제 영역을 먼저 확인하세요."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "함께 보면 좋은 글: [취업준비생 현실 2026 — 취업시험 준비 60만 명, 첫 취업까지 평균 11.2개월](https://abcfact.tistory.com/entry/%EC%B7%A8%EC%97%85%EC%A4%80%EB%B9%84%EC%83%9D-%ED%98%84%EC%8B%A4-2026-%EC%B7%A8%EC%97%85%EC%8B%9C%ED%97%98-%EC%A4%80%EB%B9%84-%EC%B2%AB-%EC%B7%A8%EC%97%85-%EC%86%8C%EC%9A%94%EA%B8%B0%EA%B0%84)"
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[잡알리오, 공공기관 채용정보시스템](https://job.alio.go.kr)",
+    "[알리오, 공공기관 신규채용 현황](https://www.alio.go.kr/statistics/newRecruit.do)",
+    "[정책브리핑, 올해 공공기관 정규직 2만 8000명, 청년인턴 2만 4000명 채용(2026.1.27)](https://www.korea.kr/news/policyNewsView.do?newsId=148958627)",
+    "[정책브리핑, 2025 공공기관 채용정보박람회 개최(2025.1.14)](https://www.korea.kr/briefing/pressReleaseView.do?newsId=156670214)",
+    "[정책브리핑, 올해 공공기관 2만6000명 신규채용…채용정보박람회 개최(2021.1.18)](https://www.korea.kr/news/policyNewsView.do?newsId=148882762)",
+    "[고용노동부, 직업공통능력 개편 보도자료(2026.4.28)](https://www.moel.go.kr/news/enews/report/enewsView.do?news_seq=19314)",
+    "[NCS 공정채용, 채용전형 단계](https://www.ncs.go.kr/blind/bl02/RH-103-003-01.scdo)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "recruit",
+   "kind": "hbar",
+   "file": "public-institution-new-hires-2021-2026.png",
+   "title": "공공기관 신규채용 인원(명)",
+   "sub": "알리오 공시, 2026년은 3분기까지 누계",
+   "labels": [
+    "2021년",
+    "2022년",
+    "2023년",
+    "2024년",
+    "2025년",
+    "2026년(3분기까지)"
+   ],
+   "values": [
+    26356,
+    24803,
+    20499,
+    20394,
+    27434,
+    19068
+   ],
+   "value_labels": [
+    "26,356명",
+    "24,803명",
+    "20,499명",
+    "20,394명",
+    "27,434명",
+    "19,068명"
+   ],
+   "highlight": [
+    4
+   ],
+   "left": 0.24,
+   "fmt": "{}",
+   "source": "출처: 알리오(공공기관 경영정보 공개시스템) 신규채용 현황",
+   "caption": "공공기관 신규채용은 2025년 2만 7,434명으로 반등했습니다",
+   "alt": "공공기관 연도별 신규채용 인원 2021년부터 2026년 3분기 차트"
+  }
+ ],
+ "shots": [
+  {
+   "key": "alioshot",
+   "url": "https://job.alio.go.kr/main.do",
+   "file": "job-alio-main.png",
+   "caption": "잡알리오 공공기관 채용정보시스템 첫 화면 (job.alio.go.kr)",
+   "alt": "잡알리오 공공기관 채용정보시스템 첫 화면",
+   "name": "잡알리오",
+   "fallback": {
+    "title": "잡알리오(공공기관 채용정보시스템)",
+    "lines": [
+     "공기업·준정부기관·기타공공기관 채용 공고",
+     "기관 유형·지역·채용 형태로 검색",
+     "공고문과 직무기술서 내려받기"
+    ]
+   }
+  },
+  {
+   "key": "ncsshot",
+   "url": "https://www.ncs.go.kr/blind/bl02/RH-103-003-01.scdo",
+   "file": "ncs-hiring-process-steps.png",
+   "caption": "NCS 공정채용 채용전형 단계 안내 (ncs.go.kr)",
+   "alt": "NCS 기반 채용전형 단계 직무기술서 확인 안내 화면",
+   "name": "NCS 채용전형 단계",
+   "fallback": {
+    "title": "NCS 채용전형 단계",
+    "lines": [
+     "STEP 1 채용공고의 직무기술서 확인",
+     "STEP 2 NCS 학습모듈에서 능력단위 찾기",
+     "STEP 3 지식·기술·태도 확인 후 지원"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "public-enterprise-hiring-2027-ncs-hero.png",
+   "caption": "",
+   "alt": "공공기관 건물 앞에서 서류 봉투를 들고 선 청년 삽화",
+   "prompt": "A young Korean job seeker holding a plain document folder stands in front of a modern public office building on a crisp clear winter morning, hopeful upward gaze, clean geometric architecture, flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "public-enterprise-hiring-2027-ncs-f1.png",
+   "caption": "확정된 공고와 지난해 패턴은 따로 적어 둡니다",
+   "alt": "노트북 화면과 탁상 달력을 번갈아 보며 메모하는 청년 삽화",
+   "prompt": "A young woman at home compares a laptop screen showing abstract job listing cards with a blank desk calendar, jotting notes with a pen, cozy room with plants, calm organized mood, flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "public-enterprise-hiring-2027-ncs-f2.png",
+   "caption": "직업공통능력 7개 영역을 하나씩 채워 갑니다",
+   "alt": "일곱 개의 퍼즐 조각을 맞추는 청년 삽화",
+   "prompt": "A young man fits together seven large colorful puzzle pieces on a table, each piece decorated with a simple icon such as a speech bubble, a chart, a lightbulb and a handshake, encouraging mood, flat illustration style, no text, no numbers, no logos."
+  }
+ ]
+}

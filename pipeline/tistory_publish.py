@@ -47,7 +47,7 @@ VISIBILITY = {"private": 0, "protected": 15, "public": 20}   # 티스토리 post
 MAX_TAGS = 10                                                  # 티스토리 글 하나의 태그 한도
 
 # abcfact.tistory.com 의 카테고리 id(--check 가 찍는 목록, 2026-10-17). 새 카테고리를 만들면 여기도 적는다.
-CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430, "IT": 946764}
+CATEGORIES = {"policy": 1170227, "B2G": 1258777, "일상TIP": 1198430, "IT": 946764, "psychology": 1083572}
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36")
 
@@ -531,7 +531,7 @@ class Tistory:
 
     def publish(self, *, title: str, content: str, category: int, tags: list[str], visibility: str,
                 attachments: list[str] | None = None, update_id: str | None = None, slogan: str = "",
-                published: int = 1) -> tuple[str, str]:
+                published: int = 1, thumbnail: str = "") -> tuple[str, str]:
         """새 글을 올린다. update_id(숫자)를 주면 그 글을 통째로 고쳐 쓴다(PUT /manage/post/{id}.json).
         slogan(문자 주소 슬러그)을 비우면 서버가 제목으로 새로 만든다 — 고쳐 쓸 때는 기존 슬러그를 줘야 주소가 `-1` 로 밀리지 않는다."""
         body = {
@@ -542,6 +542,8 @@ class Tistory:
             "cclCommercial": 0, "cclDerive": 0, "type": "post", "attachments": list(attachments or []),
             "recaptchaValue": "", "draftSequence": None, "totalWritingTimeMs": 0,
         }
+        if thumbnail:                    # 대표 이미지(글 목록 카드·og:image). 없으면 티스토리 기본 그림이 나간다
+            body["thumbnail"] = thumbnail
         if update_id:
             body["id"] = str(update_id)
             r = self._req("PUT", f"/manage/post/{update_id}.json", json=body)
@@ -578,6 +580,16 @@ def attachment_ref(up: dict) -> str:
         raise TistoryError(f"attach.json 응답에 {e} 가 없다: {json.dumps(up, ensure_ascii=False)[:300]}") from e
     search = url[url.index("?"):] if "?" in url else ""
     return f"kage@{key}/{filename}{search.replace('&', '&amp;')}"
+
+
+def thumb_ref(present: list[dict], uploaded: list[tuple]) -> str:
+    """대표 이미지로 쓸 사진의 ref — 머리 그림(hero)이 있으면 그것, 없으면 본문 첫 사진."""
+    if not uploaded:
+        return ""
+    for m, (_rep, ref, _cap) in zip(present, uploaded):
+        if m.get("key") == "hero":
+            return ref
+    return uploaded[0][1]
 
 
 def image_replacer(ref: str, width: int, height: int, style: str = "alignCenter", alt: str = "") -> str:
@@ -639,6 +651,21 @@ def today_kst() -> dt.date:
     return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
 
 
+def digest_hero(post: dict, out: str = "shots") -> dict | None:
+    """모음 글 머리 그림(제목 카드). 글꼴·matplotlib 이 없으면 None — 그림 없이 올린다."""
+    try:
+        import ai_series
+        head, _, lead = post["title"].partition(" | ")
+        os.makedirs(out, exist_ok=True)
+        path = os.path.join(out, "hero.png")
+        ai_series.draw({"kind": "hero", "kicker": "공공 채용·생활 정보 모음", "title": head if head != DIGEST_MARK else lead[:40],
+                        "sub": (lead[:40] if head != DIGEST_MARK else "") + f" · {BRAND}"}, path)
+        return {"key": "hero", "file": path, "caption": "", "alt": post["title"][:80]}
+    except (Exception, SystemExit) as e:  # noqa: BLE001
+        print(f"  (머리 그림을 못 그렸다: {type(e).__name__}: {str(e)[:100]})")
+        return None
+
+
 def take_shots(shots: list[dict], dry: bool = False, out: str = "shots") -> list[dict]:
     """[{url, key, caption}] 을 shot_pages.py 로 찍어 manifest 항목([{key, file, caption, alt}])으로 돌려준다."""
     if not shots:
@@ -664,11 +691,11 @@ def text_len(content: str) -> int:
 
 
 def original_published(t: "Tistory", post_id: str) -> int:
-    """공개된 글이 처음 발행된 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않는다.
-    비공개 글(다시 공개하는 글)이거나 모르면 1(지금)."""
+    """공개된 글이 처음 발행된 시각, 공개 예약 글이면 그 예약 시각(유닉스 초). 고쳐 쓸 때 넘기면 발행일이 오늘로 바뀌지 않고
+    예약도 풀리지 않는다. 비공개 글(다시 공개하는 글)이거나 모르면 1(지금)."""
     try:
         for it in t.recent_posts() + t.recent_posts(2) + t.recent_posts(3):
-            if it["id"] == str(post_id) and it.get("visibility", "").upper() == "PUBLIC" and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
+            if it["id"] == str(post_id) and it.get("visibility", "").upper().endswith("PUBLIC") and re.match(r"\d{4}-\d\d-\d\d \d\d:\d\d", it["date"]):
                 kst = dt.datetime.strptime(it["date"][:16], "%Y-%m-%d %H:%M").replace(tzinfo=dt.timezone(dt.timedelta(hours=9)))
                 return int(kst.timestamp())
     except Exception:  # noqa: BLE001
@@ -853,6 +880,18 @@ def main() -> int:
                     print(f"  {it['id']:>8}  {it['visibility']:<9} {it['date'][:19]:<19} {n:>14}  {it['title'][:60]}")
             except Exception as e:  # noqa: BLE001 — 목록은 덤이다. 실패해도 check 는 성공
                 print(f"  (최근 글 목록을 못 읽었다: {type(e).__name__}: {e})")
+            for pid in [x for x in os.environ.get("TISTORY_INSPECT", "").replace(" ", "").split(",") if x]:
+                try:                           # 글 하나의 관리자 정보(본문은 길이만) — 대표 이미지 같은 칸 이름을 본다
+                    d = Tistory(host, cookie).post_detail(pid)
+                    print(f"글 {pid} 항목:")
+                    for k in sorted(d):
+                        v = d[k]
+                        shown = f"({len(v)}자)" if k == "content" and isinstance(v, str) else json.dumps(v, ensure_ascii=False)[:160]
+                        print(f"  {k} = {shown}")
+                    m = re.search(r"\[##_Image\|[^\]]{0,200}", str(d.get("content", "")))
+                    print(f"  첫 사진 치환자: {m.group(0)[:200] if m else '없음'}")
+                except Exception as e:  # noqa: BLE001
+                    print(f"  글 {pid} 을 못 읽었다: {type(e).__name__}: {str(e)[:120]}")
             return 0
 
         if a.post_json:
@@ -933,6 +972,10 @@ def main() -> int:
 
         if posts and posts[0].get("shots"):          # 모음 글: 절마다 원 자료 사이트 화면을 지금 찍는다
             manifest += take_shots(posts[0]["shots"], dry=a.dry)
+            hero = None if a.dry else digest_hero(posts[0])
+            if hero:                                 # 머리 그림 — 글 목록 썸네일·og:image 로 쓴다
+                manifest.insert(0, hero)
+                posts[0]["body"].insert(0, {"type": "image", "key": "hero"})
 
         if a.dry:
             fake = [(f"[이미지 {i+1}: {m['file']}]", m.get("caption")) for i, m in enumerate(manifest)]
@@ -990,6 +1033,7 @@ def main() -> int:
             post_id, url = t.publish(title=p["title"], content=content,
                                      category=a.category or category_for(p), tags=list(p.get("keywords") or []), visibility=a.visibility,
                                      attachments=[ref for _rep, ref, _cap in uploaded], update_id=a.update,
+                                     thumbnail=thumb_ref(present, uploaded),
                                      slogan=(recorded_slogan(sb, p["slug"]) if (a.update and sb is not None) else "") or (p.get("slogan", "") if p.get("standalone") else "")
                                      or (current_slogan(t, a.update) if a.update else ""),
                                      published=at or (original_published(t, a.update) if a.update else 1))   # 예약 시각, 공개 글 고쳐 쓰기는 발행일을 그대로

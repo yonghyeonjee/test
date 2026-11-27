@@ -1,0 +1,281 @@
+{
+ "slug": "lg-appliance-subscription",
+ "slogan": "LG전자-가전-구독-장단점-케어",
+ "title": "LG전자 가전 구독 장단점 | 계약기간 3~6년 선택, 케어 서비스 범위와 총비용 계산",
+ "series": false,
+ "summary": "LG전자 가전 구독은 계약기간을 3~6년 중 고르고, 그동안 케어마스터 방문 관리와 무상 A/S를 받은 뒤 만기에 제품을 넘겨받는 구조입니다. LG전자 공식 안내(2026년 11월 확인)로 계약기간별 차이, 케어 범위, 총비용 계산법, 중도해지 비용과 만기 후 선택지를 정리했습니다.",
+ "keywords": [
+  "LG전자 가전 구독",
+  "LG 가전 구독 장단점",
+  "LG 구독 케어서비스",
+  "LG 구독 위약금",
+  "케어십",
+  "가전 구독 총비용",
+  "LG 구독 소유권"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "**LG전자 가전 구독**은 냉장고·세탁기·에어컨·TV 같은 대형 가전까지 월 구독료로 쓰고, 계약기간 동안 관리와 수리를 맡기는 서비스입니다. LG전자는 2008년부터 케어 서비스를 운영해 왔고, 전국 케어마스터가 약 4,000명(2025년 2월 기준)이라고 밝힙니다. 가입 전에 따져 볼 것을 LG전자 공식 안내 기준(2026년 11월 확인)으로 정리했습니다. 금액은 제품·요금제마다 다르니 계산 방법 위주로 봅니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "계약기간 3~6년, 무엇이 달라지나",
+   "id": "term"
+  },
+  {
+   "type": "p",
+   "text": "계약기간은 제품에 따라 3·4·5·6년 중 고릅니다. 기간이 길면 월 구독료는 내려가지만 묶이는 기간이 길어집니다. 기간에 따라 달라지는 조건은 이렇습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**결합 할인** — 2개 이상 첫 구독 시 4·5년 계약은 월 3%, 6년 계약은 월 5%(4년 이상 계약부터)",
+    "**소유권** — 계약이 끝나면 고객 소유. 단 3년 약정 상품은 소유권 이전 조건이 따로 있어 고객센터(1544-7777) 확인 필요",
+    "**위약금 구간** — 1년 이내 30%, 2년 이내 20%, 그 뒤 10%. 2년 계약 상품은 1년 이내 20%, 그 뒤 10%",
+    "**선납 할인** — 구독요금의 30%를 선결제하면 적용"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "근거: [LG전자 가전 구독 가이드](https://www.lge.co.kr/story/buying-guide/care-solutions-guide3)"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "h2",
+   "text": "케어 서비스는 어디까지 해 주나",
+   "id": "care"
+  },
+  {
+   "type": "p",
+   "text": "구독료에는 케어마스터의 정기 방문 점검, 정품 소모품 교체, 계약기간 전체 무상 A/S(고객 과실 제외)가 들어 있습니다. 품목별 케어 예시는 다음과 같습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**냉장고** — 기계실 세척, 퓨어프레시 필터 주기 교체, 고무패킹·얼음 저장통 세척",
+    "**식기세척기** — 분사 노즐·필터 관리, 전용 세정, 내부 클리닝",
+    "**전기레인지** — 상판 교체, 코팅·광택, 성능 점검, 틈새 세척"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "방문 주기는 제품과 케어 유형마다 다릅니다. 예를 들어 한 일반냉장고 제품 페이지는 라이트 케어 기준 30개월 주기 방문과 36개월 차 기계실 부분 분해·고압세척 1회를 안내합니다. 무상 철거·재설치는 계약기간 중 1회지만 제품 이동(운반) 서비스는 들어 있지 않고, 대상 품목이 정해져 있습니다. 내 제품의 케어 내용은 제품 페이지의 '케어' 탭에서 확인하세요. 예: [LG전자 냉장고 구독 페이지](https://www.lge.co.kr/care-solutions/refrigerators/d604mps52?dpType=careTab)"
+  },
+  {
+   "type": "image",
+   "key": "productshot"
+  },
+  {
+   "type": "h2",
+   "text": "총비용 계산: 페이지에 총액이 없다면",
+   "id": "total"
+  },
+  {
+   "type": "p",
+   "text": "한국소비자원 실태조사(2025년 10~12월 조사, 2026년 4월 발표)에서 LG전자는 대형 가전 14개 품목 중 8개에 총 구독 비용을 표시하지 않았고, 소비자원 권고에 전 품목의 총 구독 비용과 소비자판매가격 표시를 개선하겠다고 회신했습니다. 보고 있는 페이지에 총액이 없다면 직접 계산하거나 상담 때 숫자로 받아 두세요."
+  },
+  {
+   "type": "image",
+   "key": "totalcard"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**총 구독료** = 할인 전 월 구독료 × 계약 개월 수",
+    "**실제 낼 돈** = 총 구독료 − 선납·결합·재구독 할인 − 멤버십 포인트 사용분",
+    "**추가 비용** = 특수 타공 등 설치 추가비, 이사 때 철거·운송·재설치비",
+    "**비교 대상** = 같은 모델 소비자판매가격 + 품질보증기간 뒤 예상 수리·관리비"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "LG전자는 기본 설치비를 면제한다고 안내합니다. 제휴카드 할인은 카드 실적·연회비를 따로 따져야 하므로 총액에 섞지 않는 편이 정확합니다. 멤버십 포인트는 1포인트 1원으로 구독료에서 뺄 수 있지만, 전액을 포인트로 내면 카드 청구가 없어 제휴카드 할인은 받지 못합니다. 원문: [한국소비자원 보도자료](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)"
+  },
+  {
+   "type": "h2",
+   "text": "중도해지하면 드는 비용",
+   "id": "cancel"
+  },
+  {
+   "type": "p",
+   "text": "계약기간 안에 해지하면 해약금 = 위약금 + 회수비 + 사용료 + 미납·연체금입니다. 위약금은 **할인 전 기본요금 기준** 잔여 의무사용기간 총 요금의 30·20·10%이고, 회수비는 의무사용기간과 관계없이 계약기간 안에 임의로 해지하면 붙습니다(2021년 11월 5일 이후 계약 기준). 계약 후 12개월 안에 해지하면 받은 사은품 금액도 전액 청구됩니다."
+  },
+  {
+   "type": "image",
+   "key": "pickup"
+  },
+  {
+   "type": "p",
+   "text": "예를 들어(가정) 할인 전 월 4만 원 세탁기를 6년 계약하고 30개월 차에 해지하면, 남은 42개월 요금 168만 원의 10%인 16만 8천 원에 회수비 6만 8천 원이 더해집니다. 소비자분쟁해결기준은 1년이 넘는 계약의 위약금을 잔여 임대료의 10%로 정하고 있어, 분쟁이 생기면 이 기준을 근거로 조정을 요청할 수 있습니다. [소비자분쟁해결기준 원문](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136)"
+  },
+  {
+   "type": "h2",
+   "text": "계약이 끝나면: 소유권과 만기 후 관리",
+   "id": "after"
+  },
+  {
+   "type": "p",
+   "text": "계약기간 동안 제품은 LG전자 소유이고, 계약이 끝나고 미납이 없으면 고객 소유가 됩니다. 이후 선택지는 세 가지입니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**직접 관리** — 추가 비용 없이 그대로 사용",
+    "**케어십** — 정기 방문 관리만 따로 신청. 계약기간 12개월(에어컨 24개월, 세탁기 48개월), 해지 의사가 없으면 같은 단위로 자동 연장, 의무사용기간·위약금 없음",
+    "**재구독** — 만기 12개월 전부터 만기 후 1년까지 새 제품을 구독하면 월 5% 할인"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "정리하면 장점은 목돈 없이 시작, 계약기간 전체 무상 A/S, 정기 방문 관리입니다. 단점은 최대 6년 묶이는 기간, 할인 전 요금 기준 위약금과 회수비, 그리고 총액을 직접 계산해야 하는 수고입니다. 분쟁이 생기면 [1372소비자상담센터](https://www.ccn.go.kr)에 상담하세요."
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "image",
+   "key": "guideshot"
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[LG전자, 가전 구독 가이드(구매 vs 구독, 해약금, 할인, 케어십)](https://www.lge.co.kr/story/buying-guide/care-solutions-guide3)",
+    "LG전자, 냉장고 구독 제품 페이지 케어 탭(D604MPS52, 본문 링크), 멤버십 포인트 결제 안내(care-solutions-faq4)",
+    "[한국소비자원, 가전 구독(렌탈) 서비스 실태조사(2026.4.8)](https://www.kca.go.kr/home/sub.do?menukey=4002&mode=view&no=1004450078)",
+    "[국가법령정보센터, 소비자분쟁해결기준(공정거래위원회 고시 제2025-14호)](https://www.law.go.kr/LSW/admRulInfoP.do?admRulSeq=2100000270136)",
+    "[1372소비자상담센터](https://www.ccn.go.kr)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "totalcard",
+   "kind": "card",
+   "file": "lg-subscription-total-cost-formula.png",
+   "title": "LG 구독 총비용 직접 계산",
+   "lines": [
+    "총 구독료 = 할인 전 월 구독료 × 계약 개월",
+    "실제 낼 돈 = 총 구독료 - 선납·결합·재구독 할인",
+    "+ 특수 설치비, 이사 때 철거·운송·재설치비",
+    "비교: 같은 모델 소비자판매가격 + 보증 뒤 수리비",
+    "제휴카드 할인은 따로 계산"
+   ],
+   "source": "LG전자 가전 구독 가이드, 한국소비자원 권고(2026.4) 기준 정리",
+   "caption": "페이지에 총액이 없으면 이렇게 계산합니다",
+   "alt": "LG전자 가전 구독 총비용 계산 방법"
+  },
+  {
+   "key": "pickup",
+   "kind": "hbar",
+   "file": "lg-subscription-pickup-fee-examples.png",
+   "title": "LG전자 구독 회수비 예시",
+   "sub": "계약기간 안에 임의 해지할 때, 2021년 11월 5일 이후 계약 기준",
+   "labels": [
+    "식기세척기",
+    "전기레인지",
+    "정수기",
+    "세탁기",
+    "얼음정수기냉장고",
+    "에어컨",
+    "에어컨(23평 이상 2in1)"
+   ],
+   "values": [
+    39000,
+    39000,
+    50000,
+    68000,
+    98500,
+    100000,
+    150000
+   ],
+   "value_labels": [
+    "39,000원",
+    "39,000원",
+    "50,000원",
+    "68,000원",
+    "98,500원",
+    "100,000원",
+    "150,000원"
+   ],
+   "highlight": [
+    3
+   ],
+   "left": 0.28,
+   "fmt": "{}",
+   "source": "출처: LG전자 가전 구독 가이드(2026년 11월 확인)",
+   "caption": "위약금과 별도로 회수비가 붙습니다",
+   "alt": "LG전자 가전 구독 중도해지 품목별 회수비 차트"
+  }
+ ],
+ "shots": [
+  {
+   "key": "productshot",
+   "url": "https://www.lge.co.kr/care-solutions/refrigerators/d604mps52?dpType=careTab",
+   "file": "lge-refrigerator-subscription-care-tab.png",
+   "caption": "LG전자 냉장고 구독 제품 페이지 (lge.co.kr)",
+   "alt": "LG전자 냉장고 구독 제품 페이지 케어 안내 화면",
+   "name": "LG전자 냉장고 구독 페이지",
+   "fallback": {
+    "title": "LG전자 냉장고 구독(케어 탭)",
+    "lines": [
+     "계약기간 3·4·5·6년 선택",
+     "라이트 케어: 30개월 주기 방문",
+     "36개월 차 기계실 부분 분해·고압세척"
+    ]
+   }
+  },
+  {
+   "key": "guideshot",
+   "url": "https://www.lge.co.kr/story/buying-guide/care-solutions-guide3",
+   "file": "lge-subscription-guide-lg-post.png",
+   "caption": "LG전자 가전 구독 가이드 (lge.co.kr)",
+   "alt": "LG전자 가전 구독 가이드 구매와 구독 비교 화면",
+   "name": "LG전자 가전 구독 가이드",
+   "fallback": {
+    "title": "LG전자 가전 구독 가이드",
+    "lines": [
+     "무상 A/S 계약기간 전체(고객 과실 제외)",
+     "위약금 30% · 20% · 10%(할인 전 기본요금)",
+     "만기 후 케어십 별도 신청"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "lg-appliance-subscription-hero.png",
+   "caption": "",
+   "alt": "케어 전문가가 냉장고를 점검하는 깔끔한 주방 삽화",
+   "prompt": "A clean modern kitchen where a care technician in a simple uniform inspects an open refrigerator, a resident smiling nearby holding a coffee mug, bright morning light, flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "lg-appliance-subscription-f1.png",
+   "caption": "계약기간에 따라 할인, 위약금 구간, 소유권 조건이 달라집니다",
+   "alt": "길이가 다른 세 개의 길 위에 놓인 가전 삽화",
+   "prompt": "Three parallel paths of different lengths stretching toward a sunrise, each with a small home appliance waiting at the end, a person deciding which path to take, calm hopeful mood, flat illustration, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "lg-appliance-subscription-f2.png",
+   "caption": "계약이 끝나면 직접 관리, 케어십, 재구독 중에서 고릅니다",
+   "alt": "계약이 끝난 가전 앞에서 세 가지 선택지를 고민하는 사람 삽화",
+   "prompt": "A person standing in a cozy living room next to a well-kept washing machine, looking at three floating icons representing self care, a technician visit, and a new appliance, relaxed thoughtful mood, flat illustration, no text, no numbers, no logos."
+  }
+ ]
+}

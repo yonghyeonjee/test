@@ -1,0 +1,293 @@
+{
+ "slug": "energy-voucher-2026",
+ "slogan": "에너지바우처-2026-신청-대상-금액-난방비-지원",
+ "title": "2026 에너지바우처 신청 대상과 금액 | 겨울 난방비 지원, 신청 마감 전 확인할 것",
+ "series": false,
+ "summary": "에너지바우처는 기초생활수급 가구 중 노인·영유아·장애인 등이 있는 집에 2026년 기준 1인 29만 5,200원부터 4인 이상 70만 1,300원까지 냉난방비를 지원합니다. 신청은 2026년 12월 31일까지, 겨울 사용은 2027년 5월 31일까지입니다. 대상, 금액, 요금차감과 국민행복카드 차이, 아직 신청하지 못했을 때 할 일을 정리했습니다.",
+ "keywords": [
+  "에너지바우처",
+  "2026 에너지바우처",
+  "난방비 지원",
+  "에너지바우처 신청",
+  "에너지바우처 금액",
+  "국민행복카드",
+  "기초생활수급자 난방비",
+  "동절기 에너지바우처",
+  "복지로"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "**에너지바우처**는 형편이 어려운 가구가 전기·도시가스·지역난방·등유·LPG·연탄을 살 수 있도록 나라가 미리 금액을 정해 주는 이용권입니다. 2026년도 신청은 **12월 31일(목)에 마감**됩니다. 12월 초인 지금, 겨울 난방이 본격적으로 시작되기 전에 우리 집이 대상인지부터 확인해 두면 좋습니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글은 에너지바우처 누리집(한국에너지공단 운영), 복지로, 서울시 안내 등 공식 자료(2026년 12월 기준)를 바탕으로 누가, 얼마를, 언제까지 받는지와 신청을 놓쳤을 때 할 일을 정리했습니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "누가 받을 수 있나 — 소득 기준과 가구원 기준 둘 다",
+   "id": "who"
+  },
+  {
+   "type": "p",
+   "text": "[에너지바우처 지원 대상 안내](https://www.energyv.or.kr/info/support_info.do)에 따르면 아래 **두 조건을 모두** 갖춰야 합니다."
+  },
+  {
+   "type": "image",
+   "key": "support"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**소득 기준** — 국민기초생활보장법에 따른 생계·의료·주거·교육급여 중 하나 이상을 받는 수급자",
+    "**가구원 기준(하나 이상)** — 노인(1961년 12월 31일 이전 출생), 영유아(2019년 1월 1일 이후 출생, 7세 이하), 장애인, 임산부(임신 중이거나 분만 후 6개월 미만), 중증·희귀·중증난치질환자, 한부모가족, 소년소녀가정(가정위탁보호아동 포함), 다자녀(19세 미만 자녀 2명 이상)"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "수급자라도 가구원 기준에 하나도 해당하지 않으면 대상이 아닙니다. 반대로 노인만 사는 집이라도 수급자가 아니면 받을 수 없습니다. 2019년생 가운데 2026년에 취학을 미룬 아이는 학교장 직인이 있는 면제·유예 증명이 필요하다고 [복지로 공지](https://www.bokjiro.go.kr/ssis-tbu/cms/pc/customer/notice/1309896_1141.html)는 안내합니다."
+  },
+  {
+   "type": "h2",
+   "text": "얼마 받나 — 세대원 수별 연간 금액",
+   "id": "amount"
+  },
+  {
+   "type": "image",
+   "key": "amounts"
+  },
+  {
+   "type": "table",
+   "head": [
+    "세대원 수",
+    "2026년 지원 총액",
+    "연탄쿠폰 등 대상 세대"
+   ],
+   "rows": [
+    [
+     "1인",
+     "295,200원",
+     "40,700원"
+    ],
+    [
+     "2인",
+     "407,500원",
+     "58,800원"
+    ],
+    [
+     "3인",
+     "532,700원",
+     "75,800원"
+    ],
+    [
+     "4인 이상",
+     "701,300원",
+     "102,000원"
+    ]
+   ]
+  },
+  {
+   "type": "p",
+   "text": "금액은 **여름과 겨울을 합친 한 해 총액**이고, 매달 나눠 주는 돈이 아닙니다. 오른쪽 칸은 연탄쿠폰·연탄전환 에너지바우처·긴급복지 연료비를 함께 받는 세대에 적용되는 금액으로, 하절기에만 쓸 수 있습니다. 여름에 쓰지 않고 겨울에 몰아 쓰려면 '하절기 요금 미차감'을 신청해야 합니다([서울시 에너지바우처 안내](https://news.seoul.go.kr/env/archives/570227))."
+  },
+  {
+   "type": "h2",
+   "text": "신청은 12월 31일까지, 겨울 사용은 2027년 5월 31일까지",
+   "id": "dates"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "많이 헷갈리는 것이 **신청 기한과 사용 기한**입니다. 둘은 다릅니다. 에너지바우처 누리집에 나온 2026년도 일정은 다음과 같고, [서울시 안내](https://news.seoul.go.kr/env/archives/570227)도 사용기간을 2027년 5월 31일까지로 적고 있습니다."
+  },
+  {
+   "type": "table",
+   "head": [
+    "구분",
+    "기간"
+   ],
+   "rows": [
+    [
+     "신청",
+     "2026.6.15 ~ 2026.12.31"
+    ],
+    [
+     "하절기 사용(요금차감)",
+     "2026.7.1 ~ 2026.9.30"
+    ],
+    [
+     "동절기 사용(요금차감)",
+     "2026.10.1 ~ 2027.5.31"
+    ],
+    [
+     "동절기 사용(국민행복카드)",
+     "2026.10.3 ~ 2027.5.31"
+    ]
+   ]
+  },
+  {
+   "type": "p",
+   "text": "요금차감은 사용기간 안에 발행된 고지서에만 적용됩니다. 12월에 신청해도 겨울 사용기간이 2027년 5월 말까지라 늦게라도 신청하는 것이 낫습니다. 다만 요금차감은 신청한 다음 달 고지서부터 깎이므로, 빨리 신청할수록 한겨울 요금에 바로 반영됩니다."
+  },
+  {
+   "type": "h2",
+   "text": "요금차감과 국민행복카드, 어떻게 고르나",
+   "id": "how"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**요금차감(가상카드)** — 도시가스·전기·지역난방을 주로 쓰는 집. 최근 요금고지서(아파트는 관리비 고지서)를 들고 신청하면 다음 달부터 고지서에서 자동으로 깎입니다. 하절기는 전기만, 동절기는 도시가스·전기·지역난방 중 하나를 고릅니다.",
+    "**국민행복카드(실물카드)** — 등유·LPG·연탄을 쓰는 집. 신청 후 은행 등에서 카드를 받아 가맹점에서 직접 결제합니다. 배달료를 포함해 결제할 수 있지만 은행 창구와 공과금 수납기에서는 못 씁니다.",
+    "**하절기는 요금차감만**, 동절기는 둘 중 하나만 고를 수 있습니다."
+   ]
+  },
+  {
+   "type": "p",
+   "text": "자세한 사용법은 [에너지바우처 사용 안내](https://www.energyv.or.kr/info/use_info.do)에 있습니다. 카드는 본인만 써야 하며 다른 사람에게 빌려줄 수 없습니다."
+  },
+  {
+   "type": "h2",
+   "text": "아직 신청 못 했다면 — 12월에 할 일",
+   "id": "missed"
+  },
+  {
+   "type": "image",
+   "key": "bokjiro"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**12월 31일 전에 신청** — 주민등록상 주소지 읍·면·동 행정복지센터에 가거나 [복지로](https://www.bokjiro.go.kr/ssis-tbu/cms/pc/news/news/1309922_1114.html)에서 온라인으로 신청합니다. 이 날을 넘기면 2026년도분은 받을 수 없습니다.",
+    "**작년에 받았다면** — 주소·세대원 수·자격에 변동이 없으면 자동으로 다시 등록됩니다. 이사했거나 가족 수가 바뀌었다면 새로 신청해야 합니다.",
+    "**거동이 불편하다면** — 8촌 이내 혈족·4촌 이내 인척이나 담당 공무원이 대신 신청할 수 있습니다. 대리 신청은 방문으로만 됩니다.",
+    "**도시가스 요금 감면도 같이** — 에너지바우처를 받는 기초생활수급 가구는 도시가스 요금 감면을 함께 받을 수 있고, 이때 겨울철 감면 한도는 월 최대 8만 6천 원입니다([정부24 도시가스요금 경감 안내](https://www.gov.kr/portal/service/serviceInfo/B55121000003)).",
+    "**문의** — 에너지바우처 통합상담센터 1600-3190"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "2026년도에는 월세에 냉난방비가 포함돼 바우처로 직접 결제하기 어려운 수급자를 위한 '사전 예외지급'과, 연탄쿠폰을 쓰던 세대를 위한 '연탄전환 에너지바우처'(2026.8.7~12.31 신청)도 새로 생겼습니다. 해당하는지는 주민센터에서 물어보세요."
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[에너지바우처, 지원 대상 및 금액(2026년도)](https://www.energyv.or.kr/info/support_info.do)",
+    "[에너지바우처, 사용 안내](https://www.energyv.or.kr/info/use_info.do)",
+    "[복지로, 2026년도 에너지바우처 6월 15일부터 신청](https://www.bokjiro.go.kr/ssis-tbu/cms/pc/news/news/1309922_1114.html)",
+    "[복지로, 2026년 에너지바우처 신청 안내(2026.6.11)](https://www.bokjiro.go.kr/ssis-tbu/cms/pc/customer/notice/1309896_1141.html)",
+    "[서울특별시 환경분야, 에너지바우처 안내](https://news.seoul.go.kr/env/archives/570227)",
+    "[정부24, 사회적 배려대상자 도시가스요금 경감](https://www.gov.kr/portal/service/serviceInfo/B55121000003)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "amounts",
+   "kind": "hbar",
+   "file": "energy-voucher-2026-amounts.png",
+   "title": "2026 에너지바우처 세대원 수별 지원액(원)",
+   "sub": "여름·겨울 합친 연간 총액 · 2026년도 기준",
+   "labels": [
+    "1인 세대",
+    "2인 세대",
+    "3인 세대",
+    "4인 이상 세대"
+   ],
+   "values": [
+    295200,
+    407500,
+    532700,
+    701300
+   ],
+   "value_labels": [
+    "295,200원",
+    "407,500원",
+    "532,700원",
+    "701,300원"
+   ],
+   "highlight": [
+    3
+   ],
+   "left": 0.2,
+   "fmt": "{:,}",
+   "source": "출처: 에너지바우처 누리집 지원 대상 및 금액(2026년도)",
+   "caption": "2026년도 에너지바우처 세대원 수별 지원 금액",
+   "alt": "2026 에너지바우처 1인 295200원 2인 407500원 3인 532700원 4인 이상 701300원 지원 금액 차트"
+  }
+ ],
+ "shots": [
+  {
+   "key": "support",
+   "url": "https://www.energyv.or.kr/info/support_info.do",
+   "file": "energyv-support-info-2026.png",
+   "caption": "에너지바우처 지원 대상 및 금액 안내 (energyv.or.kr)",
+   "alt": "에너지바우처 누리집 지원 대상 및 금액 안내 화면",
+   "name": "에너지바우처 지원 대상",
+   "fallback": {
+    "title": "에너지바우처 지원 대상",
+    "lines": [
+     "생계·의료·주거·교육급여 수급자",
+     "+ 노인·영유아·장애인·임산부·질환자 등",
+     "1인 295,200원 ~ 4인 이상 701,300원"
+    ]
+   }
+  },
+  {
+   "key": "bokjiro",
+   "url": "https://www.bokjiro.go.kr/ssis-tbu/cms/pc/news/news/1309922_1114.html",
+   "file": "bokjiro-energy-voucher-2026.png",
+   "caption": "복지로 2026년도 에너지바우처 신청 안내 (bokjiro.go.kr)",
+   "alt": "복지로 2026년도 에너지바우처 신청 안내 화면",
+   "name": "복지로 에너지바우처 안내",
+   "fallback": {
+    "title": "2026년도 에너지바우처 신청",
+    "lines": [
+     "신청 2026.6.15 ~ 12.31",
+     "행정복지센터 방문 또는 복지로 온라인",
+     "문의 1600-3190"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "energy-voucher-2026-hero.png",
+   "caption": "",
+   "alt": "겨울 저녁 따뜻한 방에서 담요를 덮고 차를 마시는 할머니와 손주 삽화",
+   "prompt": "An elderly grandmother and a small child sitting together under a warm blanket in a modest cozy room on a snowy winter evening, a heater glowing softly, gentle and reassuring mood, soft flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "energy-voucher-2026-f1.png",
+   "caption": "신청 기한과 사용 기한은 다릅니다",
+   "alt": "벽 달력 앞에서 날짜를 짚어 보는 가족 삽화",
+   "prompt": "A middle-aged woman and her elderly father standing in front of a blank wall calendar, pointing at it thoughtfully, winter clothes hanging nearby, calm warm colors, soft flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "energy-voucher-2026-f2.png",
+   "caption": "도시가스·전기는 고지서 차감, 등유·LPG는 카드 결제",
+   "alt": "한쪽에는 가스 고지서를 든 사람, 다른 쪽에는 등유통과 카드를 든 사람 삽화",
+   "prompt": "Split scene illustration: on the left a person in an apartment holding a plain utility bill envelope beside a wall boiler, on the right a person in a rural house holding a plain payment card next to a kerosene canister, warm winter palette, soft flat illustration style, no text, no numbers, no logos."
+  }
+ ]
+}

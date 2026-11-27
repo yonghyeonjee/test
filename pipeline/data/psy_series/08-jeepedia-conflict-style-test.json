@@ -1,0 +1,259 @@
+{
+ "slug": "jeepedia-conflict-style-test",
+ "no": 8,
+ "series": false,
+ "category": "psychology",
+ "slogan": "갈등-대처-유형-테스트-경쟁-회피-양보-협력",
+ "title": "갈등 대처 유형 테스트 | 경쟁·회피·양보·협력, 직장과 연애에서 나는 어떻게 싸울까",
+ "summary": "갈등 대처 유형 테스트를 직접 풀어 봤습니다. 18문항·약 3분 동안 '나에 대한 관심'과 '상대에 대한 관심'을 재서 경쟁·회피·양보·협력 네 유형으로 나눕니다. 진행 방식과 결과 읽는 법, 바탕이 된 이중 관심 모형 원 논문, 직장과 연애에서 대처가 달라지는 이유, 건강하게 갈등을 푸는 순서까지 정리했습니다.",
+ "keywords": [
+  "갈등 대처 유형 테스트",
+  "갈등 해결 방법",
+  "이중 관심 모형",
+  "갈등 관리 유형",
+  "연애 싸움 스타일",
+  "직장 갈등",
+  "지피디아 심리테스트",
+  "무료 성격 테스트"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "회의에서 의견이 부딪힐 때 끝까지 밀어붙이는 사람이 있고, 일단 입을 닫는 사람이 있습니다. 연인과 다툴 때도 마찬가지입니다. 지피디아의 **갈등 대처 유형 테스트**는 이 차이를 '나를 얼마나 챙기나'와 '상대를 얼마나 챙기나' 두 가지로 풀어 봅니다. 아래 문항 수·결과·참고 문헌은 **2026년 11월 테스트 페이지에 적힌 내용**을 기준으로 정리했습니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "테스트는 이렇게 진행돼요",
+   "id": "process"
+  },
+  {
+   "type": "image",
+   "key": "intro"
+  },
+  {
+   "type": "p",
+   "text": "[갈등 대처 유형 테스트](https://jeepedia.com/psychology-test/conflict-style/)는 '의견이 부딪힐 때, 당신은 무엇을 먼저 지키나요?'라는 질문으로 시작합니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**18문항·약 3분** — 나에 대한 관심 9문항, 상대에 대한 관심 9문항",
+    "**1~5 중에서 고르기** — 키보드 숫자 키 1~5로도 답할 수 있고, 이전 문항으로 돌아가 고칠 수 있습니다",
+    "**결과 계산** — 마지막 문항 뒤 약 5초 동안 계산한 다음 '결과 보기'로 넘어갑니다",
+    "**결과** — 두 축의 점수 조합으로 경쟁·회피·양보·협력 네 유형 가운데 하나가 나옵니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "문항은 직장 갈등 연구에서 쓰는 척도(DUTCH)를 그대로 옮기지 않고 같은 구조를 따라 지피디아가 새로 쓴 것입니다. 페이지도 **심리검사나 진단이 아니며 채용·평가에 쓸 수 없다**고 밝힙니다."
+  },
+  {
+   "type": "h2",
+   "text": "결과 4유형: 두 축으로 읽어요",
+   "id": "types"
+  },
+  {
+   "type": "image",
+   "key": "matrix"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**협력형** — 나도 상대도 챙기는 사람. '함께 답을 찾는 사람'",
+    "**경쟁형** — 내 목표를 먼저 챙기는 사람. '물러서지 않는 협상가'",
+    "**양보형** — 상대를 먼저 챙기는 사람. '먼저 물러서는 배려자'",
+    "**회피형** — 둘 다 잠시 내려놓는 사람. '한 걸음 물러나 지켜보는 사람'"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "널리 알려진 토마스-킬만 모형은 여기에 **타협**을 더해 다섯 가지로 나눕니다. 지피디아 테스트에는 타협형이 따로 없고, 대신 **두 점수가 모두 3.0 근처라면 타협 성향이 강하다고 해석하라**고 안내합니다. 네 가지 전략(문제 해결·강요·양보·회피)과 타협을 더한 확장판을 함께 검증한 직장 갈등 척도 논문은 [De Dreu 외(2001)](https://onlinelibrary.wiley.com/doi/10.1002/job.107)에서 볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "이중 관심 모형, 원 논문에서 확인하기",
+   "id": "theory"
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "테스트의 뼈대는 **이중 관심 모형(dual concern model)**입니다. 내 결과에 대한 관심과 상대 결과에 대한 관심, 이 두 가지가 어떻게 조합되느냐에 따라 갈등 행동이 정해진다는 생각입니다. 페이지는 이 모형을 Pruitt·Rubin(1986)이 제시했다고 소개하고, 참고 문헌에는 Pruitt의 1983년 논문을 올려 두었습니다."
+  },
+  {
+   "type": "p",
+   "text": "[Pruitt(1983) '협상에서의 전략 선택'](https://journals.sagepub.com/doi/10.1177/000276483027002005) 원문 요약을 보면, 네 가지 기본 협상 전략과 각각이 낳는 결과, 그 전략을 고르게 되는 조건을 분석합니다. 그리고 상대가 **밀어붙이기에서 문제 해결 쪽으로 옮겨 가도록** 돕는 방법에 무게를 둡니다. 협상 연구 28편을 모은 [De Dreu 외(2000) 메타분석](https://doi.org/10.1037/0022-3514.78.5.889)도 페이지에 소개되어 있습니다. 상대까지 챙기려는 동기를 가진 협상자는 덜 경쟁적이었고, 문제 해결 전략을 더 많이 썼으며, 둘이 함께 얻는 몫도 더 컸습니다. 다만 이 효과는 쉽게 물러서지 않으려는 마음이 강하거나 그 정도를 알 수 없을 때만 나타났습니다. 무조건 양보하는 게 아니라 **내 것도 지키면서 상대를 챙길 때** 가장 좋은 답이 나온다는 뜻입니다."
+  },
+  {
+   "type": "h2",
+   "text": "직장과 연애에서 내 유형은 달라질까",
+   "id": "context"
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "p",
+   "text": "페이지의 자주 묻는 질문은 갈등 대처 방식이 **바뀔 수 있다**고 답합니다. 성격만이 아니라 상황과 동기의 영향도 크기 때문입니다. 성격 5요인과 갈등 대처 스타일의 관계를 다룬 [Antonioni(1998)](https://www.emerald.com/ijcma/article/9/4/336-355/118123)도 참고 문헌에 있지만, 같은 사람도 상대가 상사냐 연인이냐에 따라 '나를 챙기는 정도'와 '상대를 챙기는 정도'가 달라지기 쉽습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**직장** — 역할·권한·마감이 정해져 있어 평소와 다른 선택을 할 수 있습니다. 팀 연구 메타분석인 [De Dreu·Weingart(2003)](https://doi.org/10.1037/0021-9010.88.4.741)에서는 관계 갈등뿐 아니라 일에 대한 의견 갈등도 팀 성과·만족과 부정적으로 관련됐고, 복잡한 과제일수록 그 관계가 더 강했습니다",
+    "**연애** — 관계를 지키고 싶은 마음 때문에 내 몫을 덜 챙기게 될 수 있습니다. 다만 한쪽만 계속 물러서면 서운함이 쌓이기 쉽습니다",
+    "**해 보는 방법** — 테스트를 두 번, 한 번은 직장 동료를, 한 번은 연인을 떠올리며 풀어 보세요. 두 결과가 다르면 그 차이가 바로 내가 상황에 따라 바꾸는 부분입니다"
+   ]
+  },
+  {
+   "type": "h2",
+   "text": "건강한 갈등 해결, 이 순서로 해 보세요",
+   "id": "healthy"
+  },
+  {
+   "type": "image",
+   "key": "family"
+  },
+  {
+   "type": "p",
+   "text": "페이지는 **정답 유형은 없다**고 말합니다. 양쪽 모두에게 중요한 문제라면 협력이, 급하고 원칙이 걸린 일이라면 경쟁이, 상대가 훨씬 중요하게 여기는 일이라면 양보가, 사소하거나 감정이 격할 때는 잠깐의 회피가 맞을 수 있습니다. 이 기준을 바탕으로 정리한 순서입니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "① **감정이 높으면 잠깐 멈추기** — '30분 뒤에 다시 얘기하자'처럼 돌아올 시간을 정한 회피는 도망이 아니라 쉬는 시간입니다",
+    "② **이 문제가 누구에게 얼마나 중요한지 묻기** — 상대가 훨씬 중요하게 여긴다면 양보가 관계를 지킵니다",
+    "③ **입장 말고 이유를 꺼내기** — '왜 그게 필요한지'를 서로 말하면 둘 다 얻는 협력안이 보입니다",
+    "④ **원칙이 걸린 일은 분명히 말하기** — 안전·약속·존중이 걸린 문제라면 물러서지 않아도 됩니다"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "가족이나 부부 사이 갈등이 오래 풀리지 않는다면 한국건강가정진흥원 [가족센터](https://www.familynet.or.kr)의 전화상담(1577-9337)을, 갈등 때문에 마음이 많이 지쳤다면 정신건강위기상담전화 1577-0199([보건복지부 안내](https://www.mohw.go.kr/menu.es?mid=a10706040100))를 이용할 수 있습니다. 상대를 더 이해하고 싶다면 [성인 애착유형 테스트](https://jeepedia.com/psychology-test/attachment/)나 [조절 초점 테스트](https://jeepedia.com/psychology-test/regulatory-focus/)도 함께 해 보세요."
+  },
+  {
+   "type": "h2",
+   "text": "참고 자료",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "지피디아 갈등 대처 유형 테스트 페이지, 2026년 11월 확인",
+    "Pruitt, D. G. (1983). Strategic choice in negotiation. American Behavioral Scientist 27(2), 167–194",
+    "De Dreu, Weingart & Kwon (2000). JPSP 78(5), 889–905. DOI 10.1037/0022-3514.78.5.889",
+    "De Dreu, Evers, Beersma, Kluwer & Nauta (2001). Journal of Organizational Behavior 22(6), 645–668",
+    "De Dreu & Weingart (2003). Journal of Applied Psychology 88(4), 741–749",
+    "Antonioni, D. (1998). International Journal of Conflict Management 9(4), 336–355",
+    "Thomas & Kilmann (1974). Thomas-Kilmann Conflict Mode Instrument",
+    "[가족센터(한국건강가정진흥원)](https://www.familynet.or.kr)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "matrix",
+   "kind": "matrix",
+   "file": "jeepedia-conflict-style-matrix.png",
+   "title": "갈등 대처 4유형, 두 가지 관심의 조합",
+   "sub": "이중 관심 모형을 바탕으로 한 지피디아 갈등 대처 유형 테스트",
+   "rows": [
+    "협력형",
+    "경쟁형",
+    "양보형",
+    "회피형"
+   ],
+   "cols": [
+    "나에 대한 관심",
+    "상대에 대한 관심"
+   ],
+   "cells": [
+    [
+     "◎ 높음",
+     "◎ 높음"
+    ],
+    [
+     "◎ 높음",
+     "낮음"
+    ],
+    [
+     "낮음",
+     "◎ 높음"
+    ],
+    [
+     "낮음",
+     "낮음"
+    ]
+   ],
+   "source": "출처: 지피디아 갈등 대처 유형 테스트, Pruitt(1983)",
+   "caption": "두 관심이 모두 3.0 근처면 타협 성향으로 읽습니다",
+   "alt": "나에 대한 관심과 상대에 대한 관심으로 나눈 갈등 대처 4유형 표"
+  }
+ ],
+ "shots": [
+  {
+   "key": "intro",
+   "url": "https://jeepedia.com/psychology-test/conflict-style/",
+   "file": "jeepedia-conflict-style-intro.png",
+   "caption": "갈등 대처 유형 테스트 소개 (jeepedia.com)",
+   "alt": "지피디아 갈등 대처 유형 테스트 소개 화면",
+   "name": "지피디아 갈등 대처 유형 테스트",
+   "fallback": {
+    "title": "갈등 대처 유형 테스트",
+    "lines": [
+     "18문항 · 약 3분 · 1~5 중에서 고르기",
+     "나에 대한 관심 9문항 + 상대에 대한 관심 9문항",
+     "결과: 협력형 · 경쟁형 · 양보형 · 회피형",
+     "두 점수가 모두 3.0 근처면 타협 성향",
+     "바탕: 이중 관심 모형(Pruitt), 직장 갈등 척도 구조"
+    ]
+   }
+  },
+  {
+   "key": "family",
+   "url": "https://www.familynet.or.kr",
+   "file": "familynet-family-center-home.png",
+   "caption": "가족·부부 갈등 상담을 받을 수 있는 가족센터 (familynet.or.kr)",
+   "alt": "한국건강가정진흥원 가족센터 누리집 첫 화면",
+   "name": "가족센터",
+   "fallback": {
+    "title": "가족센터",
+    "lines": [
+     "운영: 한국건강가정진흥원",
+     "전화상담 1577-9337",
+     "온라인상담실 · 내 주변 센터 찾기",
+     "대표전화 02-3479-7600(평일 09:00~18:00)"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "jeepedia-conflict-style-test-hero.png",
+   "caption": "",
+   "alt": "회의 테이블에서 서로 다른 의견을 내는 동료들 삽화",
+   "prompt": "Four coworkers around a meeting table in a bright office, one leaning forward to argue a point, one listening calmly with folded hands, one stepping back slightly, one gesturing to find middle ground, soft editorial illustration. No text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "jeepedia-conflict-style-test-f1.png",
+   "caption": "내 몫과 상대 몫을 함께 저울질하는 것이 이중 관심 모형입니다",
+   "alt": "양쪽 접시에 각각 하트와 별이 올라간 저울을 함께 바라보는 두 사람 삽화",
+   "prompt": "Two people standing on either side of a large old-fashioned balance scale, each placing a small object on their own pan and looking at the other thoughtfully, warm muted colors, gentle conceptual illustration. No text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "jeepedia-conflict-style-test-f2.png",
+   "caption": "직장과 연애, 상대가 바뀌면 대처도 달라집니다",
+   "alt": "한쪽은 사무실, 다른 쪽은 거실 소파에서 대화하는 같은 사람을 나란히 그린 삽화",
+   "prompt": "A split scene of the same young adult: on the left in an office talking firmly with a colleague, on the right on a living room sofa listening softly to a partner, calm warm lighting, clean modern illustration. No text, no numbers, no logos."
+  }
+ ]
+}

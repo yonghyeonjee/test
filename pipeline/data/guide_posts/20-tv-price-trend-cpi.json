@@ -1,0 +1,253 @@
+{
+ "slug": "tv-price-trend-cpi",
+ "slogan": "TV-가격-추이-소비자물가지수-구매-적기",
+ "title": "TV 가격은 왜 달라질까? 소비자물가지수로 본 TV 가격 추이와 연말 구매 판단법",
+ "series": false,
+ "summary": "TV 가격 추이를 국가데이터처 소비자물가지수(2020=100)로 보면 TV 지수는 2015년 157.7에서 2025년 86.0으로 45% 내렸습니다. 같은 기간 전체 물가는 23% 올랐습니다. 지수가 무엇을 재는지, 연말에 정말 내려갔는지 월별 숫자로 확인하고 살 때를 고르는 법을 정리했습니다.",
+ "keywords": [
+  "TV 가격 추이",
+  "소비자물가지수 TV",
+  "가전 가격 추이",
+  "TV 구매 적기",
+  "연말 TV 할인",
+  "품질조정",
+  "국가데이터처",
+  "KOSIS"
+ ],
+ "body": [
+  {
+   "type": "p",
+   "text": "\"TV는 해마다 싸진다\"는 말을 자주 듣습니다. 그런데 매장에서 보는 값은 몇 년 전과 크게 다르지 않은 것 같기도 합니다. 어느 쪽이 맞는지 **TV 가격 추이**를 정부 통계로 직접 확인해 봤습니다."
+  },
+  {
+   "type": "p",
+   "text": "이 글의 숫자는 모두 국가데이터처(옛 통계청) KOSIS의 '품목별 소비자물가지수(2020=100)'에서 가져왔습니다. 2026년 10월분까지 들어 있는 표(2026년 11월 3일 갱신)를 기준으로 했고, 지수는 2020년 값을 100으로 놓은 숫자입니다."
+  },
+  {
+   "type": "image",
+   "key": "hero"
+  },
+  {
+   "type": "h2",
+   "text": "TV는 과거보다 싸졌나? 지수로 본 15년",
+   "id": "trend"
+  },
+  {
+   "type": "p",
+   "text": "답부터 말하면 **지수로는 크게 내렸습니다.** TV 지수는 2010년 262.2, 2015년 157.7, 2020년 100, 2025년 86.0입니다. 2015년보다 45%, 2010년보다 67% 낮습니다. 같은 기간 전체 소비자물가(총지수)는 2015년 94.9에서 2025년 116.6으로 23% 올랐습니다. 물가 전체가 오르는 동안 TV만 거꾸로 간 셈입니다."
+  },
+  {
+   "type": "image",
+   "key": "annual"
+  },
+  {
+   "type": "p",
+   "text": "내림세는 최근에도 이어집니다. 2021년 97.8, 2022년 96.0, 2023년 93.9, 2024년 91.1, 2025년 86.0으로 해마다 내려갔고, 2026년 10월은 82.67로 1년 전 같은 달(85.95)보다 3.8% 낮습니다. 원자료: [KOSIS 품목별 소비자물가지수(2020=100)](https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112)"
+  },
+  {
+   "type": "h2",
+   "text": "지수가 내렸다는 건 무슨 뜻일까 — '같은 품질' 기준",
+   "id": "meaning"
+  },
+  {
+   "type": "p",
+   "text": "여기서 오해하기 쉬운 점이 있습니다. 국가데이터처 설명에 따르면 TV처럼 브랜드·인치·해상도별로 상품이 많은 품목은 흐름을 대표할 상품을 골라 **매월 같은 상품의 가격**을 조사합니다. 조사 상품을 새 모델로 바꿀 때는 **품질조정**을 거쳐, 품질이 좋아져서 오른 값과 순수한 가격 변동을 나눕니다."
+  },
+  {
+   "type": "image",
+   "key": "f1"
+  },
+  {
+   "type": "p",
+   "text": "그래서 지수 86.0은 '2020년과 같은 품질의 TV를 사는 데 드는 값이 14% 줄었다'에 가까운 뜻입니다. 더 큰 화면이나 상위 모델로 바꾸는 집이라면 실제로 쓰는 돈은 지수만큼 줄지 않을 수 있습니다. 근거: [국가데이터처, 대표성 있는 상품선정 및 품질 조정](https://mods.go.kr/menu.es?mid=b70103010000)"
+  },
+  {
+   "type": "list",
+   "items": [
+    "**조사 가격** — 소비자가 실제로 내는 거래가격(부가가치세 포함)",
+    "**할인 반영** — 누구나 조건 없이 살 수 있는 할인은 포함, 제한된 사람만 받는 가격이나 깜짝세일 같은 초단기 염매가격은 제외",
+    "**조사 방식** — 매월 1회 정해진 기간에 전국 약 2만 6천 개 소매점을 방문·전화 조사"
+   ]
+  },
+  {
+   "type": "p",
+   "text": "자세한 기준은 [국가데이터처, 가격조사 안내](https://mods.go.kr/menu.es?mid=b70101030000)에 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "연말 할인이 유리할까? 10~12월 지수로 확인",
+   "id": "yearend"
+  },
+  {
+   "type": "p",
+   "text": "연말에 TV 값이 내려가는지 최근 3년의 10월·11월·12월 지수를 나란히 놓아 봤습니다."
+  },
+  {
+   "type": "table",
+   "head": ["연도", "10월", "11월", "12월", "10월→12월"],
+   "rows": [
+    ["2023년", "92.60", "93.07", "92.52", "-0.1%"],
+    ["2024년", "88.43", "88.43", "88.40", "0.0%"],
+    ["2025년", "85.95", "84.00", "82.20", "-4.4%"]
+   ]
+  },
+  {
+   "type": "image",
+   "key": "yearend"
+  },
+  {
+   "type": "p",
+   "text": "2025년에는 11~12월에 4.4% 내렸지만 2023·2024년에는 거의 그대로였습니다. 세 해 가운데 한 해만 내린 셈이라 **'연말이면 늘 싸다'고 보기는 어렵습니다.** 또 지수는 깜짝세일 같은 초단기 행사가를 빼고 만들기 때문에, 특정 매장의 하루 특가는 지수에 잘 드러나지 않습니다. 월별 숫자는 [KOSIS 표](https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112)의 '시점' 설정에서 직접 바꿔 볼 수 있습니다."
+  },
+  {
+   "type": "h2",
+   "text": "구매 적기는 이렇게 고르세요",
+   "id": "howto"
+  },
+  {
+   "type": "p",
+   "text": "통계가 알려 주는 것은 '긴 흐름으로는 내리는 품목'이라는 점까지입니다. 특정 달이 늘 싸다는 근거는 지수에서 찾지 못했습니다. 그래서 날짜보다는 아래 순서로 판단하는 편이 낫습니다."
+  },
+  {
+   "type": "list",
+   "items": [
+    "**① 같은 모델명으로 비교** — 화면 크기·해상도가 같아도 모델명이 다르면 다른 상품입니다. 사고 싶은 모델 두세 개를 정해 몇 주 동안 판매처별 가격을 적어 둡니다.",
+    "**② 행사 기간은 공식 안내로** — 제조사·유통사의 할인 행사는 해마다 기간과 조건이 다르니 해당 회사 공식 행사 페이지에서 기간·대상 모델을 확인합니다.",
+    "**③ 배송·설치·보증 포함 총액** — 벽걸이 설치, 기존 제품 수거 같은 조건이 판매처마다 다를 수 있어 총액으로 비교합니다.",
+    "**④ 지원 제도 확인** — 한전 전기요금 복지할인 가구라면 고효율 가전 구매 지원 대상인지 확인합니다. 2025년 공고 품목 11종에는 TV가 들어 있었습니다."
+   ]
+  },
+  {
+   "type": "image",
+   "key": "f2"
+  },
+  {
+   "type": "p",
+   "text": "복지할인 가구 지원은 2026년에도 가구당 30만 원 한도로 진행 중입니다([정책브리핑, 2026년 고효율 기기·가전 지원](https://www.korea.kr/news/policyNewsView.do?newsId=148959268)). 품목 목록은 [2025년 공고 안내](https://www.korea.kr/news/policyNewsView.do?newsId=148939160)를 참고하되, 2026년 품목은 공고문에서 다시 확인하세요. 한편 구매가 10%를 돌려준 으뜸효율 환급사업은 2026년 1월 16일 신청을 마감하고 끝났습니다. 이 사업에서 TV 환급금은 약 286억 원으로 품목 가운데 네 번째였습니다([기후에너지환경부 보도자료](https://mcee.go.kr/home/web/board/read.do?boardCategoryId=&boardId=1836180&boardMasterId=1&decorator=&maxIndexPages=10&maxPageItems=10&menuId=&orgCd=&pagerOffset=240&searchKey=&searchValue=))."
+  },
+  {
+   "type": "h2",
+   "text": "12월 말부터 지수 숫자가 바뀔 수 있습니다",
+   "id": "rebase"
+  },
+  {
+   "type": "p",
+   "text": "국가데이터처는 5년마다 소비자물가지수의 품목과 가중치를 바꿉니다. 2026년 7월 발표에 따르면 2020년 기준 지수를 **2025년 기준으로 개편해 2026년 12월 18일 공표**하고, 12월 31일부터 새 기준의 소비자물가동향을 내놓을 계획입니다. 이때 2025년 1월~2026년 11월 지수와 상승률도 바뀔 수 있다고 밝혔습니다."
+  },
+  {
+   "type": "image",
+   "key": "kosis"
+  },
+  {
+   "type": "p",
+   "text": "그러니 연도별 흐름을 볼 때는 **기준연도가 같은 지수끼리만** 비교하세요. 이 글의 숫자는 모두 2020=100 기준입니다. 개편 내용: [KDI 경제정보센터, 2025년 기준 소비자물가지수 개편 실시](https://eiec.kdi.re.kr/policy/materialView.do?num=283909)"
+  },
+  {
+   "type": "h2",
+   "text": "출처",
+   "id": "refs"
+  },
+  {
+   "type": "list",
+   "items": [
+    "[국가데이터처 KOSIS, 품목별 소비자물가지수(품목성질별: 2020=100)](https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112) — 2026년 10월분, 2026.11.3 갱신",
+    "[국가데이터처, 가격조사(소비자물가지수 알아보기)](https://mods.go.kr/menu.es?mid=b70101030000)",
+    "[국가데이터처, 대표성 있는 상품선정 및 품질 조정](https://mods.go.kr/menu.es?mid=b70103010000)",
+    "[KDI 경제정보센터, 2025년 기준 소비자물가지수 개편 실시(국가데이터처, 2026.7.7)](https://eiec.kdi.re.kr/policy/materialView.do?num=283909)",
+    "[정책브리핑, 소상공인·취약계층 고효율 기기·가전 보조금 지원(2026.2)](https://www.korea.kr/news/policyNewsView.do?newsId=148959268)",
+    "[정책브리핑, 취약계층 고효율 가전 구매비용 최대 30% 환급(2025.2)](https://www.korea.kr/news/policyNewsView.do?newsId=148939160)",
+    "[기후에너지환경부, 으뜸효율 가전제품 환급사업 종료(2026.1.20)](https://mcee.go.kr/home/web/board/read.do?boardCategoryId=&boardId=1836180&boardMasterId=1&decorator=&maxIndexPages=10&maxPageItems=10&menuId=&orgCd=&pagerOffset=240&searchKey=&searchValue=)"
+   ]
+  }
+ ],
+ "charts": [
+  {
+   "key": "annual",
+   "kind": "hbar",
+   "file": "tv-cpi-annual-2010-2025.png",
+   "title": "TV 소비자물가지수 연도별 흐름(2020=100)",
+   "sub": "같은 품질 기준 가격 지수 · 2026년 10월은 월 지수",
+   "labels": ["2010년", "2015년", "2017년", "2019년", "2020년", "2021년", "2022년", "2023년", "2024년", "2025년", "2026년 10월"],
+   "values": [262.24, 157.69, 131.35, 108.93, 100.0, 97.82, 96.03, 93.9, 91.07, 86.0, 82.67],
+   "value_labels": ["262.2", "157.7", "131.4", "108.9", "100.0", "97.8", "96.0", "93.9", "91.1", "86.0", "82.7"],
+   "highlight": [9, 10],
+   "left": 0.2,
+   "fmt": "{}",
+   "source": "출처: 국가데이터처 KOSIS 품목별 소비자물가지수(2020=100), 2026.11.3 갱신",
+   "caption": "TV 소비자물가지수 2010~2026년 흐름",
+   "alt": "TV 소비자물가지수 연도별 추이 막대 차트 2010년 262에서 2025년 86"
+  },
+  {
+   "key": "yearend",
+   "kind": "hbar",
+   "file": "tv-cpi-oct-dec-2023-2025.png",
+   "title": "연말에 TV 지수는 내렸을까(2020=100)",
+   "sub": "최근 3년 10·11·12월 TV 지수",
+   "labels": ["2023년 10월", "2023년 11월", "2023년 12월", "2024년 10월", "2024년 11월", "2024년 12월", "2025년 10월", "2025년 11월", "2025년 12월"],
+   "values": [92.6, 93.07, 92.52, 88.43, 88.43, 88.4, 85.95, 84.0, 82.2],
+   "value_labels": ["92.60", "93.07", "92.52", "88.43", "88.43", "88.40", "85.95", "84.00", "82.20"],
+   "highlight": [7, 8],
+   "left": 0.2,
+   "fmt": "{}",
+   "source": "출처: 국가데이터처 KOSIS 품목별 소비자물가지수(2020=100)",
+   "caption": "2023~2025년 10~12월 TV 소비자물가지수",
+   "alt": "연말 TV 가격 지수 비교 차트 2023 2024 2025년 10월 11월 12월"
+  }
+ ],
+ "shots": [
+  {
+   "key": "kosis",
+   "url": "https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1J22112",
+   "file": "kosis-cpi-by-item-2020-base.png",
+   "caption": "KOSIS 품목별 소비자물가지수(2020=100) 통계표 (kosis.kr)",
+   "alt": "국가데이터처 KOSIS 품목별 소비자물가지수 통계표 화면",
+   "name": "KOSIS 품목별 소비자물가지수",
+   "fallback": {
+    "title": "품목별 소비자물가지수(2020=100)",
+    "lines": [
+     "국가데이터처 소비자물가조사 · 1975.01~2026.10",
+     "TV 지수 2025년 86.0 · 2026년 10월 82.7",
+     "2025년 기준 개편: 2026.12.18 공표 예정"
+    ]
+   }
+  },
+  {
+   "key": "modsprice",
+   "url": "https://mods.go.kr/menu.es?mid=b70103010000",
+   "file": "mods-cpi-quality-adjustment.png",
+   "caption": "국가데이터처 소비자물가지수 품질 조정 안내 (mods.go.kr)",
+   "alt": "국가데이터처 대표성 있는 상품선정 및 품질 조정 설명 화면",
+   "name": "국가데이터처 품질 조정 안내",
+   "fallback": {
+    "title": "대표성 있는 상품선정 및 품질 조정",
+    "lines": [
+     "TV는 대표 상품을 골라 매월 같은 상품 가격을 조사",
+     "새 상품으로 바꿀 때 품질 변화분을 걸러 순수 가격만 반영"
+    ]
+   }
+  }
+ ],
+ "images": [
+  {
+   "key": "hero",
+   "file": "tv-price-trend-cpi-hero.png",
+   "caption": "",
+   "alt": "거실 벽에 걸린 큰 TV를 바라보며 가격을 고민하는 부부 삽화",
+   "prompt": "A young couple standing in a cozy modern living room, looking thoughtfully at a large flat-screen TV mounted on the wall, warm evening light, soft pastel illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f1",
+   "file": "tv-price-trend-cpi-f1.png",
+   "caption": "같은 크기라도 화질·기능이 다르면 다른 상품입니다",
+   "alt": "가전 매장에서 나란히 놓인 여러 TV를 비교하는 사람 삽화",
+   "prompt": "A person in an electronics store comparing several televisions of different sizes lined up side by side, clean bright store interior, flat illustration style, no text, no numbers, no logos."
+  },
+  {
+   "key": "f2",
+   "file": "tv-price-trend-cpi-f2.png",
+   "caption": "모델명을 정해 두고 몇 주 동안 가격을 기록해 보세요",
+   "alt": "노트에 가격을 적으며 노트북으로 TV를 비교하는 청년 삽화",
+   "prompt": "A young adult at a kitchen table writing in a notebook while comparing products on a laptop, a cup of tea nearby, calm winter afternoon light, soft illustration style, no text, no numbers, no logos."
+  }
+ ]
+}
