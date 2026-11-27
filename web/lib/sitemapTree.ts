@@ -77,7 +77,7 @@ function pages(): Entry[] {
     e("/jobs", "daily", 0.8, t),
     e("/jobs/region", "daily", 0.8, t),
     e("/jobs/org", "daily", 0.8, t),
-    e("/jobs/overseas", "daily", 0.7),
+    // /jobs/overseas 는 뺐다(2026-11-27): 접수 중인 공고가 없어 noindex 로 내고 있다.
     e("/jobs/majors", "yearly", 0.7),
     e("/agency", "daily", 0.8),
     e("/agency/events", "daily", 0.7),
