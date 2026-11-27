@@ -353,14 +353,18 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
 
   const { closing, closingFallback, fresh, closingCount } = bundle;
   const areaTotal = areas.reduce((a, x) => a + x.n, 0);
-  const [topicCounts, hot, jobOv, alio] = await Promise.all([
+  const [topicCounts, hot, jobOv, alio, freshBiz] = await Promise.all([
     countByTopic().catch(() => ({} as Record<string, number>)),
     // 오늘의 채용 브리핑(새 공고·사흘 안 마감 건수)과 마감 임박 목록(오른쪽 기둥). 첫 화면에서만.
     getHotSlides().catch(() => []),
     // 채용 갈래 칸의 "접수 중 N건 · 기관 M곳 이력". M 은 누적 기관 수라 "이력" 을 붙인다. 미리 센 표 한 줄.
     getJobOverview().catch(() => null),
     getAlioCounts().catch(() => null),
+    // "새로 올라온" 칸 채움(2026-11-27): 새 복지 사업이 여섯 건이 안 되는 주에는 옆의 "마감 임박"보다 훨씬 짧아
+    // 칸 아래가 크게 비었다. 모자란 만큼 새 기업·창업 지원사업으로 채운다.
+    fresh.length < 6 ? feedNew("business", 6).catch(() => [] as Program[]) : Promise.resolve([] as Program[]),
   ]);
+  const freshFeed = [...fresh, ...freshBiz.filter((b) => !fresh.some((f) => f.id === b.id))].slice(0, 6);
   const jobOpen = jobOv ? jobOv.openN + (alio?.open ?? 0) : 0;
   const brief = hot.find((s) => s.kind === "brief") ?? null;
   // 브리핑 제목 "오늘 새 공고 117건 · 사흘 안 마감 160건"에서 두 숫자를 읽는다. 없으면 접수 중 공고 수로.
@@ -434,7 +438,7 @@ export default async function Home({ searchParams, forceTab, ld = false }: { sea
               sub: closingFallback ? "마감일이 가까운 순" : `${settings.closingDays}일 이내 마감`,
               more: "/policies", content: closing.length ? <Lines items={closing.slice(0, 6)} /> : null },
             { key: "fresh", label: "새로 올라온", sub: `최근 ${settings.newDays}일`, more: "/policies",
-              content: fresh.length ? <Lines items={fresh.slice(0, 6)} fresh /> : null },
+              content: freshFeed.length ? <Lines items={freshFeed} fresh /> : null },
           ]} /></div>
           <section id="areas" className="card cv scroll-mt-28 p-4 sm:p-5">
             <SectionHead title="우리 동네 지원금"

@@ -109,7 +109,15 @@ export default async function StoryPage({ params }: P) {
       </nav>
       {/* 브런치처럼: 좁은 기둥, 명조 큰 제목, 작은 표식 줄, 그 아래 머리 띠. 2026-10-16. */}
       <header className="mt-4 sm:mt-6">
-        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">{s.title}</h1>
+        {/* "제목 | 덧제목" 꼴(순위 글)은 세로줄 뒤를 작은 줄로 내린다. 큰 제목 안에 "|"가 그대로 보이고 휴대폰에서 다섯 줄이 됐다. */}
+        <h1 className="article-title text-[1.75rem] leading-[1.3] sm:text-[2.25rem]">
+          {s.title.split(" | ")[0]}
+          {s.title.includes(" | ") && (
+            <span className="mt-2 block font-sans text-[1rem] font-semibold leading-snug text-muted sm:text-[1.125rem]">
+              {s.title.split(" | ").slice(1).join(" · ")}
+            </span>
+          )}
+        </h1>
         <p className="num mt-4 text-[13px] text-faint">
           <span className="font-semibold text-brand">K나라지원</span> · {s.updated_at.slice(0, 10).replaceAll("-", ".")} · 읽는 데 {mins}분 · {s.kind === "case" ? "실제 사례를 정리한 글입니다" : s.kind === "guide" ? "공식 발표를 확인해 정리한 글입니다" : "모아 둔 자료에서 센 숫자로 씁니다"}
         </p>

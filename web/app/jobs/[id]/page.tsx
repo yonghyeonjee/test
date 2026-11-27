@@ -292,7 +292,10 @@ export default async function JobDetail({ params }: P) {
         <OrgMark org={job.org} hire={job.hire} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            {(job.start || job.end) && <span className="badge">{STATUS_LABEL[job.status]}</span>}
+            {/* 합격자 발표·면접 안내는 지원할 수 없는 공고다. 게시 기간만 보고 "진행 중"이라 적으면 접수 중으로 읽힌다. */}
+            {stage === "final" ? <span className="badge">합격자 발표</span>
+              : stage === "interview" ? <span className="badge">면접 안내</span>
+              : (job.start || job.end) && <span className="badge">{STATUS_LABEL[job.status]}</span>}
             {job.reg && <span className="num badge badge-quiet">{dot(job.reg)} 등록</span>}
             {job.hire && <span className="badge badge-quiet">{job.hire}</span>}
           </div>
