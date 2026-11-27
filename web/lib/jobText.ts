@@ -1,4 +1,5 @@
 import type { Job } from "./pubJobs";
+import { stageOf } from "./jobRole";
 
 /**
  * 공고 상세의 글.
@@ -26,8 +27,12 @@ export function jobSummary(job: Job): string {
   if (job.hire) parts.push(job.hire);
   if (job.headcount) parts.push(`${job.headcount}명 모집`);
   const head = parts.length ? `${parts.join(" · ")}.` : "공공기관 채용 공고입니다.";
+  // 합격자 발표·면접 안내는 접수를 받지 않는다. 그 공고의 종료일은 게시 종료일이라 "접수 마감"이라 적으면 틀린다.
+  const stage = stageOf(job.title);
   const when =
-    job.end ? ` 접수 마감 ${d(job.end)}.`
+    stage === "final" ? " 최종 합격자 발표 공고입니다."
+    : stage === "interview" ? " 서류 합격자·면접 안내 공고입니다."
+    : job.end ? ` 접수 마감 ${d(job.end)}.`
     : job.start ? ` ${d(job.start)}부터 접수.`
     : "";
   // 2026-11-08 끝의 "접수 방법과 자격 요건은 기관 원문에서 확인하세요." 를 뺐다. 모든 공고 쪽의 설명문·구조화 데이터·본문

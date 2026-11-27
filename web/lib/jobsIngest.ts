@@ -411,7 +411,15 @@ export async function ingestArchive(
       return "stalled";
     }
     const err = resultError(got.xml);
-    if (err) { report.reason = `API 오류 — ${err}`; return "fail"; }
+    if (err) {
+      // 마지막 쪽을 넘기면 월드잡은 빈 쪽이 아니라 "결과값이 없습니다" 오류를 준다. 실패로 치면 커서가 그 쪽(44)에
+      // 영영 걸려 2쪽부터는 다시 읽지 않는다(2026-11-27 확인). 끝으로 보고 1쪽으로 되감는다.
+      if (pg > 1 && /결과값이 없|NODATA|NO_DATA/i.test(err)) {
+        report.pages.push({ page: pg, saved: 0, oldest: null, newest: null, err: "항목 없음(끝)" });
+        return "end";
+      }
+      report.reason = `API 오류 — ${err}`; return "fail";
+    }
     const parsed = parseItems(got.xml, conf.item).map((d) => toRow(name, d)).filter((r): r is Row => !!r);
     if (!parsed.length) {
       report.pages.push({ page: pg, saved: 0, oldest: null, newest: null, err: "항목 없음(끝)" });
