@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { HELPER_JOB_INTENT, HELPER_YIELD, helperTerms, matchFaq } from "@/lib/helperFaq";
+import { HELPER_JOB_INTENT, HELPER_LICENSE_INTENT, HELPER_WELFARE_INTENT, HELPER_YIELD, helperTerms, matchFaq } from "@/lib/helperFaq";
 import { unifiedSearch, type SectionKey } from "@/lib/search";
 
 /**
@@ -63,8 +63,12 @@ export async function GET(req: Request) {
       },
       agency: { key: "agency", label: "공공기관 사업", total: 0, href: r.agency.href, items: [] },
     };
-    // 채용을 물었으면 채용부터. 나머지는 검색이 정한 순서.
-    const order = HELPER_JOB_INTENT.test(text) ? (["jobs", ...r.order.filter((k) => k !== "jobs")] as SectionKey[]) : r.order;
+    // 물은 갈래만 답한다. 검색은 모든 갈래를 찾지만, "간호사 채용"에 지원사업이, "청년 월세 지원금"에 채용 공고가
+    // 섞여 나오면 엉뚱한 답으로 읽힌다. 갈래를 알 수 없는 말은 검색이 정한 순서 그대로.
+    const order: SectionKey[] = HELPER_JOB_INTENT.test(text) ? ["jobs", "licenses", "guides"]
+      : HELPER_LICENSE_INTENT.test(text) ? ["licenses", "guides", "jobs"]
+      : HELPER_WELFARE_INTENT.test(text) ? (r.welfare.items.length ? ["welfare", "guides"] : ["business", "guides"])
+      : r.order;
     const sections = order.map((k) => all[k]).filter((s) => s.items.length > 0).slice(0, 3);
     if (!sections.length) return NextResponse.json({ kind: "none", terms, bits: r.bits, more, faq: faq?.id ?? null }, { headers: HEAD });
     return NextResponse.json({ kind: "search", terms, bits: r.bits, sections, more }, { headers: HEAD });

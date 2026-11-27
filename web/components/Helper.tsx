@@ -72,7 +72,11 @@ export default function Helper() {
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [open]);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end" }); }, [msgs, open]);
+  // 새 답의 첫 줄이 보이게. 끝으로 내리면 긴 답(공고 목록)은 앞머리가 위로 넘어가 버린다.
+  useEffect(() => {
+    const last = end.current?.previousElementSibling?.lastElementChild;
+    if (last && msgs.length) last.scrollIntoView({ block: "start" });
+  }, [msgs, open]);
 
   const push = (m: Msg) => setMsgs((xs) => [...xs.filter((x) => !(x.role === "bot" && x.wait)), m]);
 
