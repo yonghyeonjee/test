@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchOrgNews, ORGS_EVENT, orgHref, readOrgs, removeOrg, type OrgNews, type SavedOrg } from "@/lib/savedOrgs";
+import { fetchOrgNews, ORGS_EVENT, orgHref, readOrgs, removeOrg, syncOrgs, type OrgNews, type SavedOrg } from "@/lib/savedOrgs";
 
 /**
  * 저장한 기관과 그 사이 올라온 공고(2026-11-27).
@@ -21,6 +21,7 @@ export default function SavedOrgs({ variant = "list", className = "" }: { varian
       void fetchOrgNews(list).then((ns) => setNews(Object.fromEntries(ns.map((n) => [n.name, n]))));
     };
     load();
+    void syncOrgs();   // 서버 목록과 다르면 고쳐 쓰고, 그때 ORGS_EVENT 로 다시 그린다
     window.addEventListener(ORGS_EVENT, load);
     return () => window.removeEventListener(ORGS_EVENT, load);
   }, []);

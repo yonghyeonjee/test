@@ -26,7 +26,7 @@ export default async function SavedPage() {
 
       <section className="card mt-4 p-4 sm:p-5">
         <h2 className="text-[15px] font-extrabold tracking-[-.02em]">저장한 기관</h2>
-        <p className="mt-1 text-[12.5px] text-muted">마지막으로 본 뒤 올라온 공고를 알려 드립니다. 기관 목록은 이 브라우저에만 남습니다.</p>
+        <p className="mt-1 text-[12.5px] text-muted">마지막으로 본 뒤 올라온 공고를 알려 드립니다.</p>
         <div className="mt-3"><SavedOrgs variant="list" /></div>
       </section>
 
