@@ -735,6 +735,9 @@ body { background:
   .hero-blob, .live-dot, .marquee-track, .hero-copy, .hero-bg, .hero-stack, .pick, .float-ic { animation: none !important; }
   .marquee-track { flex-wrap: wrap; width: auto; justify-content: center; }
   .marquee-set[aria-hidden] { display: none; }
+  .marquee-set { flex-wrap: wrap; justify-content: center; padding-right: 0; }
+  .marquee-set > li[data-dup] { display: none; }
+  .marquee { -webkit-mask-image: none; mask-image: none; }
   .reveal.rv-group .stagger > * { opacity: 1; transform: none; transition: none; }
   .step { opacity: 1; transform: none; }
   .way, .way:hover { transition: none; transform: none; }
