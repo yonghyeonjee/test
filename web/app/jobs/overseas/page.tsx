@@ -26,13 +26,23 @@ const DESC =
   "한국산업인력공단이 우수일자리로 고른 해외 채용 공고를 국가와 직종, 경력으로 걸러 봅니다. " +
   "필수 언어와 비자 종류를 함께 표시합니다.";
 
-export const metadata: Metadata = withOg({
-  title: "해외취업 우수일자리 — 국가·직종별 월드잡플러스 공고",
-  description: DESC,
-  keywords: [
-      ...brandKeys("해외취업", "해외 채용"),"해외취업", "해외취업 공고", "월드잡플러스", "일본 취업", "해외 우수일자리"],
-  alternates: { canonical: "/jobs/overseas" },
-});
+/** 접수 중인 공고가 없을 때 지난 공고를 몇 건까지 보일지. 2026-11-27 마감된 600건을 한 화면에 늘어놓고 있었다. */
+const PAST_MAX = 30;
+
+export async function generateMetadata(): Promise<Metadata> {
+  // 접수 중인 공고가 하나도 없으면 지난 공고 목록뿐이라 검색엔진에는 내지 않는다(원본에 2026-08 이후 새 공고가 없다).
+  const open = await getOverseasJobs().then((b) => b.jobs.some((j) => j.status !== "closed")).catch(() => false);
+  return {
+    ...withOg({
+      title: "해외취업 우수일자리 — 국가·직종별 월드잡플러스 공고",
+      description: DESC,
+      keywords: [
+        ...brandKeys("해외취업", "해외 채용"), "해외취업", "해외취업 공고", "월드잡플러스", "일본 취업", "해외 우수일자리"],
+      alternates: { canonical: "/jobs/overseas" },
+    }),
+    ...(open ? {} : { robots: { index: false, follow: true } }),
+  };
+}
 
 type SP = { [k: string]: string | string[] | undefined };
 const one = (v: SP[string]) => (Array.isArray(v) ? v[0] : v) || undefined;
@@ -55,9 +65,14 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
     cur.nation || cur.q ? getOverseasJobs(cur.nation, cur.q) : null,
   ]);
   const src = board ?? all;
-  const jobs = src.jobs.filter((j) => !cur.career || j.career === cur.career);
+  const matched = src.jobs.filter((j) => !cur.career || j.career === cur.career);
   const nations = nationFacet(all.jobs);
   const open = all.jobs.filter((j) => j.status !== "closed").length;
+  // 접수 중·예정은 전부, 마감된 것은 최근 PAST_MAX 건만(목록은 접수 중 → 예정 → 마감 최근순으로 온다).
+  const live = matched.filter((j) => j.status !== "closed");
+  const past = matched.filter((j) => j.status === "closed");
+  const jobs = [...live, ...past.slice(0, PAST_MAX)];
+  const lastEnd = all.jobs.reduce<string | null>((m, j) => (j.end && (!m || j.end > m) ? j.end : m), null);
 
   return (
     <div className="pb-4">
@@ -122,9 +137,18 @@ export default async function Overseas({ searchParams }: { searchParams: SP }) {
           </div>
 
           <div className="mb-3 mt-8 flex items-baseline justify-between">
-            <h2 className="text-[1.0625rem] font-bold">{cur.nation || cur.q || cur.career ? "조건에 맞는 공고" : "최근 공고"}</h2>
-            <span className="num text-sm text-muted">{jobs.length}건</span>
+            <h2 className="text-[1.0625rem] font-bold">{cur.nation || cur.q || cur.career ? "조건에 맞는 공고" : live.length ? "최근 공고" : "지난 공고"}</h2>
+            <span className="num text-sm text-muted">
+              {matched.length > jobs.length ? `${matched.length.toLocaleString()}건 가운데 ${jobs.length}건` : `${jobs.length}건`}
+            </span>
           </div>
+          {open === 0 && (
+            <p className="mb-3 rounded-card bg-surface2 px-4 py-3 text-[13.5px] leading-relaxed text-ink2">
+              지금 접수 중인 우수일자리 공고가 없습니다.
+              {lastEnd && <> 공단 자료에 올라온 가장 늦은 마감일은 <b className="num">{dot(lastEnd)}</b>입니다.</>}
+              {" "}아래는 지난 공고이고, 새 공고는 월드잡플러스에서 먼저 확인하세요.
+            </p>
+          )}
           {jobs.length === 0 ? (
             <div className="card p-8 text-center">
               <p className="leading-relaxed text-muted">조건에 맞는 공고가 없습니다.</p>
